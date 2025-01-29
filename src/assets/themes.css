@@ -1,0 +1,72 @@
+:root.theme-default,
+:root.theme-blue {
+  --color-prime: #3f79ff;
+  --color-prime-dark: #2c62e0;
+  --color-prime-light: #5588ff;
+  --color-prime-lighter: #a3b9ed;
+  --color-prime-transp: #3f79ff8a;
+  --color-prime-invert: white;
+  --color-ignore: #808080;
+  --color-disable: #80808088;
+  --background-image: linear-gradient(120deg, #a1c4fd 0%, #c2e9fb 100%);
+}
+
+:root.theme-red {
+  --color-prime: #ff553f;
+  --color-prime-dark: #ef452e;
+  --color-prime-light: #ff897a;
+  --color-prime-lighter: #ffafa4;
+  --color-prime-transp: #ff553f8a;
+  --color-prime-invert: white;
+  --color-ignore: #808080;
+  --color-disable: #80808088;
+  --background-image: linear-gradient(to right, #fa709a 0%, #fee140 100%);
+}
+
+:root.theme-green {
+  --color-prime: #3ad24e;
+  --color-prime-dark: #20b834;
+  --color-prime-light: #78f288;
+  --color-prime-lighter: #c8ffcf;
+  --color-prime-transp: #5bff7179;
+  --color-prime-invert: white;
+  --color-ignore: #808080;
+  --color-disable: #80808088;
+  background-image: linear-gradient(120deg, #d4f587 0%, #82db8e 100%);
+}
+
+:root.theme-pink {
+  --color-prime: #ff7f94;
+  --color-prime-dark: #df5d73;
+  --color-prime-light: #ffb3c0;
+  --color-prime-lighter: #ffc5ce;
+  --color-prime-transp: #ff8b9ea8;
+  --color-prime-invert: white;
+  --color-ignore: #808080;
+  --color-disable: #80808088;
+  background-image: linear-gradient(-20deg, #f794a4 0%, #fdd6bd 100%);
+}
+
+:root.theme-gray {
+  --color-prime: #687279;
+  --color-prime-dark: #475163;
+  --color-prime-light: #898f93;
+  --color-prime-lighter: #a4a8ab;
+  --color-prime-transp: #687279a1;
+  --color-prime-invert: white;
+  --color-ignore: #cbcbcb;
+  --color-disable: #80808088;
+  background-image: linear-gradient(to top, #cfd9df 0%, #e2ebf0 100%);
+}
+
+:root.theme-blank {
+  --color-prime: white;
+  --color-prime-dark: white;
+  --color-prime-light: white;
+  --color-prime-lighter: white;
+  --color-prime-transp: white;
+  --color-prime-invert: white;
+  --color-ignore: white;
+  --color-disable: white;
+  background-image: white;
+}
