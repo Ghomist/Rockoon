@@ -3,9 +3,9 @@
 /* themes */
 :root {
   --d-padding: 10px;
-  --d-padding-md: 4px 10px;
+  --d-padding-md: 4px 8px;
   --d-padding-sm: 4px;
-  --d-padding-lg: 8px 14px;
+  --d-padding-lg: 6px 12px;
   --d-margin: 10px;
   --d-margin-sm: 4px;
   --d-margin-xs: 2px;

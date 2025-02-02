@@ -1,8 +1,8 @@
 <script setup lang="ts">
-defineProps({
-  active: Boolean,
-  disabled: Boolean
-});
+defineProps<{
+  active?: boolean;
+  disabled?: boolean;
+}>();
 </script>
 
 <template>
@@ -23,7 +23,7 @@ defineProps({
   background-color: transparent;
   border: none;
   border-radius: 4px;
-  box-shadow: inset 0 0 2px var(--color-prime-shadow);
+  box-shadow: var(--box-shadow-prime-inset);
   transition: all 100ms;
 
   &.active {

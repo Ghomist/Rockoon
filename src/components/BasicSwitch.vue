@@ -1,10 +1,15 @@
 <script setup lang="ts">
 import { computed } from "vue";
 
+type ValueType = boolean | string | number;
+
 const props = defineProps<{
-  modelValue?: boolean | string | number;
+  modelValue?: ValueType;
 }>();
-const emits = defineEmits(["update:modelValue", "toggled"]);
+const emits = defineEmits<{
+  (e: "update:modelValue", value: ValueType): void;
+  (e: "toggled", value: ValueType): void;
+}>();
 
 const value = computed(() => {
   if (typeof props.modelValue === "boolean") {
@@ -67,18 +72,21 @@ const emit = () => {
   display: flex;
   align-items: center;
   justify-content: center;
+
   width: 40px;
   height: 24px;
-  margin: 4px;
+  margin: var(--d-margin-sm);
 }
 
 .basic-switch-slot {
+  overflow: visible;
+
   width: 30px;
   height: 12px;
-  overflow: visible;
+  border-radius: var(--d-round);
+
   border: 0.1px solid var(--color-prime);
-  border-radius: 8px;
-  box-shadow: 0 0 4px var(--color-prime-shadow);
+  box-shadow: var(--box-shadow-prime);
 }
 
 .basic-switch-btn {
@@ -86,11 +94,12 @@ const emit = () => {
   top: -4px;
   width: 20px;
   height: 20px;
+
   border-radius: 50%;
-  box-shadow: 0 0 4px var(--color-prime-shadow);
+  box-shadow: var(--box-shadow-prime);
 }
 
 .basic-switch-btn:hover {
-  box-shadow: 0 0 16px var(--color-prime-shadow);
+  box-shadow: var(--box-shadow-prime);
 }
 </style>

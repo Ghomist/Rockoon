@@ -5,8 +5,8 @@ import { computed, onMounted, ref } from "vue";
 const props = withDefaults(
   defineProps<{
     modelValue: number;
-    max: number;
-    min: number;
+    max?: number;
+    min?: number;
     percentage?: boolean;
   }>(),
   {
@@ -104,9 +104,11 @@ onMounted(() => {
   top: -6px;
   width: 20px;
   height: 20px;
-  background-color: var(--color-prime);
   border-radius: 50%;
-  box-shadow: 0 0 4px var(--color-prime-shadow);
+
   transition: 50ms;
+
+  background-color: var(--color-prime);
+  box-shadow: var(--box-shadow-prime);
 }
 </style>

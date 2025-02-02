@@ -96,6 +96,9 @@ defineExpose({
 
   color: var(--color-prime);
 }
+.basic-collapse-title * {
+  cursor: pointer;
+}
 
 .basic-collapse-buttons {
   display: flex;
