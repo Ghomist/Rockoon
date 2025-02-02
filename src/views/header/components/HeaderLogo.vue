@@ -6,8 +6,9 @@ const app = useAppStore();
 
 <template>
   <p class="logo-text">
-    {{ app.selected ? `当前游戏：${app.selectedName}` : "Ballance Launcher" }}
-    <!-- Ballance Launcher -->
+    <!-- {{ app.selected ? `当前游戏：${app.selectedName}` : "Ballance Launcher" }} -->
+
+    Rockoon for Ballance
   </p>
 </template>
 

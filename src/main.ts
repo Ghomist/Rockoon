@@ -20,16 +20,16 @@ document.addEventListener("contextmenu", e => e.preventDefault());
 const init = async () => {
   await moveWindow(Position.Center);
 
-  const tray = await TrayIcon.new({
-    icon: (await defaultWindowIcon())!,
-    action: e => {
-      if (e.type === "Click") {
-        tauriApp.toggleWindow();
-      }
-    }
-  });
-  await tray.setTooltip("Rockoon!");
-  app.onUnmount(() => tray.close());
+  // const tray = await TrayIcon.new({
+  //   icon: (await defaultWindowIcon())!,
+  //   action: e => {
+  //     if (e.type === "Click") {
+  //       tauriApp.toggleWindow();
+  //     }
+  //   }
+  // });
+  // await tray.setTooltip("Rockoon!");
+  // app.onUnmount(() => tray.close());
 
   await initStores();
 };

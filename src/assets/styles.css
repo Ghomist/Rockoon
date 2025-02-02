@@ -1,5 +1,7 @@
-@import url("themes.css");
-@import url("anim.css");
+/* animations */
+@import url("animations/index.css");
+
+@import url("theme/index.css");
 
 :root {
   font-family: "Noto Sans", Inter, Avenir, Helvetica, Arial, sans-serif;
@@ -7,35 +9,11 @@
   line-height: 24px;
   font-weight: 400;
 
-  color: #0f0f0f;
-  background-color: #f6f6f6;
-
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   -webkit-text-size-adjust: 100%;
-}
-
-/* themes */
-:root {
-  --color-prime-click: var(--color-prime-dark);
-  --color-prime-hover: var(--color-prime-light);
-  --color-prime-shadow: var(--color-prime-transp);
-
-  --color-text: #0f0f0f;
-  --color-text-light: var(--color-ignore);
-  --color-text-lighter: #80808088;
-  --color-text-prime: var(--color-prime);
-  --color-text-invert: white;
-
-  --box-background: rgba(255, 255, 255, 0.8);
-  --box-background-no-trans: rgb(255, 255, 255);
-  --box-shadow: 0 0 28px rgba(255, 255, 255, 0.6);
-
-  --input-shadow-hover: inset 0 0 2px var(--color-prime-shadow);
-  --input-shadow-focus: 0 0 10px var(--color-prime-shadow);
-  --input-bg-focus: white;
 }
 
 body {
@@ -87,6 +65,10 @@ a:hover {
 
 h1 {
   text-align: center;
+}
+
+.anim {
+  transition: all 200ms;
 }
 
 @media (prefers-color-scheme: dark) {

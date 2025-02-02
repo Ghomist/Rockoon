@@ -84,10 +84,6 @@ const modsExtraButtons = reactive([
     callback: readMods
   }
 ]);
-
-onMounted(() => {
-  readMods();
-});
 </script>
 
 <template>
@@ -96,7 +92,7 @@ onMounted(() => {
     ref="modsCollapse"
     title="模组列表"
     open
-    @on-expand="readMods()"
+    @expand="readMods()"
   >
     <template #buttons>
       <ExtraButtons :schema="modsExtraButtons" />

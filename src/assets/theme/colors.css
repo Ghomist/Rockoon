@@ -1,3 +1,8 @@
+:root {
+  color: #0f0f0f;
+  background-color: #f6f6f6;
+}
+
 :root.theme-default,
 :root.theme-blue {
   --color-prime: #3f79ff;
@@ -59,7 +64,7 @@
   background-image: linear-gradient(to top, #cfd9df 0%, #e2ebf0 100%);
 }
 
-:root.theme-blank {
+/* :root.theme-blank {
   --color-prime: white;
   --color-prime-dark: white;
   --color-prime-light: white;
@@ -69,4 +74,4 @@
   --color-ignore: white;
   --color-disable: white;
   background-image: white;
-}
+} */

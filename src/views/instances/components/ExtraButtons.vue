@@ -10,7 +10,7 @@ defineProps({
   <div style="display: flex; gap: 8px; align-items: center">
     <BasicIcon
       v-for="i in schema"
-      width="20px"
+      size="small"
       style="cursor: pointer"
       :icon="i.icon"
       @click.stop="i.callback()"

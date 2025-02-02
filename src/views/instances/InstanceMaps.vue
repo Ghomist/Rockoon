@@ -69,7 +69,7 @@ const mapsExtraButtons = reactive([
     ref="mapsCollapse"
     title="自定义地图"
     open
-    @on-expand="readMaps()"
+    @expand="readMaps()"
   >
     <template #buttons>
       <ExtraButtons :schema="mapsExtraButtons" />

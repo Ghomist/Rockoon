@@ -14,6 +14,9 @@
       {
         "label": "main",
         "title": "Rockoon",
+        "decorations": false,
+        "transparent": true,
+        "shadow": false,
         "width": 1000,
         "height": 600,
         "minWidth": 1000,

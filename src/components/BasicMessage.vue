@@ -16,14 +16,14 @@ defineProps<{
 
 <style scoped>
 .basic-message-container {
-  width: 240px;
-  height: 36px;
-  padding: 10px;
-  font-size: 14px;
+  width: var(--d-width-lg);
+  height: var(--d-height);
+  padding: var(--d-padding);
+  font-size: var(--text-sm);
 
-  border-radius: 8px;
-  background-color: white;
-  box-shadow: 0 0 8px var(--color-prime-shadow);
+  border-radius: var(--d-round);
+  background-color: var(--box-background);
+  box-shadow: var(--box-shadow-dark);
 
   display: flex;
   align-items: center;

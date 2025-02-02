@@ -1,15 +1,20 @@
 <script setup lang="ts">
-import { reactive } from "vue";
+import { onMounted, reactive, ref } from "vue";
 import HeaderButton from "./components/HeaderButton.vue";
 import HeaderLogo from "./components/HeaderLogo.vue";
 import { open } from "@tauri-apps/plugin-shell";
+import { useAppStore } from "@/stores/app";
+import { Window } from "@tauri-apps/api/window";
 
 type NavSchema = {
-  id: PageId;
-  name: string;
+  id?: PageId;
+  name?: string;
   icon?: string;
   action?: () => void;
 };
+
+const app = useAppStore();
+const window = new Window("main");
 
 const groupCenter = reactive<NavSchema[]>([
   {
@@ -22,23 +27,21 @@ const groupCenter = reactive<NavSchema[]>([
     name: "实例",
     icon: "classify-2-line"
   },
-  {
-    id: "tools",
-    name: "工具",
-    icon: "tool-line"
-  },
+  // {
+  //   id: "tools",
+  //   name: "工具",
+  //   icon: "tool-line"
+  // },
   // {
   //   id: "download",
   //   name: "下载",
   //   icon: "download-2-line"
   // },
-  {
-    id: "help",
-    name: "帮助",
-    icon: "question-line"
-  }
-]);
-const groupOthers = reactive<NavSchema[]>([
+  // {
+  //   id: "help",
+  //   name: "帮助",
+  //   icon: "question-line"
+  // }
   {
     id: "wiki",
     name: "Wiki",
@@ -46,19 +49,38 @@ const groupOthers = reactive<NavSchema[]>([
     action: () => {
       open("https://ballance.jxpxxzj.cn/wiki/首页");
     }
-  },
-  {
-    id: "settings",
-    name: "设置",
-    icon: "settings-1-line"
   }
 ]);
+const groupOthers = reactive<NavSchema[]>([
+  {
+    id: "settings",
+    icon: "settings-1-line",
+    action: () => (app.page = "settings")
+  },
+  {
+    icon: "minimize-line",
+    action: () => window.minimize()
+  },
+  {
+    icon: "close-line",
+    action: () => window.close()
+  }
+]);
+
+const headerContainer = ref<HTMLElement>();
+onMounted(() => {
+  const dragAttr = "data-tauri-drag-region";
+  headerContainer.value!.setAttribute(dragAttr, "");
+  for (const child of headerContainer.value!.children) {
+    child.setAttribute(dragAttr, "");
+  }
+});
 </script>
 
 <template>
-  <div class="header-container">
+  <div ref="headerContainer" class="header-container">
     <div class="header-logo" style="width: 200px; max-width: 200px">
-      <HeaderLogo style="margin-left: 6px" />
+      <HeaderLogo data-tauri-drag-region style="margin-left: 6px" />
     </div>
     <div class="header-buttons" style="display: flex; gap: 6px">
       <HeaderButton
@@ -91,6 +113,7 @@ const groupOthers = reactive<NavSchema[]>([
   justify-content: space-between;
   height: 100%;
   margin-right: 10px;
+  user-select: none;
 
   /* width: 100%; */
   margin-left: 10px;

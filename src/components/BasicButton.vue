@@ -1,20 +1,21 @@
 <template>
-  <button class="basic-button">
+  <button class="basic-button anim">
     <slot></slot>
   </button>
 </template>
 
 <style scoped>
 .basic-button {
-  padding: 4px 8px;
-  margin: 4px;
+  cursor: pointer;
+
+  padding: var(--d-padding-md);
+  margin: var(--d-margin-sm);
+  border-radius: var(--d-round-sm);
+  border: none;
+
   color: var(--color-text-invert);
   background-color: var(--color-prime);
-  border: 0;
-  border-radius: 4px;
-  box-shadow: 0 0 10px var(--color-prime-shadow);
-  transition: 200ms;
-  cursor: pointer;
+  box-shadow: var(--box-shadow-dark);
 
   &:hover {
     background-color: var(--color-prime-hover);

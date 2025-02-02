@@ -10,7 +10,7 @@ const props = defineProps({
 });
 
 const emits = defineEmits<{
-  (event: "onExpand"): void;
+  (event: "expand"): void;
 }>();
 
 const content = ref<HTMLDivElement>();
@@ -18,7 +18,7 @@ const contentHeight = ref("0px");
 const expand = ref(props.open);
 const onClick = () => {
   expand.value = !expand.value;
-  if (expand.value) emits("onExpand");
+  if (expand.value) emits("expand");
 };
 
 const updateHeight = () => {
@@ -32,7 +32,7 @@ const updateHeight = () => {
 
 onMounted(() => {
   updateHeight();
-  if (props.open) emits("onExpand");
+  if (props.open) emits("expand");
 });
 
 defineExpose({
@@ -42,15 +42,21 @@ defineExpose({
 
 <template>
   <BasicBlock style="overflow: hidden">
-    <div class="basic-collapse-title" @click.prevent="onClick">
-      <span style="padding-left: 10px; margin: 0; color: var(--color-prime)">
-        {{ title }}
+    <div class="basic-collapse-title anim" @click.prevent="onClick">
+      <div>
         <span
-          style="margin-left: 4px; color: var(--color-ignore); opacity: 0.6"
+          style="
+            padding-left: var(--d-margin);
+            margin-right: var(--d-margin-sm);
+            color: var(--color-prime);
+          "
         >
+          {{ title }}
+        </span>
+        <span style="color: var(--color-ignore); opacity: 0.6">
           {{ summary }}
         </span>
-      </span>
+      </div>
 
       <div class="basic-collapse-buttons">
         <Transition name="fade">
@@ -66,7 +72,7 @@ defineExpose({
     </div>
     <div
       ref="content"
-      class="basic-collapse-content"
+      class="basic-collapse-content anim"
       :style="{
         height: expand ? contentHeight : '0px',
         opacity: expand ? 1 : 0,
@@ -80,25 +86,27 @@ defineExpose({
 
 <style scoped>
 .basic-collapse-title {
+  cursor: pointer;
+
   display: flex;
   align-items: center;
   justify-content: space-between;
+
   width: 100%;
-  cursor: pointer;
+
   color: var(--color-prime);
-  transition: all 250ms;
 }
 
 .basic-collapse-buttons {
   display: flex;
-  gap: 8px;
   align-items: center;
+
+  gap: var(--d-margin);
 }
 
 .basic-collapse-content {
   display: flex;
   flex-direction: column;
   width: 100%;
-  transition: all 250ms;
 }
 </style>

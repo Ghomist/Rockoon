@@ -1,0 +1,47 @@
+@import url("colors.css");
+
+/* themes */
+:root {
+  --d-padding: 10px;
+  --d-padding-md: 4px 10px;
+  --d-padding-sm: 4px;
+  --d-padding-lg: 8px 14px;
+  --d-margin: 10px;
+  --d-margin-sm: 4px;
+  --d-margin-xs: 2px;
+  --d-round: 8px;
+  --d-round-sm: 4px;
+  --d-height: 36px;
+  --d-width: 180px;
+  --d-width-lg: 240px;
+
+  --s-icon: 24px;
+  --s-icon-sm: 20px;
+
+  --color-prime-click: var(--color-prime-dark);
+  --color-prime-hover: var(--color-prime-light);
+  --color-prime-shadow: var(--color-prime-transp);
+
+  --color-text: #0f0f0f;
+  --color-text-light: var(--color-ignore);
+  --color-text-prime: var(--color-prime);
+  --color-text-invert: white;
+
+  --box-background: rgba(255, 255, 255, 0.8);
+  --box-background-no-trans: rgb(255, 255, 255);
+  --box-shadow: 0 0 28px rgba(255, 255, 255, 0.6);
+  --box-shadow-dark: 0 0 10px var(--color-prime-shadow);
+  --box-shadow-prime: 0 0 8px var(--color-prime-shadow);
+  --box-shadow-prime-inset: inset 0 0 4px var(--color-prime-shadow);
+
+  --input-shadow-hover: inset 0 0 2px var(--color-prime-shadow);
+  --input-shadow-focus: 0 0 10px var(--color-prime-shadow);
+  --input-bg-focus: white;
+
+  --text-sm: 14px;
+}
+
+.light {
+  font-size: var(--text-sm);
+  color: var(--color-text-light);
+}

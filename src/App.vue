@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import { computed } from "vue";
+import BasicMessage from "./components/BasicMessage.vue";
 import { useAppStore } from "./stores/app";
+import DownloadPage from "./views/download/DownloadPage.vue";
 import Header from "./views/header/Header.vue";
 import HelpPage from "./views/help/HelpPage.vue";
 import HomePage from "./views/home/HomePage.vue";
 import InstancesPage from "./views/instances/InstancesPage.vue";
 import SettingsPage from "./views/settings/SettingsPage.vue";
 import ToolsPage from "./views/tools/ToolsPage.vue";
-import BasicMessage from "./components/BasicMessage.vue";
 
 const app = useAppStore();
 const pageSchema = [
@@ -19,10 +20,10 @@ const pageSchema = [
     key: "instances",
     component: InstancesPage
   },
-  // {
-  //   key: "download",
-  //   component: DownloadPage
-  // },
+  {
+    key: "download",
+    component: DownloadPage
+  },
   {
     key: "tools",
     component: ToolsPage
@@ -51,11 +52,6 @@ const currentPage = computed(
         <KeepAlive>
           <component :is="currentPage" />
         </KeepAlive>
-        <!-- <HomePage v-if="app.pageId === 'home'" />
-        <InstancesPage v-else-if="app.pageId === 'instances'" />
-        <DownloadPage v-else-if="app.pageId === 'download'" />
-        <SettingsPage v-else-if="app.pageId === 'settings'" />
-        <WikiPage v-else-if="app.pageId == 'wiki'" /> -->
       </Transition>
     </div>
   </div>
@@ -76,18 +72,24 @@ const currentPage = computed(
   display: flex;
   flex-direction: column;
   justify-items: center;
+
+  transition: none;
 }
 
 .header {
   height: 54px;
   background-color: var(--color-prime);
+
+  border-radius: 8px 8px 0 0;
 }
 
 .content {
-  height: calc(100vh - 54px);
+  height: calc(100vh - 54px - 16px);
 
   /* background-color: aqua; */
   background-image: var(--background-image);
+
+  border-radius: 0 0 8px 8px;
 }
 
 #message-service {

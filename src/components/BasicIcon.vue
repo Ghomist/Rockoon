@@ -1,9 +1,9 @@
 <script setup lang="ts">
-defineProps({
-  icon: { type: String, required: true },
-  width: String,
-  color: String
-});
+defineProps<{
+  icon: string;
+  size?: "normal" | "small" | "large";
+  color?: string;
+}>();
 </script>
 
 <template>
@@ -11,7 +11,8 @@ defineProps({
     class="basic-icon"
     :class="`mgc_${icon.replace(new RegExp('-', 'g'), '_')}`"
     :style="{
-      '--icon-size': width ?? '20px',
+      '--icon-size':
+        size === 'large' ? '32px' : size === 'small' ? '20px' : '24px',
       '--icon-color': color ?? 'inherit'
     }"
   />

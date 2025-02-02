@@ -2,13 +2,22 @@
 import { mapRange } from "@/utils/math";
 import { computed, onMounted, ref } from "vue";
 
-const props = defineProps({
-  modelValue: { type: Number, required: true },
-  max: { type: Number, default: () => 1 },
-  min: { type: Number, default: () => 0 },
-  percentage: Boolean
-});
-const emits = defineEmits(["update:modelValue", "dragEnd"]);
+const props = withDefaults(
+  defineProps<{
+    modelValue: number;
+    max: number;
+    min: number;
+    percentage?: boolean;
+  }>(),
+  {
+    max: 1,
+    min: 0
+  }
+);
+const emits = defineEmits<{
+  (event: "update:modelValue", value: number): void;
+  (event: "dragEnd", value: number): void;
+}>();
 
 const slot = ref<HTMLElement>();
 
@@ -49,15 +58,10 @@ onMounted(() => {
 
 <template>
   <div class="basic-slider-container">
-    <p
-      v-if="!percentage"
-      style="margin-top: -1px; color: var(--color-text-light)"
-    >
+    <p v-if="!percentage" class="light">
       {{ value.toFixed(1) }}
     </p>
-    <p v-else style="margin-top: -1px; color: var(--color-text-light)">
-      {{ Math.round(value * 100) }}%
-    </p>
+    <p v-else class="light">{{ Math.round(value * 100) }}%</p>
     <div ref="slot" class="basic-slider-slot">
       <div
         class="basic-slider-button"
@@ -73,27 +77,30 @@ onMounted(() => {
 <style scoped>
 .basic-slider-container {
   display: flex;
-  gap: 10px;
+  gap: var(--d-margin);
   align-items: center;
   justify-content: end;
-  width: 240px;
-  padding-right: 10px;
+
+  width: var(--d-width-lg);
+  margin-right: var(--d-margin);
 }
 
 .basic-slider-slot {
-  width: 180px;
-  min-width: 180px;
+  /* Slot Specific Variables */
   height: 8px;
-  background-color: var(--box-background);
   border: 0.1px solid var(--color-prime);
-  border-radius: 8px;
-  box-shadow: 0 0 4px var(--color-prime-shadow);
+
+  width: var(--d-width);
+  min-width: var(--d-width);
+  border-radius: var(--d-round);
+
+  background-color: var(--box-background);
+  box-shadow: var(--box-shadow-prime);
 }
 
 .basic-slider-button {
   position: relative;
 
-  /* transform: translateY(-50%); */
   top: -6px;
   width: 20px;
   height: 20px;

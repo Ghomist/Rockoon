@@ -1,23 +1,15 @@
 <script setup lang="ts">
-defineProps({
-  title: { type: String, required: true },
-  tooltip: String
-});
+defineProps<{
+  title: string;
+  tooltip?: string;
+}>();
 </script>
 
 <template>
   <div class="basic-config">
     <div class="basic-config-prop">
       <p class="basic-config-label">{{ title }}</p>
-      <p
-        class="basic-config-tooltip"
-        v-if="tooltip"
-        style="
-          margin-left: 4px;
-          font-size: 14px;
-          color: var(--color-text-light);
-        "
-      >
+      <p class="basic-config-tooltip light" v-if="tooltip">
         {{ tooltip }}
       </p>
     </div>
@@ -32,13 +24,11 @@ defineProps({
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 36px;
-  min-height: 36px;
-  max-height: 36px;
-  padding: 2px 0;
-  margin: 0 10px;
 
-  /* font-size: 15px; */
+  height: var(--d-height);
+  min-height: var(--d-height);
+  max-height: var(--d-height);
+  margin-left: var(--d-margin);
 }
 
 .basic-config-prop {
@@ -46,13 +36,16 @@ defineProps({
   gap: 2px;
   align-items: center;
 
-  /* font-size: 14px; */
   .basic-config-label,
   .basic-config-tooltip {
-    max-width: 280px;
+    /* max-width: 280px; */
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  .basic-config-tooltip {
+    margin-left: var(--d-margin-sm);
   }
 }
 

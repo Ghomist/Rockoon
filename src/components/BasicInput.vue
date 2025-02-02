@@ -79,7 +79,7 @@ const onInput = (e: Event) => {
 
 <template>
   <input
-    class="basic-input"
+    class="basic-input anim"
     ref="inputRef"
     :placeholder="placeholder ?? '未设置'"
     :value="modelValue"
@@ -91,12 +91,12 @@ const onInput = (e: Event) => {
 
 <style scoped>
 .basic-input {
-  width: 240px;
-  min-width: none;
   text-align: right;
-  background-color: transparent;
+
+  width: var(--d-width-lg);
+  min-width: none;
   border: none;
-  transition: all 200ms;
+  background-color: transparent;
 
   &:hover {
     box-shadow: var(--input-shadow-hover);

@@ -1,8 +1,8 @@
 <script setup lang="ts">
-defineProps({
-  name: { type: String, required: true },
-  selected: Boolean
-});
+defineProps<{
+  name: string;
+  selected?: boolean;
+}>();
 
 const emits = defineEmits<{
   (event: "clicked", name: string): void;
@@ -12,11 +12,7 @@ const emits = defineEmits<{
 <template>
   <div
     class="basic-list-item"
-    :style="{
-      color: selected ? 'var(--color-prime-invert)' : 'var(--color-prime)',
-      backgroundColor: selected ? 'var(--color-prime)' : 'transparent',
-      boxShadow: selected ? '0 0 8px var(--color-prime-shadow)' : ''
-    }"
+    :class="{ selected }"
     @click.prevent="emits('clicked', name)"
   >
     <slot></slot>
@@ -25,26 +21,26 @@ const emits = defineEmits<{
 
 <style scoped>
 .basic-list-item {
-  width: 90%;
-
-  /* border-bottom: 1px solid rgba(0, 0, 0, 0.5); */
-  padding: 8px 12px;
-  border-radius: 8px;
+  cursor: pointer;
 
   display: flex;
   align-items: center;
-  gap: 4px;
+  width: 90%;
 
-  cursor: pointer;
+  gap: var(--d-margin-sm);
+  padding: var(--d-padding-lg);
+  border-radius: var(--d-round);
+
+  color: var(--color-prime);
+  background-color: transparent;
 
   &:hover {
-    box-shadow: inset 0 0 6px var(--color-prime-shadow);
+    box-shadow: var(--box-shadow-prime-inset);
   }
-
-  /* &:active {
-    box-shadow: 0 0 6px var(--color-prime-shadow);
+  &.selected {
+    color: var(--color-prime-invert);
     background-color: var(--color-prime);
-    color: white;
-  } */
+    box-shadow: var(--box-shadow-prime);
+  }
 }
 </style>
