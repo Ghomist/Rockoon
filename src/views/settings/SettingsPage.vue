@@ -6,7 +6,7 @@ import BasicInput from "@/components/BasicInput.vue";
 import BasicSwitch from "@/components/BasicSwitch.vue";
 import SwitchButton from "@/components/SwitchButton.vue";
 import { usePrefStore } from "@/stores/pref";
-import { openDialog } from "@/utils/dialog";
+import { openDialog, sendMessage } from "@/utils/dialog";
 import storage from "@/utils/storage";
 import { getTauriVersion, getVersion } from "@tauri-apps/api/app";
 import { open } from "@tauri-apps/plugin-shell";
@@ -52,6 +52,9 @@ const tauriVersion = ref("");
 const debugContent = ref("Test Content");
 const openDebugDialog = () => {
   openDialog(debugContent.value, "info");
+};
+const onSendMessage = () => {
+  sendMessage("info", debugContent.value);
 };
 
 const openDevtools = () => {
@@ -143,14 +146,17 @@ onMounted(() => {
         <BasicConfig title="开发者工具">
           <BasicButton @click="openDevtools()"> 打开 </BasicButton>
         </BasicConfig>
-        <BasicConfig title="清空设置" tooltip="这也会清空所有已添加的实例">
-          <BasicButton @click="clearStorage()"> 清空 </BasicButton>
+        <BasicConfig title="消息测试">
+          <BasicButton @click="onSendMessage"> 发送 </BasicButton>
         </BasicConfig>
-        <BasicConfig title="弹窗测试内容">
+        <BasicConfig title="弹窗&消息测试内容">
           <BasicInput v-model="debugContent" />
         </BasicConfig>
         <BasicConfig title="弹窗测试">
           <BasicButton @click="openDebugDialog"> 打开 </BasicButton>
+        </BasicConfig>
+        <BasicConfig title="清空设置" tooltip="这也会清空所有已添加的实例">
+          <BasicButton @click="clearStorage()"> 清空 </BasicButton>
         </BasicConfig>
       </BasicCollapse>
     </div>

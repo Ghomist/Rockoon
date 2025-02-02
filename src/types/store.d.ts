@@ -15,6 +15,14 @@ type AppStore = {
 
   /** 当前运行的实例 ID */
   runningInstance?: number;
+
+  /** 消息队列 */
+  messageQueue: Message[];
+};
+type Message = {
+  id: number;
+  type: HintType;
+  message: string;
 };
 
 type ThemeId = "blue" | "red" | "green" | "pink" | "gray";

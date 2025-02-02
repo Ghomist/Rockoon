@@ -7,6 +7,7 @@ import HomePage from "./views/home/HomePage.vue";
 import InstancesPage from "./views/instances/InstancesPage.vue";
 import SettingsPage from "./views/settings/SettingsPage.vue";
 import ToolsPage from "./views/tools/ToolsPage.vue";
+import BasicMessage from "./components/BasicMessage.vue";
 
 const app = useAppStore();
 const pageSchema = [
@@ -58,6 +59,16 @@ const currentPage = computed(
       </Transition>
     </div>
   </div>
+  <div id="message-service">
+    <TransitionGroup name="message">
+      <BasicMessage
+        v-for="msg in app.messageQueue"
+        :key="msg.id"
+        :type="msg.type"
+        :message="msg.message"
+      />
+    </TransitionGroup>
+  </div>
 </template>
 
 <style scoped>
@@ -77,5 +88,19 @@ const currentPage = computed(
 
   /* background-color: aqua; */
   background-image: var(--background-image);
+}
+
+#message-service {
+  position: fixed;
+  display: flex;
+  flex-direction: column;
+  justify-content: right;
+  pointer-events: none;
+  gap: 6px;
+  right: 0;
+  bottom: 0;
+  padding: 20px;
+  z-index: 1000;
+  width: 260px;
 }
 </style>

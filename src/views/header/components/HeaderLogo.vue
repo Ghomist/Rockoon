@@ -1,13 +1,13 @@
 <script setup lang="ts">
-// import { useState } from '@/utils/state'
+import { useAppStore } from "@/stores/app";
 
-// const state = useState()
+const app = useAppStore();
 </script>
 
 <template>
   <p class="logo-text">
-    <!-- {{ state.selectedPath ? state.instance.name : 'Ballance Launcher' }} -->
-    Ballance Launcher
+    {{ app.selected ? `当前游戏：${app.selectedName}` : "Ballance Launcher" }}
+    <!-- Ballance Launcher -->
   </p>
 </template>
 

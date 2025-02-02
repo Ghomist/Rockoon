@@ -18,6 +18,24 @@
   /* transform: translateX(30px); */
 }
 
+/* Animation used by vue Transition Group */
+.message-move, /* 对移动中的元素应用的过渡 */
+.message-enter-active,
+.message-leave-active {
+  transition: all 0.5s ease;
+}
+.message-enter-from {
+  opacity: 0;
+  transform: translateX(30px);
+}
+.message-leave-to {
+  opacity: 0;
+  transform: translateX(0px);
+}
+.message-leave-active {
+  position: absolute;
+}
+
 /* Shake effect */
 .shake-effect {
   animation: shake 0.3s;

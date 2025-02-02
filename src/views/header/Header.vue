@@ -4,14 +4,14 @@ import HeaderButton from "./components/HeaderButton.vue";
 import HeaderLogo from "./components/HeaderLogo.vue";
 import { open } from "@tauri-apps/plugin-shell";
 
-type NavSchame = {
+type NavSchema = {
   id: PageId;
   name: string;
   icon?: string;
   action?: () => void;
 };
 
-const groupCenter = reactive<NavSchame[]>([
+const groupCenter = reactive<NavSchema[]>([
   {
     id: "home",
     name: "主页",
@@ -38,7 +38,7 @@ const groupCenter = reactive<NavSchame[]>([
     icon: "question-line"
   }
 ]);
-const groupOthers = reactive<NavSchame[]>([
+const groupOthers = reactive<NavSchema[]>([
   {
     id: "wiki",
     name: "Wiki",

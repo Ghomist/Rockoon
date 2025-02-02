@@ -10,7 +10,8 @@ export const useAppStore = defineStore("app", {
   state: (): AppStore => ({
     page: "home",
     selected: undefined,
-    runningInstance: undefined
+    runningInstance: undefined,
+    messageQueue: []
   }),
   getters: {
     selectedName: state =>
