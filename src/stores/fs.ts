@@ -1,6 +1,6 @@
 import fs from "@/api/fs";
 import { checkBallanceFolder } from "@/utils/instance";
-import { getPathSeperator } from "@/utils/os";
+import { getPathSeparator } from "@/utils/os";
 import storage from "@/utils/storage";
 import { join } from "@tauri-apps/api/path";
 import { acceptHMRUpdate, defineStore } from "pinia";
@@ -19,7 +19,7 @@ export const useFileStore = defineStore(FILE_STORE_KEY, {
     },
     async addInstance(path: string, name?: string) {
       if (this.instances.some(x => x.path === path)) return null;
-      name = name ?? path.split(getPathSeperator()).pop() ?? "Ballance";
+      name = name ?? path.split(getPathSeparator()).pop() ?? "Ballance";
       const instance = await checkBallanceFolder(path);
       if (instance) {
         this.instances.push({ name, path });

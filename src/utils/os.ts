@@ -1,4 +1,4 @@
-export type PathSeperator = "/" | "\\";
+export type PathSeparator = "/" | "\\";
 
 // TODO: Implement OS detection
 // export const getOs = (): "win" | "mac" | "linux" =>
@@ -8,6 +8,6 @@ export type PathSeperator = "/" | "\\";
 //       ? "mac"
 //       : "linux";
 
-export const getPathSeperator = (): PathSeperator => {
+export const getPathSeparator = (): PathSeparator => {
   return "\\";
 };

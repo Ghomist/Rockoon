@@ -18,6 +18,8 @@ pub fn run() {
             fs::size,
             fs::list,
             fs::delete,
+            fs::disable,
+            fs::enable,
             process::execute,
             process::kill,
             process::check,

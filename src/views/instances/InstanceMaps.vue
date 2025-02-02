@@ -71,7 +71,7 @@ const mapsExtraButtons = reactive([
           color: var(--color-text-light);
         "
       >
-        {{ convertFileSize(map.size) }} | {{ map.ext.toUpperCase() }}
+        {{ convertFileSize(map.size) }}
       </p>
       <BasicButton> 删除 </BasicButton>
       <!-- <BasicSwitch v-model="map.enabled" @toggled="onToggleMap(map)" /> -->
