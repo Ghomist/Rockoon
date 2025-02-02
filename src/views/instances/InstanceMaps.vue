@@ -10,6 +10,7 @@ import { open as browseFile } from "@tauri-apps/plugin-dialog";
 import { open } from "@tauri-apps/plugin-shell";
 import { computed, nextTick, reactive, ref } from "vue";
 import ExtraButtons from "./components/ExtraButtons.vue";
+import file from "@/api/fs";
 
 const app = useAppStore();
 const fs = useFileStore();
@@ -22,6 +23,16 @@ const readMaps = async () => {
   nextTick(() => {
     mapsCollapse.value?.resize();
   });
+};
+const onDeleteMap = async (map: ManagedFile) => {
+  const mapFile = await join(
+    instance.value.path,
+    "ModLoader",
+    "Maps",
+    map.name
+  );
+  await file.delete(mapFile);
+  await readMaps();
 };
 const mapsExtraButtons = reactive([
   {
@@ -73,8 +84,7 @@ const mapsExtraButtons = reactive([
       >
         {{ convertFileSize(map.size) }}
       </p>
-      <BasicButton> 删除 </BasicButton>
-      <!-- <BasicSwitch v-model="map.enabled" @toggled="onToggleMap(map)" /> -->
+      <BasicButton @click="onDeleteMap(map)"> 删除 </BasicButton>
     </BasicConfig>
   </BasicCollapse>
 </template>

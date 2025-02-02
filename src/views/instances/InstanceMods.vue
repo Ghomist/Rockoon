@@ -44,6 +44,16 @@ const onToggleMod = async (mod: ManagedFile, value: boolean) => {
   }
   await readMods();
 };
+const onDeleteMod = async (mod: ManagedFile) => {
+  const modFile = await join(
+    instance.value.path,
+    "ModLoader",
+    "Mods",
+    mod.name
+  );
+  await file.delete(modFile);
+  await readMods();
+};
 const modsExtraButtons = reactive([
   {
     icon: "folder-open-line",
@@ -100,7 +110,7 @@ onMounted(() => {
         :model-value="!mod.name.endsWith('.disable')"
         @toggled="onToggleMod(mod, $event)"
       />
-      <BasicButton>删除</BasicButton>
+      <BasicButton @click="onDeleteMod(mod)">删除</BasicButton>
     </BasicConfig>
   </BasicCollapse>
 </template>
