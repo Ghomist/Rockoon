@@ -7,11 +7,14 @@ const PREF_STORE_KEY = "rock-pref";
 export const usePrefStore = defineStore(PREF_STORE_KEY, {
   state: () =>
     storage.getWithDefault<PreferenceStore>(PREF_STORE_KEY, {
-      theme: "blue",
       recent: undefined,
       hideWinWhenLaunch: true,
       killInstanceWhenExit: true,
-      highscoreDefaultPlayer: "Mr. Default"
+      highscoreDefaultPlayer: "Mr. Default",
+      theme: "blue",
+      enableBgv: true,
+      backgroundBlur: 8,
+      maskOpacity: 0.25
     }),
   getters: {
     hasRecent: state =>
@@ -22,6 +25,9 @@ export const usePrefStore = defineStore(PREF_STORE_KEY, {
   actions: {
     save() {
       storage.set(PREF_STORE_KEY, this.$state);
+    },
+    restore() {
+      storage.set(PREF_STORE_KEY, {});
     }
   }
 });

@@ -37,7 +37,64 @@ onMounted(async () => {
 
 <template>
   <template v-if="instance.newPlayer && playerConfig">
-    <BasicCollapse title="游戏性" open>
+    <BasicCollapse title="常用启动项" open>
+      <BasicConfig
+        title="跳过启动动画"
+        tooltip="跳过打开游戏时的 Atari 以及 Ballance 动画"
+      >
+        <BasicSwitch v-model="playerConfig['Game']['SkipOpening']" />
+      </BasicConfig>
+      <BasicConfig title="去除帧率限制" tooltip="允许高帧率">
+        <BasicSwitch v-model="playerConfig['Game']['UnlockFramerate']" />
+      </BasicConfig>
+      <BasicConfig
+        title="允许高分辨率"
+        tooltip="允许使用高于 1600x1200 的分辨率"
+      >
+        <BasicSwitch v-model="playerConfig['Game']['UnlockHighResolution']" />
+      </BasicConfig>
+      <BasicConfig title="分辨率">
+        <BasicInput
+          data-type="number"
+          v-model="playerConfig['Graphics']['Width']"
+          style="text-align: center"
+          :style="{
+            width:
+              playerConfig['Graphics']['Width'].length > 3 ? '40px' : '30px'
+          }"
+        />
+        <p>×</p>
+        <BasicInput
+          data-type="number"
+          v-model="playerConfig['Graphics']['Height']"
+          style="text-align: center"
+          :style="{
+            width:
+              playerConfig['Graphics']['Height'].length > 3 ? '40px' : '30px'
+          }"
+        />
+      </BasicConfig>
+      <BasicConfig title="全屏">
+        <BasicSwitch v-model="playerConfig['Graphics']['Fullscreen']" />
+      </BasicConfig>
+      <BasicConfig title="无边框模式" tooltip="去除窗口边框">
+        <BasicSwitch v-model="playerConfig['Window']['Borderless']" />
+      </BasicConfig>
+      <BasicConfig title="限制鼠标在窗口内">
+        <BasicSwitch v-model="playerConfig['Window']['ClipCursor']" />
+      </BasicConfig>
+      <BasicConfig
+        title="允许后台输入"
+        tooltip="窗口在后台时也可以响应鼠标/键盘输入"
+      >
+        <BasicSwitch v-model="playerConfig['Window']['AlwaysHandleInput']" />
+      </BasicConfig>
+      <BasicConfig title="失去焦点时暂停" tooltip="切出窗口时游戏自动暂停">
+        <BasicSwitch v-model="playerConfig['Window']['PauseOnDeactivated']" />
+      </BasicConfig>
+    </BasicCollapse>
+
+    <BasicCollapse title="游戏性">
       <BasicConfig title="游戏语言">
         <SwitchButton
           v-for="item in [
@@ -77,7 +134,7 @@ onMounted(async () => {
       <BasicConfig title="调试模式">
         <BasicSwitch v-model="playerConfig['Game']['Debug']" />
       </BasicConfig>
-      <BasicConfig title="Rookie" tooltip="Rookie 模式">
+      <BasicConfig title="Rookie">
         <BasicSwitch v-model="playerConfig['Game']['Rookie']" />
       </BasicConfig>
     </BasicCollapse>

@@ -3,6 +3,7 @@ import BasicButton from "@/components/BasicButton.vue";
 import BasicCollapse from "@/components/BasicCollapse.vue";
 import BasicConfig from "@/components/BasicConfig.vue";
 import BasicInput from "@/components/BasicInput.vue";
+import BasicSlider from "@/components/BasicSlider.vue";
 import BasicSwitch from "@/components/BasicSwitch.vue";
 import SwitchButton from "@/components/SwitchButton.vue";
 import { usePrefStore } from "@/stores/pref";
@@ -43,6 +44,10 @@ const themeColors: {
 ];
 const onClickTheme = (theme: ThemeId) => {
   pref.theme = theme;
+};
+const onRestorePref = () => {
+  pref.restore();
+  location.reload();
 };
 
 const appVersion = ref("");
@@ -92,6 +97,12 @@ onMounted(() => {
             ascii-only
           />
         </BasicConfig>
+        <BasicConfig title="重置启动器设置">
+          <BasicButton @click="onRestorePref">重置</BasicButton>
+        </BasicConfig>
+      </BasicCollapse>
+
+      <BasicCollapse title="启动器外观" open>
         <BasicConfig title="颜色主题">
           <SwitchButton
             v-for="color in themeColors"
@@ -100,6 +111,19 @@ onMounted(() => {
           >
             {{ color.label }}
           </SwitchButton>
+        </BasicConfig>
+        <BasicConfig title="启用动态背景">
+          <BasicSwitch v-model="pref.enableBgv" />
+        </BasicConfig>
+        <BasicConfig title="背景模糊">
+          <BasicSlider
+            v-model="pref.backgroundBlur"
+            :max="100"
+            :formatter="(v: number) => v.toFixed(0) + 'px'"
+          />
+        </BasicConfig>
+        <BasicConfig title="遮罩透明度">
+          <BasicSlider v-model="pref.maskOpacity" percentage />
         </BasicConfig>
       </BasicCollapse>
 
@@ -119,7 +143,7 @@ onMounted(() => {
         </BasicConfig>
       </BasicCollapse>
 
-      <BasicCollapse title="相关站点">
+      <BasicCollapse title="相关站点 / 特别鸣谢">
         <BasicConfig title="地图 / Mod 下载源">
           <a @click="open('http://ballancemaps.ysepan.com/')">
             Ballance 地图下载站
@@ -139,6 +163,17 @@ onMounted(() => {
           <a @click="open('https://github.com/doyaGu/BallancePlayer')">
             https://github.com/doyaGu/BallancePlayer
           </a>
+        </BasicConfig>
+        <BasicConfig title="MenuLevel 动态背景图">
+          感谢由
+          <span style="padding: 0.25em">
+            <a @click="open('https://github.com/chirs241097/')"> chris </a>
+            ,
+            <a @click="open('https://github.com/ShadowPower')"> 61 </a>
+            ,
+            <a @click="open('https://github.com/yyc12345')"> yyc </a>
+          </span>
+          提供的背景图（名称为缩写）
         </BasicConfig>
       </BasicCollapse>
 

@@ -58,6 +58,10 @@ const groupOthers = reactive<NavSchema[]>([
     action: () => (app.page = "settings")
   },
   {
+    icon: "refresh-1-line",
+    action: () => location.reload()
+  },
+  {
     icon: "minimize-line",
     action: () => window.minimize()
   },

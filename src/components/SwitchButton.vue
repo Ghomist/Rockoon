@@ -17,6 +17,7 @@ defineProps<{
 
 <style scoped>
 .virtual-key-button {
+  cursor: pointer;
   min-width: 36px;
   height: 36px;
   margin: 0.5px 1px;

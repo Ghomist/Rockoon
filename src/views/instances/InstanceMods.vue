@@ -106,7 +106,6 @@ const modsExtraButtons = reactive([
     v-if="instance.bmlEnabled || instance.bmlpEnabled"
     ref="modsCollapse"
     title="模组列表"
-    open
     @expand="readMods()"
   >
     <template #buttons>

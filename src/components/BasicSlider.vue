@@ -8,10 +8,12 @@ const props = withDefaults(
     max?: number;
     min?: number;
     percentage?: boolean;
+    formatter?: (value: number) => string;
   }>(),
   {
     max: 1,
-    min: 0
+    min: 0,
+    formatter: (value: number) => value.toFixed(1)
   }
 );
 const emits = defineEmits<{
@@ -59,7 +61,7 @@ onMounted(() => {
 <template>
   <div class="basic-slider-container">
     <p v-if="!percentage" class="light">
-      {{ value.toFixed(1) }}
+      {{ formatter(value) }}
     </p>
     <p v-else class="light">{{ Math.round(value * 100) }}%</p>
     <div ref="slot" class="basic-slider-slot">

@@ -77,6 +77,9 @@ const emit = () => {
   height: 24px;
   margin: var(--d-margin-sm);
 }
+.basic-switch-container * {
+  cursor: pointer;
+}
 
 .basic-switch-slot {
   overflow: visible;

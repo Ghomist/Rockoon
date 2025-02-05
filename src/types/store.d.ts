@@ -27,9 +27,6 @@ type Message = {
 
 type ThemeId = "blue" | "red" | "green" | "pink" | "gray";
 type PreferenceStore = {
-  /** 主题 */
-  theme: ThemeId;
-
   /** 最近一次启动的实例路径 */
   recent?: string;
 
@@ -41,6 +38,18 @@ type PreferenceStore = {
 
   /** 重置高分榜时的默认玩家名称 */
   highscoreDefaultPlayer: string;
+
+  /** 主题 */
+  theme: ThemeId;
+
+  /** 是否启用背景视频 */
+  enableBgv: boolean;
+
+  /** 背景模糊 */
+  backgroundBlur: number;
+
+  /** 背景遮罩透明度 */
+  maskOpacity: number;
 };
 
 type FileStore = {

@@ -21,6 +21,7 @@ const onLaunch = async () => {
     // TODO: 确认弹窗
     await app.killInstance();
   } else if (app.selected) {
+    // TODO: 手动启动 + 无 Mod 启动
     await app.launchInstance(app.selected);
     pref.recent = app.selected.path;
   } else {

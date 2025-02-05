@@ -1,5 +1,4 @@
 import BasicDialogVue from "@/components/BasicDialog.vue";
-import BasicMessageVue from "@/components/BasicMessage.vue";
 import { useAppStore } from "@/stores/app";
 import { createApp } from "vue";
 

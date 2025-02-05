@@ -79,6 +79,7 @@ const editingKey = ref<BallanceKeyType | "all">("all");
     <VirtualKeyboard :editing="editingKey" />
   </BasicCollapse>
   <BasicCollapse title="其它操作" open>
+    <!-- TODO -->
     <!-- <BasicConfig v-if="instance.bmlInstalled" title="启用 BML">
       <BasicSwitch v-model="instance.bmlEnabled" />
     </BasicConfig>

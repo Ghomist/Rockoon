@@ -2,6 +2,7 @@
 import { computed } from "vue";
 import BasicMessage from "./components/BasicMessage.vue";
 import { useAppStore } from "./stores/app";
+import { usePrefStore } from "./stores/pref";
 import DownloadPage from "./views/download/DownloadPage.vue";
 import Header from "./views/header/Header.vue";
 import HelpPage from "./views/help/HelpPage.vue";
@@ -11,6 +12,7 @@ import SettingsPage from "./views/settings/SettingsPage.vue";
 import ToolsPage from "./views/tools/ToolsPage.vue";
 
 const app = useAppStore();
+const pref = usePrefStore();
 const pageSchema = [
   {
     key: "home",
@@ -47,7 +49,23 @@ const currentPage = computed(
     <div class="header">
       <Header></Header>
     </div>
-    <div class="content">
+    <div
+      class="content"
+      :style="{
+        '--bg-blur': pref.backgroundBlur + 'px',
+        '--mask-opacity': pref.enableBgv ? pref.maskOpacity : 1
+      }"
+    >
+      <video
+        v-if="pref.enableBgv"
+        class="content-bgv"
+        src="/menu_level_compressed.mp4"
+        autoplay
+        loop
+        muted
+      />
+      <div class="content-bg-blur" />
+      <div class="content-bg-mask" />
       <Transition name="fade" mode="out-in">
         <KeepAlive>
           <component :is="currentPage" />
@@ -55,6 +73,7 @@ const currentPage = computed(
       </Transition>
     </div>
   </div>
+
   <div id="message-service">
     <TransitionGroup name="message">
       <BasicMessage
@@ -77,19 +96,45 @@ const currentPage = computed(
 }
 
 .header {
-  height: 54px;
-  background-color: var(--color-prime);
+  overflow: hidden;
 
+  height: 54px;
   border-radius: 8px 8px 0 0;
+
+  background-color: var(--color-prime);
 }
 
 .content {
+  position: relative;
+  overflow: hidden;
+
   height: calc(100vh - 54px - 16px);
-
-  /* background-color: aqua; */
-  background-image: var(--background-image);
-
   border-radius: 0 0 8px 8px;
+
+  & > * {
+    position: absolute;
+  }
+}
+.content-bg-blur {
+  inset: 0;
+  backdrop-filter: blur(var(--bg-blur));
+}
+.content-bg-mask {
+  inset: 0;
+  opacity: var(--mask-opacity);
+  background-image: var(--background-image);
+}
+.content-bgv {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  scale: 1.1;
+  object-fit: cover;
+  z-index: -1;
+  overflow: clip;
+  filter: saturate(1.5);
 }
 
 #message-service {
