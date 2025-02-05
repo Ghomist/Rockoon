@@ -27,7 +27,7 @@
   --color-text-prime: var(--color-prime);
   --color-text-invert: white;
 
-  --box-background: rgba(255, 255, 255, 0.8);
+  --box-background: rgba(255, 255, 255, 0.85);
   --box-background-no-trans: rgb(255, 255, 255);
   --box-shadow: 0 0 28px rgba(255, 255, 255, 0.6);
   --box-shadow-dark: 0 0 10px var(--color-prime-shadow);

@@ -1,15 +1,11 @@
 <script setup lang="ts">
-import BasicIcon from "./BasicIcon.vue";
-
 defineProps<{
-  type: HintType;
   message: string;
 }>();
 </script>
 
 <template>
   <div class="basic-message-container">
-    <BasicIcon :icon="type" />
     {{ message }}
   </div>
 </template>

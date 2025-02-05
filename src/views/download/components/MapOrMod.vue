@@ -4,7 +4,7 @@ import BasicButton from "@/components/BasicButton.vue";
 import BasicConfig from "@/components/BasicConfig.vue";
 import BasicInput from "@/components/BasicInput.vue";
 import BasicSplit from "@/components/BasicSplit.vue";
-import { openDialog } from "@/utils/dialog";
+import { openDialog } from "@/utils/message";
 import { YsFile } from "@/utils/fetcher";
 import { onMounted, reactive, ref, watch } from "vue";
 

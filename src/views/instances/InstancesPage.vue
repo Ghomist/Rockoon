@@ -5,7 +5,7 @@ import BasicNavItem from "@/components/BasicNavItem.vue";
 import BasicSplit from "@/components/BasicSplit.vue";
 import { useAppStore } from "@/stores/app";
 import { useFileStore } from "@/stores/fs";
-import { openDialog } from "@/utils/dialog.ts";
+import { sendMessage } from "@/utils/message";
 import { open as browseFile } from "@tauri-apps/plugin-dialog";
 import { ref } from "vue";
 import InstanceLaunchConfig from "./InstanceLaunchConfig.vue";
@@ -21,16 +21,16 @@ const fs = useFileStore();
 const onAddInstance = async () => {
   const folder = await browseFile({
     directory: true,
-    title: "请选择 Ballance 根目录"
+    title: "选择 Ballance 根目录"
   });
   if (folder) {
     const instance = await fs.addInstance(folder);
     if (instance) {
       app.selected = instance;
+      sendMessage("添加游戏成功！");
     } else {
-      openDialog(
-        "添加 Ballance 实例失败，请检查是否已经添加或是游戏文件缺失？",
-        "info"
+      sendMessage(
+        "添加游戏失败！请确认这是 Ballance 游戏目录，也不要重复添加哦~"
       );
     }
   }

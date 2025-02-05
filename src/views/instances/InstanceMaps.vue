@@ -1,16 +1,17 @@
 <script setup lang="ts">
+import file from "@/api/fs";
 import BasicButton from "@/components/BasicButton.vue";
 import BasicCollapse from "@/components/BasicCollapse.vue";
 import BasicConfig from "@/components/BasicConfig.vue";
 import { useAppStore } from "@/stores/app";
 import { useFileStore } from "@/stores/fs";
+import { formatFileName } from "@/utils/format";
 import { convertFileSize } from "@/utils/math.ts";
 import { join } from "@tauri-apps/api/path";
 import { open as browseFile } from "@tauri-apps/plugin-dialog";
 import { open } from "@tauri-apps/plugin-shell";
 import { computed, nextTick, reactive, ref } from "vue";
 import ExtraButtons from "./components/ExtraButtons.vue";
-import file from "@/api/fs";
 
 const app = useAppStore();
 const fs = useFileStore();
@@ -74,7 +75,7 @@ const mapsExtraButtons = reactive([
     <template #buttons>
       <ExtraButtons :schema="mapsExtraButtons" />
     </template>
-    <BasicConfig v-for="map in maps" :title="map.name">
+    <BasicConfig v-for="map in maps" :title="formatFileName(map.name)">
       <p
         style="
           margin-right: 4px;

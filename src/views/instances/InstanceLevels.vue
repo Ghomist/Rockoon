@@ -7,6 +7,7 @@ import BasicSwitch from "@/components/BasicSwitch.vue";
 import { useAppStore } from "@/stores/app";
 import { usePrefStore } from "@/stores/pref";
 import { pad } from "@/utils/format";
+import { openDialog, sendMessage } from "@/utils/message";
 import { computed, toRef } from "vue";
 
 const app = useAppStore();
@@ -15,22 +16,34 @@ const instance = computed(() => app.selected!);
 
 const unlockAllLevels = () => {
   instance.value.options.levelLock.fill(true);
+  sendMessage("关卡已全部解锁");
 };
 
 const resetLevelLock = () => {
   instance.value.options.levelLock[0] = true;
   instance.value.options.levelLock.fill(false, 1);
+  sendMessage("关卡已重置为初始状态");
 };
 
 const resetHighscores = () => {
-  const getHighestScoreOfLevel = (level: number) => (level < 12 ? 4000 : 7000);
-  const ranking = toRef(instance.value.options.highscores);
-  for (let i = 0; i < ranking.value.length; ++i) {
-    for (let j = 0; j < ranking.value[i].length; ++j) {
-      ranking.value[i][j].player = pref.highscoreDefaultPlayer;
-      ranking.value[i][j].score = getHighestScoreOfLevel(i + 1) - j * 400;
+  openDialog(
+    `高分榜将会以 "${pref.highscoreDefaultPlayer}"（此名称可以在设置中更改）为默认玩家重置，目前所有的高分榜数据都将清空并且不可撤销！`,
+    {
+      title: "重置高分榜",
+      onSure: () => {
+        const getHighestScoreOfLevel = (level: number) =>
+          level < 12 ? 4000 : 7000;
+        const ranking = toRef(instance.value.options.highscores);
+        for (let i = 0; i < ranking.value.length; ++i) {
+          for (let j = 0; j < ranking.value[i].length; ++j) {
+            ranking.value[i][j].player = pref.highscoreDefaultPlayer;
+            ranking.value[i][j].score = getHighestScoreOfLevel(i + 1) - j * 400;
+          }
+        }
+        sendMessage("高分榜重置成功");
+      }
     }
-  }
+  );
 };
 </script>
 

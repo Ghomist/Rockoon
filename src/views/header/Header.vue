@@ -58,10 +58,6 @@ const groupOthers = reactive<NavSchema[]>([
     action: () => (app.page = "settings")
   },
   {
-    icon: "refresh-1-line",
-    action: () => location.reload()
-  },
-  {
     icon: "minimize-line",
     action: () => window.minimize()
   },
@@ -121,12 +117,5 @@ onMounted(() => {
 
   /* width: 100%; */
   margin-left: 10px;
-}
-
-.block {
-  width: 20px;
-  height: 20px;
-  margin: 20px;
-  background-color: aqua;
 }
 </style>

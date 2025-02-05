@@ -21,7 +21,6 @@ type AppStore = {
 };
 type Message = {
   id: number;
-  type: HintType;
   message: string;
 };
 

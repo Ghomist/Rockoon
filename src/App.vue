@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, onMounted } from "vue";
 import BasicMessage from "./components/BasicMessage.vue";
 import { useAppStore } from "./stores/app";
 import { usePrefStore } from "./stores/pref";
@@ -10,6 +10,7 @@ import HomePage from "./views/home/HomePage.vue";
 import InstancesPage from "./views/instances/InstancesPage.vue";
 import SettingsPage from "./views/settings/SettingsPage.vue";
 import ToolsPage from "./views/tools/ToolsPage.vue";
+import { sendMessage } from "./utils/message";
 
 const app = useAppStore();
 const pref = usePrefStore();
@@ -42,6 +43,10 @@ const pageSchema = [
 const currentPage = computed(
   () => pageSchema.find(x => x.key === app.page)!.component
 );
+
+onMounted(() => {
+  sendMessage("欢迎使用 Rockoon！");
+});
 </script>
 
 <template>
@@ -79,7 +84,6 @@ const currentPage = computed(
       <BasicMessage
         v-for="msg in app.messageQueue"
         :key="msg.id"
-        :type="msg.type"
         :message="msg.message"
       />
     </TransitionGroup>

@@ -2,13 +2,15 @@ import BasicDialogVue from "@/components/BasicDialog.vue";
 import { useAppStore } from "@/stores/app";
 import { createApp } from "vue";
 
-export const openDialog = (
-  content: string,
-  icon?: "info" | "warning" | "error"
-) => {
-  const header =
-    icon === "info" ? "提示" : icon === "warning" ? "警告" : "错误";
-  const component = createApp(BasicDialogVue, { type: icon, header, content });
+export type DialogArgs = {
+  title?: string;
+  footer?: boolean;
+  onSure?: () => void;
+  onCancel?: () => void;
+};
+
+export const openDialog = (content: string, args?: DialogArgs) => {
+  const component = createApp(BasicDialogVue, { content, ...args });
   const div = document.createElement("div");
   div.onclick = () => {
     setTimeout(() => {
@@ -20,13 +22,12 @@ export const openDialog = (
   component.mount(div);
 };
 
-export const sendMessage = (type: HintType, message: string) => {
+export const sendMessage = (message: string) => {
   const app = useAppStore();
 
   const id = Date.now();
   app.messageQueue.push({
     id,
-    type,
     message
   });
 

@@ -7,7 +7,7 @@ import BasicSplit from "@/components/BasicSplit.vue";
 import { useAppStore } from "@/stores/app";
 import { useFileStore } from "@/stores/fs";
 import { usePrefStore } from "@/stores/pref";
-import { openDialog } from "@/utils/dialog.ts";
+import { openDialog, sendMessage } from "@/utils/message";
 import { onMounted, onUnmounted, ref } from "vue";
 
 const app = useAppStore();
@@ -18,14 +18,19 @@ const hideInstanceList = ref(true);
 
 const onLaunch = async () => {
   if (app.runningInstance) {
-    // TODO: 确认弹窗
-    await app.killInstance();
+    openDialog("要强制关闭正在运行的游戏吗？", {
+      onSure: async () => {
+        await app.killInstance();
+        sendMessage("游戏已关闭");
+      }
+    });
   } else if (app.selected) {
     // TODO: 手动启动 + 无 Mod 启动
     await app.launchInstance(app.selected);
     pref.recent = app.selected.path;
+    sendMessage("游戏已启动！");
   } else {
-    openDialog("还没有添加游戏呢，请先添加游戏实例（选择本地文件或在线下载）");
+    sendMessage("还没有添加游戏呢，请先添加游戏实例（选择本地文件或在线下载）");
     app.page = "instances";
   }
 };

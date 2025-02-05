@@ -6,8 +6,8 @@ import BasicConfig from "@/components/BasicConfig.vue";
 import BasicSwitch from "@/components/BasicSwitch.vue";
 import { useAppStore } from "@/stores/app";
 import { useFileStore } from "@/stores/fs";
-import { formatModName } from "@/utils/format";
-import { convertFileSize } from "@/utils/math.ts";
+import { formatFileName, formatFileType } from "@/utils/format";
+import { sendMessage } from "@/utils/message";
 import { join } from "@tauri-apps/api/path";
 import { open as browseFile } from "@tauri-apps/plugin-dialog";
 import { open } from "@tauri-apps/plugin-shell";
@@ -56,6 +56,7 @@ const onDeleteMod = async (mod: ManagedFile) => {
 };
 const toggleAllMods = async (enable: boolean) => {
   for (const mod of mods.value) await onToggleMod(mod, enable);
+  sendMessage(enable ? "全部 Mod 已启用" : "全部 Mod 已禁用");
 };
 const modsExtraButtons = reactive([
   {
@@ -106,6 +107,7 @@ const modsExtraButtons = reactive([
     v-if="instance.bmlEnabled || instance.bmlpEnabled"
     ref="modsCollapse"
     title="模组列表"
+    open
     @expand="readMods()"
   >
     <template #buttons>
@@ -113,8 +115,8 @@ const modsExtraButtons = reactive([
     </template>
     <BasicConfig
       v-for="mod in mods"
-      :title="formatModName(mod.name)"
-      :tooltip="convertFileSize(mod.size)"
+      :title="formatFileName(mod.name)"
+      :tooltip="'[' + formatFileType(mod.name) + ']'"
     >
       <BasicSwitch
         :model-value="!mod.name.endsWith('.disable')"

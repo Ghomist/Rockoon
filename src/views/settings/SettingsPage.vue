@@ -7,7 +7,7 @@ import BasicSlider from "@/components/BasicSlider.vue";
 import BasicSwitch from "@/components/BasicSwitch.vue";
 import SwitchButton from "@/components/SwitchButton.vue";
 import { usePrefStore } from "@/stores/pref";
-import { openDialog, sendMessage } from "@/utils/dialog";
+import { openDialog, sendMessage } from "@/utils/message";
 import storage from "@/utils/storage";
 import { getTauriVersion, getVersion } from "@tauri-apps/api/app";
 import { open } from "@tauri-apps/plugin-shell";
@@ -46,20 +46,36 @@ const onClickTheme = (theme: ThemeId) => {
   pref.theme = theme;
 };
 const onRestorePref = () => {
-  pref.restore();
-  location.reload();
+  openDialog("确定要恢复默认设置吗？", {
+    title: "恢复默认设置",
+    onSure: () => {
+      pref.restore();
+      sendMessage("已恢复默认设置");
+      setTimeout(() => {
+        location.reload();
+      }, 1000);
+    }
+  });
 };
 
 const appVersion = ref("");
 const tauriVersion = ref("");
 
 // debug
-const debugContent = ref("Test Content");
+const debugContent = ref("欢迎使用 Rockoon！");
 const openDebugDialog = () => {
-  openDialog(debugContent.value, "info");
+  openDialog(debugContent.value, {
+    title: "测试弹窗",
+    onSure: () => {
+      sendMessage("点击了确认！");
+    },
+    onCancel: () => {
+      sendMessage("点击了取消！");
+    }
+  });
 };
 const onSendMessage = () => {
-  sendMessage("info", debugContent.value);
+  sendMessage(debugContent.value);
 };
 
 const openDevtools = () => {

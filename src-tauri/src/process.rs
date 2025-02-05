@@ -25,7 +25,7 @@ pub fn kill() -> Result<(), String> {
 #[tauri::command]
 pub fn check(pid: u32) -> Result<bool, String> {
     let output = std::process::Command::new("tasklist")
-        .args(["/FI", &format!("PID eq {}", &pid)])
+        .args(["/FI", &format!("PID eq {}", pid)])
         .output()
         .map_err(|e| e.to_string())?;
     if !output.status.success() {
@@ -33,7 +33,7 @@ pub fn check(pid: u32) -> Result<bool, String> {
     }
 
     let output = String::from_utf8_lossy(&output.stdout);
-    let exists = !output.contains("No tasks are running");
+    let exists = output.contains("Player");
 
     Ok(exists)
 }

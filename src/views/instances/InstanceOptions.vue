@@ -12,6 +12,7 @@ import { computed, reactive, ref } from "vue";
 import ExtraButtons from "./components/ExtraButtons.vue";
 import MultiSelect from "./components/MultiSelect.vue";
 import VirtualKeyboard from "./components/VirtualKeyboard.vue";
+import { openDialog, sendMessage } from "@/utils/message";
 
 const app = useAppStore();
 const fs = useFileStore();
@@ -25,6 +26,19 @@ const basicExtraButtons = reactive([
 ]);
 
 const editingKey = ref<BallanceKeyType | "all">("all");
+
+const onRemoveInstance = () => {
+  openDialog(
+    `确认要移除实例吗？本地游戏文件不会被删除，你仍然可以再次将游戏添加至启动器`,
+    {
+      title: `移除实例 "${app.selectedName}"`,
+      onSure: () => {
+        fs.removeInstance(instance.value.path);
+        sendMessage("实例已移除");
+      }
+    }
+  );
+};
 </script>
 
 <template>
@@ -86,8 +100,8 @@ const editingKey = ref<BallanceKeyType | "all">("all");
     <BasicConfig v-if="instance.bmlpInstalled" title="启用 BML Plus">
       <BasicSwitch v-model="instance.bmlpEnabled" />
     </BasicConfig> -->
-    <BasicConfig title="删除此实例" tooltip="不会删除游戏文件">
-      <BasicButton @click="fs.removeInstance(instance.path)">删除</BasicButton>
+    <BasicConfig title="移除此实例" tooltip="不会删除游戏文件">
+      <BasicButton @click="onRemoveInstance">移除</BasicButton>
     </BasicConfig>
   </BasicCollapse>
 </template>

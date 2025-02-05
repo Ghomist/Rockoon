@@ -3,9 +3,16 @@ export const pad = (value: number, pad: string, len: number) =>
   (Array(len).join(pad) + value).slice(-len);
 
 /** 格式化模组名 */
-export const formatModName = (modName: string) => {
-  if (modName.endsWith(".disable")) {
-    modName = modName.replace(".disable", "");
+export const formatFileName = (fileName: string) => {
+  if (fileName.endsWith(".disable")) {
+    fileName = fileName.replace(".disable", "");
   }
-  return modName.substring(0, modName.lastIndexOf("."));
+  return fileName.substring(0, fileName.lastIndexOf("."));
+};
+
+export const formatFileType = (fileName: string) => {
+  if (fileName.endsWith(".disable")) {
+    fileName = fileName.replace(".disable", "");
+  }
+  return fileName.substring(fileName.lastIndexOf(".") + 1).toLowerCase();
 };
