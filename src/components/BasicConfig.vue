@@ -38,7 +38,7 @@ defineProps<{
 
   .basic-config-label,
   .basic-config-tooltip {
-    /* max-width: 280px; */
+    max-width: 280px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;

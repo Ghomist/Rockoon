@@ -8,5 +8,9 @@ export default {
   readLaunchConfig: (path: string) =>
     invoke<NewPlayerConfig>("read_launch_config", { path }),
   saveLaunchConfig: (path: string, config: NewPlayerConfig) =>
-    invoke<void>("save_launch_config", { config, path })
+    invoke<void>("save_launch_config", { config, path }),
+  readModConfig: (path: string) =>
+    invoke<ModConfig>("read_mod_config", { path }),
+  saveModConfig: (path: string, config: ModConfig) =>
+    invoke<void>("save_mod_config", { config, path })
 };

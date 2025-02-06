@@ -5,13 +5,14 @@ import BasicCollapse from "@/components/BasicCollapse.vue";
 import BasicConfig from "@/components/BasicConfig.vue";
 import { useAppStore } from "@/stores/app";
 import { useFileStore } from "@/stores/fs";
-import { formatFileName } from "@/utils/format";
+import { formatFileName, formatFileType } from "@/utils/format";
 import { convertFileSize } from "@/utils/math.ts";
 import { join } from "@tauri-apps/api/path";
 import { open as browseFile } from "@tauri-apps/plugin-dialog";
 import { open } from "@tauri-apps/plugin-shell";
 import { computed, nextTick, reactive, ref } from "vue";
 import ExtraButtons from "./components/ExtraButtons.vue";
+import { openDialog, sendMessage } from "@/utils/message";
 
 const app = useAppStore();
 const fs = useFileStore();
@@ -26,14 +27,20 @@ const readMaps = async () => {
   });
 };
 const onDeleteMap = async (map: ManagedFile) => {
-  const mapFile = await join(
-    instance.value.path,
-    "ModLoader",
-    "Maps",
-    map.name
-  );
-  await file.delete(mapFile);
-  await readMaps();
+  openDialog("确定要删除此地图吗？此操作无法撤销！", {
+    title: `删除 ${map.name}`,
+    onSure: async () => {
+      const mapFile = await join(
+        instance.value.path,
+        "ModLoader",
+        "Maps",
+        map.name
+      );
+      await file.delete(mapFile);
+      sendMessage("地图已删除");
+      await readMaps();
+    }
+  });
 };
 const mapsExtraButtons = reactive([
   {
@@ -75,7 +82,11 @@ const mapsExtraButtons = reactive([
     <template #buttons>
       <ExtraButtons :schema="mapsExtraButtons" />
     </template>
-    <BasicConfig v-for="map in maps" :title="formatFileName(map.name)">
+    <BasicConfig
+      v-for="map in maps"
+      :title="formatFileName(map.name)"
+      :tooltip="'[' + formatFileType(map.name) + ']'"
+    >
       <p
         style="
           margin-right: 4px;

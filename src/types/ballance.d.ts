@@ -43,3 +43,18 @@ type MapOrMod = {
   size: number;
   enabled: boolean;
 };
+
+type ModConfigEntry = {
+  name: string;
+  description: string;
+  datatype: string;
+  value: string;
+};
+type ModConfig = {
+  categories: {
+    [category: string]: string;
+  };
+  entries: {
+    [category: string]: ModConfigEntry[];
+  };
+};

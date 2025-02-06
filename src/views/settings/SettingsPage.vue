@@ -83,8 +83,13 @@ const openDevtools = () => {
 };
 
 const clearStorage = () => {
-  storage.clear();
-  location.reload();
+  openDialog("确定要清空所有数据吗？", {
+    title: "清空数据",
+    onSure: () => {
+      storage.clear();
+      location.reload();
+    }
+  });
 };
 
 onMounted(() => {
@@ -197,11 +202,11 @@ onMounted(() => {
         <BasicConfig title="开发者工具">
           <BasicButton @click="openDevtools()"> 打开 </BasicButton>
         </BasicConfig>
-        <BasicConfig title="消息测试">
-          <BasicButton @click="onSendMessage"> 发送 </BasicButton>
-        </BasicConfig>
         <BasicConfig title="弹窗&消息测试内容">
           <BasicInput v-model="debugContent" />
+        </BasicConfig>
+        <BasicConfig title="消息测试">
+          <BasicButton @click="onSendMessage"> 发送 </BasicButton>
         </BasicConfig>
         <BasicConfig title="弹窗测试">
           <BasicButton @click="openDebugDialog"> 打开 </BasicButton>

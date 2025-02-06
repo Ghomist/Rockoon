@@ -77,7 +77,8 @@ onMounted(() => {
   flex-direction: column;
   align-items: start;
 
-  max-width: 50%;
+  max-width: 60%;
+  max-height: 75%;
 
   padding: var(--d-padding);
   background-color: var(--box-background);
@@ -91,9 +92,11 @@ onMounted(() => {
 }
 
 .basic-dialog-content {
+  max-height: 300px;
+  overflow-y: scroll;
   min-width: var(--d-width-lg);
   margin: var(--d-margin-sm);
-  padding-bottom: var(--d-margin);
+  margin-bottom: var(--d-margin);
 }
 
 .basic-dialog-footer {

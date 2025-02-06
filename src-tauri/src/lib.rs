@@ -31,7 +31,9 @@ pub fn run() {
             ballance::read_options,
             ballance::save_options,
             ballance::read_launch_config,
-            ballance::save_launch_config
+            ballance::save_launch_config,
+            ballance::read_mod_config,
+            ballance::save_mod_config
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
