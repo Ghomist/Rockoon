@@ -58,3 +58,11 @@ type ModConfig = {
     [category: string]: ModConfigEntry[];
   };
 };
+
+type KeySchema = {
+  id: number;
+  name: string;
+  display?: string;
+  width?: number;
+  disabled?: boolean;
+};

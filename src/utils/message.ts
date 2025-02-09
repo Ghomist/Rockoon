@@ -1,7 +1,8 @@
 import BasicDialogVue from "@/components/BasicDialog.vue";
 import { useAppStore } from "@/stores/app";
-import { createApp, h, VNode } from "vue";
+import { createApp, h, ref, VNode } from "vue";
 import { withDefault } from "./common";
+import VirtualKeyboard from "@/components/VirtualKeyboard.vue";
 
 export type DialogArgs = {
   title?: string;
@@ -32,6 +33,24 @@ export const openDialog = (
   };
   document.body.appendChild(div);
   component.mount(div);
+};
+
+export const keyboardDialog = (keycode: number, title: string) => {
+  let result = ref(keycode);
+  return new Promise<number>(resolve => {
+    openDialog(
+      () =>
+        h(VirtualKeyboard, {
+          modelValue: result.value,
+          "onUpdate:modelValue": v => (result.value = v)
+        }),
+      {
+        title: `更改按键绑定：${title}`,
+        onSure: () => resolve(result.value),
+        onCancel: () => resolve(keycode)
+      }
+    );
+  });
 };
 
 export type MessageArgs = {

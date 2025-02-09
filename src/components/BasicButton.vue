@@ -11,6 +11,7 @@
   padding: var(--d-padding-md);
   margin: var(--d-margin-sm);
   border-radius: var(--d-round-sm);
+  min-width: 3em;
   border: none;
 
   color: var(--color-text-invert);

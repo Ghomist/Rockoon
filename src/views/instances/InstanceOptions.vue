@@ -7,12 +7,11 @@ import BasicSlider from "@/components/BasicSlider.vue";
 import BasicSwitch from "@/components/BasicSwitch.vue";
 import { useAppStore } from "@/stores/app";
 import { useFileStore } from "@/stores/fs";
+import { getKeyName } from "@/utils/ballance";
+import { keyboardDialog, openDialog, sendMessage } from "@/utils/message";
 import { open } from "@tauri-apps/plugin-shell";
-import { computed, reactive, ref } from "vue";
+import { computed, reactive } from "vue";
 import ExtraButtons from "./components/ExtraButtons.vue";
-import MultiSelect from "./components/MultiSelect.vue";
-import VirtualKeyboard from "./components/VirtualKeyboard.vue";
-import { openDialog, sendMessage } from "@/utils/message";
 
 const app = useAppStore();
 const fs = useFileStore();
@@ -25,7 +24,19 @@ const basicExtraButtons = reactive([
   }
 ]);
 
-const editingKey = ref<BallanceKeyType | "all">("all");
+const keyBindings: { name: string; key: BallanceKeyType }[] = [
+  { name: "向前", key: "keyForward" },
+  { name: "向后", key: "keyBackward" },
+  { name: "向左", key: "keyLeft" },
+  { name: "向右", key: "keyRight" },
+  { name: "旋转视角", key: "keyRotateCam" },
+  { name: "抬升视角", key: "keyLiftCam" }
+];
+const onEditingKey = (key: BallanceKeyType, name: string) => {
+  keyboardDialog(instance.value.options[key], name).then(v => {
+    instance.value.options[key] = v;
+  });
+};
 
 const onRemoveInstance = () => {
   openDialog(
@@ -87,10 +98,13 @@ const onRemoveInstance = () => {
     <BasicConfig title="反转相机旋转">
       <BasicSwitch v-model="instance.options.invertCamRotation" />
     </BasicConfig>
-    <BasicConfig title="按键绑定">
-      <MultiSelect @on-key-change="editingKey = $event" />
+  </BasicCollapse>
+  <BasicCollapse title="按键绑定" open>
+    <BasicConfig v-for="k in keyBindings" :key="k.key" :title="k.name">
+      <BasicButton @click="onEditingKey(k.key, k.name)">
+        {{ getKeyName(instance.options[k.key]) }}
+      </BasicButton>
     </BasicConfig>
-    <VirtualKeyboard :editing="editingKey" />
   </BasicCollapse>
   <BasicCollapse title="其它操作" open>
     <!-- TODO -->

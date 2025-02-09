@@ -6,7 +6,7 @@ export const pad = (value: number, pad: string, len: number) =>
 export const clampString = (str: string, len: number) =>
   str.length > len ? str.slice(0, len) + "..." : str;
 
-/** 格式化模组名 */
+/** 格式化文件名 */
 export const formatFileName = (fileName: string) => {
   if (fileName.endsWith(".disable")) {
     fileName = fileName.replace(".disable", "");
@@ -14,6 +14,7 @@ export const formatFileName = (fileName: string) => {
   return fileName.substring(0, fileName.lastIndexOf("."));
 };
 
+/** 格式化文件后缀 */
 export const formatFileType = (fileName: string) => {
   if (fileName.endsWith(".disable")) {
     fileName = fileName.replace(".disable", "");

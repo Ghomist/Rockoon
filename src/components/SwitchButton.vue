@@ -7,7 +7,7 @@ defineProps<{
 
 <template>
   <button
-    class="virtual-key-button"
+    class="switch-button"
     :class="{ active, disabled }"
     :disabled="disabled"
   >
@@ -16,7 +16,7 @@ defineProps<{
 </template>
 
 <style scoped>
-.virtual-key-button {
+.switch-button {
   cursor: pointer;
 
   padding: var(--d-padding-md);

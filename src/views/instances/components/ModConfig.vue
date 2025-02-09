@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import ballance from "@/api/ballance";
-import BasicButton from "@/components/BasicButton.vue";
 import BasicCollapse from "@/components/BasicCollapse.vue";
 import BasicConfig from "@/components/BasicConfig.vue";
 import BasicInput from "@/components/BasicInput.vue";
@@ -54,9 +53,11 @@ onMounted(async () => {
           v-model="c.value"
           data-type="decimal"
         />
-        <BasicButton v-else-if="c.datatype === 'K'">
-          {{ `[${c.value}]` }}
-        </BasicButton>
+        <BasicInput
+          v-else-if="c.datatype === 'K'"
+          v-model="c.value"
+          data-type="number"
+        />
       </BasicConfig>
     </BasicCollapse>
   </div>
