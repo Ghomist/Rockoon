@@ -3,6 +3,7 @@ import { computed, onMounted } from "vue";
 import BasicMessage from "./components/BasicMessage.vue";
 import { useAppStore } from "./stores/app";
 import { usePrefStore } from "./stores/pref";
+import { sendMessage } from "./utils/message";
 import DownloadPage from "./views/download/DownloadPage.vue";
 import Header from "./views/header/Header.vue";
 import HelpPage from "./views/help/HelpPage.vue";
@@ -10,7 +11,6 @@ import HomePage from "./views/home/HomePage.vue";
 import InstancesPage from "./views/instances/InstancesPage.vue";
 import SettingsPage from "./views/settings/SettingsPage.vue";
 import ToolsPage from "./views/tools/ToolsPage.vue";
-import { sendMessage } from "./utils/message";
 
 const app = useAppStore();
 const pref = usePrefStore();

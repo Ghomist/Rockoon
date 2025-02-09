@@ -27,15 +27,15 @@ const groupCenter = reactive<NavSchema[]>([
     name: "实例",
     icon: "classify-2-line"
   },
+  {
+    id: "download",
+    name: "下载",
+    icon: "download-2-line"
+  },
   // {
   //   id: "tools",
   //   name: "工具",
   //   icon: "tool-line"
-  // },
-  // {
-  //   id: "download",
-  //   name: "下载",
-  //   icon: "download-2-line"
   // },
   // {
   //   id: "help",

@@ -21,17 +21,24 @@ export default defineConfig(async () => ({
       ? {
           protocol: "ws",
           host,
-          port: 1421,
+          port: 1421
         }
       : undefined,
     watch: {
       // 3. tell vite to ignore watching `src-tauri`
-      ignored: ["**/src-tauri/**"],
+      ignored: ["**/src-tauri/**"]
     },
+    proxy: {
+      "/ballance-download": {
+        target: "http://ballancemaps.ysepan.com/",
+        changeOrigin: true,
+        rewrite: (path: string) => path.replace(/^\/ballance-download/, "")
+      }
+    }
   },
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "src"),
-    },
-  },
+      "@": path.resolve(__dirname, "src")
+    }
+  }
 }));

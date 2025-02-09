@@ -9,7 +9,7 @@ defineProps<{
   <div class="basic-config">
     <div class="basic-config-prop">
       <p class="basic-config-label">{{ title }}</p>
-      <p class="basic-config-tooltip light" v-if="tooltip">
+      <p class="basic-config-tooltip light">
         {{ tooltip }}
       </p>
     </div>
@@ -33,18 +33,19 @@ defineProps<{
 
 .basic-config-prop {
   display: flex;
-  gap: 2px;
+  gap: var(--d-margin-xs);
   align-items: center;
 
   .basic-config-label,
   .basic-config-tooltip {
-    max-width: 280px;
+    max-width: 350px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
 
   .basic-config-tooltip {
+    min-width: var(--d-margin-xs);
     margin-left: var(--d-margin-sm);
   }
 }

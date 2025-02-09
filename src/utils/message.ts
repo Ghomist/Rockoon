@@ -6,6 +6,8 @@ import { withDefault } from "./common";
 export type DialogArgs = {
   title?: string;
   footer?: boolean;
+  sureText?: string;
+  cancelText?: string;
   onSure?: () => void;
   onCancel?: () => void;
 };

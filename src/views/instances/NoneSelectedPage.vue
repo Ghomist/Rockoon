@@ -11,7 +11,9 @@ const tipList = computed(() =>
 
 <template>
   <div class="container">
-    <div v-for="tip in tipList">{{ tip }}</div>
+    <div v-for="tip in tipList" class="floating">
+      {{ tip }}
+    </div>
   </div>
 </template>
 
@@ -24,6 +26,7 @@ const tipList = computed(() =>
   height: 100%;
   width: 100%;
 
-  color: gray;
+  color: var(--color-text-invert);
+  filter: drop-shadow(var(--box-shadow-dark));
 }
 </style>

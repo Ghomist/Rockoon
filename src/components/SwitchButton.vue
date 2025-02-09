@@ -18,20 +18,20 @@ defineProps<{
 <style scoped>
 .virtual-key-button {
   cursor: pointer;
-  min-width: 36px;
-  height: 36px;
-  margin: 0.5px 1px;
-  background-color: transparent;
+
+  padding: var(--d-padding-md);
+  margin: var(--d-margin-sm);
+  border-radius: var(--d-round-sm);
   border: none;
-  border-radius: 4px;
-  box-shadow: var(--box-shadow-prime-inset);
-  transition: all 100ms;
+
+  background-color: transparent;
+
+  transition: all 200ms;
 
   &.active {
-    color: var(--color-prime-invert);
+    box-shadow: var(--box-shadow-dark);
+    color: var(--color-text-invert);
     background-color: var(--color-prime);
-
-    /* font-weight: bold; */
   }
 
   &:hover {

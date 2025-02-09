@@ -1,7 +1,15 @@
 import { withDefault } from "./common";
 
 function get<T>(key: string): T {
-  return JSON.parse(localStorage.getItem(key) ?? "{}");
+  return JSON.parse(localStorage.getItem(key) ?? "{}", (_, value) => {
+    if (
+      typeof value === "string" &&
+      /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(value)
+    ) {
+      return new Date(value);
+    }
+    return value;
+  });
 }
 
 function getWithDefault<T>(key: string, dft: T) {

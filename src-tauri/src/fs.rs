@@ -51,7 +51,10 @@ pub fn list(path: String, exts: Vec<String>) -> Result<Vec<File>, String> {
 
         // 获取文件名并检查后缀
         if let Some(file_name) = path.file_name().and_then(|s| s.to_str()) {
-            if exts.iter().any(|ext| file_name.ends_with(ext)) {
+            if exts
+                .iter()
+                .any(|ext| file_name.to_lowercase().ends_with(ext))
+            {
                 matches.push(File {
                     name: file_name.to_string(),
                     size: metadata.len(),

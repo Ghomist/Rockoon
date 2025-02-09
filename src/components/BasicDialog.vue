@@ -8,9 +8,13 @@ withDefaults(
     title?: string;
     content?: string;
     footer?: boolean;
+    sureText?: string;
+    cancelText?: string;
   }>(),
   {
-    footer: true
+    footer: true,
+    sureText: "确认",
+    cancelText: "取消"
   }
 );
 const emits = defineEmits<{
@@ -43,13 +47,11 @@ onMounted(() => {
         </h>
         <div class="basic-dialog-content">
           <p v-if="content">{{ content }}</p>
-          <div v-else>
-            <slot></slot>
-          </div>
+          <slot v-else></slot>
         </div>
         <div v-if="footer" class="basic-dialog-footer">
-          <BasicButton @click="onSure">确认</BasicButton>
-          <BasicButton @click="onCancel">取消</BasicButton>
+          <BasicButton @click="onSure"> {{ sureText }} </BasicButton>
+          <BasicButton @click="onCancel"> {{ cancelText }} </BasicButton>
         </div>
       </BasicBlock>
     </div>

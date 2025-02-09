@@ -1,90 +1,106 @@
 <script setup lang="ts">
 import BasicBlock from "@/components/BasicBlock.vue";
+import BasicIcon from "@/components/BasicIcon.vue";
 import BasicNavItem from "@/components/BasicNavItem.vue";
-// import BasicSplit from '@/components/BasicSplit.vue'
-// import BasicIcon from '@/components/BasicIcon.vue'
-import MapOrMod from "./components/MapOrMod.vue";
+import BasicSplit from "@/components/BasicSplit.vue";
+import { fetchFiles } from "@/utils/fetcher";
+import { open } from "@tauri-apps/plugin-shell";
 import { onMounted, ref } from "vue";
-import { YsMap, YsMod, fetcher, toYsMap, toYsMod } from "@/utils/fetcher";
+import NoneSelectedPage from "../instances/NoneSelectedPage.vue";
+import AllFiles from "./AllFiles.vue";
+import DownloadMap from "./DownloadMap.vue";
+import DownloadMod from "./DownloadMod.vue";
+import { sendMessage } from "@/utils/message";
 
-const select = ref("maps");
-const navSchema = [
+const loading = ref(true);
+const cache = ref<YsCache>();
+const subPage = ref("maps");
+const subPageData = [
   {
-    key: "maps",
-    label: "自制地图"
+    label: "自制地图",
+    value: "maps",
+    page: DownloadMap
   },
   {
-    key: "mods",
-    label: "模组"
+    label: "模组插件",
+    value: "mods",
+    page: DownloadMod
+  },
+  {
+    label: "游戏本体",
+    value: "game"
+  },
+  {
+    label: "全部文件",
+    value: "all",
+    page: AllFiles
   }
 ];
 
-const allMaps = ref<YsMap[]>([]);
-const allMods = ref<YsMod[]>([]);
-
-onMounted(() => {
-  [
-    { category: "原版地图", name: "原版地图" },
-    { category: "Ballance自制地图【HOT】", name: "热门地图" },
-    { category: "Ballance自制地图【CLASSIC】", name: "经典地图" },
-    { category: "Ballance自制地图【NEW】", name: "最新地图" },
-    { category: "Ballance自制地图①", name: "旧地图①" },
-    { category: "Ballance自制地图②", name: "旧地图②" },
-    { category: "Ballance自制地图③", name: "旧地图③" },
-    { category: "Ballance自制地图④", name: "旧地图④" },
-    { category: "Ballance自制地图⑤", name: "旧地图⑤" },
-    { category: "Ballance自制地图⑥", name: "旧地图⑥" },
-    { category: "Ballance其它制图作品", name: "其它地图" },
-    { category: "英雄榜竞速地图", name: "英雄榜竞速" },
-    { category: "专业竞速第三季", name: "专业竞速第三季" },
-    { category: "专业竞速系列", name: "专业竞速" },
-    { category: "镜像地图", name: "镜像地图" },
-    { category: "半盲打地图", name: "半盲打地图" },
-    { category: "反方向地图", name: "反方向地图" },
-    { category: "45", name: "45°地图" }
-  ].map(async target => {
-    const index = (await fetcher.searchIndexes(target.category))[0];
-    fetcher.getFileList(index, target.name).then(files => {
-      files.map(f => toYsMap(f)).forEach(x => allMaps.value.push(x));
-    });
-  });
-
-  fetcher.searchIndexes("Ballance自制模组").then(res => {
-    fetcher.getFileList(res[0]).then(files => {
-      files.map(f => toYsMod(f)).forEach(x => allMods.value.push(x));
-    });
-  });
-});
+const onRefresh = async (refresh: boolean) => {
+  if (refresh) sendMessage("正在刷新，请稍候...");
+  loading.value = true;
+  cache.value = await fetchFiles(refresh);
+  loading.value = false;
+  if (refresh) sendMessage("刷新成功！");
+};
+onMounted(() => onRefresh(false));
 </script>
 
 <template>
-  <div style="display: flex; width: 100%; height: 100%">
+  <div class="download-container">
     <BasicBlock style="width: 200px; min-width: 200px">
       <BasicNavItem
-        v-for="item in navSchema"
-        :name="item.key"
-        :selected="select === item.key"
-        @clicked="select = item.key"
+        v-for="page in subPageData"
+        :name="page.value"
+        :selected="subPage === page.value"
+        @clicked="subPage = page.value"
       >
-        <p
-          style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap"
-        >
-          {{ item.label }}
-        </p>
+        {{ page.label }}
       </BasicNavItem>
-      <!--  <BasicSplit v-if="state.instanceList.length > 0" />
-      <BasicNavItemF
+      <BasicSplit />
+      <BasicNavItem
         name=""
         :selected="false"
-        style="border: none; color: var(--color-text-light)"
-        @clicked="onAdd"
+        style="color: var(--color-text-light); border: none"
+        @clicked="onRefresh(true)"
       >
-        <BasicIcon icon="add-circle-line" /> 添加
-      </BasicNavItemF> -->
+        <BasicIcon icon="refresh-2-line" />
+        <span> 刷新 {{ cache?.lastUpdate?.toLocaleTimeString() }} </span>
+      </BasicNavItem>
+      <BasicNavItem
+        name=""
+        :selected="false"
+        style="color: var(--color-text-light); border: none"
+        @clicked="open('http://ballancemaps.ysepan.com/')"
+      >
+        <BasicIcon icon="external-link-line" />
+        <span> 打开下载站 </span>
+      </BasicNavItem>
     </BasicBlock>
+
     <Transition name="fade" mode="out-in">
-      <MapOrMod v-if="select === 'maps'" :list="allMaps" />
-      <MapOrMod v-else-if="select === 'mods'" :list="allMods" />
+      <div v-if="!loading" class="subpage-container">
+        <component
+          :is="subPageData.find(x => x.value === subPage)?.page"
+          :cache="cache!"
+        />
+      </div>
+      <NoneSelectedPage v-else tips="加载中..." />
     </Transition>
   </div>
 </template>
+
+<style scoped>
+.download-container {
+  display: flex;
+  width: 100%;
+  height: 100%;
+}
+
+.subpage-container {
+  width: 9999px;
+  margin-left: -10px;
+  overflow: visible scroll;
+}
+</style>
