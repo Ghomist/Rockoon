@@ -24,8 +24,11 @@ pub fn kill() -> Result<(), String> {
 #[cfg(target_os = "windows")]
 #[tauri::command]
 pub fn check(pid: u32) -> Result<bool, String> {
+    use std::os::windows::process::CommandExt;
+
     let output = std::process::Command::new("tasklist")
         .args(["/FI", &format!("PID eq {}", pid)])
+        .creation_flags(0x08000000)
         .output()
         .map_err(|e| e.to_string())?;
     if !output.status.success() {
