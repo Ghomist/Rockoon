@@ -32,6 +32,7 @@ const savePlayerIni = async () => {
 onMounted(async () => {
   await readPlayerIni();
   watch(playerConfig, savePlayerIni, { deep: true });
+  watch(instance, readPlayerIni);
 });
 </script>
 
@@ -294,8 +295,9 @@ onMounted(async () => {
           data-type="number"
           v-model="playerConfig['Window']['X']"
           style="text-align: center"
+          placeholder="0"
           :style="{
-            width: playerConfig['Window']['X'].length > 3 ? '40px' : '30px'
+            width: playerConfig['Window']['X']?.length > 3 ? '40px' : '30px'
           }"
         />
         <p>，</p>
@@ -303,8 +305,9 @@ onMounted(async () => {
           data-type="number"
           v-model="playerConfig['Window']['Y']"
           style="text-align: center"
+          placeholder="0"
           :style="{
-            width: playerConfig['Window']['Y'].length > 3 ? '40px' : '30px'
+            width: playerConfig['Window']['Y']?.length > 3 ? '40px' : '30px'
           }"
         />
       </BasicConfig>

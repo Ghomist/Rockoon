@@ -33,14 +33,6 @@ export const useFileStore = defineStore(FILE_STORE_KEY, {
         useAppStore().selected = undefined;
       }
     },
-    // async checkInstance(id: string) {
-    //   const index = this.instances.findIndex(x => x.path === id);
-    //   if (index !== -1) {
-    //     const { path, name } = this.instances[index];
-    //     const instance = await checkBallanceFolder(path, name);
-    //     if (instance) this.instances.splice(index, 1, instance);
-    //   }
-    // },
     async getInstanceFiles(
       path: string,
       folderType: "map" | "mod" | "modCfg" | "bb"

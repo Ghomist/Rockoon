@@ -20,16 +20,19 @@ withDefaults(
 const emits = defineEmits<{
   (event: "cancel"): void;
   (event: "sure"): void;
+  (event: "close", sure: boolean): void;
 }>();
 
 const show = ref(false);
 
 const onCancel = () => {
   emits("cancel");
+  emits("close", false);
   show.value = false;
 };
 const onSure = () => {
   emits("sure");
+  emits("close", true);
   show.value = false;
 };
 

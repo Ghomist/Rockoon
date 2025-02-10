@@ -1,9 +1,10 @@
+import app from "@/api/app";
 import process from "@/api/process";
 import { checkBallanceFolder } from "@/utils/instance";
+import { openDialog } from "@/utils/message";
 import { join } from "@tauri-apps/api/path";
 import { acceptHMRUpdate, defineStore } from "pinia";
 import { useFileStore } from "./fs";
-import app from "@/api/app";
 import { usePrefStore } from "./pref";
 
 export const useAppStore = defineStore("app", {
@@ -21,6 +22,15 @@ export const useAppStore = defineStore("app", {
     async changeSelect(path: string) {
       const instance = await checkBallanceFolder(path);
       if (instance) this.selected = instance;
+      else {
+        this.selected = undefined;
+        openDialog("该游戏已被移动或删除，请重新添加", {
+          title: "出错啦",
+          onClose: () => {
+            useFileStore().removeInstance(path);
+          }
+        });
+      }
     },
     renameSelectedInstance(name: string) {
       if (!name) return;

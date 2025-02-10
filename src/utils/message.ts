@@ -11,6 +11,7 @@ export type DialogArgs = {
   cancelText?: string;
   onSure?: () => void;
   onCancel?: () => void;
+  onClose?: (sure: boolean) => void;
 };
 export const openDialog = (
   content: string | (() => VNode),

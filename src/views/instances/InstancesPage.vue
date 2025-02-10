@@ -7,7 +7,7 @@ import { useAppStore } from "@/stores/app";
 import { useFileStore } from "@/stores/fs";
 import { sendMessage } from "@/utils/message";
 import { open as browseFile } from "@tauri-apps/plugin-dialog";
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import InstanceLaunchConfig from "./InstanceLaunchConfig.vue";
 import InstanceLevels from "./InstanceLevels.vue";
 import InstanceMaps from "./InstanceMaps.vue";
@@ -37,33 +37,40 @@ const onAddInstance = async () => {
 };
 
 const subPage = ref("basic");
-const subPageData = [
-  {
-    label: "基本信息",
-    value: "basic",
-    page: InstanceOptions
-  },
-  {
-    label: "启动项设置",
-    value: "launch-config",
-    page: InstanceLaunchConfig
-  },
-  {
-    label: "关卡与高分榜",
-    value: "levels",
-    page: InstanceLevels
-  },
-  {
-    label: "自制地图",
-    value: "maps",
-    page: InstanceMaps
-  },
-  {
-    label: "MOD 模组",
-    value: "mods",
-    page: InstanceMods
-  }
-];
+const subPageData = computed(() => {
+  const data = [
+    {
+      label: "基本信息",
+      value: "basic",
+      page: InstanceOptions
+    },
+    {
+      label: "关卡与高分榜",
+      value: "levels",
+      page: InstanceLevels
+    }
+  ];
+  if (app.selected?.newPlayer)
+    data.push({
+      label: "启动项设置",
+      value: "launch-config",
+      page: InstanceLaunchConfig
+    });
+  if (app.selected?.bmlInstalled || app.selected?.bmlpInstalled)
+    data.push(
+      {
+        label: "自制地图",
+        value: "maps",
+        page: InstanceMaps
+      },
+      {
+        label: "模组插件",
+        value: "mods",
+        page: InstanceMods
+      }
+    );
+  return data;
+});
 </script>
 
 <template>

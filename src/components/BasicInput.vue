@@ -4,7 +4,7 @@ import { computed, ref } from "vue";
 
 const props = withDefaults(
   defineProps<{
-    modelValue: string | number;
+    modelValue?: string | number;
     dataType?: "string" | "number" | "decimal";
     disabled?: boolean;
     placeholder?: string;
@@ -51,7 +51,7 @@ const onInput = (e: Event) => {
   const valid = validators.value.every(validator => {
     if (!validator(value)) {
       // reset value
-      target.value = props.modelValue.toString();
+      target.value = props.modelValue?.toString() ?? "";
       shakeNode(inputRef.value!);
       return false;
     }
