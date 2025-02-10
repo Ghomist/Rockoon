@@ -5,26 +5,21 @@ import BasicCollapse from "@/components/BasicCollapse.vue";
 import BasicConfig from "@/components/BasicConfig.vue";
 import { useAppStore } from "@/stores/app";
 import { useFileStore } from "@/stores/fs";
-import { formatFileName, formatFileType } from "@/utils/format";
-import { convertFileSize } from "@/utils/math.ts";
+import { formatFileName, formatFileSize, formatFileType } from "@/utils/format";
+import { openDialog, sendMessage } from "@/utils/message";
 import { join } from "@tauri-apps/api/path";
 import { open as browseFile } from "@tauri-apps/plugin-dialog";
 import { open } from "@tauri-apps/plugin-shell";
-import { computed, nextTick, reactive, ref } from "vue";
+import { computed, reactive, ref } from "vue";
 import ExtraButtons from "./components/ExtraButtons.vue";
-import { openDialog, sendMessage } from "@/utils/message";
 
 const app = useAppStore();
 const fs = useFileStore();
 const instance = computed(() => app.selected!);
 
-const mapsCollapse = ref<InstanceType<typeof BasicCollapse>>();
 const maps = ref<ManagedFile[]>([]);
 const readMaps = async () => {
   maps.value = await fs.getInstanceFiles(instance.value.path, "map");
-  nextTick(() => {
-    mapsCollapse.value?.resize();
-  });
 };
 const onDeleteMap = async (map: ManagedFile) => {
   openDialog("确定要删除此地图吗？此操作无法撤销！", {
@@ -74,7 +69,6 @@ const mapsExtraButtons = reactive([
 <template>
   <BasicCollapse
     v-if="instance.bmlEnabled || instance.bmlpEnabled"
-    ref="mapsCollapse"
     title="自定义地图"
     open
     @expand="readMaps()"
@@ -85,17 +79,8 @@ const mapsExtraButtons = reactive([
     <BasicConfig
       v-for="map in maps"
       :title="formatFileName(map.name)"
-      :tooltip="'[' + formatFileType(map.name) + ']'"
+      :tooltip="`[${formatFileType(map.name)}] [${formatFileSize(map.size)}]`"
     >
-      <p
-        style="
-          margin-right: 4px;
-          font-size: 14px;
-          color: var(--color-text-light);
-        "
-      >
-        {{ convertFileSize(map.size) }}
-      </p>
       <BasicButton @click="onDeleteMap(map)"> 删除 </BasicButton>
     </BasicConfig>
   </BasicCollapse>

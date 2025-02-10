@@ -6,12 +6,12 @@ import BasicConfig from "@/components/BasicConfig.vue";
 import BasicSwitch from "@/components/BasicSwitch.vue";
 import { useAppStore } from "@/stores/app";
 import { useFileStore } from "@/stores/fs";
-import { formatFileName, formatFileType } from "@/utils/format";
+import { formatFileName, formatFileSize, formatFileType } from "@/utils/format";
 import { openDialog, sendMessage } from "@/utils/message";
 import { join } from "@tauri-apps/api/path";
 import { open as browseFile } from "@tauri-apps/plugin-dialog";
 import { open } from "@tauri-apps/plugin-shell";
-import { computed, h, nextTick, reactive, ref } from "vue";
+import { computed, h, nextTick, ref } from "vue";
 import ExtraButtons from "./components/ExtraButtons.vue";
 import ModConfig from "./components/ModConfig.vue";
 
@@ -19,14 +19,12 @@ const app = useAppStore();
 const fs = useFileStore();
 const instance = computed(() => app.selected!);
 
-const modsCollapse = ref<InstanceType<typeof BasicCollapse>>();
 const mods = ref<ManagedFile[]>([]);
 const reading = ref(false);
 const readMods = async () => {
   reading.value = true;
   mods.value = await fs.getInstanceFiles(instance.value.path, "mod");
   nextTick(() => {
-    modsCollapse.value?.resize();
     reading.value = false;
   });
 };
@@ -65,7 +63,7 @@ const toggleAllMods = async (enable: boolean) => {
   for (const mod of mods.value) await onToggleMod(mod, enable);
   sendMessage(enable ? "全部 Mod 已启用" : "全部 Mod 已禁用");
 };
-const modsExtraButtons = reactive([
+const modsExtraButtons = [
   {
     icon: "folder-open-line",
     callback: async () => {
@@ -94,15 +92,11 @@ const modsExtraButtons = reactive([
     icon: "refresh-1-line",
     callback: readMods
   }
-]);
+];
 
-const modConfigsCollapse = ref<InstanceType<typeof BasicCollapse>>();
 const modConfigs = ref<ManagedFile[]>([]);
 const readConfigs = async () => {
   modConfigs.value = await fs.getInstanceFiles(instance.value.path, "modCfg");
-  nextTick(() => {
-    modConfigsCollapse.value?.resize();
-  });
 };
 const onEditConfig = async (cfg: ManagedFile) => {
   const componentRef = ref<InstanceType<typeof ModConfig>>();
@@ -124,7 +118,7 @@ const onEditConfig = async (cfg: ManagedFile) => {
 };
 const onDeleteConfig = async (cfg: ManagedFile) => {
   openDialog(
-    "确定要清空此配置文件吗？下一次打开游戏时该 Mod 的配置会自动重置为默认",
+    "确定要清空此配置文件吗？清除后无法修改或还原，下一次打开游戏时该 Mod 的配置会自动重置为默认",
     {
       title: `清空 ${cfg.name}`,
       onSure: async () => {
@@ -141,6 +135,19 @@ const onDeleteConfig = async (cfg: ManagedFile) => {
     }
   );
 };
+const modConfigExtraButtons = [
+  {
+    icon: "folder-open-line",
+    callback: async () => {
+      const modFolder = await join(instance.value.path, "ModLoader", "Configs");
+      await open(modFolder);
+    }
+  },
+  {
+    icon: "refresh-1-line",
+    callback: readConfigs
+  }
+];
 </script>
 
 <template>
@@ -159,7 +166,6 @@ const onDeleteConfig = async (cfg: ManagedFile) => {
   </BasicCollapse>
   <BasicCollapse
     v-if="instance.bmlEnabled || instance.bmlpEnabled"
-    ref="modsCollapse"
     title="模组文件列表"
     @expand="readMods()"
   >
@@ -169,7 +175,7 @@ const onDeleteConfig = async (cfg: ManagedFile) => {
     <BasicConfig
       v-for="mod in mods"
       :title="formatFileName(mod.name)"
-      :tooltip="'[' + formatFileType(mod.name) + ']'"
+      :tooltip="`[${formatFileType(mod.name)}] [${formatFileSize(mod.size)}]`"
     >
       <BasicSwitch
         :model-value="!mod.name.endsWith('.disable')"
@@ -180,10 +186,16 @@ const onDeleteConfig = async (cfg: ManagedFile) => {
   </BasicCollapse>
   <BasicCollapse
     v-if="instance.bmlEnabled || instance.bmlpEnabled"
-    ref="modConfigsCollapse"
     title="模组配置"
     @expand="readConfigs()"
   >
+    <template #buttons>
+      <ExtraButtons :schema="modConfigExtraButtons" />
+    </template>
+    <BasicConfig
+      title=""
+      tooltip="新安装模组的配置需要先启动一次游戏才会在此处显示"
+    />
     <BasicConfig v-for="cfg in modConfigs" :title="formatFileName(cfg.name)">
       <BasicButton @click="onEditConfig(cfg)"> 打开配置 </BasicButton>
       <BasicButton @click="onDeleteConfig(cfg)"> 清空 </BasicButton>

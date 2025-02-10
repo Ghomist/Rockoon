@@ -165,6 +165,9 @@ onMounted(() => {
       </BasicCollapse>
 
       <BasicCollapse title="相关站点 / 特别鸣谢">
+        <BasicConfig title="Ballance 社区百科">
+          <a @click="open('https://ballance.jxpxxzj.cn/')"> Ballance Wiki </a>
+        </BasicConfig>
         <BasicConfig title="地图 / Mod 下载源">
           <a @click="open('http://ballancemaps.ysepan.com/')">
             Ballance 地图下载站

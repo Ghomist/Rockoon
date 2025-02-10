@@ -14,6 +14,16 @@ export const formatFileName = (fileName: string) => {
   return fileName.substring(0, fileName.lastIndexOf("."));
 };
 
+/** 格式化文件大小 */
+export const formatFileSize = (b: number) => {
+  if (b < 1024) return "<1KB";
+  const kb = Math.floor(b / 1024);
+  if (kb < 1024) return kb + "KB";
+  const mb = Math.floor(kb / 1024);
+  if (mb >= 1024) return ">1GB";
+  return mb + "MB";
+};
+
 /** 格式化文件后缀 */
 export const formatFileType = (fileName: string) => {
   if (fileName.endsWith(".disable")) {

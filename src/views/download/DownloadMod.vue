@@ -18,7 +18,6 @@ const props = defineProps<{
 const categories = ["Mod"];
 const mods = ref<YsFile[]>([]);
 
-const modList = ref<InstanceType<typeof BasicCollapse>>();
 const filterText = ref("");
 const filteredList = ref<YsFile[]>([]);
 const filterType = ref("bmlp");
@@ -41,9 +40,6 @@ const onSearch = () => {
   filteredList.value = filteredList.value.filter(x =>
     x.filename.endsWith(filterType.value === "bmlp" ? ".bmodp" : ".bmod")
   );
-  setTimeout(() => {
-    modList.value?.resize();
-  }, 300);
 };
 
 const onDownload = (file: YsFile) => {
@@ -117,7 +113,7 @@ onMounted(() => {
       </SwitchButton>
     </BasicConfig>
   </BasicCollapse>
-  <BasicCollapse ref="modList" title="Mod 列表" open>
+  <BasicCollapse title="Mod 列表" open>
     <TransitionGroup name="list">
       <BasicConfig
         v-for="f in filteredList"

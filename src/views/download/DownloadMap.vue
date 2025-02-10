@@ -17,33 +17,29 @@ const props = defineProps<{
 const categories = ["地图", "制图", "专业竞速", "访客上传"];
 const maps = ref<YsFile[]>([]);
 
-const mapList = ref<InstanceType<typeof BasicCollapse>>();
 const filterText = ref("");
 const filteredList = ref<YsFile[]>([]);
 const showSpecialMap = ref(false);
 
 const onSearch = () => {
+  let result: YsFile[];
   if (filterText.value) {
     const filters = filterText.value
       .trim()
       .split(" ")
       .map(x => x.toLowerCase());
-    filteredList.value = maps.value.filter(x =>
+    result = maps.value.filter(x =>
       filters.every(filter =>
         `${x.category} ${x.filename} ${x.notes}`.toLowerCase().includes(filter)
       )
     );
   } else {
-    filteredList.value = maps.value;
+    result = maps.value;
   }
   if (!showSpecialMap.value) {
-    filteredList.value = filteredList.value.filter(x =>
-      x.filename.toLowerCase().endsWith(".nmo")
-    );
+    result = result.filter(x => x.filename.toLowerCase().endsWith(".nmo"));
   }
-  setTimeout(() => {
-    mapList.value?.resize();
-  }, 300);
+  filteredList.value = result;
 };
 
 const onDownload = (file: YsFile) => {
@@ -110,20 +106,18 @@ onMounted(() => {
       <BasicSwitch v-model="showSpecialMap" @toggled="onSearch" />
     </BasicConfig>
   </BasicCollapse>
-  <BasicCollapse ref="mapList" title="地图列表" open>
-    <TransitionGroup name="list">
-      <BasicConfig
-        v-for="f in filteredList"
-        :key="f.url"
-        :title="
-          f.filename.replace(/\.(nmo|7z|zip|rar)/gi, '') +
-          (f.filename.endsWith('.nmo') ? '' : '*')
-        "
-        :tooltip="f.notes || f.category"
-      >
-        <p style="margin: 10px">{{ f.size }}</p>
-        <BasicButton @click="onDownload(f)">获取</BasicButton>
-      </BasicConfig>
-    </TransitionGroup>
+  <BasicCollapse title="地图列表" open>
+    <BasicConfig
+      v-for="f in filteredList"
+      :key="f.url"
+      :title="
+        f.filename.replace(/\.(nmo|7z|zip|rar)/gi, '') +
+        (f.filename.endsWith('.nmo') ? '' : '*')
+      "
+      :tooltip="f.notes || f.category"
+    >
+      <p style="margin: 10px">{{ f.size }}</p>
+      <BasicButton @click="onDownload(f)">获取</BasicButton>
+    </BasicConfig>
   </BasicCollapse>
 </template>

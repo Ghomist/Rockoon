@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { onMounted, onUnmounted, ref } from "vue";
 import BasicBlock from "./BasicBlock.vue";
 import BasicIcon from "./BasicIcon.vue";
 
@@ -30,13 +30,15 @@ const updateHeight = () => {
   contentHeight.value = height + "px";
 };
 
+let observer: MutationObserver | null = null;
 onMounted(() => {
+  observer = new MutationObserver(updateHeight);
+  observer.observe(content.value!, { childList: true });
   updateHeight();
   if (props.open) emits("expand");
 });
-
-defineExpose({
-  resize: updateHeight
+onUnmounted(() => {
+  observer?.disconnect();
 });
 </script>
 
