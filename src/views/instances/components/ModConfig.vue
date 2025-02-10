@@ -4,6 +4,7 @@ import BasicCollapse from "@/components/BasicCollapse.vue";
 import BasicConfig from "@/components/BasicConfig.vue";
 import BasicInput from "@/components/BasicInput.vue";
 import BasicSwitch from "@/components/BasicSwitch.vue";
+import KeyButton from "@/components/KeyButton.vue";
 import { join } from "@tauri-apps/api/path";
 import { onMounted, reactive, ref } from "vue";
 
@@ -53,11 +54,8 @@ onMounted(async () => {
           v-model="c.value"
           data-type="decimal"
         />
-        <BasicInput
-          v-else-if="c.datatype === 'K'"
-          v-model="c.value"
-          data-type="number"
-        />
+        <KeyButton v-else-if="c.datatype === 'K'" v-model="c.value" />
+        <p v-else>{{ c.value }}</p>
       </BasicConfig>
     </BasicCollapse>
   </div>

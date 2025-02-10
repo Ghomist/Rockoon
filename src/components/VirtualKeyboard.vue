@@ -34,7 +34,7 @@ onUnmounted(() => {
 
 <template>
   <p ref="tip" class="virtual-keyboard-tip light" tabindex="0">
-    按下键盘或单击下方的虚拟键盘选择更改按键绑定... 当前按键：
+    按下键盘或单击下方的虚拟键盘按键以更改按键绑定 当前按键：
     <span style="color: var(--color-text-prime)">
       {{ getKeyName(modelValue) }}
     </span>

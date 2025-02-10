@@ -1,3 +1,4 @@
+/** Database 按键（布局）映射 */
 export const keySchema: KeySchema[][] = [
   [
     { id: 38, name: "`" },
@@ -13,7 +14,7 @@ export const keySchema: KeySchema[][] = [
     { id: 9, name: "0" },
     { id: 10, name: "-" },
     { id: 11, name: "=" },
-    { id: 12, name: "BackSpace", display: "BKSP", width: 3 },
+    { id: 12, name: "BackSpace", width: 3 },
     { id: -1, name: "N", disabled: true },
     { id: 61, name: "Num +", display: "+" },
     { id: 57, name: "Num -", display: "-" }
