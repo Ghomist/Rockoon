@@ -12,7 +12,7 @@ defineProps<{
     <BasicConfig
       v-if="!file.filename.endsWith('.nmo')"
       title=""
-      tooltip="该地图可能无法直接游玩，下载完成后需要手动解压"
+      tooltip="该地图可能无法直接游玩，下载完成后需要手动解压/安装配套插件"
     >
     </BasicConfig>
     <BasicConfig title="地图名称">

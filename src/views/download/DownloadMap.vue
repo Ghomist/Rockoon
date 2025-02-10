@@ -14,7 +14,7 @@ import MapDetails from "./MapDetails.vue";
 const props = defineProps<{
   cache: YsCache;
 }>();
-const categories = ["地图", "制图", "专业竞速"];
+const categories = ["地图", "制图", "专业竞速", "访客上传"];
 const maps = ref<YsFile[]>([]);
 
 const mapList = ref<InstanceType<typeof BasicCollapse>>();
