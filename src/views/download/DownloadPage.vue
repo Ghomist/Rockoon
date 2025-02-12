@@ -4,18 +4,23 @@ import BasicIcon from "@/components/BasicIcon.vue";
 import BasicNavItem from "@/components/BasicNavItem.vue";
 import BasicSplit from "@/components/BasicSplit.vue";
 import { fetchFiles } from "@/utils/fetcher";
+import { sendMessage } from "@/utils/message";
 import { open } from "@tauri-apps/plugin-shell";
 import { onMounted, ref } from "vue";
 import NoneSelectedPage from "../instances/NoneSelectedPage.vue";
-import AllFiles from "./AllFiles.vue";
+import DownloadGame from "./DownloadGame.vue";
 import DownloadMap from "./DownloadMap.vue";
 import DownloadMod from "./DownloadMod.vue";
-import { sendMessage } from "@/utils/message";
 
 const loading = ref(true);
 const cache = ref<YsCache>();
-const subPage = ref("maps");
+const subPage = ref("game");
 const subPageData = [
+  {
+    label: "游戏本体",
+    value: "game",
+    page: DownloadGame
+  },
   {
     label: "自制地图",
     value: "maps",
@@ -25,16 +30,12 @@ const subPageData = [
     label: "模组插件",
     value: "mods",
     page: DownloadMod
-  },
-  {
-    label: "游戏本体",
-    value: "game"
-  },
-  {
-    label: "全部文件",
-    value: "all",
-    page: AllFiles
   }
+  // {
+  //   label: "全部文件",
+  //   value: "all",
+  //   page: AllFiles
+  // }
 ];
 
 const onRefresh = async (refresh: boolean) => {
@@ -66,7 +67,8 @@ onMounted(() => onRefresh(false));
         @clicked="onRefresh(true)"
       >
         <BasicIcon icon="refresh-2-line" />
-        <span> 刷新 {{ cache?.lastUpdate?.toLocaleTimeString() }} </span>
+        <span v-if="loading">刷新中...</span>
+        <span v-else> 上次刷新 {{ cache?.lastUpdate?.toLocaleTimeString() }} </span>
       </BasicNavItem>
       <BasicNavItem
         name=""

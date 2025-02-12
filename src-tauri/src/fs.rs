@@ -1,4 +1,4 @@
-use std::fs;
+use std::{fs, path};
 
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct File {
@@ -67,6 +67,12 @@ pub fn list(path: String, exts: Vec<String>) -> Result<Vec<File>, String> {
 }
 
 #[tauri::command]
+pub fn mkdir(path: String) -> Result<(), String> {
+    fs::create_dir_all(&path).map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
 pub fn delete(path: String) -> Result<(), String> {
     fs::remove_file(path).map_err(|e| e.to_string())?;
     Ok(())
@@ -93,5 +99,28 @@ pub fn enable(path: String, file_name: String) -> Result<(), String> {
         let new_file = folder.join(file_name);
         fs::rename(raw_file, new_file).map_err(|e| e.to_string())?;
     }
+    Ok(())
+}
+
+#[tauri::command]
+pub fn unzip(zip_path: String, output_dir: String) -> Result<(), String> {
+    let file = fs::File::open(zip_path).map_err(|e| e.to_string())?;
+    let mut archive = zip::ZipArchive::new(file).map_err(|e| e.to_string())?;
+
+    for i in 0..archive.len() {
+        let mut file = archive.by_index(i).map_err(|e| e.to_string())?;
+        if file.is_dir() {
+            continue;
+        }
+
+        let output_path = path::Path::new(&output_dir).join(file.name());
+        if let Some(parent) = output_path.parent() {
+            fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+        }
+
+        let mut out_file = fs::File::create(output_path).map_err(|e| e.to_string())?;
+        std::io::copy(&mut file, &mut out_file).map_err(|e| e.to_string())?;
+    }
+
     Ok(())
 }

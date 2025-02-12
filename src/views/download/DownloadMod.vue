@@ -90,40 +90,42 @@ onMounted(() => {
 </script>
 
 <template>
-  <BasicCollapse title="筛选" open>
-    <BasicConfig
-      title="关键词"
-      tooltip="支持搜索名称、作者、备注，以空格分隔多个关键词"
-    >
-      <BasicInput v-model="filterText" />
-      <BasicButton @click="onSearch">搜索</BasicButton>
-    </BasicConfig>
-    <BasicConfig title="筛选类型" tooltip="选择 Mod 类型">
-      <SwitchButton
-        v-for="modType in ['bml', 'bmlp']"
-        :active="filterType === modType"
-        @click="
-          () => {
-            filterType = modType;
-            onSearch();
-          }
-        "
-      >
-        {{ modType === "bml" ? "BML" : "BML+" }}
-      </SwitchButton>
-    </BasicConfig>
-  </BasicCollapse>
-  <BasicCollapse title="Mod 列表" open>
-    <TransitionGroup name="list">
+  <div>
+    <BasicCollapse title="筛选" open>
       <BasicConfig
-        v-for="f in filteredList"
-        :key="f.url"
-        :title="clampString(f.filename.replace(/\.bmodp?/gi, ''), 20)"
-        :tooltip="f.notes || f.category"
+        title="关键词"
+        tooltip="支持搜索名称、作者、备注，以空格分隔多个关键词"
       >
-        <p style="margin: 10px">{{ f.size }}</p>
-        <BasicButton @click="onDownload(f)">获取</BasicButton>
+        <BasicInput v-model="filterText" />
+        <BasicButton @click="onSearch">搜索</BasicButton>
       </BasicConfig>
-    </TransitionGroup>
-  </BasicCollapse>
+      <BasicConfig title="筛选类型" tooltip="选择 Mod 类型">
+        <SwitchButton
+          v-for="modType in ['bml', 'bmlp']"
+          :active="filterType === modType"
+          @click="
+            () => {
+              filterType = modType;
+              onSearch();
+            }
+          "
+        >
+          {{ modType === "bml" ? "BML" : "BML+" }}
+        </SwitchButton>
+      </BasicConfig>
+    </BasicCollapse>
+    <BasicCollapse title="Mod 列表" open>
+      <TransitionGroup name="list">
+        <BasicConfig
+          v-for="f in filteredList"
+          :key="f.url"
+          :title="clampString(f.filename.replace(/\.bmodp?/gi, ''), 20)"
+          :tooltip="f.notes || f.category"
+        >
+          <p style="margin: 10px">{{ f.size }}</p>
+          <BasicButton @click="onDownload(f)">获取</BasicButton>
+        </BasicConfig>
+      </TransitionGroup>
+    </BasicCollapse>
+  </div>
 </template>

@@ -1,39 +1,59 @@
-import BasicDialogVue from "@/components/BasicDialog.vue";
+import BasicDialog from "@/components/BasicDialog.vue";
 import { useAppStore } from "@/stores/app";
-import { createApp, h, ref, VNode } from "vue";
+import { App, createApp, h, ref, VNode } from "vue";
 import { withDefault } from "./common";
 import VirtualKeyboard from "@/components/VirtualKeyboard.vue";
 
 export type DialogArgs = {
   title?: string;
   footer?: boolean;
+  sure?: boolean;
+  cancel?: boolean;
   sureText?: string;
   cancelText?: string;
   onSure?: () => void;
   onCancel?: () => void;
   onClose?: (sure: boolean) => void;
+  lock?: boolean;
+  parent?: "body" | "content";
 };
 export const openDialog = (
   content: string | (() => VNode),
   args?: DialogArgs
 ) => {
-  let component;
+  let component: App;
+  const div = document.createElement("div");
+  const parent =
+    (args?.parent ?? "body") === "body"
+      ? document.body
+      : document.querySelector("div#content-container")!;
+
+  const onDestroy = () => {
+    setTimeout(() => {
+      component?.unmount();
+      parent.removeChild(div);
+    }, 200);
+  };
+
+  if (!args?.lock) {
+    div.onclick = onDestroy;
+  }
+
   if (typeof content === "string") {
-    component = createApp(BasicDialogVue, { content, ...args });
+    component = createApp(BasicDialog, { content, ...args, onDestroy });
   } else {
     component = createApp({
-      render: () => h(BasicDialogVue, { ...args }, { default: () => content() })
+      render: () =>
+        h(BasicDialog, { ...args, onDestroy }, { default: () => content() })
     });
   }
-  const div = document.createElement("div");
-  div.onclick = () => {
-    setTimeout(() => {
-      component.unmount();
-      document.body.removeChild(div);
-    }, 150);
-  };
-  document.body.appendChild(div);
+
+  parent.appendChild(div);
   component.mount(div);
+
+  return {
+    close: onDestroy
+  };
 };
 
 export const keyboardDialog = (keycode: number, title: string) => {

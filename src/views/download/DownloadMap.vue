@@ -91,33 +91,35 @@ onMounted(() => {
 </script>
 
 <template>
-  <BasicCollapse title="筛选" open>
-    <BasicConfig
-      title="关键词"
-      tooltip="支持搜索名称、作者、备注，以空格分隔多个关键词"
-    >
-      <BasicInput v-model="filterText" />
-      <BasicButton @click="onSearch">搜索</BasicButton>
-    </BasicConfig>
-    <BasicConfig
-      title="显示特殊地图"
-      tooltip="部分地图需要手动处理，例如解压、安装配套插件等"
-    >
-      <BasicSwitch v-model="showSpecialMap" @toggled="onSearch" />
-    </BasicConfig>
-  </BasicCollapse>
-  <BasicCollapse title="地图列表" open>
-    <BasicConfig
-      v-for="f in filteredList"
-      :key="f.url"
-      :title="
-        f.filename.replace(/\.(nmo|7z|zip|rar)/gi, '') +
-        (f.filename.endsWith('.nmo') ? '' : '*')
-      "
-      :tooltip="f.notes || f.category"
-    >
-      <p style="margin: 10px">{{ f.size }}</p>
-      <BasicButton @click="onDownload(f)">获取</BasicButton>
-    </BasicConfig>
-  </BasicCollapse>
+  <div>
+    <BasicCollapse title="筛选" open>
+      <BasicConfig
+        title="关键词"
+        tooltip="支持搜索名称、作者、备注，以空格分隔多个关键词"
+      >
+        <BasicInput v-model="filterText" />
+        <BasicButton @click="onSearch">搜索</BasicButton>
+      </BasicConfig>
+      <BasicConfig
+        title="显示特殊地图"
+        tooltip="部分地图需要手动处理，例如解压、安装配套插件等"
+      >
+        <BasicSwitch v-model="showSpecialMap" @toggled="onSearch" />
+      </BasicConfig>
+    </BasicCollapse>
+    <BasicCollapse title="地图列表" open>
+      <BasicConfig
+        v-for="f in filteredList"
+        :key="f.url"
+        :title="
+          f.filename.replace(/\.(nmo|7z|zip|rar)/gi, '') +
+          (f.filename.endsWith('.nmo') ? '' : '*')
+        "
+        :tooltip="f.notes || f.category"
+      >
+        <p style="margin: 10px">{{ f.size }}</p>
+        <BasicButton @click="onDownload(f)">获取</BasicButton>
+      </BasicConfig>
+    </BasicCollapse>
+  </div>
 </template>

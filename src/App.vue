@@ -55,6 +55,7 @@ onMounted(() => {
       <Header></Header>
     </div>
     <div
+      id="content-container"
       class="content"
       :style="{
         '--bg-blur': pref.backgroundBlur + 'px',

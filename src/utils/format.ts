@@ -2,6 +2,8 @@
 export const pad = (value: number, pad: string, len: number) =>
   (Array(len).join(pad) + value).slice(-len);
 
+export const toPercentage = (value: number) => (value * 100).toFixed(2) + "%";
+
 /** value 超出 len 长度时自动在后面加上省略号 */
 export const clampString = (str: string, len: number) =>
   str.length > len ? str.slice(0, len) + "..." : str;

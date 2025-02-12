@@ -43,11 +43,10 @@ const groupCenter = reactive<NavSchema[]>([
   //   icon: "question-line"
   // }
   {
-    id: "wiki",
     name: "Wiki",
     icon: "external-link-line",
     action: () => {
-      open("https://ballance.jxpxxzj.cn/wiki/首页");
+      open("https://ballance.jxpxxzj.cn");
     }
   }
 ]);
@@ -88,6 +87,7 @@ onMounted(() => {
         :page="item.id"
         :content="item.name"
         :icon="item.icon"
+        :action="item.action"
       >
       </HeaderButton>
     </div>

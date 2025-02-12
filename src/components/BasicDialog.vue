@@ -8,11 +8,16 @@ withDefaults(
     title?: string;
     content?: string;
     footer?: boolean;
+    sure?: boolean;
+    cancel?: boolean;
     sureText?: string;
     cancelText?: string;
+    lock?: boolean;
   }>(),
   {
     footer: true,
+    sure: true,
+    cancel: true,
     sureText: "确认",
     cancelText: "取消"
   }
@@ -21,6 +26,7 @@ const emits = defineEmits<{
   (event: "cancel"): void;
   (event: "sure"): void;
   (event: "close", sure: boolean): void;
+  (event: "destroy"): void;
 }>();
 
 const show = ref(false);
@@ -29,11 +35,13 @@ const onCancel = () => {
   emits("cancel");
   emits("close", false);
   show.value = false;
+  emits("destroy");
 };
 const onSure = () => {
   emits("sure");
   emits("close", true);
   show.value = false;
+  emits("destroy");
 };
 
 onMounted(() => {
@@ -43,18 +51,26 @@ onMounted(() => {
 
 <template>
   <Transition name="fade">
-    <div v-if="show" class="basic-dialog-mask" @click="onCancel">
+    <div
+      v-if="show"
+      class="basic-dialog-mask"
+      @click="lock ? undefined : onCancel"
+    >
       <BasicBlock class="basic-dialog-container" @click.stop>
         <h v-if="title" class="basic-dialog-title">
           {{ title }}
         </h>
         <div class="basic-dialog-content">
-          <p v-if="content">{{ content }}</p>
+          <div v-if="content" v-html="content" />
           <slot v-else></slot>
         </div>
         <div v-if="footer" class="basic-dialog-footer">
-          <BasicButton @click="onSure"> {{ sureText }} </BasicButton>
-          <BasicButton @click="onCancel"> {{ cancelText }} </BasicButton>
+          <BasicButton v-if="sure" @click="onSure">
+            {{ sureText }}
+          </BasicButton>
+          <BasicButton v-if="cancel" @click="onCancel">
+            {{ cancelText }}
+          </BasicButton>
         </div>
       </BasicBlock>
     </div>
