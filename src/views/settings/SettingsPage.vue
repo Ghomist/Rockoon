@@ -162,42 +162,10 @@ onMounted(() => {
             https://github.com/Ghomist/Rockoon
           </a>
         </BasicConfig>
-      </BasicCollapse>
-
-      <BasicCollapse title="相关站点 / 特别鸣谢">
-        <BasicConfig title="Ballance 社区百科">
-          <a @click="open('https://ballance.jxpxxzj.cn/')"> Ballance Wiki </a>
-        </BasicConfig>
-        <BasicConfig title="地图 / Mod 下载源">
-          <a @click="open('http://ballancemaps.ysepan.com/')">
-            Ballance 地图下载站
+        <BasicConfig title="相关站点引用 / 特别鸣谢">
+          <a @click="open('https://github.com/Ghomist/Rockoon')">
+            参见 Rockoon 仓库 README
           </a>
-        </BasicConfig>
-        <BasicConfig title="BML 代码仓库">
-          <a @click="open('https://github.com/Gamepiaynmo/BallanceModLoader')">
-            https://github.com/Gamepiaynmo/BallanceModLoader
-          </a>
-        </BasicConfig>
-        <BasicConfig title="BML+ 代码仓库">
-          <a @click="open('https://github.com/doyaGu/BallanceModLoaderPlus')">
-            https://github.com/doyaGu/BallanceModLoaderPlus
-          </a>
-        </BasicConfig>
-        <BasicConfig title="New Player 代码仓库">
-          <a @click="open('https://github.com/doyaGu/BallancePlayer')">
-            https://github.com/doyaGu/BallancePlayer
-          </a>
-        </BasicConfig>
-        <BasicConfig title="MenuLevel 动态背景图">
-          感谢由
-          <span style="padding: 0.25em">
-            <a @click="open('https://github.com/chirs241097/')"> chris </a>
-            ,
-            <a @click="open('https://github.com/ShadowPower')"> 61 </a>
-            ,
-            <a @click="open('https://github.com/yyc12345')"> yyc </a>
-          </span>
-          提供的背景图（名称为缩写）
         </BasicConfig>
       </BasicCollapse>
 
