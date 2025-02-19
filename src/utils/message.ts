@@ -1,8 +1,8 @@
 import BasicDialog from "@/components/BasicDialog.vue";
+import VirtualKeyboard from "@/components/VirtualKeyboard.vue";
 import { useAppStore } from "@/stores/app";
 import { App, createApp, h, ref, VNode } from "vue";
 import { withDefault } from "./common";
-import VirtualKeyboard from "@/components/VirtualKeyboard.vue";
 
 export type DialogArgs = {
   title?: string;

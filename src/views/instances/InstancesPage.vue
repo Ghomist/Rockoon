@@ -5,7 +5,7 @@ import BasicNavItem from "@/components/BasicNavItem.vue";
 import BasicSplit from "@/components/BasicSplit.vue";
 import { useAppStore } from "@/stores/app";
 import { useFileStore } from "@/stores/fs";
-import { sendMessage } from "@/utils/message";
+import { openDialog, sendMessage } from "@/utils/message";
 import { open as browseFile } from "@tauri-apps/plugin-dialog";
 import { computed, ref } from "vue";
 import InstanceLaunchConfig from "./InstanceLaunchConfig.vue";
@@ -34,6 +34,20 @@ const onAddInstance = async () => {
       );
     }
   }
+};
+
+const onScanInstances = async () => {
+  openDialog("此操作可以自动扫描电脑中常见位置，以发现 Ballance 游戏目录", {
+    title: "扫描 Ballance 游戏目录",
+    onSure: () => {
+      fs.scanPossibleInstances().then(cnt =>
+        openDialog(`扫描完成！共发现 ${cnt} 个实例`, {
+          lock: true,
+          cancel: false
+        })
+      );
+    }
+  });
 };
 
 const subPage = ref("basic");
@@ -102,6 +116,15 @@ const subPageData = computed(() => {
         >
           <BasicIcon icon="add-circle-line" />
           <span> 添加 </span>
+        </BasicNavItem>
+        <BasicNavItem
+          name=""
+          :selected="false"
+          style="color: var(--color-text-light); border: none"
+          @clicked="onScanInstances"
+        >
+          <BasicIcon icon="scan-2-line" />
+          <span> 扫描 </span>
         </BasicNavItem>
       </BasicBlock>
       <BasicBlock v-if="app.selected">

@@ -156,7 +156,7 @@ onMounted(() => {
         </BasicConfig>
         <BasicConfig
           title="开源仓库地址"
-          tooltip="欢迎 pr, issue, star！（但是还没开源其实）"
+          tooltip="欢迎 pr, issue, star！"
         >
           <a @click="open('https://github.com/Ghomist/Rockoon')">
             https://github.com/Ghomist/Rockoon

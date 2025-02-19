@@ -1,5 +1,7 @@
 use std::{fs, path};
 
+use tauri::Manager;
+
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct File {
     name: String,
@@ -67,6 +69,25 @@ pub fn list(path: String, exts: Vec<String>) -> Result<Vec<File>, String> {
 }
 
 #[tauri::command]
+pub fn list_dirs(path: String) -> Result<Vec<String>, String> {
+    let mut matches = Vec::new();
+    for entry in fs::read_dir(path).map_err(|e| e.to_string())? {
+        let entry = match entry {
+            Ok(e) => e,
+            Err(_) => continue,
+        };
+
+        if entry.file_type().is_ok_and(|t| t.is_dir()) {
+            if let Ok(filename) = entry.path().into_os_string().into_string() {
+                matches.push(filename);
+            }
+        }
+    }
+
+    Ok(matches)
+}
+
+#[tauri::command]
 pub fn mkdir(path: String) -> Result<(), String> {
     fs::create_dir_all(&path).map_err(|e| e.to_string())?;
     Ok(())
@@ -123,4 +144,55 @@ pub fn unzip(zip_path: String, output_dir: String) -> Result<(), String> {
     }
 
     Ok(())
+}
+
+#[tauri::command]
+pub fn get_common_dirs(app: tauri::AppHandle) -> Result<Vec<String>, String> {
+    let mut dirs = Vec::new();
+
+    // LocalAppData/Programs
+    if let Ok(local_app_data) = std::env::var("LocalAppData") {
+        let path = path::Path::new(&local_app_data).join("Programs");
+        if let Some(s) = path.to_str() {
+            dirs.push(s.to_string());
+        }
+    }
+
+    // ProgramFiles
+    // if let Ok(program_files) = std::env::var("ProgramFiles") {
+    //     dirs.push(program_files);
+    // }
+
+    // ProgramFiles(x86)
+    // if let Ok(program_files_x86) = std::env::var("ProgramFiles(x86)") {
+    //     dirs.push(program_files_x86);
+    // }
+
+    let path_resolver = app.path();
+
+    // 下载目录
+    if let Ok(download) = path_resolver.download_dir() {
+        if let Some(s) = download.to_str() {
+            dirs.push(s.to_string());
+        }
+    }
+
+    // 桌面目录
+    if let Ok(desktop) = path_resolver.desktop_dir() {
+        if let Some(s) = desktop.to_str() {
+            dirs.push(s.to_string());
+        }
+    }
+
+    // 非 C 盘根目录
+    for drive in b'A'..=b'Z' {
+        let drive = drive as char;
+        let root = format!("{}:\\", drive);
+        let path = path::Path::new(&root);
+        if drive != 'C' && path.exists() {
+            dirs.push(root);
+        }
+    }
+
+    Ok(dirs)
 }

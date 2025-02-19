@@ -32,6 +32,31 @@ export const useFileStore = defineStore(FILE_STORE_KEY, {
         useAppStore().selected = undefined;
       }
     },
+    async scanInstances(dir: string, depth: number) {
+      let cnt = 0;
+      if (depth) {
+        try {
+          const dirs = await fs.listDirs(dir);
+          for (const dir of dirs) {
+            const instance = await this.addInstance(dir);
+            if (instance) cnt++;
+            else cnt += await this.scanInstances(dir, depth - 1);
+          }
+        } catch {
+          // ignore
+        }
+      }
+      return cnt;
+    },
+    async scanPossibleInstances() {
+      let cnt = 0;
+      const dirs = await fs.getCommonDirs();
+      for (const dir of dirs) {
+        cnt += await this.scanInstances(dir, 2);
+      }
+      console.log(`done: ${cnt}`);
+      return cnt;
+    },
     async getInstanceFiles(
       path: string,
       folderType: "map" | "mod" | "modCfg" | "bb"
