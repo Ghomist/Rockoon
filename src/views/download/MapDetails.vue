@@ -22,7 +22,7 @@ defineProps<{
       {{ file.size }}
     </BasicConfig>
     <BasicConfig title="上传时间">
-      {{ file.uploadTime }}
+      {{ file.uploadTime.toLocaleDateString() }}
     </BasicConfig>
     <BasicConfig title="所在分区">
       {{ file.category }}

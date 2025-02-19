@@ -28,7 +28,7 @@ const notes = computed(() => props.file.notes.split("|").map(x => x.trim()));
       {{ file.size }}
     </BasicConfig>
     <BasicConfig title="上传时间">
-      {{ file.uploadTime }}
+      {{ file.uploadTime.toLocaleDateString() }}
     </BasicConfig>
   </div>
 </template>

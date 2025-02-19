@@ -17,7 +17,7 @@ type YsFile = {
   url: string;
   size: string;
   notes: string;
-  uploadTime: string;
+  uploadTime: Date;
 };
 /** 永硕云盘缓存 */
 type YsCache = {

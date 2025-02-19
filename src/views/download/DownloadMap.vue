@@ -73,8 +73,8 @@ const onDownload = (file: YsFile) => {
 
 onMounted(() => {
   for (const folder of props.cache.folders) {
-    for (const file of props.cache.files[folder.id]) {
-      if (categories.some(cat => file.category.includes(cat))) {
+    if (categories.some(cat => folder.name.includes(cat))) {
+      for (const file of props.cache.files[folder.id]) {
         const handledFile = { ...file };
         handledFile.filename = file.filename.replace(/(\.level)/gi, "");
         handledFile.filename = handledFile.filename.replace(
@@ -85,6 +85,8 @@ onMounted(() => {
       }
     }
   }
+
+  maps.value.sort((a, b) => (a.uploadTime < b.uploadTime ? 1 : -1));
 
   onSearch();
 });

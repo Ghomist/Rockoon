@@ -23,6 +23,28 @@ const getYsHtml = async (url: string) => {
   return responseString ?? "";
 };
 
+const parseYsDate = (date: string) => {
+  const result = new Date();
+  result.setHours(0, 0, 0, 0);
+
+  if (date.includes("昨日")) {
+    result.setDate(result.getDate() - 1);
+    return result;
+  }
+
+  let match = date.match(/(\d+)月(\d+)日/);
+  if (match) result.setMonth(parseInt(match[1]) - 1, parseInt(match[2]));
+  console.log(date, match, result.toLocaleDateString());
+
+  match = date.match(/(\d+)号/);
+  if (match) result.setDate(parseInt(match[1]));
+
+  match = date.match(/(\d+)年/);
+  if (match) result.setFullYear(parseInt(match[1]));
+
+  return result;
+};
+
 /**
  * 获取地图站的文件
  * @param refresh 强制刷新缓存
@@ -69,7 +91,7 @@ export const fetchFiles = async (refresh = false) => {
         url: a.href,
         size: li.getElementsByTagName("i")[0]?.innerText ?? "",
         notes: li.getElementsByTagName("b")[0]?.innerText ?? "",
-        uploadTime: a.title
+        uploadTime: parseYsDate(a.title)
       } as YsFile);
     }
     cache.files[index.id] = list;
