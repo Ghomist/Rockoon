@@ -13,6 +13,7 @@ import InstanceLevels from "./InstanceLevels.vue";
 import InstanceMaps from "./InstanceMaps.vue";
 import InstanceMods from "./InstanceMods.vue";
 import InstanceOptions from "./InstanceOptions.vue";
+import InstanceSky from "./InstanceSky.vue";
 import NoneSelectedPage from "./NoneSelectedPage.vue";
 
 const app = useAppStore();
@@ -62,6 +63,11 @@ const subPageData = computed(() => {
       label: "关卡与高分榜",
       value: "levels",
       page: InstanceLevels
+    },
+    {
+      label: "天空背景",
+      value: "sky",
+      page: InstanceSky
     }
   ];
   if (app.selected?.newPlayer)

@@ -28,7 +28,6 @@ const onSearch = () => {
       .trim()
       .split(" ")
       .map(x => x.toLowerCase());
-    console.log(filterType.value);
     filteredList.value = mods.value.filter(x =>
       filters.every(filter =>
         `${x.filename} ${x.notes}`.toLowerCase().includes(filter)

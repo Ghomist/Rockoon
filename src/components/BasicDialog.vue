@@ -13,6 +13,7 @@ const props = withDefaults(
     sureText?: string;
     cancelText?: string;
     lock?: boolean;
+    width?: string;
   }>(),
   {
     footer: true,
@@ -53,7 +54,14 @@ onMounted(() => {
 <template>
   <Transition name="fade">
     <div v-if="show" class="basic-dialog-mask" @click="onCancel(false)">
-      <BasicBlock class="basic-dialog-container" @click.stop>
+      <BasicBlock
+        class="basic-dialog-container"
+        :style="{
+          width,
+          maxWidth: width
+        }"
+        @click.stop
+      >
         <p v-if="title" class="basic-dialog-title">
           {{ title }}
         </p>
@@ -96,7 +104,7 @@ onMounted(() => {
   align-items: start;
 
   max-width: 60%;
-  max-height: 75%;
+  max-height: 80%;
 
   padding: var(--d-padding);
   background-color: var(--box-background);

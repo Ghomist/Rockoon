@@ -54,7 +54,6 @@ export const useFileStore = defineStore(FILE_STORE_KEY, {
       for (const dir of dirs) {
         cnt += await this.scanInstances(dir, 2);
       }
-      console.log(`done: ${cnt}`);
       return cnt;
     },
     async getInstanceFiles(

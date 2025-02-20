@@ -24,7 +24,6 @@ const readPlayerIni = async () => {
 };
 const savePlayerIni = async () => {
   if (instance.value.newPlayer && playerConfig.value) {
-    console.log("save");
     const iniPath = await join(instance.value.path, "Bin", "Player.ini");
     await ballance.saveLaunchConfig(iniPath, playerConfig.value);
   }

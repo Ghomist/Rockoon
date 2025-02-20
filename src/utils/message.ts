@@ -16,6 +16,7 @@ export type DialogArgs = {
   onClose?: (sure: boolean) => void;
   lock?: boolean;
   parent?: "body" | "content";
+  width?: string;
 };
 export const openDialog = (
   content: string | (() => VNode),

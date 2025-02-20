@@ -34,7 +34,6 @@ const parseYsDate = (date: string) => {
 
   let match = date.match(/(\d+)月(\d+)日/);
   if (match) result.setMonth(parseInt(match[1]) - 1, parseInt(match[2]));
-  console.log(date, match, result.toLocaleDateString());
 
   match = date.match(/(\d+)号/);
   if (match) result.setDate(parseInt(match[1]));
