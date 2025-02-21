@@ -158,7 +158,7 @@ onMounted(() => {
         <BasicConfig
           v-if="pref.theme === 'custom'"
           title="自定义主题色"
-          tooltip="支持任何 CSS 颜色语法，例：rgb(0,205,229) 或 hex"
+          tooltip="支持任何 CSS 颜色语法，例：rgb(0, 0, 0) 或 #ffffff"
         >
           <BasicInput v-model="pref.customThemeColor" />
         </BasicConfig>
@@ -171,7 +171,7 @@ onMounted(() => {
         <BasicConfig title="背景模糊">
           <BasicSlider
             v-model="pref.backgroundBlur"
-            :max="100"
+            :max="64"
             :formatter="(v: number) => v.toFixed(0) + 'px'"
           />
         </BasicConfig>

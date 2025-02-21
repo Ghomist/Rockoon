@@ -31,18 +31,20 @@ defineProps<{
 
 .basic-config-prop {
   display: flex;
-  gap: var(--d-margin-xs);
+  flex: 1;
+  max-width: 80%;
   align-items: center;
+  gap: var(--d-margin-xs);
 
   .basic-config-label,
   .basic-config-tooltip {
-    max-width: 350px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
 
   .basic-config-tooltip {
+    flex: 1;
     min-width: var(--d-margin-xs);
     margin-left: var(--d-margin-sm);
   }
