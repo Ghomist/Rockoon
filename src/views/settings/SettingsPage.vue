@@ -11,7 +11,9 @@ import { openDialog, sendMessage } from "@/utils/message";
 import storage from "@/utils/storage";
 import { getTauriVersion, getVersion } from "@tauri-apps/api/app";
 import { open } from "@tauri-apps/plugin-shell";
+import { open as browseFile } from "@tauri-apps/plugin-dialog";
 import { onMounted, ref } from "vue";
+import { convertFileSrc } from "@tauri-apps/api/core";
 
 const pref = usePrefStore();
 
@@ -40,10 +42,30 @@ const themeColors: {
   {
     label: "默哀灰",
     theme: "gray"
+  },
+  {
+    label: "自定义",
+    theme: "custom"
   }
 ];
 const onClickTheme = (theme: ThemeId) => {
   pref.theme = theme;
+};
+const onChangeBackgroundImage = async () => {
+  const file = await browseFile({
+    title: "选择背景图",
+    filters: [
+      {
+        name: "图片文件",
+        extensions: ["jpg", "jpeg", "png", "bmp", "gif"]
+      }
+    ]
+  });
+  if (file) {
+    const srcUrl = convertFileSrc(file);
+    pref.backgroundImage = `url(${srcUrl})`;
+    sendMessage("设置背景图成功！");
+  }
 };
 const onRestorePref = () => {
   openDialog("确定要恢复默认设置吗？", {
@@ -133,7 +155,17 @@ onMounted(() => {
             {{ color.label }}
           </SwitchButton>
         </BasicConfig>
-        <BasicConfig title="启用动态背景">
+        <BasicConfig
+          v-if="pref.theme === 'custom'"
+          title="自定义主题色"
+          tooltip="支持任何 CSS 颜色语法，例：rgb(0,205,229) 或 hex"
+        >
+          <BasicInput v-model="pref.customThemeColor" />
+        </BasicConfig>
+        <BasicConfig
+          title="启用 Menu Level 动态背景"
+          :tooltip="pref.backgroundImage ? '禁用自定义背景图以生效' : undefined"
+        >
           <BasicSwitch v-model="pref.enableBgv" />
         </BasicConfig>
         <BasicConfig title="背景模糊">
@@ -143,8 +175,22 @@ onMounted(() => {
             :formatter="(v: number) => v.toFixed(0) + 'px'"
           />
         </BasicConfig>
-        <BasicConfig title="遮罩透明度">
+        <BasicConfig
+          title="遮罩不透明度"
+          tooltip="背景图上方的覆盖层，颜色由主题色控制"
+        >
           <BasicSlider v-model="pref.maskOpacity" percentage />
+        </BasicConfig>
+        <BasicConfig title="自定义背景图" tooltip="会自动禁用默认的动态背景">
+          <BasicButton @click="onChangeBackgroundImage">
+            {{ pref.backgroundImage ? "更换" : "选择" }}
+          </BasicButton>
+          <BasicButton
+            v-if="pref.backgroundImage"
+            @click="pref.backgroundImage = undefined"
+          >
+            清除
+          </BasicButton>
         </BasicConfig>
       </BasicCollapse>
 
@@ -154,10 +200,7 @@ onMounted(() => {
         <BasicConfig title="作者 Github">
           <a @click="open('https://github.com/Ghomist')"> @Ghomist </a>
         </BasicConfig>
-        <BasicConfig
-          title="开源仓库地址"
-          tooltip="欢迎 pr, issue, star！"
-        >
+        <BasicConfig title="开源仓库地址" tooltip="欢迎 pr, issue, star！">
           <a @click="open('https://github.com/Ghomist/Rockoon')">
             https://github.com/Ghomist/Rockoon
           </a>

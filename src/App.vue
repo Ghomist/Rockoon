@@ -59,11 +59,14 @@ onMounted(() => {
       class="content"
       :style="{
         '--bg-blur': pref.backgroundBlur + 'px',
-        '--mask-opacity': pref.enableBgv ? pref.maskOpacity : 1
+        '--custom-background-image': pref.backgroundImage,
+        '--mask-opacity':
+          pref.enableBgv || pref.backgroundImage ? pref.maskOpacity : 1
       }"
     >
+      <div v-if="pref.backgroundImage" class="content-custom-bg" />
       <video
-        v-if="pref.enableBgv"
+        v-else-if="pref.enableBgv"
         class="content-bgv"
         src="/menu_level_compressed.mp4"
         autoplay
@@ -129,12 +132,15 @@ onMounted(() => {
   opacity: var(--mask-opacity);
   background-image: var(--background-image);
 }
+.content-custom-bg {
+  inset: 0;
+  background-image: var(--custom-background-image);
+  background-size: cover;
+  background-position: center center;
+}
 .content-bgv {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  inset: 0;
   scale: 1.1;
   object-fit: cover;
   z-index: -1;

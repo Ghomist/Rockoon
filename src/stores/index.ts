@@ -24,9 +24,16 @@ export const initStores = async () => {
   prefStore.$subscribe(() => prefStore.save());
   fileStore.$subscribe(() => fileStore.save());
 
-  // auto load theme
+  // auto load theme and color
   const html = document.getElementsByTagName("html")[0];
-  const loadTheme = () => (html.className = `theme-${prefStore.theme}`);
+  const loadTheme = () => {
+    html.className = `theme-${prefStore.theme}`;
+    if (prefStore.theme === "custom" && prefStore.customThemeColor) {
+      html.style.setProperty("--color-prime", prefStore.customThemeColor);
+    } else {
+      html.style.removeProperty("--color-prime");
+    }
+  };
   prefStore.$subscribe(loadTheme);
 
   // init theme

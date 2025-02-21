@@ -9,9 +9,7 @@ defineProps<{
   <div class="basic-config">
     <div class="basic-config-prop">
       <p class="basic-config-label">{{ title }}</p>
-      <p class="basic-config-tooltip light">
-        {{ tooltip }}
-      </p>
+      <p class="basic-config-tooltip light" v-html="tooltip" />
     </div>
     <div class="basic-config-slot">
       <slot></slot>

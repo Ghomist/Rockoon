@@ -14,7 +14,9 @@ export const usePrefStore = defineStore(PREF_STORE_KEY, {
       theme: "blue",
       enableBgv: true,
       backgroundBlur: 8,
-      maskOpacity: 0.25
+      maskOpacity: 0.25,
+      backgroundImage: undefined,
+      customThemeColor: "#888"
     }),
   getters: {
     hasRecent: state =>

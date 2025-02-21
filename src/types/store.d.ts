@@ -24,7 +24,7 @@ type Message = {
   message: string;
 };
 
-type ThemeId = "blue" | "red" | "green" | "pink" | "gray";
+type ThemeId = "blue" | "red" | "green" | "pink" | "gray" | "custom";
 type PreferenceStore = {
   /** 最近一次启动的实例路径 */
   recent?: string;
@@ -49,6 +49,12 @@ type PreferenceStore = {
 
   /** 背景遮罩透明度 */
   maskOpacity: number;
+
+  /** 自定义背景图 */
+  backgroundImage?: string;
+
+  /** 自定义主题色 */
+  customThemeColor?: string;
 };
 
 type FileStore = {
