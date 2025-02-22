@@ -16,13 +16,15 @@ export const usePrefStore = defineStore(PREF_STORE_KEY, {
       backgroundBlur: 8,
       maskOpacity: 0.25,
       backgroundImage: undefined,
-      customThemeColor: "#888"
+      customThemeColor: "#888",
+      indexExpireTime: 120
     }),
   getters: {
     hasRecent: state =>
       useFileStore().instances.some(x => x.path === state.recent),
     recentInstance: state =>
-      useFileStore().instances.find(x => x.path === state.recent)
+      useFileStore().instances.find(x => x.path === state.recent),
+    expireMs: state => state.indexExpireTime * 60 * 1000
   },
   actions: {
     save() {

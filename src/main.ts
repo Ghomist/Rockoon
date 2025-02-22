@@ -41,7 +41,7 @@ const init = async () => {
 
   await initStores();
 
-  await checkUpdate();
+  await checkUpdate(true);
 };
 
 init();

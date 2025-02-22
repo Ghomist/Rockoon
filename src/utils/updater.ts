@@ -3,10 +3,18 @@ import { openDialog, sendMessage } from "./message";
 import { h, ref } from "vue";
 import { toPercentage } from "./format";
 
-export const checkUpdate = async () => {
-  const update = await check();
+export const checkUpdate = async (quiet = false) => {
+  let update;
+  try {
+    update = await check({
+      timeout: 10000
+    });
+  } catch {
+    if (!quiet) sendMessage("检查更新失败");
+    return;
+  }
   if (update) {
-    let date = "未知";
+    let date = "未知更新时间";
     if (update.date) {
       date = update.date
         .replace(/\s+([+-]\d{2}:\d{2}):\d{2}$/, "$1")
@@ -46,8 +54,10 @@ export const checkUpdate = async () => {
           }
         });
         close();
-        sendMessage("更新完成！请重启 Rockoon");
+        if (!quiet) sendMessage("更新完成！请重启 Rockoon");
       }
     });
+  } else {
+    if (!quiet) sendMessage("已是最新版本！");
   }
 };

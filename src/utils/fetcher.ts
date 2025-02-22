@@ -1,10 +1,10 @@
+import { usePrefStore } from "@/stores/pref";
 import storage from "./storage";
 
-const expireTime = 1000 * 60 * 90; // 90 min
 const STORAGE_KEY = "ys-storage";
 const username = "ballancemaps";
-const indexLink = `http://c6.ysepan.com/f_ht/ajcx/ml.aspx?cz=ml_dq&_dlmc=${username}&_dlmm=`;
-const fileListLink = `http://c6.ysepan.com/f_ht/ajcx/wj.aspx?cz=dq&jsq=0&mlbh={index}&wjpx=1&_dlmc=${username}&_dlmm=`;
+const indexLink = `/ballance-download/f_ht/ajcx/ml.aspx?cz=ml_dq&_dlmc=${username}&_dlmm=`;
+const fileListLink = `/ballance-download/f_ht/ajcx/wj.aspx?cz=dq&jsq=0&mlbh={index}&wjpx=1&_dlmc=${username}&_dlmm=`;
 
 const getYsHtml = async (url: string) => {
   let responseString = await fetch(url, {
@@ -57,7 +57,7 @@ export const fetchFiles = async (refresh = false) => {
   if (
     !refresh &&
     cache.lastUpdate &&
-    cache.lastUpdate.getTime() + expireTime > Date.now()
+    cache.lastUpdate.getTime() + usePrefStore().expireMs > Date.now()
   ) {
     return cache;
   }

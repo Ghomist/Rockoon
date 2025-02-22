@@ -55,6 +55,9 @@ type PreferenceStore = {
 
   /** 自定义主题色 */
   customThemeColor?: string;
+
+  /** 下载站索引过期时间（分钟） */
+  indexExpireTime: number;
 };
 
 type FileStore = {

@@ -30,7 +30,7 @@ export default defineConfig(async () => ({
     },
     proxy: {
       "/ballance-download": {
-        target: "http://ballancemaps.ysepan.com/",
+        target: "http://c6.ysepan.com",
         changeOrigin: true,
         rewrite: (path: string) => path.replace(/^\/ballance-download/, "")
       }

@@ -145,6 +145,17 @@ onMounted(() => {
             ascii-only
           />
         </BasicConfig>
+        <BasicConfig
+          title="下载站自动刷新时间"
+          tooltip="超过此时间将会自动刷新下载列表，建议设置为 120 分钟"
+        >
+          <BasicSlider
+            v-model="pref.indexExpireTime"
+            :min="30"
+            :max="360"
+            :formatter="(v: number) => v.toFixed(0) + 'min'"
+          />
+        </BasicConfig>
         <BasicConfig title="重置启动器设置">
           <BasicButton @click="onRestorePref">重置</BasicButton>
         </BasicConfig>
