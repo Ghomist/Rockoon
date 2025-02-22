@@ -14,6 +14,7 @@ import { open } from "@tauri-apps/plugin-shell";
 import { open as browseFile } from "@tauri-apps/plugin-dialog";
 import { onMounted, ref } from "vue";
 import { convertFileSrc } from "@tauri-apps/api/core";
+import { checkUpdate } from "@/utils/updater";
 
 const pref = usePrefStore();
 
@@ -82,6 +83,10 @@ const onRestorePref = () => {
 
 const appVersion = ref("");
 const tauriVersion = ref("");
+const onCheckUpdate = async () => {
+  sendMessage("正在检查更新");
+  await checkUpdate();
+};
 
 // debug
 const debugContent = ref("欢迎使用 Rockoon！");
@@ -195,8 +200,14 @@ onMounted(() => {
       </BasicCollapse>
 
       <BasicCollapse title="关于 Rockoon">
-        <BasicConfig title="当前版本"> {{ appVersion }} </BasicConfig>
-        <BasicConfig title="Tauri 版本"> {{ tauriVersion }} </BasicConfig>
+        <BasicConfig title="当前版本">
+          <BasicButton @click="onCheckUpdate">
+            当前版本 {{ appVersion }}，点击检查更新
+          </BasicButton>
+        </BasicConfig>
+        <BasicConfig title="框架版本">
+          <BasicButton> Tauri - {{ tauriVersion }} </BasicButton>
+        </BasicConfig>
         <BasicConfig title="作者 Github">
           <a @click="open('https://github.com/Ghomist')"> @Ghomist </a>
         </BasicConfig>

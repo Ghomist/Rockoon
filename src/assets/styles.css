@@ -16,6 +16,11 @@
   -webkit-text-size-adjust: 100%;
 }
 
+:root {
+  /* make transparent window */
+  background: transparent;
+}
+
 body {
   user-select: none;
   -ms-user-select: none;
@@ -24,7 +29,8 @@ body {
 
   scrollbar-width: none;
 
-  margin: 0;
+  margin: 8px;
+  filter: drop-shadow(0 0 2px black);
 }
 
 ::-webkit-scrollbar {
