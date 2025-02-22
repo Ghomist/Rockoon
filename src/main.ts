@@ -6,6 +6,7 @@ import { createPinia } from "pinia";
 import { createApp } from "vue";
 import App from "./App.vue";
 import { initStores } from "./stores";
+import { checkUpdate } from "./utils/updater";
 
 const app = createApp(App);
 app.use(createPinia());
@@ -39,6 +40,8 @@ const init = async () => {
   // });
 
   await initStores();
+
+  await checkUpdate();
 };
 
 init();

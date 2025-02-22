@@ -1,6 +1,15 @@
 {
   "identifier": "desktop-capability",
-  "platforms": ["macOS", "windows", "linux"],
-  "windows": ["main"],
-  "permissions": ["positioner:allow-move-window"]
+  "platforms": [
+    "macOS",
+    "windows",
+    "linux"
+  ],
+  "windows": [
+    "main"
+  ],
+  "permissions": [
+    "positioner:allow-move-window",
+    "updater:default"
+  ]
 }
