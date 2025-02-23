@@ -38,7 +38,7 @@
   --color-text: #0f0f0f;
   --color-text-light: var(--color-ignore);
   --color-text-prime: var(--color-prime);
-  --color-text-invert: white;
+  --color-text-invert: var(--color-prime-invert);
 
   --box-background: rgba(255, 255, 255, 0.85);
   --box-background-no-trans: rgb(255, 255, 255);

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import app from "@/api/app";
 import BasicButton from "@/components/BasicButton.vue";
 import BasicCollapse from "@/components/BasicCollapse.vue";
 import BasicConfig from "@/components/BasicConfig.vue";
@@ -9,12 +10,12 @@ import SwitchButton from "@/components/SwitchButton.vue";
 import { usePrefStore } from "@/stores/pref";
 import { openDialog, sendMessage } from "@/utils/message";
 import storage from "@/utils/storage";
-import { getTauriVersion, getVersion } from "@tauri-apps/api/app";
-import { open } from "@tauri-apps/plugin-shell";
-import { open as browseFile } from "@tauri-apps/plugin-dialog";
-import { onMounted, ref } from "vue";
-import { convertFileSrc } from "@tauri-apps/api/core";
 import { checkUpdate } from "@/utils/updater";
+import { getTauriVersion, getVersion } from "@tauri-apps/api/app";
+import { convertFileSrc } from "@tauri-apps/api/core";
+import { open as browseFile } from "@tauri-apps/plugin-dialog";
+import { open } from "@tauri-apps/plugin-shell";
+import { onMounted, ref } from "vue";
 
 const pref = usePrefStore();
 
@@ -105,8 +106,8 @@ const onSendMessage = () => {
   sendMessage(debugContent.value);
 };
 
-const openDevtools = () => {
-  // TODO
+const openDevtools = async () => {
+  await app.openDevtools();
 };
 
 const clearStorage = () => {

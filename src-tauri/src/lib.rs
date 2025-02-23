@@ -21,6 +21,7 @@ pub fn run() {
             app::hide_window,
             app::show_window,
             app::toggle_window,
+            app::open_devtools,
             fs::exists,
             fs::size,
             fs::list,
