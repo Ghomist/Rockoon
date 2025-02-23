@@ -7,8 +7,9 @@ pub fn execute(cwd: String, bin: String) -> Result<u32, String> {
     Ok(child.id())
 }
 
+// TODO: 应校验，只允许关闭由启动器产生的线程
 #[cfg(target_os = "windows")]
-#[tauri::command] // TODO: 应校验，只允许关闭由启动器产生的线程
+#[tauri::command]
 pub fn kill(pid: u32) -> Result<(), String> {
     std::process::Command::new("taskkill")
         .args(["/pid", &pid.to_string(), "/f"])
@@ -17,8 +18,13 @@ pub fn kill(pid: u32) -> Result<(), String> {
     Ok(())
 }
 #[cfg(not(target_os = "windows"))]
-pub fn kill() -> Result<(), String> {
-    Err("Not support on your OS".into()) // TODO
+#[tauri::command]
+pub fn kill(pid: u32) -> Result<(), String> {
+    std::process::Command::new("kill")
+        .args(["-9", &pid.to_string()])
+        .spawn()
+        .map_err(|e| e.to_string())?;
+    Ok(())
 }
 
 #[cfg(target_os = "windows")]
@@ -41,6 +47,18 @@ pub fn check(pid: u32) -> Result<bool, String> {
     Ok(exists)
 }
 #[cfg(not(target_os = "windows"))]
+#[tauri::command]
 pub fn check(pid: u32) -> Result<bool, String> {
-    Err("Not support on your OS".into()) // TODO
+    let output = std::process::Command::new("ps")
+        .args(["-p", &pid.to_string()])
+        .output()
+        .map_err(|e| e.to_string())?;
+    if !output.status.success() {
+        return Err("Check process failed".into());
+    }
+
+    let output = String::from_utf8_lossy(&output.stdout);
+    let exists = output.contains("Player");
+
+    Ok(exists)
 }
