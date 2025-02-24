@@ -1,15 +1,27 @@
 import { usePrefStore } from "@/stores/pref";
+import { fetch } from "@tauri-apps/plugin-http";
 import storage from "./storage";
 
 const STORAGE_KEY = "ys-storage";
-const username = "ballancemaps";
-const indexLink = `/ballance-download/f_ht/ajcx/ml.aspx?cz=ml_dq&_dlmc=${username}&_dlmm=`;
-const fileListLink = `/ballance-download/f_ht/ajcx/wj.aspx?cz=dq&jsq=0&mlbh={index}&wjpx=1&_dlmc=${username}&_dlmm=`;
 
-const getYsHtml = async (url: string) => {
+const homeLink = "http://ballancemaps.ysepan.com/";
+const indexLink = `{baseUrl}/f_ht/ajcx/ml.aspx?cz=ml_dq&_dlmc={username}&_dlmm=`;
+const fileListLink = `{baseUrl}/f_ht/ajcx/wj.aspx?cz=dq&jsq=0&mlbh={index}&wjpx=1&_dlmc={username}&_dlmm=`;
+
+const escape = (s: string) =>
+  Array.from(
+    s,
+    c => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2)
+  ).join("");
+
+const getYsHtml = async (url: string, meta: any) => {
+  url = url.replace("{baseUrl}", meta.ccym).replace("{username}", meta.dlmc);
   let responseString = await fetch(url, {
     method: "GET",
-    referrer: "http://cg.ys168.com/f_ht/ajcx/000ht.html?bbh=1183"
+    referrer: `${meta.ccym}/f_ht/ajcx/000ht.html?bbh=${meta.bbh}`, // set for capacity
+    headers: {
+      referer: `${meta.ccym}/f_ht/ajcx/000ht.html?bbh=${meta.bbh}` // use unsafe-header
+    }
   })
     .then(response => response.text())
     .then(text => text.substring(text.indexOf("]") + 1))
@@ -50,6 +62,7 @@ const parseYsDate = (date: string) => {
  */
 export const fetchFiles = async (refresh = false) => {
   const cache = storage.getWithDefault<YsCache>(STORAGE_KEY, {
+    meta: {},
     folders: [],
     files: {}
   });
@@ -62,8 +75,20 @@ export const fetchFiles = async (refresh = false) => {
     return cache;
   }
 
+  const parser = new DOMParser();
+
+  const homeHtml = await fetch(homeLink).then(response => response.text());
+  const homePage = parser.parseFromString(homeHtml, "text/html");
+  const scriptText = homePage
+    .querySelector("script")
+    ?.innerText.replace(/document\.\w+\s*=\s*(.+?);/g, "");
+  cache.meta = new Function(
+    "global",
+    `with(global) { ${scriptText}; return _kj; }`
+  )({ _kj: null });
+
   // fetch folders
-  const folderHtml = await getYsHtml(indexLink);
+  const folderHtml = await getYsHtml(indexLink, cache.meta);
   cache.folders = Array.from(
     folderHtml.matchAll(
       /<li[^<>]+id="ml_([0-9]+)"[^<>]*>.*?<a [^<>]*>([^<>]+)<\/a><label>([^<>]+)?<\/label>.*?<\/li>/g
@@ -77,9 +102,9 @@ export const fetchFiles = async (refresh = false) => {
   // fetch files
   for (const index of cache.folders) {
     const htmlString = await getYsHtml(
-      fileListLink.replace("{index}", index.id)
+      fileListLink.replace("{index}", index.id),
+      cache.meta
     );
-    const parser = new DOMParser();
     const doc = parser.parseFromString(htmlString, "text/html");
     const list = [];
     for (const li of doc.querySelectorAll("li.xwj")) {

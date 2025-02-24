@@ -30,7 +30,7 @@ body {
   scrollbar-width: none;
 
   margin: 8px;
-  filter: drop-shadow(0 0 2px black);
+  filter: drop-shadow(0 0 4px rgba(0, 0, 0, 0.75));
 }
 
 ::-webkit-scrollbar {

@@ -21,7 +21,15 @@ type YsFile = {
 };
 /** 永硕云盘缓存 */
 type YsCache = {
+  /** 最近更新时间 */
   lastUpdate?: Date;
+
+  /** 网盘元信息 */
+  meta: { [key: string]: any };
+
+  /** 目录列表 */
   folders: YsFolder[];
+
+  /** 文件列表 */
   files: { [id: string]: YsFile[] };
 };

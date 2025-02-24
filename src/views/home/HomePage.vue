@@ -65,7 +65,11 @@ onUnmounted(() => {
         <p
           style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap"
         >
-          <BasicIcon icon="history-line" style="margin-right: 4px" />
+          <BasicIcon
+            icon="history-line"
+            size="small"
+            style="margin-right: 4px"
+          />
           {{ pref.recentInstance!.name }}
         </p>
       </BasicNavItem>

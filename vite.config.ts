@@ -27,13 +27,6 @@ export default defineConfig(async () => ({
     watch: {
       // 3. tell vite to ignore watching `src-tauri`
       ignored: ["**/src-tauri/**"]
-    },
-    proxy: {
-      "/ballance-download": {
-        target: "http://c6.ysepan.com",
-        changeOrigin: true,
-        rewrite: (path: string) => path.replace(/^\/ballance-download/, "")
-      }
     }
   },
   resolve: {
