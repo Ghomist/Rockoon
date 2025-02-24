@@ -77,15 +77,20 @@ export const fetchFiles = async (refresh = false) => {
 
   const parser = new DOMParser();
 
-  const homeHtml = await fetch(homeLink).then(response => response.text());
+  const homeHtml = await fetch(homeLink)
+    .then(response => response.text())
+    .then(text => text.replace(/<style>(.*?)<\/style>/g, ""));
   const homePage = parser.parseFromString(homeHtml, "text/html");
-  const scriptText = homePage
-    .querySelector("script")
-    ?.innerText.replace(/document\.\w+\s*=\s*(.+?);/g, "");
-  cache.meta = new Function(
-    "global",
-    `with(global) { ${scriptText}; return _kj; }`
-  )({ _kj: null });
+  let scriptText = homePage.querySelector("script")?.innerText;
+  if (scriptText) {
+    const script = scriptText.replace(/document\.\w+\s*=\s*(.+?);/g, "");
+    cache.meta = new Function(
+      "global",
+      `with(global) { ${script}; return _kj; }`
+    )({ _kj: null });
+  }
+
+  if (!cache.meta) throw Error("Cannot read meta");
 
   // fetch folders
   const folderHtml = await getYsHtml(indexLink, cache.meta);
