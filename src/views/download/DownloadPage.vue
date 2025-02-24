@@ -43,7 +43,10 @@ const onRefresh = async (refresh: boolean) => {
   loading.value = true;
   cache.value = await fetchFiles(refresh);
   loading.value = false;
-  if (refresh) sendMessage("刷新成功！");
+  if (refresh)
+    sendMessage(
+      `刷新成功！当前网盘文件数量为 ${Object.values(cache.value.files).flat().length} 个`
+    );
 };
 onMounted(() => onRefresh(false));
 </script>
@@ -68,7 +71,9 @@ onMounted(() => onRefresh(false));
       >
         <BasicIcon icon="refresh-2-line" />
         <span v-if="loading">刷新中...</span>
-        <span v-else> 上次刷新 {{ cache?.lastUpdate?.toLocaleTimeString() }} </span>
+        <span v-else>
+          上次刷新 {{ cache?.lastUpdate?.toLocaleTimeString() }}
+        </span>
       </BasicNavItem>
       <BasicNavItem
         name=""

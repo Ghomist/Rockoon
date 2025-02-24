@@ -75,19 +75,13 @@ export const fetchFiles = async (refresh = false) => {
     return cache;
   }
 
-  const parser = new DOMParser();
-
-  const homeHtml = await fetch(homeLink)
-    .then(response => response.text())
-    .then(text => text.replace(/<style>(.*?)<\/style>/g, ""));
-  const homePage = parser.parseFromString(homeHtml, "text/html");
-  let scriptText = homePage.querySelector("script")?.innerText;
-  if (scriptText) {
-    const script = scriptText.replace(/document\.\w+\s*=\s*(.+?);/g, "");
-    cache.meta = new Function(
-      "global",
-      `with(global) { ${script}; return _kj; }`
-    )({ _kj: null });
+  const homeHtml = await fetch(homeLink).then(response => response.text());
+  const match = homeHtml.match(/_kj\s*=\s*(\{[^}]+\})/);
+  if (match) {
+    const jsonText = match[1]
+      .replace(/([\w]+):(?!\/\/)/g, '"$1":')
+      .replace(/'/g, '"');
+    cache.meta = JSON.parse(jsonText);
   }
 
   if (!cache.meta) throw Error("Cannot read meta");
@@ -110,20 +104,18 @@ export const fetchFiles = async (refresh = false) => {
       fileListLink.replace("{index}", index.id),
       cache.meta
     );
-    const doc = parser.parseFromString(htmlString, "text/html");
-    const list = [];
-    for (const li of doc.querySelectorAll("li.xwj")) {
-      const a = li.getElementsByTagName("a")[0];
-      list.push({
-        category: index.name,
-        filename: a.text,
-        url: a.href,
-        size: li.getElementsByTagName("i")[0]?.innerText ?? "",
-        notes: li.getElementsByTagName("b")[0]?.innerText ?? "",
-        uploadTime: parseYsDate(a.title)
-      } as YsFile);
-    }
-    cache.files[index.id] = list;
+    cache.files[index.id] = Array.from(
+      htmlString.matchAll(
+        /<li\b[^>]*>.*?<a\b[^>]*?href="([^"]*)"[^>]*?title="([^"]*)"[^>]*?>([\s\S]*?)<\/a>\s*<i>([\s\S]*?)<\/i>\s*<b>([\s\S]*?)<\/b>\s*<span>[\s\S]*?<\/span>/gis
+      )
+    ).map<YsFile>(matches => ({
+      category: index.name,
+      filename: matches[3],
+      url: matches[1],
+      size: matches[4],
+      notes: matches[5] ?? "",
+      uploadTime: parseYsDate(matches[2])
+    }));
   }
 
   // update time
