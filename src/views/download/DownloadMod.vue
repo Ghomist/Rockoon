@@ -11,6 +11,7 @@ import { download } from "@tauri-apps/plugin-upload";
 import { h, onMounted, ref } from "vue";
 import InstanceSelection from "./InstanceSelection.vue";
 import ModDetails from "./ModDetails.vue";
+import fs from "@/api/fs";
 
 const props = defineProps<{
   cache: YsCache;
@@ -47,25 +48,26 @@ const onDownload = (file: YsFile) => {
     sureText: "开始下载",
     onSure: () => {
       const selectionRef = ref<InstanceType<typeof InstanceSelection>>();
-      openDialog(() => h(InstanceSelection, { ref: selectionRef }), {
-        title: "下载位置",
-        sureText: "开始下载",
-        onSure: async () => {
-          if (selectionRef.value?.selectedPath) {
-            const filePath = await join(
-              selectionRef.value.selectedPath,
-              "ModLoader",
-              "Mods",
-              file.filename
-            );
-            sendMessage(`开始下载 ${file.filename}`);
-            await download(file.url, filePath);
-            sendMessage(`${file.filename} 下载完成！`);
-          } else {
-            sendMessage("未选择游戏，下载取消");
+      openDialog(
+        () => h(InstanceSelection, { ref: selectionRef, checkBml: true }),
+        {
+          title: "下载位置",
+          sureText: "开始下载",
+          onSure: async () => {
+            const instance = selectionRef.value?.selectedPath();
+            if (instance) {
+              sendMessage(`开始下载 ${file.filename}`);
+              const modsFolder = await join(instance, "ModLoader", "Mods");
+              await fs.mkdir(modsFolder);
+              const filePath = await join(modsFolder, file.filename);
+              await download(file.url, filePath);
+              sendMessage(`${file.filename} 下载完成！`);
+            } else {
+              sendMessage("未选择游戏，下载取消");
+            }
           }
         }
-      });
+      );
     }
   });
 };

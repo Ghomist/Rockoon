@@ -8,7 +8,14 @@ import SwitchButton from "@/components/SwitchButton.vue";
 import { useAppStore } from "@/stores/app";
 import { withDefault } from "@/utils/common";
 import { join } from "@tauri-apps/api/path";
-import { computed, onMounted, ref, watch } from "vue";
+import {
+  computed,
+  onMounted,
+  onUnmounted,
+  ref,
+  watch,
+  WatchHandle
+} from "vue";
 import NoneSelectedPage from "./NoneSelectedPage.vue";
 
 const app = useAppStore();
@@ -28,10 +35,16 @@ const savePlayerIni = async () => {
     await ballance.saveLaunchConfig(iniPath, playerConfig.value);
   }
 };
+
+let watchHandles: WatchHandle[] = [];
 onMounted(async () => {
   await readPlayerIni();
-  watch(playerConfig, savePlayerIni, { deep: true });
-  watch(instance, readPlayerIni);
+
+  watchHandles.push(watch(playerConfig, savePlayerIni, { deep: true }));
+  watchHandles.push(watch(instance, readPlayerIni));
+});
+onUnmounted(() => {
+  watchHandles.forEach(w => w.stop());
 });
 </script>
 

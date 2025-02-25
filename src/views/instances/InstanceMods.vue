@@ -11,7 +11,16 @@ import { openDialog, sendMessage } from "@/utils/message";
 import { join } from "@tauri-apps/api/path";
 import { open as browseFile } from "@tauri-apps/plugin-dialog";
 import { open } from "@tauri-apps/plugin-shell";
-import { computed, h, nextTick, ref } from "vue";
+import {
+  computed,
+  h,
+  nextTick,
+  onMounted,
+  onUnmounted,
+  ref,
+  watchEffect,
+  WatchHandle
+} from "vue";
 import ExtraButtons from "./components/ExtraButtons.vue";
 import ModConfig from "./components/ModConfig.vue";
 
@@ -148,6 +157,10 @@ const modConfigExtraButtons = [
     callback: readConfigs
   }
 ];
+
+let watchHandle: WatchHandle;
+onMounted(() => (watchHandle = watchEffect(readMods)));
+onUnmounted(() => watchHandle?.stop());
 </script>
 
 <template>

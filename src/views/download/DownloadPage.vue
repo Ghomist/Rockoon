@@ -14,13 +14,8 @@ import DownloadMod from "./DownloadMod.vue";
 
 const loading = ref(true);
 const cache = ref<YsCache>();
-const subPage = ref("game");
+const subPage = ref("maps");
 const subPageData = [
-  {
-    label: "游戏本体",
-    value: "game",
-    page: DownloadGame
-  },
   {
     label: "自制地图",
     value: "maps",
@@ -30,6 +25,11 @@ const subPageData = [
     label: "模组插件",
     value: "mods",
     page: DownloadMod
+  },
+  {
+    label: "游戏本体",
+    value: "game",
+    page: DownloadGame
   }
   // {
   //   label: "全部文件",

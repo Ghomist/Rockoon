@@ -7,7 +7,7 @@ import BasicSlider from "@/components/BasicSlider.vue";
 import BasicSwitch from "@/components/BasicSwitch.vue";
 import { useAppStore } from "@/stores/app";
 import { useFileStore } from "@/stores/fs";
-import { getKeyName } from "@/utils/ballance";
+import { getKeyName } from "@/utils/key";
 import { keyboardDialog, openDialog, sendMessage } from "@/utils/message";
 import { open } from "@tauri-apps/plugin-shell";
 import { computed, reactive } from "vue";

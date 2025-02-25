@@ -38,7 +38,7 @@ const checklists: {
 type ChecklistType = keyof typeof checklists;
 
 /** 检查清单上的所有文件是否存在 */
-const checkFiles = async (
+export const checkFiles = async (
   baseFolder: string,
   checklist: ChecklistType
 ): Promise<Set<string> | null> => {

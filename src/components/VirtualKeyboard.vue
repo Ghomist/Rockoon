@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { getKeyByPhysicCode, getKeyName, keySchema } from "@/utils/ballance";
+import { getKeyByPhysicCode, getKeyName, keySchema } from "@/utils/key";
 import { onMounted, onUnmounted, ref } from "vue";
 import SwitchButton from "./SwitchButton.vue";
 import { sendMessage } from "@/utils/message";

@@ -1,5 +1,7 @@
 <script setup lang="ts">
-defineProps<{
+import { onMounted, onUnmounted, ref, watchEffect, WatchHandle } from "vue";
+
+const props = defineProps<{
   name: string;
   selected?: boolean;
 }>();
@@ -7,10 +9,26 @@ defineProps<{
 const emits = defineEmits<{
   (event: "clicked", name: string): void;
 }>();
+
+const elRef = ref<HTMLElement>();
+
+const autoScroll = () => {
+  if (elRef.value && props.selected) {
+    elRef.value.scrollIntoView({
+      behavior: "smooth",
+      block: "center"
+    });
+  }
+};
+
+let watchHandle: WatchHandle;
+onMounted(() => (watchHandle = watchEffect(autoScroll)));
+onUnmounted(() => watchHandle?.stop());
 </script>
 
 <template>
   <div
+    ref="elRef"
     class="basic-list-item"
     :class="{ selected }"
     @click.prevent="emits('clicked', name)"

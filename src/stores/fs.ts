@@ -60,20 +60,22 @@ export const useFileStore = defineStore(FILE_STORE_KEY, {
       path: string,
       folderType: "map" | "mod" | "modCfg" | "bb"
     ) {
-      return await fs.list(
-        await {
-          map: join(path, "ModLoader", "Maps"),
-          mod: join(path, "ModLoader", "Mods"),
-          modCfg: join(path, "ModLoader", "Configs"),
-          bb: join(path, "BuildingBlocks")
-        }[folderType],
-        {
-          map: ["nmo"],
-          mod: ["bmod", "bmodp", "zip"],
-          modCfg: ["cfg"],
-          bb: ["dll"]
-        }[folderType]
-      );
+      return await fs
+        .list(
+          await {
+            map: join(path, "ModLoader", "Maps"),
+            mod: join(path, "ModLoader", "Mods"),
+            modCfg: join(path, "ModLoader", "Configs"),
+            bb: join(path, "BuildingBlocks")
+          }[folderType],
+          {
+            map: ["nmo"],
+            mod: ["bmod", "bmodp", "zip"],
+            modCfg: ["cfg"],
+            bb: ["dll"]
+          }[folderType]
+        )
+        .catch(() => []);
     }
   }
 });

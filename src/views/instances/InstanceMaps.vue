@@ -10,7 +10,15 @@ import { openDialog, sendMessage } from "@/utils/message";
 import { join } from "@tauri-apps/api/path";
 import { open as browseFile } from "@tauri-apps/plugin-dialog";
 import { open } from "@tauri-apps/plugin-shell";
-import { computed, reactive, ref } from "vue";
+import {
+  computed,
+  onMounted,
+  onUnmounted,
+  reactive,
+  ref,
+  watchEffect,
+  WatchHandle
+} from "vue";
 import ExtraButtons from "./components/ExtraButtons.vue";
 
 const app = useAppStore();
@@ -64,6 +72,10 @@ const mapsExtraButtons = reactive([
     callback: readMaps
   }
 ]);
+
+let watchHandle: WatchHandle;
+onMounted(() => (watchHandle = watchEffect(readMaps)));
+onUnmounted(() => watchHandle?.stop());
 </script>
 
 <template>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import fs from "@/api/fs";
+import BasicBlock from "@/components/BasicBlock.vue";
 import BasicButton from "@/components/BasicButton.vue";
 import BasicCollapse from "@/components/BasicCollapse.vue";
 import BasicConfig from "@/components/BasicConfig.vue";
@@ -148,6 +149,9 @@ const onInstall = async () => {
 
 <template>
   <div>
+    <BasicBlock>
+      <p class="light">该功能尚不完善，暂不推荐在此处下载游戏本体！仅供测试使用</p>
+    </BasicBlock>
     <BasicCollapse title="下载游戏" open>
       <BasicConfig
         title="游戏名称"
