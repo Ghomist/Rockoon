@@ -26,12 +26,18 @@ export const initStores = async () => {
 
   // auto load theme and color
   const html = document.getElementsByTagName("html")[0];
+  const body = document.getElementsByTagName("body")[0];
   const loadTheme = () => {
     html.className = `theme-${prefStore.theme}`;
     if (prefStore.theme === "custom" && prefStore.customThemeColor) {
       html.style.setProperty("--color-prime", prefStore.customThemeColor);
     } else {
       html.style.removeProperty("--color-prime");
+    }
+    if (prefStore.isMaximized) {
+      body.classList.add("on-maximized");
+    } else {
+      body.classList.remove("on-maximized");
     }
   };
   prefStore.$subscribe(loadTheme);

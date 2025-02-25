@@ -101,6 +101,7 @@ const subPageData = computed(() => {
           v-for="x in fs.instances"
           :name="x.path"
           :selected="app.selected?.path === x.path"
+          auto-scroll
           @clicked="app.changeSelect(x.path)"
         >
           <p

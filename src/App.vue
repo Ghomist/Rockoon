@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { getVersion } from "@tauri-apps/api/app";
 import { computed, onMounted } from "vue";
 import BasicMessage from "./components/BasicMessage.vue";
 import { useAppStore } from "./stores/app";
@@ -44,19 +45,21 @@ const currentPage = computed(
   () => pageSchema.find(x => x.key === app.page)!.component
 );
 
-onMounted(() => {
-  sendMessage("欢迎使用 Rockoon！");
+onMounted(async () => {
+  const ver = await getVersion();
+  sendMessage(`欢迎使用 Rockoon！当前版本 <b>${ver}</b>`);
 });
 </script>
 
 <template>
   <div class="container">
-    <div class="header">
+    <div class="header" :class="{ onMaximized: pref.isMaximized }">
       <Header></Header>
     </div>
     <div
       id="content-container"
       class="content"
+      :class="{ onMaximized: pref.isMaximized }"
       :style="{
         '--bg-blur': pref.backgroundBlur + 'px',
         '--custom-background-image': pref.backgroundImage,
@@ -65,14 +68,9 @@ onMounted(() => {
       }"
     >
       <div v-if="pref.backgroundImage" class="content-custom-bg" />
-      <video
-        v-else-if="pref.enableBgv"
-        class="content-bgv"
-        src="/menu_level_compressed.mp4"
-        autoplay
-        loop
-        muted
-      />
+      <video v-else-if="pref.enableBgv" class="content-bgv" autoplay loop muted>
+        <source src="/menu_level_compressed.mp4" type="video/mp4" />
+      </video>
       <div class="content-bg-blur" />
       <div class="content-bg-mask" />
       <Transition name="fade" mode="out-in">
@@ -110,6 +108,10 @@ onMounted(() => {
   border-radius: 8px 8px 0 0;
 
   background-color: var(--color-prime);
+
+  &.onMaximized {
+    border-radius: 0;
+  }
 }
 
 .content {
@@ -121,6 +123,11 @@ onMounted(() => {
 
   & > * {
     position: absolute;
+  }
+
+  &.onMaximized {
+    height: calc(100vh - 54px);
+    border-radius: 0;
   }
 }
 .content-bg-blur {
@@ -141,11 +148,11 @@ onMounted(() => {
 .content-bgv {
   position: absolute;
   inset: 0;
-  scale: 1.1;
-  object-fit: cover;
+  min-width: 100%;
+  min-height: 100%;
   z-index: -1;
+  object-fit: cover;
   overflow: clip;
-  filter: saturate(1.5);
 }
 
 #message-service {

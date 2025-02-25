@@ -56,6 +56,15 @@ type PreferenceStore = {
   /** 自定义主题色 */
   customThemeColor?: string;
 
+  /** 窗口是否最大化 */
+  isMaximized?: boolean;
+
+  /** 窗口高度 */
+  windowHeight?: number;
+
+  /** 窗口宽度 */
+  windowWidth?: number;
+
   /** 下载站索引过期时间（分钟） */
   indexExpireTime: number;
 };

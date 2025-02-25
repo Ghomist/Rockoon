@@ -31,6 +31,11 @@ body {
 
   margin: 8px;
   filter: drop-shadow(0 0 4px rgba(0, 0, 0, 0.75));
+
+  &.on-maximized {
+    margin: 0;
+    filter: none;
+  }
 }
 
 ::-webkit-scrollbar {
@@ -77,7 +82,7 @@ h1 {
   transition: all 200ms;
 }
 
-@media (prefers-color-scheme: dark) {
+/* @media (prefers-color-scheme: dark) {
   :root {
     color: #f6f6f6;
     background-color: #2f2f2f;
@@ -96,4 +101,4 @@ h1 {
   button:active {
     background-color: #0f0f0f69;
   }
-}
+} */

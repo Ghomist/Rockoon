@@ -7,6 +7,7 @@ import { createApp } from "vue";
 import App from "./App.vue";
 import { initStores } from "./stores";
 import { checkUpdate } from "./utils/updater";
+import { initWindowSize } from "./utils/window";
 
 const app = createApp(App);
 app.use(createPinia());
@@ -40,6 +41,8 @@ const init = async () => {
   // });
 
   await initStores();
+
+  await initWindowSize();
 
   await checkUpdate(true);
 };

@@ -4,6 +4,7 @@ import { onMounted, onUnmounted, ref, watchEffect, WatchHandle } from "vue";
 const props = defineProps<{
   name: string;
   selected?: boolean;
+  autoScroll?: boolean;
 }>();
 
 const emits = defineEmits<{
@@ -13,7 +14,7 @@ const emits = defineEmits<{
 const elRef = ref<HTMLElement>();
 
 const autoScroll = () => {
-  if (elRef.value && props.selected) {
+  if (props.autoScroll && elRef.value && props.selected) {
     elRef.value.scrollIntoView({
       behavior: "smooth",
       block: "center"

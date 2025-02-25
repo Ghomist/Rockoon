@@ -181,7 +181,11 @@ onMounted(() => {
         </BasicConfig>
         <BasicConfig
           title="启用 Menu Level 动态背景"
-          :tooltip="pref.backgroundImage ? '禁用自定义背景图以生效' : undefined"
+          :tooltip="
+            pref.backgroundImage
+              ? '检测到自定义背景图，已自动禁用动态背景'
+              : '若启动器出现明显卡顿建议关闭此选项'
+          "
         >
           <BasicSwitch v-model="pref.enableBgv" />
         </BasicConfig>
@@ -198,7 +202,10 @@ onMounted(() => {
         >
           <BasicSlider v-model="pref.maskOpacity" percentage />
         </BasicConfig>
-        <BasicConfig title="自定义背景图" tooltip="会自动禁用默认的动态背景">
+        <BasicConfig
+          title="自定义背景图"
+          tooltip="支持动图，但部分图片可能无法显示"
+        >
           <BasicButton @click="onChangeBackgroundImage">
             {{ pref.backgroundImage ? "更换" : "选择" }}
           </BasicButton>
@@ -211,7 +218,7 @@ onMounted(() => {
         </BasicConfig>
       </BasicCollapse>
 
-      <BasicCollapse title="关于 Rockoon">
+      <BasicCollapse title="关于 Rockoon" open>
         <BasicConfig title="当前版本">
           <BasicButton @click="onCheckUpdate">
             当前版本 {{ appVersion }}，点击检查更新

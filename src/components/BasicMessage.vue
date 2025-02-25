@@ -5,9 +5,7 @@ defineProps<{
 </script>
 
 <template>
-  <div class="basic-message-container">
-    {{ message }}
-  </div>
+  <div class="basic-message-container" v-html="message" />
 </template>
 
 <style scoped>

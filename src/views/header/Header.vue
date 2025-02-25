@@ -61,6 +61,10 @@ const groupOthers = reactive<NavSchema[]>([
     action: () => window.minimize()
   },
   {
+    icon: "square-line",
+    action: () => window.toggleMaximize()
+  },
+  {
     icon: "close-line",
     action: () => window.close()
   }
