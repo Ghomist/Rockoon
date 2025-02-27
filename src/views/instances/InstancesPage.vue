@@ -55,7 +55,7 @@ const subPage = ref("basic");
 const subPageData = computed(() => {
   const data = [
     {
-      label: "基本信息",
+      label: "基本设置",
       value: "basic",
       page: InstanceOptions
     },

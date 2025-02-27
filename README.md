@@ -2,13 +2,16 @@
 
 Rockoon 是一款集成了**下载、管理、启动**于一体的 Ballance 启动器。
 
-特性列表：
+本启动器借助 [Tauri 2.0](https://v2.tauri.app/) 开发，需要 webview 才能正常运行与显示。最低支持的系统以及 webview 版本参见[官方文档](https://v2.tauri.app/reference/webview-versions/)。
+
+功能列表：
 
 - 启动 Ballance
 - 管理 Ballance 实例
   - 外部更改游戏设置
   - 解锁原版关卡
   - 修改、重置排行榜
+  - 预览、修改天空盒（自定义背景）
   - BML/BMLPlus 支持
     - 管理自制地图
     - 管理 Mod（禁用 Mod）
@@ -30,17 +33,17 @@ Rockoon 是一款集成了**下载、管理、启动**于一体的 Ballance 启�
 - `node.js v22.13.1`
 - `pnpm 9.15.4`
 
-安装依赖并启动：
+安装依赖并以调试模式启动：
 
 ```shell
 pnpm install
 pnpm tauri dev
 ```
 
-构建：
+也支持仅启动 vite（前端调试）：
 
 ```shell
-pnpm tauri build
+pnpm dev
 ```
 
 ## 引用与鸣谢
@@ -56,4 +59,4 @@ Rockoon 是致力于做到 Ballance 社区 All-in-One 的项目，而这注定�
 
 其它引用：
 
-- 目前 Ballance 游戏以及相关插件的文件托管于 Gitee 仓库 [RockoonResources](https://gitee.com/ghomist/rockoon-resources/releases/tag/v1.0.0)，便于国内用户下载
+- 目前 Ballance 游戏以及相关插件的文件**临时**托管于 Gitee 仓库 [RockoonResources](https://gitee.com/ghomist/rockoon-resources/releases/tag/v1.0.0)，便于国内用户下载

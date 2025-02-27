@@ -85,7 +85,7 @@ const onRemoveInstance = () => {
       </p>
     </BasicConfig>
   </BasicCollapse>
-  <BasicCollapse title="游戏设置" open>
+  <BasicCollapse title="游戏设置">
     <BasicConfig title="音乐音量" tooltip="此选项不影响音效音量">
       <BasicSlider v-model="instance.options.volume" :percentage="true" />
     </BasicConfig>
@@ -99,7 +99,7 @@ const onRemoveInstance = () => {
       <BasicSwitch v-model="instance.options.invertCamRotation" />
     </BasicConfig>
   </BasicCollapse>
-  <BasicCollapse title="按键绑定" open>
+  <BasicCollapse title="按键绑定">
     <BasicConfig v-for="k in keyBindings" :key="k.key" :title="k.name">
       <BasicButton @click="onEditingKey(k.key, k.name)">
         {{ getKeyName(instance.options[k.key]) }}

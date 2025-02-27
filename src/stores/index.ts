@@ -1,9 +1,11 @@
 import ballance from "@/api/ballance";
+import { checkBallanceFolder } from "@/utils/instance";
+import { join } from "@tauri-apps/api/path";
+import { watch } from "vue";
 import { useAppStore } from "./app";
 import { useFileStore } from "./fs";
-import { join } from "@tauri-apps/api/path";
 import { usePrefStore } from "./pref";
-import { checkBallanceFolder } from "@/utils/instance";
+import { debounce } from "@/utils/common";
 
 export const initStores = async () => {
   const appStore = useAppStore();
@@ -21,8 +23,8 @@ export const initStores = async () => {
   }
 
   // auto save instance options
-  prefStore.$subscribe(() => prefStore.save());
-  fileStore.$subscribe(() => fileStore.save());
+  prefStore.$subscribe(debounce(prefStore.save));
+  fileStore.$subscribe(debounce(fileStore.save));
 
   // auto load theme and color
   const html = document.getElementsByTagName("html")[0];
@@ -40,23 +42,27 @@ export const initStores = async () => {
       body.classList.remove("on-maximized");
     }
   };
-  prefStore.$subscribe(loadTheme);
+  watch(
+    [
+      () => prefStore.theme,
+      () => prefStore.customThemeColor,
+      () => prefStore.isMaximized
+    ],
+    loadTheme
+  );
 
   // init theme
   loadTheme();
 
   // dump instance options
-  appStore.$subscribe(
-    () => {
-      if (appStore.selected) {
-        const instance = appStore.selected!;
-        join(instance.path, "Database.tdb").then(path => {
-          ballance.saveOptions(path, instance.options);
-        });
-      }
+  watch(
+    () => appStore.selected?.options,
+    async () => {
+      if (!appStore.selected) return;
+      const instance = appStore.selected;
+      const dbPath = await join(instance.path, "Database.tdb");
+      await ballance.saveOptions(dbPath, instance.options);
     },
-    {
-      deep: true
-    }
+    { deep: true }
   );
 };

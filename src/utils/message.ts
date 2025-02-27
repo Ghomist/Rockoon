@@ -1,26 +1,19 @@
-import BasicDialog from "@/components/BasicDialog.vue";
+import BasicDialog, { DialogArgs } from "@/components/BasicDialog.vue";
 import VirtualKeyboard from "@/components/VirtualKeyboard.vue";
 import { useAppStore } from "@/stores/app";
 import { App, createApp, h, ref, VNode } from "vue";
 import { withDefault } from "./common";
 
-export type DialogArgs = {
-  title?: string;
-  footer?: boolean;
-  sure?: boolean;
-  cancel?: boolean;
-  sureText?: string;
-  cancelText?: string;
-  onSure?: () => void;
-  onCancel?: () => void;
-  onClose?: (sure: boolean) => void;
-  lock?: boolean;
-  parent?: "body" | "content";
-  width?: string;
-};
 export const openDialog = (
   content: string | (() => VNode),
-  args?: DialogArgs
+  args?: DialogArgs & {
+    onSure?: () => void;
+    onCancel?: () => void;
+    onClose?: (sure: boolean) => void;
+    onDestroy?: () => void;
+  } & {
+    parent?: "body" | "content";
+  }
 ) => {
   let component: App;
   const div = document.createElement("div");

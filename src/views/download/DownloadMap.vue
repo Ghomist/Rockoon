@@ -15,7 +15,7 @@ import fs from "@/api/fs";
 const props = defineProps<{
   cache: YsCache;
 }>();
-const categories = ["地图", "制图", "专业竞速", "访客上传"];
+const categories = ["地图", "制图", "专业竞速"];
 const maps = ref<YsFile[]>([]);
 
 const filterText = ref("");
@@ -35,7 +35,8 @@ const onSearch = () => {
       )
     );
   } else {
-    result = maps.value;
+    // use [new] category maps on non-filter
+    result = maps.value.filter(x => x.category.includes("NEW"));
   }
   if (!showSpecialMap.value) {
     result = result.filter(x => x.filename.toLowerCase().endsWith(".nmo"));

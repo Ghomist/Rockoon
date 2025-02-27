@@ -225,7 +225,9 @@ onMounted(() => {
           </BasicButton>
         </BasicConfig>
         <BasicConfig title="框架版本">
-          <BasicButton> Tauri - {{ tauriVersion }} </BasicButton>
+          <BasicButton @click="open('https://v2.tauri.app')">
+            Tauri {{ tauriVersion }}
+          </BasicButton>
         </BasicConfig>
         <BasicConfig title="作者 Github">
           <a @click="open('https://github.com/Ghomist')"> @Ghomist </a>
@@ -236,7 +238,13 @@ onMounted(() => {
           </a>
         </BasicConfig>
         <BasicConfig title="相关站点引用 / 特别鸣谢">
-          <a @click="open('https://github.com/Ghomist/Rockoon')">
+          <a
+            @click="
+              open(
+                'https://github.com/Ghomist/Rockoon?tab=readme-ov-file#引用与鸣谢'
+              )
+            "
+          >
             参见 Rockoon 仓库 README
           </a>
         </BasicConfig>

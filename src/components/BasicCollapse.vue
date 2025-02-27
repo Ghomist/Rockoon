@@ -3,17 +3,24 @@ import { onMounted, onUnmounted, ref } from "vue";
 import BasicBlock from "./BasicBlock.vue";
 import BasicIcon from "./BasicIcon.vue";
 
-const props = defineProps({
-  open: { type: Boolean, default: () => false },
-  title: { type: String, required: true },
-  summary: String
-});
+const props = withDefaults(
+  defineProps<{
+    title: string;
+    summary?: string;
+    open?: boolean;
+    empty?: string;
+  }>(),
+  {
+    open: false,
+    empty: "内容为空"
+  }
+);
 
 const emits = defineEmits<{
   (event: "expand"): void;
 }>();
 
-const content = ref<HTMLDivElement>();
+const contentRef = ref<HTMLDivElement>();
 const contentHeight = ref("0px");
 const expand = ref(props.open);
 const onClick = () => {
@@ -22,18 +29,24 @@ const onClick = () => {
 };
 
 const updateHeight = () => {
-  let height = 0;
-  const cnt = content.value?.childElementCount ?? 0;
-  for (let i = 0; i < cnt; ++i) {
-    height += (content.value?.children[i] as HTMLElement).offsetHeight;
+  const contentEl = contentRef.value!;
+  const children = Array.from(contentEl.children);
+  let height;
+  if (children.length < 50) {
+    height = children.reduce(
+      (acc, el) => acc + (el as HTMLElement).offsetHeight,
+      0
+    );
+  } else {
+    height = children.length * (children[0] as HTMLElement).offsetHeight;
   }
-  contentHeight.value = height + "px";
+  contentHeight.value = `${height}px`;
 };
 
 let observer: MutationObserver | null = null;
 onMounted(() => {
   observer = new MutationObserver(updateHeight);
-  observer.observe(content.value!, { childList: true });
+  observer.observe(contentRef.value!, { childList: true });
   updateHeight();
   if (props.open) emits("expand");
 });
@@ -44,7 +57,7 @@ onUnmounted(() => {
 
 <template>
   <BasicBlock style="overflow: hidden">
-    <div class="basic-collapse-title anim" @click.prevent="onClick">
+    <div class="basic-collapse-title" @click.prevent="onClick">
       <div>
         <span
           style="
@@ -72,17 +85,20 @@ onUnmounted(() => {
         </div>
       </div>
     </div>
+
     <div
-      ref="content"
+      ref="contentRef"
       class="basic-collapse-content anim"
       :style="{
         height: expand ? contentHeight : '0px',
-        opacity: expand ? 1 : 0,
         paddingTop: expand ? '8px' : '0px'
       }"
     >
-      <slot></slot>
+      <template v-if="expand">
+        <slot></slot>
+      </template>
     </div>
+    <p class="light" v-if="expand && contentHeight === '0px'">{{ empty }}</p>
   </BasicBlock>
 </template>
 

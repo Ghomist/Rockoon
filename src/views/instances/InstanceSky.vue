@@ -47,7 +47,7 @@ const onClickSky = (sky: string, level: number) => {
       ]),
     {
       title: `第${level + 1}关 Sky_${sky}`,
-      width: "68%",
+      maxWidth: "none",
       sureText: "更换背景",
       onSure: () => {
         sendMessage("暂不支持，敬请期待");
@@ -58,7 +58,6 @@ const onClickSky = (sky: string, level: number) => {
 
 let handle: WatchHandle;
 onMounted(async () => {
-  await updateSkyPath();
   handle = watchEffect(updateSkyPath);
 });
 onUnmounted(() => {

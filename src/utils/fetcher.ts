@@ -8,6 +8,8 @@ const homeLink = "http://ballancemaps.ysepan.com/";
 const indexLink = `{baseUrl}/f_ht/ajcx/ml.aspx?cz=ml_dq&_dlmc={username}&_dlmm=`;
 const fileListLink = `{baseUrl}/f_ht/ajcx/wj.aspx?cz=dq&jsq=0&mlbh={index}&wjpx=1&_dlmc={username}&_dlmm=`;
 
+const folderFilters = ["Ballance", "地图", "专业竞速"];
+
 const escape = (s: string) =>
   Array.from(
     s,
@@ -92,11 +94,15 @@ export const fetchFiles = async (refresh = false) => {
     folderHtml.matchAll(
       /<li[^<>]+id="ml_([0-9]+)"[^<>]*>.*?<a [^<>]*>([^<>]+)<\/a><label>([^<>]+)?<\/label>.*?<\/li>/g
     )
-  ).map(matches => ({
-    id: matches[1],
-    name: matches[2],
-    notes: matches[3] ?? ""
-  }));
+  )
+    .map(matches => ({
+      id: matches[1],
+      name: matches[2],
+      notes: matches[3] ?? ""
+    }))
+    .filter(folder =>
+      folderFilters.some(filter => folder.name.includes(filter))
+    );
 
   // fetch files
   for (const index of cache.folders) {

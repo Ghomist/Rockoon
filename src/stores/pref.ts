@@ -18,8 +18,6 @@ export const usePrefStore = defineStore(PREF_STORE_KEY, {
       backgroundImage: undefined,
       customThemeColor: "#888",
       isMaximized: undefined,
-      windowHeight: undefined,
-      windowWidth: undefined,
       indexExpireTime: 120
     }),
   getters: {

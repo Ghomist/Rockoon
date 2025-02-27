@@ -8,14 +8,9 @@ import SwitchButton from "@/components/SwitchButton.vue";
 import { useAppStore } from "@/stores/app";
 import { withDefault } from "@/utils/common";
 import { join } from "@tauri-apps/api/path";
-import {
-  computed,
-  onMounted,
-  onUnmounted,
-  ref,
-  watch,
-  WatchHandle
-} from "vue";
+import { open } from "@tauri-apps/plugin-shell";
+import { computed, onMounted, onUnmounted, ref, watch, WatchHandle } from "vue";
+import ExtraButtons from "./components/ExtraButtons.vue";
 import NoneSelectedPage from "./NoneSelectedPage.vue";
 
 const app = useAppStore();
@@ -36,12 +31,22 @@ const savePlayerIni = async () => {
   }
 };
 
+const extraButtons = [
+  {
+    icon: "folder-open-line",
+    callback: async () => {
+      const binFolder = await join(instance.value.path, "Bin");
+      open(binFolder);
+    }
+  }
+];
+
 let watchHandles: WatchHandle[] = [];
 onMounted(async () => {
   await readPlayerIni();
 
   watchHandles.push(watch(playerConfig, savePlayerIni, { deep: true }));
-  watchHandles.push(watch(instance, readPlayerIni));
+  watchHandles.push(watch(() => app.selected, readPlayerIni));
 });
 onUnmounted(() => {
   watchHandles.forEach(w => w.stop());
@@ -51,6 +56,9 @@ onUnmounted(() => {
 <template>
   <template v-if="instance.newPlayer && playerConfig">
     <BasicCollapse title="常用启动项" open>
+      <template #buttons>
+        <ExtraButtons :schema="extraButtons" />
+      </template>
       <BasicConfig
         title="跳过启动动画"
         tooltip="跳过打开游戏时的 Atari 以及 Ballance 动画"

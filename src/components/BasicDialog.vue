@@ -3,26 +3,26 @@ import { onMounted, ref } from "vue";
 import BasicBlock from "./BasicBlock.vue";
 import BasicButton from "./BasicButton.vue";
 
-const props = withDefaults(
-  defineProps<{
-    title?: string;
-    content?: string;
-    footer?: boolean;
-    sure?: boolean;
-    cancel?: boolean;
-    sureText?: string;
-    cancelText?: string;
-    lock?: boolean;
-    width?: string;
-  }>(),
-  {
-    footer: true,
-    sure: true,
-    cancel: true,
-    sureText: "确认",
-    cancelText: "取消"
-  }
-);
+export type DialogArgs = {
+  title?: string;
+  content?: string;
+  footer?: boolean;
+  sure?: boolean;
+  cancel?: boolean;
+  sureText?: string;
+  cancelText?: string;
+  lock?: boolean;
+  width?: string;
+  maxWidth?: string;
+};
+
+const props = withDefaults(defineProps<DialogArgs>(), {
+  footer: true,
+  sure: true,
+  cancel: true,
+  sureText: "确认",
+  cancelText: "取消"
+});
 const emits = defineEmits<{
   (event: "cancel"): void;
   (event: "sure"): void;
@@ -58,7 +58,7 @@ onMounted(() => {
         class="basic-dialog-container"
         :style="{
           width,
-          maxWidth: width
+          maxWidth: maxWidth ?? width
         }"
         @click.stop
       >
