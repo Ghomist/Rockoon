@@ -6,6 +6,7 @@ export default {
   list: (dir: string, exts: string[]) =>
     invoke<ManagedFile[]>("list", { path: dir, exts }),
   listDirs: (dir: string) => invoke<string[]>("list_dirs", { path: dir }),
+  copy: (from: string, to: string) => invoke<void>("copy", { from, to }),
   mkdir: (dir: string) => invoke<void>("mkdir", { path: dir }),
   delete: (file: string) => invoke<void>("delete", { path: file }),
   disable: (dir: string, fileName: string) =>

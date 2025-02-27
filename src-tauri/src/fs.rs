@@ -88,6 +88,12 @@ pub fn list_dirs(path: String) -> Result<Vec<String>, String> {
 }
 
 #[tauri::command]
+pub fn copy(from: String, to: String) -> Result<(), String> {
+    fs::copy(from, to).map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
 pub fn mkdir(path: String) -> Result<(), String> {
     fs::create_dir_all(&path).map_err(|e| e.to_string())?;
     Ok(())

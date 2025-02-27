@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import file from "@/api/fs";
+import { default as file, default as fs } from "@/api/fs";
 import BasicButton from "@/components/BasicButton.vue";
 import BasicCollapse from "@/components/BasicCollapse.vue";
 import BasicConfig from "@/components/BasicConfig.vue";
@@ -7,7 +7,7 @@ import { useAppStore } from "@/stores/app";
 import { useFileStore } from "@/stores/fs";
 import { formatFileName, formatFileSize, formatFileType } from "@/utils/format";
 import { openDialog, sendMessage } from "@/utils/message";
-import { join } from "@tauri-apps/api/path";
+import { join, sep } from "@tauri-apps/api/path";
 import { open as browseFile } from "@tauri-apps/plugin-dialog";
 import { open } from "@tauri-apps/plugin-shell";
 import {
@@ -22,12 +22,12 @@ import {
 import ExtraButtons from "./components/ExtraButtons.vue";
 
 const app = useAppStore();
-const fs = useFileStore();
+const fileStore = useFileStore();
 const instance = computed(() => app.selected!);
 
 const maps = ref<ManagedFile[]>([]);
 const readMaps = async () => {
-  maps.value = await fs.getInstanceFiles(instance.value.path, "map");
+  maps.value = await fileStore.getInstanceFiles(instance.value.path, "map");
 };
 const onDeleteMap = async (map: ManagedFile) => {
   openDialog("确定要删除此地图吗？此操作无法撤销！", {
@@ -62,8 +62,17 @@ const mapsExtraButtons = reactive([
         filters: [{ name: "Ballance 地图文件", extensions: ["cmo", "nmo"] }]
       });
       if (result) {
-        // TODO
-        // if (!Array.isArray(res)) res = [res];
+        if (result && result.length) {
+          for (const file of result) {
+            const mapFile = await join(
+              instance.value.path,
+              "ModLoader",
+              "Maps",
+              file.split(sep()).pop()!
+            );
+            await fs.copy(file, mapFile);
+          }
+        }
       }
     }
   },

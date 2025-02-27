@@ -27,6 +27,7 @@ pub fn run() {
             fs::size,
             fs::list,
             fs::list_dirs,
+            fs::copy,
             fs::mkdir,
             fs::delete,
             fs::disable,
