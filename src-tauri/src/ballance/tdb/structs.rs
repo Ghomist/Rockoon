@@ -1,3 +1,4 @@
+use std::fmt::Display;
 use std::fs;
 use std::ops::Index;
 use std::ops::IndexMut;
@@ -10,7 +11,7 @@ const PLACEHOLDER: [u8; 4] = [0xFF, 0xFF, 0xFF, 0xFF];
 const C_EOS: u8 = 0x00; // c-style end of string
 
 #[derive(Debug)]
-pub struct TDB {
+pub struct Tdb {
     db_path: String,
     tables: Vec<VtTable>,
 }
@@ -63,7 +64,7 @@ impl VtValueType {
     }
 }
 
-impl TDB {
+impl Tdb {
     pub fn new(path: &str) -> Self {
         // TODO: 判断文件是否存在
         let mut content = fs::read(path).unwrap();
@@ -71,7 +72,7 @@ impl TDB {
             *b = decode(*b);
         }
 
-        let mut db: TDB = Self {
+        let mut db: Tdb = Self {
             db_path: path.to_string(),
             tables: Vec::new(),
         };
@@ -175,9 +176,7 @@ impl TDB {
             let chunk_size = content.len() - chunk_size_start;
             let chunk_size = (chunk_size as i32).to_le_bytes();
             let target_slice = &mut content[chunk_size_offset..chunk_size_offset + 4];
-            for i in 0..4 {
-                target_slice[i] = chunk_size[i];
-            }
+            target_slice[..4].copy_from_slice(&chunk_size);
         }
 
         for b in &mut content {
@@ -258,9 +257,11 @@ impl VtValue {
     pub fn to_bool(&self) -> bool {
         self.to_int() != 0
     }
+}
 
-    pub fn to_string(&self) -> String {
-        String::from_utf8_lossy(&self.slice).to_string()
+impl Display for VtValue {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", String::from_utf8_lossy(&self.slice))
     }
 }
 
@@ -278,7 +279,7 @@ impl IndexMut<usize> for VtColumn {
     }
 }
 
-impl std::ops::Index<usize> for TDB {
+impl std::ops::Index<usize> for Tdb {
     type Output = VtTable;
 
     fn index(&self, index: usize) -> &Self::Output {

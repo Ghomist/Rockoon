@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use mod_config::{ConfigEntry, ModConfig};
 use options::BallanceOptions;
-use tdb::TDB;
+use tdb::Tdb;
 
 mod mod_config;
 mod options;
@@ -10,7 +10,7 @@ mod tdb;
 
 #[tauri::command]
 pub fn read_options(path: String) -> Result<BallanceOptions, String> {
-    let tdb = TDB::new(&path);
+    let tdb = Tdb::new(&path);
     let mut options = BallanceOptions::new();
     options.read_from(&tdb);
     Ok(options)
@@ -18,7 +18,7 @@ pub fn read_options(path: String) -> Result<BallanceOptions, String> {
 
 #[tauri::command]
 pub fn save_options(path: String, mut options: BallanceOptions) -> Result<(), String> {
-    let mut tdb = TDB::new(&path);
+    let mut tdb = Tdb::new(&path);
     options.write_to(&mut tdb);
     tdb.write();
     Ok(())
@@ -77,8 +77,8 @@ pub fn read_mod_config(path: String) -> Result<ModConfig, String> {
         if line.is_empty() {
             continue;
         }
-        if line.ends_with("{") {
-            current_category = line[..line.len() - 1].trim().to_string();
+        if let Some(line) = line.strip_suffix('{') {
+            current_category = line.trim().to_string();
             config
                 .categories
                 .insert(current_category.clone(), current_description.clone());
@@ -89,8 +89,8 @@ pub fn read_mod_config(path: String) -> Result<ModConfig, String> {
             current_category = String::new();
             continue;
         }
-        if line.starts_with("#") {
-            current_description = line[1..].trim().to_string();
+        if let Some(line) = line.strip_prefix('#') {
+            current_description = line.trim().to_string();
             continue;
         }
 

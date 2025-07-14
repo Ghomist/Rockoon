@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use super::tdb::{VtValue, TDB};
+use super::tdb::{Tdb, VtValue};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -53,7 +53,7 @@ impl BallanceOptions {
         }
     }
 
-    pub fn read_from(&mut self, tdb: &TDB) {
+    pub fn read_from(&mut self, tdb: &Tdb) {
         let table = tdb.get_table("DB_Options");
         self.volume = table[0][0].to_float();
         self.sync_to_screen = table[1][0].to_bool();
@@ -91,7 +91,7 @@ impl BallanceOptions {
         }
     }
 
-    pub fn write_to(&mut self, tdb: &mut TDB) {
+    pub fn write_to(&mut self, tdb: &mut Tdb) {
         let vol = self.volume * 100.0;
         let vol = vol.round();
         self.volume = vol / 100.0;
@@ -99,12 +99,12 @@ impl BallanceOptions {
         let table = tdb.get_table_mut("DB_Options");
         table[0][0] = VtValue::new(&(self.volume).to_le_bytes());
         table[1][0] = VtValue::new(&(self.sync_to_screen as i32).to_le_bytes());
-        table[2][0] = VtValue::new(&(self.key_forward as i32).to_le_bytes());
-        table[3][0] = VtValue::new(&(self.key_backward as i32).to_le_bytes());
-        table[4][0] = VtValue::new(&(self.key_left as i32).to_le_bytes());
-        table[5][0] = VtValue::new(&(self.key_right as i32).to_le_bytes());
-        table[6][0] = VtValue::new(&(self.key_rotate_cam as i32).to_le_bytes());
-        table[7][0] = VtValue::new(&(self.key_lift_cam as i32).to_le_bytes());
+        table[2][0] = VtValue::new(&self.key_forward.to_le_bytes());
+        table[3][0] = VtValue::new(&self.key_backward.to_le_bytes());
+        table[4][0] = VtValue::new(&self.key_left.to_le_bytes());
+        table[5][0] = VtValue::new(&self.key_right.to_le_bytes());
+        table[6][0] = VtValue::new(&self.key_rotate_cam.to_le_bytes());
+        table[7][0] = VtValue::new(&self.key_lift_cam.to_le_bytes());
         table[8][0] = VtValue::new(&(self.invert_cam_rotation as i32).to_le_bytes());
         table[9][0] = VtValue::new(self.last_player.as_bytes());
         table[10][0] = VtValue::new(&(self.cloud_layer as i32).to_le_bytes());
