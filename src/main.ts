@@ -8,10 +8,14 @@ import App from "./App.vue";
 import { initStores } from "./stores";
 import { checkUpdate } from "./utils/updater";
 import { initWindowSize } from "./utils/window";
+import { registerLoggers } from "./utils/logger";
 
 const app = createApp(App);
 app.use(createPinia());
 app.mount("#app");
+
+// register & hook loggers in `console`
+registerLoggers();
 
 // disable context menu
 document.addEventListener("contextmenu", e => e.preventDefault());
@@ -45,6 +49,8 @@ const init = async () => {
   await initWindowSize();
 
   await checkUpdate(true);
+
+  console.info("Rockoon UI initialized");
 };
 
 init();

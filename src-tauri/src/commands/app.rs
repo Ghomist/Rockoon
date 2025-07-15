@@ -1,9 +1,20 @@
 use crate::common::exception::RcResult;
+use log::{log, log_enabled, Level};
 use tauri::{command, Runtime, WebviewWindow, Window};
 
 #[command]
-pub fn log(msg: String) {
-    println!("{}", msg);
+pub fn log(level: String, msg: String) {
+    let level = match level.as_str() {
+        "error" => Level::Error,
+        "warn" => Level::Warn,
+        "info" => Level::Info,
+        "debug" => Level::Debug,
+        "trace" => Level::Trace,
+        _ => Level::Info,
+    };
+    if log_enabled!(level) {
+        log!(level, "[UI] {}", msg);
+    }
 }
 
 #[command]

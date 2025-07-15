@@ -1,4 +1,5 @@
 use crate::common::exception::{RcResult, RcResultWith};
+use log::info;
 use std::{fs, path};
 use tauri::{command, AppHandle, Manager};
 
@@ -89,19 +90,22 @@ pub fn list_dirs(path: String) -> RcResultWith<Vec<String>> {
 
 #[command]
 pub fn copy(from: String, to: String) -> RcResult {
-    fs::copy(from, to)?;
+    fs::copy(&from, &to)?;
+    info!("Copied {} to {}", from, to);
     Ok(())
 }
 
 #[command]
 pub fn mkdir(path: String) -> RcResult {
     fs::create_dir_all(&path)?;
+    info!("Created directory {}", path);
     Ok(())
 }
 
 #[command]
 pub fn delete(path: String) -> RcResult {
-    fs::remove_file(path)?;
+    fs::remove_file(&path)?;
+    info!("Deleted {}", path);
     Ok(())
 }
 
@@ -112,7 +116,9 @@ pub fn disable(path: String, file_name: String) -> RcResult {
         let raw_file = folder.join(&file_name);
         let file_name = format!("{}.disable", &file_name);
         let new_file = folder.join(file_name);
-        fs::rename(raw_file, new_file)?;
+        fs::rename(&raw_file, &new_file)?;
+
+        info!("Disabled {}", raw_file.display());
     }
     Ok(())
 }
@@ -124,14 +130,16 @@ pub fn enable(path: String, file_name: String) -> RcResult {
         let raw_file = folder.join(&file_name);
         let file_name = &file_name.replace(".disable", "");
         let new_file = folder.join(file_name);
-        fs::rename(raw_file, new_file)?;
+        fs::rename(&raw_file, &new_file)?;
+
+        info!("Enabled {}", new_file.display());
     }
     Ok(())
 }
 
 #[command]
 pub fn unzip(zip_path: String, output_dir: String) -> RcResult {
-    let file = fs::File::open(zip_path)?;
+    let file = fs::File::open(&zip_path)?;
     let mut archive = zip::ZipArchive::new(file)?;
 
     for i in 0..archive.len() {
@@ -148,6 +156,8 @@ pub fn unzip(zip_path: String, output_dir: String) -> RcResult {
         let mut out_file = fs::File::create(output_path)?;
         std::io::copy(&mut file, &mut out_file)?;
     }
+
+    info!("Unzipped {} to {}", zip_path, output_dir);
 
     Ok(())
 }

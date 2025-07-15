@@ -6,6 +6,7 @@ use crate::{
     },
     common::exception::{RcResult, RcResultWith},
 };
+use log::info;
 use std::collections::HashMap;
 use tauri::command;
 
@@ -14,6 +15,9 @@ pub fn read_options(path: String) -> RcResultWith<BallanceOptions> {
     let tdb = Tdb::new(&path)?;
     let mut options = BallanceOptions::new();
     options.read_from(&tdb)?;
+
+    info!("Read options from {}", path);
+
     Ok(options)
 }
 
@@ -22,6 +26,9 @@ pub fn save_options(path: String, mut options: BallanceOptions) -> RcResult {
     let mut tdb = Tdb::new(&path)?;
     options.write_to(&mut tdb)?;
     tdb.write()?;
+
+    info!("Saved options to {}", path);
+
     Ok(())
 }
 
@@ -45,6 +52,9 @@ pub fn read_launch_config(path: String) -> RcResultWith<HashMap<String, HashMap<
             }
         }
     }
+
+    info!("Read launch config from {}", path);
+
     Ok(config_map)
 }
 
@@ -61,6 +71,8 @@ pub fn save_launch_config(
         }
     }
     std::fs::write(&path, content)?;
+
+    info!("Saved launch config to {}", path);
 
     Ok(())
 }
@@ -111,6 +123,8 @@ pub fn read_mod_config(path: String) -> RcResultWith<ModConfig> {
         }
     }
 
+    info!("Read mod config from {}", path);
+
     Ok(config)
 }
 
@@ -130,5 +144,8 @@ pub fn save_mod_config(path: String, config: ModConfig) -> RcResult {
         }
     }
     std::fs::write(&path, content)?;
+
+    info!("Saved mod config to {}", path);
+
     Ok(())
 }

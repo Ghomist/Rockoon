@@ -74,8 +74,11 @@ export const fetchFiles = async (refresh = false) => {
     cache.lastUpdate &&
     cache.lastUpdate.getTime() + usePrefStore().expireMs > Date.now()
   ) {
+    console.info(`Using cached files, last update: ${cache.lastUpdate}`);
     return cache;
   }
+
+  console.info("Fetching files...");
 
   const homeHtml = await fetch(homeLink).then(response => response.text());
   const match = homeHtml.match(/_kj\s*=\s*(\{[^}]+\})/);
@@ -106,6 +109,7 @@ export const fetchFiles = async (refresh = false) => {
 
   // fetch files
   for (const index of cache.folders) {
+    console.info(`Fetching files for ${index.name}...`);
     const htmlString = await getYsHtml(
       fileListLink.replace("{index}", index.id),
       cache.meta
@@ -129,6 +133,8 @@ export const fetchFiles = async (refresh = false) => {
 
   // save cache
   storage.set(STORAGE_KEY, cache);
+
+  console.info("Fetch complete");
 
   return cache;
 };
