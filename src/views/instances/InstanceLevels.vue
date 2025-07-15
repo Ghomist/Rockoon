@@ -52,7 +52,7 @@ const resetHighscores = () => {
     <BasicConfig title="解锁全部关卡">
       <BasicButton @click="unlockAllLevels">解锁</BasicButton>
     </BasicConfig>
-    <BasicConfig title="锁定为初始状态" tooltip="锁定 1~11 关">
+    <BasicConfig title="锁定为初始状态" tooltip="锁定 2~12 关">
       <BasicButton @click="resetLevelLock">锁定</BasicButton>
     </BasicConfig>
     <BasicConfig
