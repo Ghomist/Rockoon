@@ -69,21 +69,44 @@ export const keyboardDialog = (keycode: number, title: string) => {
 };
 
 export type MessageArgs = {
+  id?: number | null;
   duration?: number;
+  sticky?: boolean;
 };
 export const sendMessage = (message: string, args?: MessageArgs) => {
   const app = useAppStore();
   args = withDefault<Required<MessageArgs>>(args ?? {}, {
-    duration: 3000
+    id: null,
+    duration: 3000,
+    sticky: false
   });
 
-  const id = Date.now();
-  app.messageQueue.push({
-    id,
-    message
-  });
+  let messageId: number | null = null;
+  if (args.id) {
+    const msg = app.messageQueue.find(msg => msg.id !== args.id);
+    if (msg) {
+      msg.message = message;
+      messageId = msg.id;
+    }
+  }
+  if (!messageId) {
+    messageId = Date.now();
+    app.messageQueue.push({
+      id: messageId,
+      message
+    });
+  }
 
-  setTimeout(() => {
-    app.messageQueue = app.messageQueue.filter(msg => msg.id !== id);
-  }, args.duration);
+  const closeLater = () => {
+    setTimeout(() => {
+      app.messageQueue = app.messageQueue.filter(msg => msg.id !== messageId);
+    }, args.duration);
+  };
+
+  if (!args.sticky) closeLater();
+
+  return {
+    id: messageId,
+    closeLater
+  };
 };

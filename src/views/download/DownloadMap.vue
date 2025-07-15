@@ -1,16 +1,17 @@
 <script setup lang="ts">
+import fs from "@/api/fs";
 import BasicButton from "@/components/BasicButton.vue";
 import BasicCollapse from "@/components/BasicCollapse.vue";
 import BasicConfig from "@/components/BasicConfig.vue";
 import BasicInput from "@/components/BasicInput.vue";
 import BasicSwitch from "@/components/BasicSwitch.vue";
+import { sleep } from "@/utils/common";
 import { openDialog, sendMessage } from "@/utils/message";
 import { join } from "@tauri-apps/api/path";
 import { download } from "@tauri-apps/plugin-upload";
 import { h, onMounted, ref } from "vue";
 import InstanceSelection from "./InstanceSelection.vue";
 import MapDetails from "./MapDetails.vue";
-import fs from "@/api/fs";
 
 const props = defineProps<{
   cache: YsCache;
@@ -59,11 +60,19 @@ const onDownload = (file: YsFile) => {
             const instance = selectionRef.value?.selectedPath();
             if (instance) {
               sendMessage(`开始下载 ${file.filename}`);
+              await sleep(300);
               const mapsFolder = await join(instance, "ModLoader", "Maps");
               await fs.mkdir(mapsFolder);
               const filePath = await join(mapsFolder, file.filename);
-              await download(file.url, filePath);
-              sendMessage(`${file.filename} 下载完成！`);
+              const id = Date.now();
+              await download(file.url, filePath, ({ progressTotal, total }) => {
+                sendMessage(
+                  `正在下载 ${file.filename}... ${Math.floor((progressTotal / total) * 100)}%`,
+                  { sticky: true, id }
+                );
+              });
+              await sleep(300);
+              sendMessage(`${file.filename} 下载完成！`, { id });
             } else {
               sendMessage("未选择游戏，下载取消");
             }

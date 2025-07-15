@@ -145,12 +145,26 @@ const onInstall = async () => {
     }
   });
 };
+
+const onClickGroupNumberLink = () => {
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText("702613602");
+    sendMessage("群号已复制到剪切板");
+  }
+};
 </script>
 
 <template>
   <div>
     <BasicBlock>
-      <p class="light">该功能尚不完善，暂不推荐在此处下载游戏本体！仅供测试使用</p>
+      <p class="light">
+        该功能尚不完善，暂不推荐在此处下载游戏本体，目前仅供内部测试使用！
+      </p>
+      <p class="light">
+        推荐前往
+        <a @click="onClickGroupNumberLink"> Ballance 中文社区 QQ 交流群 </a>
+        进行下载
+      </p>
     </BasicBlock>
     <BasicCollapse title="下载游戏" open>
       <BasicConfig
