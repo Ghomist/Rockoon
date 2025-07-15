@@ -1,34 +1,33 @@
+use crate::{
+    ballance::{
+        mod_config::{ConfigEntry, ModConfig},
+        options::BallanceOptions,
+        tdb::Tdb,
+    },
+    common::exception::{RcResult, RcResultWith},
+};
 use std::collections::HashMap;
+use tauri::command;
 
-use mod_config::{ConfigEntry, ModConfig};
-use options::BallanceOptions;
-use tdb::Tdb;
-
-mod mod_config;
-mod options;
-mod tdb;
-
-#[tauri::command]
-pub fn read_options(path: String) -> Result<BallanceOptions, String> {
-    let tdb = Tdb::new(&path);
+#[command]
+pub fn read_options(path: String) -> RcResultWith<BallanceOptions> {
+    let tdb = Tdb::new(&path)?;
     let mut options = BallanceOptions::new();
-    options.read_from(&tdb);
+    options.read_from(&tdb)?;
     Ok(options)
 }
 
-#[tauri::command]
-pub fn save_options(path: String, mut options: BallanceOptions) -> Result<(), String> {
-    let mut tdb = Tdb::new(&path);
-    options.write_to(&mut tdb);
-    tdb.write();
+#[command]
+pub fn save_options(path: String, mut options: BallanceOptions) -> RcResult {
+    let mut tdb = Tdb::new(&path)?;
+    options.write_to(&mut tdb)?;
+    tdb.write()?;
     Ok(())
 }
 
-#[tauri::command]
-pub fn read_launch_config(
-    path: String,
-) -> Result<HashMap<String, HashMap<String, String>>, String> {
-    let content = std::fs::read_to_string(&path).map_err(|e| e.to_string())?;
+#[command]
+pub fn read_launch_config(path: String) -> RcResultWith<HashMap<String, HashMap<String, String>>> {
+    let content = std::fs::read_to_string(&path)?;
     let lines: Vec<String> = content.lines().map(|s| s.to_string()).collect();
     let mut config_map = HashMap::new();
     let mut current_category = String::new();
@@ -39,20 +38,21 @@ pub fn read_launch_config(
                 config_map.insert(current_category.to_string(), HashMap::new());
             }
         } else if let Some(index) = line.find('=') {
-            let category = config_map.get_mut(&current_category).unwrap();
-            let key = line[..index].trim().to_string();
-            let value = line[index + 1..].trim().to_string();
-            category.insert(key, value);
+            if let Some(category) = config_map.get_mut(&current_category) {
+                let key = line[..index].trim().to_string();
+                let value = line[index + 1..].trim().to_string();
+                category.insert(key, value);
+            }
         }
     }
     Ok(config_map)
 }
 
-#[tauri::command]
+#[command]
 pub fn save_launch_config(
     path: String,
     config: HashMap<String, HashMap<String, String>>,
-) -> Result<(), String> {
+) -> RcResult {
     let mut content = String::new();
     for (category, items) in config {
         content.push_str(&format!("[{}]\n", category));
@@ -60,14 +60,14 @@ pub fn save_launch_config(
             content.push_str(&format!("{}={}\n", key, value));
         }
     }
-    std::fs::write(&path, content).map_err(|e| e.to_string())?;
+    std::fs::write(&path, content)?;
 
     Ok(())
 }
 
-#[tauri::command]
-pub fn read_mod_config(path: String) -> Result<ModConfig, String> {
-    let content = std::fs::read_to_string(&path).map_err(|e| e.to_string())?;
+#[command]
+pub fn read_mod_config(path: String) -> RcResultWith<ModConfig> {
+    let content = std::fs::read_to_string(&path)?;
     let lines = &content.lines().collect::<Vec<_>>()[1..];
     let mut config = ModConfig::new();
     let mut current_category = String::new();
@@ -114,20 +114,21 @@ pub fn read_mod_config(path: String) -> Result<ModConfig, String> {
     Ok(config)
 }
 
-#[tauri::command]
-pub fn save_mod_config(path: String, config: ModConfig) -> Result<(), String> {
+#[command]
+pub fn save_mod_config(path: String, config: ModConfig) -> RcResult {
     let mut content = String::new();
     for (cat, entries) in config.entries {
-        let desc = config.categories.get(&cat).unwrap();
-        content.push_str(&format!("# {}\n{} {{\n\n", desc, cat));
-        for entry in entries {
-            content.push_str(&format!(
-                "\t# {}\n\t{} {} {}\n\n",
-                entry.description, entry.datatype, entry.name, entry.value
-            ));
+        if let Some(desc) = config.categories.get(&cat) {
+            content.push_str(&format!("# {}\n{} {{\n\n", desc, cat));
+            for entry in entries {
+                content.push_str(&format!(
+                    "\t# {}\n\t{} {} {}\n\n",
+                    entry.description, entry.datatype, entry.name, entry.value
+                ));
+            }
+            content.push_str("}\n\n");
         }
-        content.push_str("}\n\n");
     }
-    std::fs::write(&path, content).map_err(|e| e.to_string())?;
+    std::fs::write(&path, content)?;
     Ok(())
 }

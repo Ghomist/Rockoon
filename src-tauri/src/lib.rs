@@ -1,13 +1,12 @@
-mod app;
 mod ballance;
-mod fs;
-mod process;
+mod commands;
+mod common;
 
-use tauri::{AppHandle, Manager};
+use tauri::{AppHandle, Builder, Manager};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
+    Builder::default()
         .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_upload::init())
@@ -18,31 +17,31 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_shell::init())
         .invoke_handler(tauri::generate_handler![
-            app::log,
-            app::hide_window,
-            app::show_window,
-            app::toggle_window,
-            app::open_devtools,
-            fs::exists,
-            fs::size,
-            fs::list,
-            fs::list_dirs,
-            fs::copy,
-            fs::mkdir,
-            fs::delete,
-            fs::disable,
-            fs::enable,
-            fs::unzip,
-            fs::get_common_dirs,
-            process::execute,
-            process::kill,
-            process::check,
-            ballance::read_options,
-            ballance::save_options,
-            ballance::read_launch_config,
-            ballance::save_launch_config,
-            ballance::read_mod_config,
-            ballance::save_mod_config
+            commands::app::log,
+            commands::app::hide_window,
+            commands::app::show_window,
+            commands::app::toggle_window,
+            commands::app::open_devtools,
+            commands::fs::exists,
+            commands::fs::size,
+            commands::fs::list,
+            commands::fs::list_dirs,
+            commands::fs::copy,
+            commands::fs::mkdir,
+            commands::fs::delete,
+            commands::fs::disable,
+            commands::fs::enable,
+            commands::fs::unzip,
+            commands::fs::get_common_dirs,
+            commands::process::execute,
+            commands::process::kill,
+            commands::process::check,
+            commands::ballance::read_options,
+            commands::ballance::save_options,
+            commands::ballance::read_launch_config,
+            commands::ballance::save_launch_config,
+            commands::ballance::read_mod_config,
+            commands::ballance::save_mod_config
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

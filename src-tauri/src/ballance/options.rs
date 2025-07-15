@@ -1,6 +1,6 @@
-use serde::{Deserialize, Serialize};
-
 use super::tdb::{Tdb, VtValue};
+use crate::common::exception::RcResult;
+use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -53,8 +53,8 @@ impl BallanceOptions {
         }
     }
 
-    pub fn read_from(&mut self, tdb: &Tdb) {
-        let table = tdb.get_table("DB_Options");
+    pub fn read_from(&mut self, tdb: &Tdb) -> RcResult {
+        let table = tdb.get_table("DB_Options")?;
         self.volume = table[0][0].to_float();
         self.sync_to_screen = table[1][0].to_bool();
         self.key_forward = table[2][0].to_int();
@@ -67,7 +67,7 @@ impl BallanceOptions {
         self.last_player = table[9][0].to_string();
         self.cloud_layer = table[10][0].to_bool();
 
-        let table = tdb.get_table("DB_Levelfreischaltung");
+        let table = tdb.get_table("DB_Levelfreischaltung")?;
         let col = &table[0];
         for i in 0..12 {
             self.level_lock[i] = col[i].to_bool();
@@ -83,21 +83,24 @@ impl BallanceOptions {
                     level.to_string()
                 }
             );
-            let table = tdb.get_table(&table_name);
-            for j in 0..10 {
-                self.highscores[i][j].player = table[0][j].to_string();
-                self.highscores[i][j].score = table[1][j].to_int();
+            if let Ok(table) = tdb.get_table(&table_name) {
+                for j in 0..10 {
+                    self.highscores[i][j].player = table[0][j].to_string();
+                    self.highscores[i][j].score = table[1][j].to_int();
+                }
             }
         }
+
+        Ok(())
     }
 
-    pub fn write_to(&mut self, tdb: &mut Tdb) {
+    pub fn write_to(&mut self, tdb: &mut Tdb) -> RcResult {
         let vol = self.volume * 100.0;
         let vol = vol.round();
         self.volume = vol / 100.0;
 
-        let table = tdb.get_table_mut("DB_Options");
-        table[0][0] = VtValue::new(&(self.volume).to_le_bytes());
+        let table = tdb.get_table_mut("DB_Options")?;
+        table[0][0] = VtValue::new(&self.volume.to_le_bytes());
         table[1][0] = VtValue::new(&(self.sync_to_screen as i32).to_le_bytes());
         table[2][0] = VtValue::new(&self.key_forward.to_le_bytes());
         table[3][0] = VtValue::new(&self.key_backward.to_le_bytes());
@@ -109,7 +112,7 @@ impl BallanceOptions {
         table[9][0] = VtValue::new(self.last_player.as_bytes());
         table[10][0] = VtValue::new(&(self.cloud_layer as i32).to_le_bytes());
 
-        let table = tdb.get_table_mut("DB_Levelfreischaltung");
+        let table = tdb.get_table_mut("DB_Levelfreischaltung")?;
         let col = &mut table[0];
         for i in 0..12 {
             // col[i] = VtValue::new(&(if self.unlocked[i] { 1_i32 } else { 0_i32 }).to_le_bytes());
@@ -126,12 +129,15 @@ impl BallanceOptions {
                     level.to_string()
                 }
             );
-            let table = tdb.get_table_mut(&table_name);
-            for j in 0..10 {
-                table[0][j] = VtValue::new(self.highscores[i][j].player.as_bytes());
-                table[1][j] = VtValue::new(&(self.highscores[i][j].score).to_le_bytes());
+            if let Ok(table) = tdb.get_table_mut(&table_name) {
+                for j in 0..10 {
+                    table[0][j] = VtValue::new(self.highscores[i][j].player.as_bytes());
+                    table[1][j] = VtValue::new(&self.highscores[i][j].score.to_le_bytes());
+                }
             }
         }
+
+        Ok(())
     }
 }
 

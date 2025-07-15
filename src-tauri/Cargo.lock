@@ -3623,6 +3623,7 @@ dependencies = [
  "tauri-plugin-single-instance",
  "tauri-plugin-updater",
  "tauri-plugin-upload",
+ "thiserror 2.0.12",
  "zip 2.4.2",
 ]
 

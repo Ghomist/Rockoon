@@ -20,16 +20,26 @@ export const useAppStore = defineStore("app", {
   },
   actions: {
     async changeSelect(path: string) {
-      const instance = await checkBallanceFolder(path);
-      if (instance) this.selected = instance;
-      else {
-        this.selected = undefined;
-        openDialog("该游戏已被移动或删除，请重新添加", {
+      try {
+        const instance = await checkBallanceFolder(path);
+        if (instance) this.selected = instance;
+        else {
+          this.selected = undefined;
+          openDialog("该游戏已被移动或删除，请重新添加", {
+            title: "出错啦",
+            onClose: () => {
+              useFileStore().removeInstance(path);
+            }
+          });
+        }
+      } catch (e) {
+        openDialog(`该游戏出现错误了，请尝试重新添加（${e}）`, {
           title: "出错啦",
           onClose: () => {
             useFileStore().removeInstance(path);
           }
         });
+        return;
       }
     },
     renameSelectedInstance(name: string) {

@@ -3,9 +3,8 @@ use std::fs;
 use std::ops::Index;
 use std::ops::IndexMut;
 
-use super::decode;
-use super::find_eos;
-use super::utils::encode;
+use super::{decode, encode, find_eos};
+use crate::common::exception::{RcError, RcResult, RcResultWith};
 
 const PLACEHOLDER: [u8; 4] = [0xFF, 0xFF, 0xFF, 0xFF];
 const C_EOS: u8 = 0x00; // c-style end of string
@@ -65,9 +64,8 @@ impl VtValueType {
 }
 
 impl Tdb {
-    pub fn new(path: &str) -> Self {
-        // TODO: 判断文件是否存在
-        let mut content = fs::read(path).unwrap();
+    pub fn new(path: &str) -> RcResultWith<Self> {
+        let mut content = fs::read(path)?;
         for b in &mut content {
             *b = decode(*b);
         }
@@ -79,7 +77,7 @@ impl Tdb {
 
         let mut i: usize = 0;
         while i < content.len() {
-            let eos = find_eos(&content, i);
+            let eos = find_eos(&content, i)?;
             let table_name = VtValue::new(&content[i..eos]).to_string();
             i = eos + 1;
 
@@ -100,7 +98,7 @@ impl Tdb {
             let mut table: VtTable = VtTable::new(table_name, row, col);
             for _ in 0..col {
                 // field name
-                let eos = find_eos(&content, i);
+                let eos = find_eos(&content, i)?;
                 let field_name = VtValue::new(&content[i..eos]).to_string();
                 i = eos + 1;
 
@@ -122,7 +120,7 @@ impl Tdb {
                 for _ in 0..row {
                     let value;
                     if current_col.value_type == VtValueType::String {
-                        let eos = find_eos(&content, i);
+                        let eos = find_eos(&content, i)?;
                         value = &content[i..eos];
                         i = eos + 1;
                     } else {
@@ -135,10 +133,10 @@ impl Tdb {
 
             db.tables.push(table);
         }
-        db
+        Ok(db)
     }
 
-    pub fn write(&self) {
+    pub fn write(&self) -> RcResult {
         let mut content = Vec::new();
 
         for table in &self.tables {
@@ -183,25 +181,27 @@ impl Tdb {
             *b = encode(*b);
         }
 
-        fs::write(&self.db_path, content).unwrap();
+        fs::write(&self.db_path, content)?;
+
+        Ok(())
     }
 
-    pub fn get_table(&self, name: &str) -> &VtTable {
+    pub fn get_table(&self, name: &str) -> RcResultWith<&VtTable> {
         for t in &self.tables {
             if t.name == name {
-                return t;
+                return Ok(t);
             }
         }
-        panic!("Cannot find table");
+        Err(RcError::TdbParseError("Cannot find table".into()))
     }
 
-    pub fn get_table_mut(&mut self, name: &str) -> &mut VtTable {
+    pub fn get_table_mut(&mut self, name: &str) -> RcResultWith<&mut VtTable> {
         for t in &mut self.tables {
             if t.name == name {
-                return t;
+                return Ok(t);
             }
         }
-        panic!("Cannot find table");
+        Err(RcError::TdbParseError("Cannot find table".into()))
     }
 }
 
