@@ -4,6 +4,7 @@ import type { LogLevel } from "@/api/app";
 export const registerLoggers = () => {
   // hook console functions
   hookConsoleFunction("error", console.error);
+  hookConsoleFunction("info", console.info);
   hookConsoleFunction("info", console.log);
   hookConsoleFunction("warn", console.warn);
   hookConsoleFunction("debug", console.debug);
