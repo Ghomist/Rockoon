@@ -12,6 +12,8 @@ import { keyboardDialog, openDialog, sendMessage } from "@/utils/message";
 import { open } from "@tauri-apps/plugin-shell";
 import { computed, reactive } from "vue";
 import ExtraButtons from "./components/ExtraButtons.vue";
+import { join } from "@tauri-apps/api/path";
+import ballance from "@/api/ballance";
 
 const app = useAppStore();
 const fs = useFileStore();
@@ -36,6 +38,38 @@ const onEditingKey = (key: BallanceKeyType, name: string) => {
   keyboardDialog(instance.value.options[key], name).then(v => {
     instance.value.options[key] = v;
   });
+};
+
+const onFixMapList = async () => {
+  const configPath = await join(
+    instance.value.path,
+    "ModLoader",
+    "Configs",
+    "BML.cfg"
+  );
+
+  // read config & font ranges
+  let fontRanges;
+  let config;
+  try {
+    config = await ballance.readModConfig(configPath);
+    fontRanges = config.entries["GUI"].find(x => x.name === "FontRanges");
+  } catch {
+    fontRanges = null;
+  }
+
+  // check
+  if (!fontRanges) {
+    sendMessage(
+      "修复失败：未找到 FontRanges 配置项，请先开一次游戏或重置 BML 配置后再试"
+    );
+    return;
+  }
+
+  // fix to chinese-full & save config
+  fontRanges.value = "ChineseFull";
+  await ballance.saveModConfig(configPath, config!);
+  sendMessage("修复成功！");
 };
 
 const onRemoveInstance = () => {
@@ -114,6 +148,16 @@ const onRemoveInstance = () => {
     <BasicConfig v-if="instance.bmlpInstalled" title="启用 BML Plus">
       <BasicSwitch v-model="instance.bmlpEnabled" />
     </BasicConfig> -->
+    <BasicConfig
+      title="全屏 / 窗口化 / 窗口边框"
+      tooltip="请在“启动项设置”处修改"
+    />
+    <BasicConfig
+      title="设置自制地图列表显示中文"
+      tooltip="该操作需要至少先运行一次游戏"
+    >
+      <BasicButton @click="onFixMapList">修复</BasicButton>
+    </BasicConfig>
     <BasicConfig title="移除此实例" tooltip="不会删除游戏文件">
       <BasicButton @click="onRemoveInstance">移除</BasicButton>
     </BasicConfig>
