@@ -13,8 +13,14 @@ type AppStore = {
   /** 当前选中的实例 */
   selected?: BallanceInstance;
 
-  /** 当前运行的实例 ID */
-  runningInstance?: number;
+  /** 当前运行的实例路径 */
+  runningInstancePath?: string;
+
+  /** 当前运行的实例 PID */
+  runningInstancePid?: number;
+
+  /** 当前运行的实例启动时间 */
+  runningInstanceTimestamp?: number;
 
   /** 消息队列 */
   messageQueue: Message[];
@@ -67,6 +73,7 @@ type FileStore = {
   instances: {
     path: string;
     name: string;
+    playtime: number;
   }[];
 };
 type BallanceInstanceStore = FileStore["instances"][number];

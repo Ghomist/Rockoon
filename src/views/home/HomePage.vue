@@ -17,7 +17,7 @@ const fs = useFileStore();
 const hideInstanceList = ref(true);
 
 const onLaunch = async () => {
-  if (app.runningInstance) {
+  if (app.runningInstancePid) {
     openDialog("要强制关闭正在运行的游戏吗？", {
       onSure: async () => {
         await app.killInstance();
@@ -39,7 +39,7 @@ const checkingIntervalId = ref();
 onMounted(() => {
   checkingIntervalId.value = setInterval(() => {
     app.checkRunningInstance();
-  }, 1500);
+  }, 1000);
 });
 onUnmounted(() => {
   clearInterval(checkingIntervalId.value);
@@ -141,7 +141,7 @@ onUnmounted(() => {
         "
         @click="onLaunch"
       >
-        <span v-if="!app.runningInstance">
+        <span v-if="!app.runningInstancePid">
           {{ app.selectedName ?? "Ballance" }} 启动 !
         </span>
         <template v-else> 强制关闭运行中的游戏 </template>

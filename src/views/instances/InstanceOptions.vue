@@ -14,6 +14,7 @@ import { computed, reactive } from "vue";
 import ExtraButtons from "./components/ExtraButtons.vue";
 import { join } from "@tauri-apps/api/path";
 import ballance from "@/api/ballance";
+import { formatTime } from "@/utils/format";
 
 const app = useAppStore();
 const fs = useFileStore();
@@ -99,6 +100,13 @@ const onRemoveInstance = () => {
     </BasicConfig>
     <BasicConfig title="实例位置" tooltip="路径暂不支持直接修改">
       <BasicInput v-model="instance.path" disabled />
+    </BasicConfig>
+    <BasicConfig title="游玩时间" tooltip="仅统计用 Rockoon 启动的游戏时间">
+      <p style="margin-right: 10px; font-size: 14px">
+        {{
+          app.selectedPlaytime ? formatTime(app.selectedPlaytime) : "还未玩过"
+        }}
+      </p>
     </BasicConfig>
     <BasicConfig title="BML" tooltip="Ballance Mod Loader by @Gamepiaynmo">
       <p style="margin-right: 10px; font-size: 14px">

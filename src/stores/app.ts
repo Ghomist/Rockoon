@@ -11,12 +11,17 @@ export const useAppStore = defineStore("app", {
   state: (): AppStore => ({
     page: "home",
     selected: undefined,
-    runningInstance: undefined,
+    runningInstancePid: undefined,
+    runningInstancePath: undefined,
+    runningInstanceTimestamp: 0,
     messageQueue: []
   }),
   getters: {
     selectedName: state =>
-      useFileStore().instances.find(x => x.path === state.selected?.path)?.name
+      useFileStore().instances.find(x => x.path === state.selected?.path)?.name,
+    selectedPlaytime: state =>
+      useFileStore().instances.find(x => x.path === state.selected?.path)
+        ?.playtime
   },
   actions: {
     async changeSelect(path: string) {
@@ -55,22 +60,37 @@ export const useAppStore = defineStore("app", {
       const bin = await join(cwd, "Player.exe");
       const pid = await process.execute(cwd, bin);
       if (usePrefStore().hideWinWhenLaunch) await app.hideWindow();
-      this.runningInstance = pid;
+      this.runningInstancePid = pid;
+      this.runningInstancePath = instance.path;
+      this.runningInstanceTimestamp = Date.now();
     },
     async killInstance() {
-      if (this.runningInstance) {
-        await process.kill(this.runningInstance);
+      if (this.runningInstancePid) {
+        await process.kill(this.runningInstancePid);
         await app.showWindow();
-        this.runningInstance = undefined;
+        this.updateInstanceRunningTime();
+        this.runningInstancePid = undefined;
       }
     },
     async checkRunningInstance() {
-      if (this.runningInstance) {
-        const exists = await process.check(this.runningInstance);
+      if (this.runningInstancePid) {
+        const exists = await process.check(this.runningInstancePid);
         if (!exists) {
-          this.runningInstance = undefined;
           await app.showWindow();
+          this.updateInstanceRunningTime();
+          this.runningInstancePid = undefined;
         }
+      }
+    },
+    updateInstanceRunningTime() {
+      const fs = useFileStore();
+      const index = fs.instances.findIndex(
+        x => x.path === this.runningInstancePath
+      );
+      if (index !== -1) {
+        const time = Date.now() - this.runningInstanceTimestamp!;
+        fs.instances[index].playtime += time;
+        console.info(`Played for ${time}ms`);
       }
     }
   }

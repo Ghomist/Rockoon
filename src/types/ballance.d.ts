@@ -6,6 +6,7 @@ type BallanceInstance = {
   bmlpInstalled: boolean;
   bmlpEnabled: boolean;
   options: BallanceOptions;
+  playtime: number;
 };
 
 type BallanceOptions = {

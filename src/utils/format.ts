@@ -33,3 +33,14 @@ export const formatFileType = (fileName: string) => {
   }
   return fileName.substring(fileName.lastIndexOf(".") + 1).toLowerCase();
 };
+
+export const formatTime = (ms: number) => {
+  const seconds = Math.floor(ms / 1000);
+  const minutes = Math.floor(seconds / 60);
+  const hours = Math.floor(minutes / 60);
+  return `${pad(hours, "0", 2)}:${pad(minutes % 60, "0", 2)}:${pad(
+    seconds % 60,
+    "0",
+    2
+  )}`;
+};

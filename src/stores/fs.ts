@@ -21,7 +21,7 @@ export const useFileStore = defineStore(FILE_STORE_KEY, {
       name = name ?? path.split(sep()).pop() ?? "Ballance";
       const instance = await checkBallanceFolder(path);
       if (instance) {
-        this.instances.push({ name, path });
+        this.instances.push({ name, path, playtime: 0 });
       }
       return instance;
     },
