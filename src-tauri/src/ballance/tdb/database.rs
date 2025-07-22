@@ -1,10 +1,6 @@
-use std::fmt::Display;
-use std::fs;
-use std::ops::Index;
-use std::ops::IndexMut;
-
-use super::{decode, encode, find_eos};
+use super::{decode, encode, find_eos, VtColumn, VtTable, VtValue, VtValueType};
 use crate::common::exception::{RcError, RcResult, RcResultWith};
+use std::{fs, ops::Index};
 
 const PLACEHOLDER: [u8; 4] = [0xFF, 0xFF, 0xFF, 0xFF];
 const C_EOS: u8 = 0x00; // c-style end of string
@@ -15,65 +11,21 @@ pub struct Tdb {
     tables: Vec<VtTable>,
 }
 
-#[derive(Debug)]
-pub struct VtTable {
-    pub name: String,
-    pub row_len: usize,
-    pub col_len: usize,
-    cols: Vec<VtColumn>,
-}
-
-#[derive(Debug)]
-pub struct VtColumn {
-    pub name: String,
-    pub value_type: VtValueType,
-    values: Vec<VtValue>,
-}
-
-#[derive(Debug)]
-pub struct VtValue {
-    slice: Vec<u8>,
-}
-
-#[derive(PartialEq, Debug)]
-pub enum VtValueType {
-    None,
-    Int,
-    Float,
-    String,
-}
-
-impl VtValueType {
-    fn new(i: i32) -> Self {
-        match i {
-            1 => Self::Int,
-            2 => Self::Float,
-            3 => Self::String,
-            _ => Self::None,
-        }
-    }
-
-    fn to_int(&self) -> i32 {
-        match self {
-            Self::Int => 1,
-            Self::Float => 2,
-            Self::String => 3,
-            Self::None => 0,
-        }
-    }
-}
-
 impl Tdb {
-    pub fn new(path: &str) -> RcResultWith<Self> {
-        let mut content = fs::read(path)?;
+    pub fn new(path: &str) -> Self {
+        Self {
+            db_path: path.to_string(),
+            tables: Vec::new(),
+        }
+    }
+
+    pub fn load(&mut self) -> RcResult {
+        let mut content = fs::read(&self.db_path)?;
         for b in &mut content {
             *b = decode(*b);
         }
 
-        let mut db: Tdb = Self {
-            db_path: path.to_string(),
-            tables: Vec::new(),
-        };
+        self.tables.clear();
 
         let mut i: usize = 0;
         while i < content.len() {
@@ -95,7 +47,7 @@ impl Tdb {
             i += 4;
 
             // make header
-            let mut table: VtTable = VtTable::new(table_name, row, col);
+            let mut table: VtTable = VtTable::new(table_name);
             for _ in 0..col {
                 // field name
                 let eos = find_eos(&content, i)?;
@@ -131,12 +83,21 @@ impl Tdb {
                 }
             }
 
-            db.tables.push(table);
+            // assert table size
+            assert_eq!(col, table.cols.len());
+            assert_eq!(row, table.cols[0].values.len());
+
+            self.tables.push(table);
         }
-        Ok(db)
+
+        Ok(())
     }
 
-    pub fn write(&self) -> RcResult {
+    pub fn dump(&self) -> RcResult {
+        if self.db_path.is_empty() {
+            return Err(RcError::TdbParseError("No path specified".into()));
+        }
+
         let mut content = Vec::new();
 
         for table in &self.tables {
@@ -152,8 +113,8 @@ impl Tdb {
             // chunk size starts here
             let chunk_size_start = chunk_size_offset + 4;
 
-            content.extend_from_slice(&(table.col_len as i32).to_le_bytes());
-            content.extend_from_slice(&(table.row_len as i32).to_le_bytes());
+            content.extend_from_slice(&(table.cols.len() as i32).to_le_bytes());
+            content.extend_from_slice(&(table.cols[0].values.len() as i32).to_le_bytes());
             content.extend_from_slice(&PLACEHOLDER); // separator
 
             for col in &table.cols {
@@ -164,9 +125,11 @@ impl Tdb {
 
             for col in &table.cols {
                 for v in &col.values {
-                    content.extend_from_slice(&v.slice);
                     if col.value_type == VtValueType::String {
+                        content.extend_from_slice(v.get_slice());
                         content.push(C_EOS);
+                    } else {
+                        content.extend_from_slice(&v.get_byte_slice());
                     }
                 }
             }
@@ -195,91 +158,20 @@ impl Tdb {
         Err(RcError::TdbParseError("Cannot find table".into()))
     }
 
-    pub fn get_table_mut(&mut self, name: &str) -> RcResultWith<&mut VtTable> {
-        for t in &mut self.tables {
-            if t.name == name {
-                return Ok(t);
+    /// find named table, if no table matched, insert a new table and return it
+    pub fn get_table_mut(&mut self, name: &str) -> &mut VtTable {
+        let table_index = self.tables.iter().position(|t| t.name == name);
+        match table_index {
+            Some(index) => &mut self.tables[index],
+            None => {
+                self.tables.push(VtTable::new(name.to_string()));
+                self.tables.last_mut().unwrap()
             }
         }
-        Err(RcError::TdbParseError("Cannot find table".into()))
     }
 }
 
-impl VtTable {
-    fn new(name: String, row: usize, col: usize) -> Self {
-        Self {
-            name,
-            row_len: row,
-            col_len: col,
-            cols: Vec::new(),
-        }
-    }
-}
-
-impl Index<usize> for VtTable {
-    type Output = VtColumn;
-
-    fn index(&self, index: usize) -> &Self::Output {
-        &self.cols[index]
-    }
-}
-
-impl IndexMut<usize> for VtTable {
-    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
-        &mut self.cols[index]
-    }
-}
-
-impl VtValue {
-    pub fn new(slice: &[u8]) -> Self {
-        VtValue {
-            slice: Vec::from(slice),
-        }
-    }
-
-    fn get_byte_slice(&self) -> [u8; 4] {
-        let s = &self.slice[0..4];
-        [s[0], s[1], s[2], s[3]]
-    }
-
-    pub fn to_float(&self) -> f32 {
-        f32::from_le_bytes(self.get_byte_slice())
-    }
-
-    pub fn to_int(&self) -> i32 {
-        i32::from_le_bytes(self.get_byte_slice())
-    }
-
-    pub fn to_usize(&self) -> usize {
-        self.to_int() as usize
-    }
-
-    pub fn to_bool(&self) -> bool {
-        self.to_int() != 0
-    }
-}
-
-impl Display for VtValue {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", String::from_utf8_lossy(&self.slice))
-    }
-}
-
-impl Index<usize> for VtColumn {
-    type Output = VtValue;
-
-    fn index(&self, index: usize) -> &Self::Output {
-        &self.values[index]
-    }
-}
-
-impl IndexMut<usize> for VtColumn {
-    fn index_mut(&mut self, index: usize) -> &mut VtValue {
-        &mut self.values[index]
-    }
-}
-
-impl std::ops::Index<usize> for Tdb {
+impl Index<usize> for Tdb {
     type Output = VtTable;
 
     fn index(&self, index: usize) -> &Self::Output {

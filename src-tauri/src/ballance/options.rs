@@ -1,4 +1,4 @@
-use super::tdb::{Tdb, VtValue};
+use super::tdb::{Tdb, VtColumn, VtValue, VtValueType};
 use crate::common::exception::RcResult;
 use serde::{Deserialize, Serialize};
 
@@ -53,7 +53,10 @@ impl BallanceOptions {
         }
     }
 
-    pub fn read_from(&mut self, tdb: &Tdb) -> RcResult {
+    pub fn read_from(&mut self, tdb: &str) -> RcResult {
+        let mut tdb = Tdb::new(tdb);
+        tdb.load()?;
+
         let table = tdb.get_table("DB_Options")?;
         self.volume = table[0][0].to_float();
         self.sync_to_screen = table[1][0].to_bool();
@@ -75,14 +78,7 @@ impl BallanceOptions {
 
         for i in 0..13 {
             let level = i + 1;
-            let table_name = format!(
-                "DB_Highscore_Lv{}",
-                if level < 10 {
-                    format!("0{}", level)
-                } else {
-                    level.to_string()
-                }
-            );
+            let table_name = format!("DB_Highscore_Lv{:02}", level);
             if let Ok(table) = tdb.get_table(&table_name) {
                 for j in 0..10 {
                     self.highscores[i][j].player = table[0][j].to_string();
@@ -94,48 +90,145 @@ impl BallanceOptions {
         Ok(())
     }
 
-    pub fn write_to(&mut self, tdb: &mut Tdb) -> RcResult {
+    pub fn write_to(&mut self, tdb: &str) -> RcResult {
+        let mut tdb = Tdb::new(tdb);
+
         let vol = self.volume * 100.0;
         let vol = vol.round();
         self.volume = vol / 100.0;
 
-        let table = tdb.get_table_mut("DB_Options")?;
-        table[0][0] = VtValue::new(&self.volume.to_le_bytes());
-        table[1][0] = VtValue::new(&(self.sync_to_screen as i32).to_le_bytes());
-        table[2][0] = VtValue::new(&self.key_forward.to_le_bytes());
-        table[3][0] = VtValue::new(&self.key_backward.to_le_bytes());
-        table[4][0] = VtValue::new(&self.key_left.to_le_bytes());
-        table[5][0] = VtValue::new(&self.key_right.to_le_bytes());
-        table[6][0] = VtValue::new(&self.key_rotate_cam.to_le_bytes());
-        table[7][0] = VtValue::new(&self.key_lift_cam.to_le_bytes());
-        table[8][0] = VtValue::new(&(self.invert_cam_rotation as i32).to_le_bytes());
-        table[9][0] = VtValue::new(self.last_player.as_bytes());
-        table[10][0] = VtValue::new(&(self.cloud_layer as i32).to_le_bytes());
+        let table = tdb.get_table_mut("DB_Options");
+        table.add_column(
+            0,
+            VtColumn {
+                name: "Volume".to_string(),
+                value_type: VtValueType::Float,
+                values: vec![VtValue::new_float(self.volume)],
+            },
+        );
+        table.add_column(
+            1,
+            VtColumn {
+                name: "Sync to Screen?".to_string(),
+                value_type: VtValueType::Int,
+                values: vec![VtValue::new_bool(self.sync_to_screen)],
+            },
+        );
+        table.add_column(
+            2,
+            VtColumn {
+                name: "Key Forward".to_string(),
+                value_type: VtValueType::Int,
+                values: vec![VtValue::new_int(self.key_forward)],
+            },
+        );
+        table.add_column(
+            3,
+            VtColumn {
+                name: "Key Backward".to_string(),
+                value_type: VtValueType::Int,
+                values: vec![VtValue::new_int(self.key_backward)],
+            },
+        );
+        table.add_column(
+            4,
+            VtColumn {
+                name: "Key Left".to_string(),
+                value_type: VtValueType::Int,
+                values: vec![VtValue::new_int(self.key_left)],
+            },
+        );
+        table.add_column(
+            5,
+            VtColumn {
+                name: "Key Right".to_string(),
+                value_type: VtValueType::Int,
+                values: vec![VtValue::new_int(self.key_right)],
+            },
+        );
+        table.add_column(
+            6,
+            VtColumn {
+                name: "Key Rotate Cam".to_string(),
+                value_type: VtValueType::Int,
+                values: vec![VtValue::new_int(self.key_rotate_cam)],
+            },
+        );
+        table.add_column(
+            7,
+            VtColumn {
+                name: "Key Lift Cam".to_string(),
+                value_type: VtValueType::Int,
+                values: vec![VtValue::new_int(self.key_lift_cam)],
+            },
+        );
+        table.add_column(
+            8,
+            VtColumn {
+                name: "Invert Cam Rotation?".to_string(),
+                value_type: VtValueType::Int,
+                values: vec![VtValue::new_bool(self.invert_cam_rotation)],
+            },
+        );
+        table.add_column(
+            9,
+            VtColumn {
+                name: "Last Player".to_string(),
+                value_type: VtValueType::String,
+                values: vec![VtValue::new_string(&self.last_player)],
+            },
+        );
+        table.add_column(
+            10,
+            VtColumn {
+                name: "CloudLayer?".to_string(),
+                value_type: VtValueType::Int,
+                values: vec![VtValue::new_bool(self.cloud_layer)],
+            },
+        );
 
-        let table = tdb.get_table_mut("DB_Levelfreischaltung")?;
-        let col = &mut table[0];
-        for i in 0..12 {
-            // col[i] = VtValue::new(&(if self.unlocked[i] { 1_i32 } else { 0_i32 }).to_le_bytes());
-            col[i] = VtValue::new(&(self.level_lock[i] as i32).to_le_bytes());
-        }
+        tdb.get_table_mut("DB_Levelfreischaltung").add_column(
+            0,
+            VtColumn {
+                name: "Freigeschaltet?".to_string(),
+                value_type: VtValueType::Int,
+                values: self
+                    .level_lock
+                    .iter()
+                    .map(|b| VtValue::new_bool(*b))
+                    .collect(),
+            },
+        );
 
         for i in 0..13 {
             let level = i + 1;
-            let table_name = format!(
-                "DB_Highscore_Lv{}",
-                if level < 10 {
-                    format!("0{}", level)
-                } else {
-                    level.to_string()
-                }
+            let table_name = format!("DB_Highscore_Lv{:02}", level);
+            let table = tdb.get_table_mut(&table_name);
+            table.add_column(
+                0,
+                VtColumn {
+                    name: "Playername".to_string(),
+                    value_type: VtValueType::String,
+                    values: self.highscores[i]
+                        .iter()
+                        .map(|hs| VtValue::new_string(&hs.player))
+                        .collect(),
+                },
             );
-            if let Ok(table) = tdb.get_table_mut(&table_name) {
-                for j in 0..10 {
-                    table[0][j] = VtValue::new(self.highscores[i][j].player.as_bytes());
-                    table[1][j] = VtValue::new(&self.highscores[i][j].score.to_le_bytes());
-                }
-            }
+            table.add_column(
+                1,
+                VtColumn {
+                    name: "Points".to_string(),
+                    value_type: VtValueType::Int,
+                    values: self.highscores[i]
+                        .iter()
+                        .map(|hs| VtValue::new_int(hs.score))
+                        .collect(),
+                },
+            );
         }
+
+        tdb.dump()?;
 
         Ok(())
     }

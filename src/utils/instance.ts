@@ -93,7 +93,14 @@ export const checkBallanceFolder = async (
 
   const tdbPath = await join(baseFolder, "Database.tdb");
 
-  instance.options = await ballance.readOptions(tdbPath);
+  try {
+    instance.options = await ballance.readOptions(tdbPath);
+  } catch {
+    // 写入默认配置
+    console.error("Failed to read options, writing default options");
+    instance.options = defaultOptions();
+    ballance.saveOptions(tdbPath, instance.options);
+  }
 
   const bml = await checkFiles(baseFolder, "bml");
   if (bml) {
@@ -120,3 +127,34 @@ export const checkBallanceFolder = async (
 
   return instance;
 };
+
+const defaultOptions = (): BallanceOptions => ({
+  volume: 1,
+  syncToScreen: false,
+  keyForward: 68,
+  keyBackward: 69,
+  keyLeft: 70,
+  keyRight: 71,
+  keyRotateCam: 39,
+  keyLiftCam: 53,
+  invertCamRotation: false,
+  cloudLayer: true,
+  lastPlayer: "Mr. Default",
+  levelLock: [
+    true,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false
+  ],
+  highscores: Array.from({ length: 13 }, () =>
+    Array.from({ length: 10 }, () => ({ player: "Mr. Default", score: 0 }))
+  )
+});

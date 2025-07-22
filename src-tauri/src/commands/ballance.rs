@@ -2,7 +2,6 @@ use crate::{
     ballance::{
         mod_config::{ConfigEntry, ModConfig},
         options::BallanceOptions,
-        tdb::Tdb,
     },
     common::exception::{RcResult, RcResultWith},
 };
@@ -12,23 +11,16 @@ use tauri::command;
 
 #[command]
 pub fn read_options(path: String) -> RcResultWith<BallanceOptions> {
-    let tdb = Tdb::new(&path)?;
     let mut options = BallanceOptions::new();
-    options.read_from(&tdb)?;
-
+    options.read_from(&path)?;
     info!("Read options from {}", path);
-
     Ok(options)
 }
 
 #[command]
 pub fn save_options(path: String, mut options: BallanceOptions) -> RcResult {
-    let mut tdb = Tdb::new(&path)?;
-    options.write_to(&mut tdb)?;
-    tdb.write()?;
-
+    options.write_to(&path)?;
     info!("Saved options to {}", path);
-
     Ok(())
 }
 
