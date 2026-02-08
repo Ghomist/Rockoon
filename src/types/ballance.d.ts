@@ -1,6 +1,7 @@
 type Instance = {
   path: string;
   name: string;
+  /** 游玩时间（单位：秒） */
   playtime: number;
 };
 

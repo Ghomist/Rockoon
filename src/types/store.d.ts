@@ -9,7 +9,7 @@ type AppStore = {
   runningInstancePid?: number;
 
   /** 当前运行的实例启动时间 */
-  runningInstanceTimestamp?: number;
+  runningInstanceTimestamp: number;
 };
 type Message = {
   id: number;

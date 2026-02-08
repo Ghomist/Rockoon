@@ -67,8 +67,8 @@ onMounted(async () => {
     <n-scrollbar class="list-container-fix">
       <n-list-item
         v-for="i in 12"
-        class="list-item-fix"
         :key="i"
+        class="list-item-fix"
         @click="onToggleLevelLock(i)"
       >
         <template #prefix>

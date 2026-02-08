@@ -17,7 +17,7 @@ import {
   NText,
   zhCN
 } from "naive-ui";
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted, ref, onUnmounted } from "vue";
 import { useRouter } from "vue-router";
 import BasicIcon from "./views/components/MgcIcon.vue";
 import { t } from "./i18n";
@@ -25,10 +25,13 @@ import { getMenuOptions } from "./routers/menu";
 import { useAppStore } from "./stores/app";
 import { usePrefStore } from "./stores/pref";
 import { message } from "./utils/ui/feedback";
+import { useLauncherService } from "./services/launcher";
 
 const app = useAppStore();
 const pref = usePrefStore();
 const router = useRouter();
+const { checkRunningInstance, killInstance, launchInstance } =
+  useLauncherService();
 
 const theme = computed(() => (pref.darkMode ? darkTheme : lightTheme));
 const locale = computed(() => (pref.language === "zh" ? zhCN : enUS));
@@ -40,6 +43,25 @@ const dateLocale = computed(() =>
 const menuRef = ref<InstanceType<typeof NMenu>>();
 const collapsed = ref(false);
 const selectedKey = ref("");
+const checkInterval = ref<ReturnType<typeof setInterval>>();
+
+const onLaunchGame = async () => {
+  if (!app.selectedInstance) {
+    message.warning(t("instances.selectInstance"));
+    return;
+  }
+
+  if (app.runningInstancePid) {
+    const isRunning = await checkRunningInstance();
+    if (isRunning) {
+      message.warning(t("home.alreadyRunning"));
+      return;
+    }
+  }
+
+  await launchInstance(app.selectedInstance);
+  message.success(t("home.launching"));
+};
 
 onMounted(() => {
   // react to route change
@@ -61,6 +83,22 @@ onMounted(() => {
     setTimeout(() => {
       message.info(t("message.welcome"));
     }, 50);
+  }
+
+  // 定期检查游戏进程状态并保存游玩时间（每1秒检查一次）
+  checkInterval.value = setInterval(() => {
+    checkRunningInstance();
+    // 更新当前的游玩时间（即使游戏还在运行）
+    if (app.runningInstancePid) {
+      app.updateInstanceRunningTime();
+    }
+  }, 1000);
+});
+
+onUnmounted(() => {
+  // 清理定时器
+  if (checkInterval.value) {
+    clearInterval(checkInterval.value);
   }
 });
 </script>
@@ -98,11 +136,21 @@ onMounted(() => {
         </n-text>
 
         <n-flex justify="flex-end" style="flex: 1">
-          <n-button type="primary">
+          <n-button
+            v-if="!app.runningInstancePid"
+            type="primary"
+            @click="onLaunchGame"
+          >
             <template #icon>
               <BasicIcon icon="play-line" />
             </template>
             {{ t("home.launch") }}
+          </n-button>
+          <n-button v-else type="error" @click="killInstance">
+            <template #icon>
+              <BasicIcon icon="stop-line" />
+            </template>
+            {{ t("home.stop") }}
           </n-button>
         </n-flex>
       </n-flex>

@@ -43,7 +43,10 @@
     "ingameMotdContent": "In-game welcome message"
   },
   "home": {
-    "launch": "Start Game"
+    "launch": "Start Game",
+    "stop": "Stop Game",
+    "launching": "Launching game...",
+    "alreadyRunning": "Game is already running"
   },
   "common": {
     "none": "None",

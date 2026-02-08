@@ -22,19 +22,25 @@ export const useLauncherService = () => {
 
     await backend.kill(appStore.runningInstancePid);
     await backend.showWindow();
-    // appStore.updateInstanceRunningTime();
+    appStore.updateInstanceRunningTime();
     appStore.runningInstancePid = undefined;
+    appStore.runningInstancePath = undefined;
+    appStore.runningInstanceTimestamp = 0;
   }
 
   async function checkRunningInstance() {
-    if (!appStore.runningInstancePid) return;
+    if (!appStore.runningInstancePid) return false;
 
     const exists = await backend.check(appStore.runningInstancePid);
     if (!exists) {
       await backend.showWindow();
-      //   appStore.updateInstanceRunningTime();
+      appStore.updateInstanceRunningTime();
       appStore.runningInstancePid = undefined;
+      appStore.runningInstancePath = undefined;
+      appStore.runningInstanceTimestamp = 0;
+      return false;
     }
+    return true;
   }
 
   return { checkRunningInstance, killInstance, launchInstance };

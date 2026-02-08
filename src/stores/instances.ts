@@ -22,6 +22,7 @@ export const useInstancesStore = defineStore(INSTANCES_STORE_KEY, {
       if (data) {
         name ??= path.split(sep()).pop() ?? "Ballance";
         this.instances.push({ name, path, playtime: 0 });
+        this.save();
         return data;
       }
     },
@@ -33,6 +34,7 @@ export const useInstancesStore = defineStore(INSTANCES_STORE_KEY, {
           app.selectedInstanceData = undefined;
         }
         this.instances.splice(index, 1);
+        this.save();
       }
     },
     findInstance(path: string) {

@@ -24,7 +24,10 @@
     "noImpl": "敬请期待！"
   },
   "home": {
-    "launch": "启动游戏"
+    "launch": "启动游戏",
+    "stop": "停止游戏",
+    "launching": "正在启动游戏...",
+    "alreadyRunning": "游戏正在运行中"
   },
   "instances": {
     "add": {

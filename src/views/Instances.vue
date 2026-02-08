@@ -6,13 +6,16 @@ import { useInstancesStore } from "@/stores/instances";
 import { dialog, loadingBar, message } from "@/utils/ui/feedback";
 import { sep } from "@tauri-apps/api/path";
 import { open as browseFile } from "@tauri-apps/plugin-dialog";
+import { formatPlaytime } from "@/utils/format";
 import {
   NButton,
   NCheckbox,
   NFlex,
   NList,
   NListItem,
-  NScrollbar
+  NScrollbar,
+  NText,
+  NTag
 } from "naive-ui";
 import { useI18n } from "vue-i18n";
 
@@ -112,9 +115,15 @@ const onOpenFolder = async (i: Instance) => {
         <template #prefix>
           <n-checkbox :checked="app.selectedInstanceData?.path === i.path" />
         </template>
-        {{ i.name }} [{{ i.path }}]
+        <n-flex vertical :size="0">
+          <n-text>{{ i.name }}</n-text>
+          <n-text depth="3" style="font-size: 12px">{{ i.path }}</n-text>
+        </n-flex>
         <template #suffix>
-          <n-flex :wrap="false">
+          <n-flex :wrap="false" align="center">
+            <n-tag size="small" :bordered="false">{{
+              formatPlaytime(i.playtime)
+            }}</n-tag>
             <n-button secondary type="primary" @click="onOpenFolder(i)">
               {{ t("common.action.openFolder") }}
             </n-button>

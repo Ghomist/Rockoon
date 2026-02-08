@@ -44,3 +44,15 @@ export const formatTime = (ms: number) => {
     2
   )}`;
 };
+
+/** 格式化游玩时间（秒转小时+分钟+秒） */
+export const formatPlaytime = (seconds: number) => {
+  const hours = Math.floor(seconds / 3600);
+  const mins = Math.floor((seconds % 3600) / 60);
+  const secs = seconds % 60;
+
+  if (hours === 0 && mins === 0) return `${secs}s`;
+  if (hours === 0) return `${mins}m ${secs}s`;
+  if (mins === 0) return `${hours}h ${secs}s`;
+  return `${hours}h ${mins}m ${secs}s`;
+};

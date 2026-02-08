@@ -26,6 +26,22 @@ export const useAppStore = defineStore("app", {
         return true;
       }
       return false;
+    },
+    updateInstanceRunningTime() {
+      if (this.runningInstancePath && this.runningInstanceTimestamp > 0) {
+        const instancesStore = useInstancesStore();
+        const instance = instancesStore.findInstance(this.runningInstancePath);
+        if (instance) {
+          const elapsedSeconds = Math.floor(
+            (Date.now() - this.runningInstanceTimestamp) / 1000
+          );
+          if (elapsedSeconds > 0) {
+            instance.playtime += elapsedSeconds;
+            this.runningInstanceTimestamp = Date.now();
+            instancesStore.save();
+          }
+        }
+      }
     }
   }
 });
