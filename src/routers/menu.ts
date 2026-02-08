@@ -1,4 +1,4 @@
-import BasicIcon from "@/components/BasicIcon.vue";
+import BasicIcon from "@/views/components/MgcIcon.vue";
 import { t } from "@/i18n";
 import Download from "@/views/Download.vue";
 import GameConfig from "@/views/GameConfig.vue";

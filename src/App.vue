@@ -19,7 +19,7 @@ import {
 } from "naive-ui";
 import { computed, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
-import BasicIcon from "./components/BasicIcon.vue";
+import BasicIcon from "./views/components/MgcIcon.vue";
 import { t } from "./i18n";
 import { getMenuOptions } from "./routers/menu";
 import { useAppStore } from "./stores/app";
