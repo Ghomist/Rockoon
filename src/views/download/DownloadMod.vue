@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import fs from "@/api/fs";
+import fs from "@/backend/fs";
 import BasicButton from "@/components/BasicButton.vue";
 import BasicCollapse from "@/components/BasicCollapse.vue";
 import BasicConfig from "@/components/BasicConfig.vue";
 import BasicInput from "@/components/BasicInput.vue";
-import SwitchButton from "@/components/SwitchButton.vue";
+import SwitchButton from "@/views/components/SwitchButton.vue";
 import { sleep } from "@/utils/common";
 import { clampString } from "@/utils/format";
 import { openDialog, sendMessage } from "@/utils/message";

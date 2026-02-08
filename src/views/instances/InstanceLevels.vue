@@ -12,7 +12,7 @@ import { computed, toRef } from "vue";
 
 const app = useAppStore();
 const pref = usePrefStore();
-const instance = computed(() => app.selected!);
+const instance = computed(() => app.selectedInstanceData!);
 
 const unlockAllLevels = () => {
   instance.value.options.levelLock.fill(true);

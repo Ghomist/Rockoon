@@ -1,6 +1,6 @@
 # Rockoon
 
-Rockoon 是一款集成了**下载、管理、启动**于一体的 Ballance 启动器。
+Rockoon 是一款集成了 **下载、管理、启动** 于一体的 Ballance 启动器。
 
 本启动器借助 [Tauri 2.0](https://v2.tauri.app/) 开发，需要 webview 才能正常运行与显示。最低支持的系统以及 webview 版本参见[官方文档](https://v2.tauri.app/reference/webview-versions/)。
 
@@ -56,7 +56,3 @@ Rockoon 是致力于做到 Ballance 社区 All-in-One 的项目，而这注定�
 - [BMLPlus (Ballance Mod Loader Plus)](https://github.com/doyaGu/BallanceModLoaderPlus)
 - [New Player](https://github.com/doyaGu/BallancePlayer)
 - 感谢由 [Chris](https://github.com/chirs241097/)、[61](https://github.com/ShadowPower)、[yyc](https://github.com/yyc12345) 提供的 MenuLevel 动态渲染图（名称为圈内常用缩写称呼）
-
-其它引用：
-
-- 目前 Ballance 游戏以及相关插件的文件**临时**托管于 Gitee 仓库 [RockoonResources](https://gitee.com/ghomist/rockoon-resources/releases/tag/v1.0.0)，便于国内用户下载

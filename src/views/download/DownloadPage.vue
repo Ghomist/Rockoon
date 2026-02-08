@@ -3,7 +3,7 @@ import BasicBlock from "@/components/BasicBlock.vue";
 import BasicIcon from "@/components/BasicIcon.vue";
 import BasicNavItem from "@/components/BasicNavItem.vue";
 import BasicSplit from "@/components/BasicSplit.vue";
-import { fetchFiles } from "@/utils/fetcher";
+import { fetchFiles } from "@/utils/lagecy/fetcher";
 import { sendMessage } from "@/utils/message";
 import { open } from "@tauri-apps/plugin-shell";
 import { onMounted, ref } from "vue";

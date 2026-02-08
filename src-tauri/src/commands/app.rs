@@ -3,7 +3,7 @@ use log::{log, log_enabled, Level};
 use tauri::{command, Runtime, WebviewWindow, Window};
 
 #[command]
-pub fn log(level: String, msg: String) {
+pub fn log(level: String, msg: String) -> RcResult {
     let level = match level.as_str() {
         "error" => Level::Error,
         "warn" => Level::Warn,
@@ -13,8 +13,17 @@ pub fn log(level: String, msg: String) {
         _ => Level::Info,
     };
     if log_enabled!(level) {
-        log!(level, "[UI] {}", msg);
+        if msg.len() > 100 {
+            log!(
+                level,
+                "[UI] Message is too long! {}",
+                msg[..100].to_string()
+            );
+        } else {
+            log!(level, "[UI] {}", msg);
+        }
     }
+    Ok(())
 }
 
 #[command]

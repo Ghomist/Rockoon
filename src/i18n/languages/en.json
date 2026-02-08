@@ -1,0 +1,318 @@
+{
+  "menu": {
+    "game": "Start Game",
+    "options": "Options",
+    "resources": "Resources",
+    "data": "Game Data",
+    "instances": "Instances",
+    "download": "Download",
+    "tools": "Tools",
+    "help": "Help",
+    "settings": "Settings",
+    "backgrounds": "Sky Pack",
+    "maps": "Map",
+    "mods": "Mod",
+    "musics": "Music Pack",
+    "textures": "Texture Pack"
+  },
+  "header": {
+    "currentSelection": "Currently selection:",
+    "pleaseLogin": "Please log in"
+  },
+  "message": {
+    "welcome": "Welcome to use Rockoon!",
+    "noImpl": "Coming Soon!"
+  },
+  "settings": {
+    "basic": "Basic Settings",
+    "theme": {
+      "auto": "Follow the system",
+      "dark": "Dark",
+      "light": "Light",
+      "title": "Color theme"
+    },
+    "clearStorage": {
+      "button": "Clear all data",
+      "title": "Are you sure you want to clear all data?"
+    },
+    "debug": "Debug",
+    "showWelcome": "Show welcome in Rockoon",
+    "centerWindow": "Center window",
+    "ingame": "Game settings",
+    "ingameMotd": "Enable in-game welcome message",
+    "ingameMotdContent": "In-game welcome message"
+  },
+  "home": {
+    "launch": "Start Game"
+  },
+  "common": {
+    "none": "None",
+    "action": {
+      "openFolder": "Open directory",
+      "openDevtools": "Open debugging tools",
+      "refresh": "refresh"
+    },
+    "dialog": {
+      "cancel": "Cancel",
+      "confirm": "Confirm"
+    },
+    "message": {
+      "warning": "Warning!",
+      "error": "Something went wrong!"
+    },
+    "key": {
+      "changeKeyTip": "Press the keyboard or click a virtual keyboard key below to change key binding",
+      "changeKeyTitle": "Change key binding",
+      "unavailableKey": "This key is not available in Ballance"
+    }
+  },
+  "instances": {
+    "add": {
+      "browse": {
+        "fail": "This is not the Ballance game directory, or the key game files are corrupted!",
+        "success": "Adding game instance successfully!",
+        "title": "Please select the Ballance root directory"
+      },
+      "button": "Add instance"
+    },
+    "list": {
+      "remove": {
+        "button": "Remove",
+        "message": "Are you sure you want to remove this instance? \nLocal game files will not be deleted and you can still add the game to the launcher again",
+        "success": "Instance removed"
+      },
+      "statistics": "None instance add yet | Total 1 instance | Total {cnt} instances"
+    },
+    "scan": {
+      "button": "Scan instance",
+      "scanning": "Scanning instances...",
+      "success": "Scan completed! \n{total} games found ({added} games successfully added)"
+    }
+  },
+  "gameConfig": {
+    "game": {
+      "applyHotfix": {
+        "label": "Apply hot fix"
+      },
+      "language": {
+        "label": "Game interface language",
+        "tip": "Only affects the text in the game interface menu",
+        "options": {
+          "English": "English",
+          "German": "German",
+          "Spanish": "Spanish",
+          "Italian": "Italian",
+          "French": "French"
+        }
+      },
+      "skipOpening": {
+        "label": "Skip startup animation",
+        "tip": "Skip Atari and Ballance animations when opening the game"
+      },
+      "unlockFramerate": {
+        "label": "Unlock frame rate",
+        "tip": "Allows high frame rates"
+      },
+      "unlockHighResolution": {
+        "label": "Unlock high resolution",
+        "tip": "Allows resolutions higher than 1600x1200"
+      },
+      "unlockWidescreen": {
+        "label": "Unlock widescreen mode",
+        "tip": "Allows resolutions other than 4:3"
+      }
+    },
+    "graphics": {
+      "antialias": {
+        "label": "Antialias",
+        "tip": "Anti-aliasing multi-sample count, the minimum value is 2"
+      },
+      "bitsPerPixel": {
+        "label": "Bits per pixel",
+        "tip": "Bitmap color depth, set to 0 to automatically select"
+      },
+      "disableDithering": {
+        "label": "Disable image dithering"
+      },
+      "disableFilter": {
+        "label": "Disable material filtering"
+      },
+      "disableMipmap": {
+        "label": "Disable mipmaps"
+      },
+      "disablePerspectiveCorrection": {
+        "label": "Disable perspective correction"
+      },
+      "disableSpecular": {
+        "label": "Disable specular highlights"
+      },
+      "driver": {
+        "label": "Graphics card ID"
+      },
+      "enableDebugMode": {
+        "label": "Enable debug rendering",
+        "tip": "Progressive rendering"
+      },
+      "enableScreenDump": {
+        "label": "Enable screen dumps"
+      },
+      "ensureVertexShader": {
+        "label": "Check the vertex shader"
+      },
+      "forceLinearFog": {
+        "label": "Force linear fog effect"
+      },
+      "forceSoftware": {
+        "label": "Force software rendering"
+      },
+      "resolution": {
+        "label": "Resolution"
+      },
+      "sortTransparentObjects": {
+        "label": "Sort transparent objects"
+      },
+      "spriteVideoFormat": {
+        "label": "Bitmap video format"
+      },
+      "textureCacheManagement": {
+        "label": "Texture cache management"
+      },
+      "textureVideoFormat": {
+        "label": "Texture video format"
+      },
+      "useIndexBuffers": {
+        "label": "Enable vertex buffering"
+      },
+      "vertexCache": {
+        "label": "Vertex cache",
+        "tip": "Set the vertex cache size, set to 0 to disable"
+      }
+    },
+    "openConfigFile": "Open config file",
+    "selectInstance": "Please select a game instance first",
+    "startup": {
+      "loadAllBuildingBlocks": {
+        "label": "Load all Building Blocks"
+      },
+      "loadAllManagers": {
+        "label": "Load all Managers"
+      },
+      "loadAllPlugins": {
+        "label": "Load all plugins"
+      },
+      "logMode": {
+        "label": "Overwrite log",
+        "tip": "Each startup will overwrite the previous log, otherwise it will be appended to the end"
+      },
+      "manualSetup": {
+        "label": "Manual start",
+        "tip": "Show startup settings dialog window"
+      },
+      "verbose": {
+        "label": "Detailed log"
+      }
+    },
+    "tabs": {
+      "game": "Gameplay",
+      "graphics": "Graphics",
+      "startup": "Start Up",
+      "window": "Window",
+      "inGameOptions": "In-Game Options"
+    },
+    "window": {
+      "alwaysHandleInput": {
+        "label": "Allow background input",
+        "tip": "Window can also respond to mouse/keyboard input while the window is in the background"
+      },
+      "borderless": {
+        "label": "Borderless mode",
+        "tip": "Remove window borders"
+      },
+      "childWindowRendering": {
+        "label": "Subwindow rendering"
+      },
+      "clipCursor": {
+        "label": "Limit the mouse to the window"
+      },
+      "position": {
+        "label": "Window position",
+        "tip": "Negative numbers can be set, and setting all to 0 means no restrictions"
+      }
+    },
+    "inGameOptions": {
+      "cloudLayer": {
+        "label": "Show clouds"
+      },
+      "invertCamRotation": {
+        "label": "Invert camera rotation"
+      },
+      "syncToScreen": {
+        "label": "Sync to screen"
+      },
+      "volume": {
+        "label": "Volume",
+        "tip": "Due to game limitations, this option only affects background music"
+      },
+      "keyBackward": {
+        "label": "Backward"
+      },
+      "keyForward": {
+        "label": "Forward"
+      },
+      "keyLeft": {
+        "label": "Left"
+      },
+      "keyLiftCam": {
+        "label": "Lift perspective"
+      },
+      "keyRight": {
+        "label": "Right"
+      },
+      "keyRotateCam": {
+        "label": "Rotate perspective",
+        "tip": "Press this key and the left / right key at the same time to rotate the perspective"
+      }
+    }
+  },
+  "gameData": {
+    "levelLabel": "Level {i}",
+    "action": {
+      "editHighscores": "Edit highscores",
+      "exportHighscores": "Export highscores",
+      "unlockAll": "Unlock all levels"
+    },
+    "levelState": {
+      "locked": "Locked",
+      "unlocked": "Unlocked"
+    },
+    "title": "Level unlocking and highscores",
+    "highscores": {
+      "rank": "Rank",
+      "player": "Player Name",
+      "score": "Highscore"
+    }
+  },
+  "resources": {
+    "delete": {
+      "button": "delete",
+      "message": "Are you sure you want to delete {name}? \nThe files will not be retrieved!",
+      "success": "File deleted"
+    },
+    "import": {
+      "button": "import",
+      "success": "Import successful",
+      "tip": "Please select"
+    },
+    "name": {
+      "map": "Ballance map file",
+      "mod": "Ballance module files"
+    },
+    "refresh": {
+      "success": "Refresh successful!"
+    },
+    "statistics": {
+      "map": "No map found | 1 self-made map in total | {cnt} self-made map in total",
+      "mod": "No modules found | 1 module in total | {cnt} modules in total"
+    }
+  }
+}

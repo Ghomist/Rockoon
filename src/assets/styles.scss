@@ -1,0 +1,28 @@
+@use "ui-fix.scss";
+
+:root {
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: 100%;
+
+  // ui
+  --main-header-h: 52px;
+  --main-container-h: calc(100vh - var(--main-header-h));
+
+  --list-header-h: 75px;
+  --list-container-h: calc(var(--main-container-h) - var(--list-header-h));
+}
+
+body {
+  user-select: none;
+  -ms-user-select: none;
+  -moz-user-select: none;
+  -webkit-user-select: none;
+}
+
+#app {
+  height: 100vh;
+  overflow: hidden;
+}

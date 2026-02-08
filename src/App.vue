@@ -1,171 +1,168 @@
-<script setup lang="ts">
-import { getVersion } from "@tauri-apps/api/app";
-import { computed, onMounted } from "vue";
-import BasicMessage from "./components/BasicMessage.vue";
+<script lang="ts" setup>
+import {
+  darkTheme,
+  dateEnUS,
+  dateZhCN,
+  enUS,
+  lightTheme,
+  NA,
+  NAvatar,
+  NButton,
+  NConfigProvider,
+  NFlex,
+  NLayout,
+  NLayoutSider,
+  NMenu,
+  NScrollbar,
+  NText,
+  zhCN
+} from "naive-ui";
+import { computed, onMounted, ref } from "vue";
+import { useRouter } from "vue-router";
+import BasicIcon from "./components/BasicIcon.vue";
+import { t } from "./i18n";
+import { getMenuOptions } from "./routers/menu";
 import { useAppStore } from "./stores/app";
 import { usePrefStore } from "./stores/pref";
-import { sendMessage } from "./utils/message";
-import DownloadPage from "./views/download/DownloadPage.vue";
-import Header from "./views/header/Header.vue";
-import HelpPage from "./views/help/HelpPage.vue";
-import HomePage from "./views/home/HomePage.vue";
-import InstancesPage from "./views/instances/InstancesPage.vue";
-import SettingsPage from "./views/settings/SettingsPage.vue";
-import ToolsPage from "./views/tools/ToolsPage.vue";
+import { message } from "./utils/ui/feedback";
 
 const app = useAppStore();
 const pref = usePrefStore();
-const pageSchema = [
-  {
-    key: "home",
-    component: HomePage
-  },
-  {
-    key: "instances",
-    component: InstancesPage
-  },
-  {
-    key: "download",
-    component: DownloadPage
-  },
-  {
-    key: "tools",
-    component: ToolsPage
-  },
-  {
-    key: "settings",
-    component: SettingsPage
-  },
-  {
-    key: "help",
-    component: HelpPage
-  }
-];
-const currentPage = computed(
-  () => pageSchema.find(x => x.key === app.page)!.component
+const router = useRouter();
+
+const theme = computed(() => (pref.darkMode ? darkTheme : lightTheme));
+const locale = computed(() => (pref.language === "zh" ? zhCN : enUS));
+const dateLocale = computed(() =>
+  pref.language === "zh" ? dateZhCN : dateEnUS
 );
 
-onMounted(async () => {
-  const ver = await getVersion();
-  sendMessage(`欢迎使用 Rockoon！当前版本 <b>${ver}</b>`);
+// menu related props
+const menuRef = ref<InstanceType<typeof NMenu>>();
+const collapsed = ref(false);
+const selectedKey = ref("");
+
+onMounted(() => {
+  // react to route change
+  router.afterEach(() => {
+    const currentPath = router.currentRoute.value.path;
+
+    // update selected key
+    selectedKey.value = currentPath;
+
+    // remember latest route
+    pref.route = currentPath;
+
+    // auto-expand selected submenu
+    menuRef.value?.showOption(currentPath);
+  });
+
+  // show welcome message
+  if (pref.showWelcome) {
+    setTimeout(() => {
+      message.info(t("message.welcome"));
+    }, 50);
+  }
 });
 </script>
 
 <template>
-  <div class="container">
-    <div class="header" :class="{ onMaximized: pref.isMaximized }">
-      <Header></Header>
-    </div>
-    <div
-      id="content-container"
-      class="content"
-      :class="{ onMaximized: pref.isMaximized }"
-      :style="{
-        '--bg-blur': pref.backgroundBlur + 'px',
-        '--custom-background-image': pref.backgroundImage,
-        '--mask-opacity':
-          pref.enableBgv || pref.backgroundImage ? pref.maskOpacity : 1
-      }"
-    >
-      <div v-if="pref.backgroundImage" class="content-custom-bg" />
-      <video v-else-if="pref.enableBgv" class="content-bgv" autoplay loop muted>
-        <source src="/menu_level_compressed.mp4" type="video/mp4" />
-      </video>
-      <div class="content-bg-blur" />
-      <div class="content-bg-mask" />
-      <Transition name="fade" mode="out-in">
-        <KeepAlive>
-          <component :is="currentPage" />
-        </KeepAlive>
-      </Transition>
-    </div>
-  </div>
+  <n-config-provider
+    :theme
+    :locale
+    :date-locale="dateLocale"
+    style="--main-ctn-h: calc(100vh - 52px)"
+  >
+    <n-layout style="height: 52px; border-bottom: 1px solid rgb(239, 239, 245)">
+      <n-flex
+        align="center"
+        justify="space-between"
+        style="height: 100%; padding-left: 16px; padding-right: 16px"
+      >
+        <n-flex style="flex: 1">
+          <n-avatar>
+            <BasicIcon icon="avatar-line" />
+          </n-avatar>
+          <n-button @click="message.info(t('message.noImpl'))">
+            {{ t("header.pleaseLogin") }}
+          </n-button>
+        </n-flex>
 
-  <div id="message-service">
-    <TransitionGroup name="message">
-      <BasicMessage
-        v-for="msg in app.messageQueue"
-        :key="msg.id"
-        :message="msg.message"
-      />
-    </TransitionGroup>
-  </div>
+        <n-text>
+          {{ t("header.currentSelection") }}
+          <n-a
+            v-if="app.selectedInstanceData"
+            @click="router.push('/instances')"
+          >
+            {{ app.selectedInstanceData.path ?? t("common.none") }}
+          </n-a>
+        </n-text>
+
+        <n-flex justify="flex-end" style="flex: 1">
+          <n-button type="primary">
+            <template #icon>
+              <BasicIcon icon="play-line" />
+            </template>
+            {{ t("home.launch") }}
+          </n-button>
+        </n-flex>
+      </n-flex>
+    </n-layout>
+
+    <n-layout has-sider style="width: 100vw; height: var(--main-ctn-h)">
+      <n-layout-sider
+        bordered
+        show-trigger
+        collapse-mode="width"
+        :width="180"
+        :collapsed-width="50"
+        :collapsed="collapsed"
+        @collapse="collapsed = true"
+        @expand="collapsed = false"
+      >
+        <n-scrollbar>
+          <n-menu
+            ref="menuRef"
+            v-model:value="selectedKey"
+            :options="getMenuOptions()"
+            :indent="20"
+          />
+        </n-scrollbar>
+      </n-layout-sider>
+
+      <n-layout
+        class="main-container-scrollbar-fix"
+        style="height: 100%"
+        :native-scrollbar="false"
+      >
+        <router-view v-slot="{ Component }">
+          <transition name="fade-slide" mode="out-in">
+            <component :is="Component" class="view" />
+          </transition>
+        </router-view>
+      </n-layout>
+    </n-layout>
+  </n-config-provider>
 </template>
 
 <style scoped>
-.container {
-  display: flex;
-  flex-direction: column;
-  justify-items: center;
-
-  transition: none;
+.fade-slide-enter-active,
+.fade-slide-leave-active {
+  transition: all 150ms ease;
 }
-
-.header {
-  overflow: hidden;
-
-  height: 54px;
-  border-radius: 8px 8px 0 0;
-
-  background-color: var(--color-prime);
-
-  &.onMaximized {
-    border-radius: 0;
-  }
+.fade-slide-enter-from {
+  opacity: 0;
+  transform: translateY(10px);
 }
-
-.content {
-  position: relative;
-  overflow: hidden;
-
-  height: calc(100vh - 54px - 16px);
-  border-radius: 0 0 8px 8px;
-
-  & > * {
-    position: absolute;
-  }
-
-  &.onMaximized {
-    height: calc(100vh - 54px);
-    border-radius: 0;
-  }
+.fade-slide-enter-to {
+  opacity: 1;
+  transform: translateY(0);
 }
-.content-bg-blur {
-  inset: 0;
-  backdrop-filter: blur(var(--bg-blur));
+.fade-slide-leave-from {
+  opacity: 1;
+  transform: translateY(0);
 }
-.content-bg-mask {
-  inset: 0;
-  opacity: var(--mask-opacity);
-  background-image: var(--background-image);
-}
-.content-custom-bg {
-  inset: 0;
-  background-image: var(--custom-background-image);
-  background-size: cover;
-  background-position: center center;
-}
-.content-bgv {
-  position: absolute;
-  inset: 0;
-  min-width: 100%;
-  min-height: 100%;
-  z-index: -1;
-  object-fit: cover;
-  overflow: clip;
-}
-
-#message-service {
-  position: fixed;
-  display: flex;
-  flex-direction: column;
-  justify-content: right;
-  pointer-events: none;
-  gap: 6px;
-  right: 0;
-  bottom: 0;
-  padding: 20px;
-  z-index: 1000;
-  width: 260px;
+.fade-slide-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
 }
 </style>

@@ -1,25 +1,11 @@
-export const watchNode = (
-  node: HTMLElement,
-  callback: MutationCallback
-): MutationObserver => {
-  const observer = new MutationObserver(callback);
-  observer.observe(node, { attributes: true, childList: true, subtree: true });
-  return observer;
-};
-
-export const withDefault = <T>(obj: any, dft: T) => ({ ...dft, ...obj }) as T;
-
-export const shakeNode = (node: HTMLElement) => {
-  node.classList.add("shake-effect");
-  setTimeout(() => node.classList.remove("shake-effect"), 300);
-};
-
 export const sleep = (ms: number) =>
   new Promise(resolve => setTimeout(resolve, ms));
 
-export const debounce = (func: Function, wait: number = 300) => {
+export const withDefault = <T>(obj: any, dft: T) => ({ ...dft, ...obj }) as T;
+
+export const withDebounce = (func: (...args: any[]) => void, wait = 300) => {
   let timeout: number;
-  return function executedFunction(...args: any[]) {
+  return (...args: any[]) => {
     const later = () => {
       clearTimeout(timeout);
       func(...args);
@@ -27,4 +13,27 @@ export const debounce = (func: Function, wait: number = 300) => {
     clearTimeout(timeout);
     timeout = window.setTimeout(later, wait);
   };
+};
+
+export const withCache = <R>(func: () => R | Promise<R>, expireMs = 0) => {
+  const cache: {
+    value?: R;
+    timestamp: number;
+  } = {
+    value: undefined,
+    timestamp: 0
+  };
+
+  return async () => {
+    if (cache.value === undefined || cache.timestamp + expireMs < Date.now()) {
+      cache.value = await Promise.resolve(func());
+      cache.timestamp = Date.now();
+    }
+    return cache.value;
+  };
+};
+
+export const defineService = <R>(func: () => R) => {
+  const instance = func();
+  return () => instance;
 };

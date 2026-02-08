@@ -14,10 +14,10 @@ import {
   watchEffect,
   WatchHandle
 } from "vue";
-import fs from "@/api/fs";
+import fs from "@/backend/fs";
 
 const app = useAppStore();
-const instance = computed(() => app.selected!);
+const instance = computed(() => app.selectedInstanceData!);
 
 const skyPath = ref("");
 const updateSkyPath = async () => {

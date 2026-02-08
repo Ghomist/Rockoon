@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { default as file, default as fs } from "@/api/fs";
+import { default as file, default as fs } from "@/backend/fs";
 import BasicButton from "@/components/BasicButton.vue";
 import BasicCollapse from "@/components/BasicCollapse.vue";
 import BasicConfig from "@/components/BasicConfig.vue";
 import BasicSwitch from "@/components/BasicSwitch.vue";
 import { useAppStore } from "@/stores/app";
-import { useFileStore } from "@/stores/fs";
+import { useInstancesStore } from "@/stores/instances";
 import { formatFileName, formatFileSize, formatFileType } from "@/utils/format";
 import { openDialog, sendMessage } from "@/utils/message";
 import { join, sep } from "@tauri-apps/api/path";
@@ -25,8 +25,8 @@ import ExtraButtons from "./components/ExtraButtons.vue";
 import ModConfig from "./components/ModConfig.vue";
 
 const app = useAppStore();
-const fileStore = useFileStore();
-const instance = computed(() => app.selected!);
+const fileStore = useInstancesStore();
+const instance = computed(() => app.selectedInstanceData!);
 
 const mods = ref<ManagedFile[]>([]);
 const reading = ref(false);

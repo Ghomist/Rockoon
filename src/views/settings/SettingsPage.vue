@@ -1,16 +1,16 @@
 <script setup lang="ts">
-import app from "@/api/app";
+import app from "@/backend/common";
 import BasicButton from "@/components/BasicButton.vue";
 import BasicCollapse from "@/components/BasicCollapse.vue";
 import BasicConfig from "@/components/BasicConfig.vue";
 import BasicInput from "@/components/BasicInput.vue";
 import BasicSlider from "@/components/BasicSlider.vue";
 import BasicSwitch from "@/components/BasicSwitch.vue";
-import SwitchButton from "@/components/SwitchButton.vue";
+import SwitchButton from "@/views/components/SwitchButton.vue";
 import { usePrefStore } from "@/stores/pref";
 import { openDialog, sendMessage } from "@/utils/message";
 import storage from "@/utils/storage";
-import { checkUpdate } from "@/utils/updater";
+import { checkUpdate } from "@/utils/lagecy/updater";
 import { getTauriVersion, getVersion } from "@tauri-apps/api/app";
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { open as browseFile } from "@tauri-apps/plugin-dialog";

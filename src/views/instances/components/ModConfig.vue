@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import ballance from "@/api/ballance";
+import ballance from "@/backend/ballance";
 import BasicCollapse from "@/components/BasicCollapse.vue";
 import BasicConfig from "@/components/BasicConfig.vue";
 import BasicInput from "@/components/BasicInput.vue";

@@ -52,7 +52,7 @@ export const keySchema: KeySchema[][] = [
     { id: 35, name: "L" },
     { id: 36, name: ";" },
     { id: 37, name: "'" },
-    { id: -1, name: "Enter", width: 3 },
+    { id: -1, name: "Enter", width: 3, disabled: true },
     { id: 58, name: "Num 4", display: "4" },
     { id: 59, name: "Num 5", display: "5" },
     { id: 60, name: "Num 6", display: "6" }

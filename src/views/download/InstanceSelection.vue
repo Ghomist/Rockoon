@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import BasicNavItem from "@/components/BasicNavItem.vue";
 import { useAppStore } from "@/stores/app";
-import { useFileStore } from "@/stores/fs";
-import { checkFiles } from "@/utils/instance";
+import { useInstancesStore } from "@/stores/instances";
+import { checkFiles } from "@/backend/instance";
 import { onMounted, ref } from "vue";
 
 const props = defineProps<{
@@ -10,8 +10,8 @@ const props = defineProps<{
 }>();
 
 const app = useAppStore();
-const fs = useFileStore();
-const selected = ref(app.selected?.path);
+const fs = useInstancesStore();
+const selected = ref(app.selectedInstanceData?.path);
 const instances = ref<BallanceInstanceStore[]>([]);
 
 defineExpose({ selectedPath: () => selected.value });

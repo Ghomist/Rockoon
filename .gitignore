@@ -12,6 +12,8 @@ dist
 dist-ssr
 *.local
 
+target
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -25,3 +27,8 @@ dist-ssr
 
 *_ignored
 .secrets
+
+# Ballance mod files
+src-bmodp/build
+src-bmodp/3rd-party/*
+!src-bmodp/3rd-party/CMakeLists.txt

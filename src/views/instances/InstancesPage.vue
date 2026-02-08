@@ -4,7 +4,7 @@ import BasicIcon from "@/components/BasicIcon.vue";
 import BasicNavItem from "@/components/BasicNavItem.vue";
 import BasicSplit from "@/components/BasicSplit.vue";
 import { useAppStore } from "@/stores/app";
-import { useFileStore } from "@/stores/fs";
+import { useInstancesStore } from "@/stores/instances";
 import { openDialog, sendMessage } from "@/utils/message";
 import { open as browseFile } from "@tauri-apps/plugin-dialog";
 import { computed, ref } from "vue";
@@ -17,7 +17,7 @@ import InstanceSky from "./InstanceSky.vue";
 import NoneSelectedPage from "./NoneSelectedPage.vue";
 
 const app = useAppStore();
-const fs = useFileStore();
+const fs = useInstancesStore();
 
 const onAddInstance = async () => {
   const folder = await browseFile({
@@ -27,7 +27,7 @@ const onAddInstance = async () => {
   if (folder) {
     const instance = await fs.addInstance(folder);
     if (instance) {
-      app.selected = instance;
+      app.selectedInstanceData = instance;
       sendMessage("添加游戏成功！");
     } else {
       sendMessage(
@@ -70,13 +70,16 @@ const subPageData = computed(() => {
       page: InstanceSky
     }
   ];
-  if (app.selected?.newPlayer)
+  if (app.selectedInstanceData?.newPlayer)
     data.push({
       label: "启动项设置",
       value: "launch-config",
       page: InstanceLaunchConfig
     });
-  if (app.selected?.bmlInstalled || app.selected?.bmlpInstalled)
+  if (
+    app.selectedInstanceData?.bmlInstalled ||
+    app.selectedInstanceData?.bmlpInstalled
+  )
     data.push(
       {
         label: "自制地图",
@@ -100,7 +103,7 @@ const subPageData = computed(() => {
         <BasicNavItem
           v-for="x in fs.instances"
           :name="x.path"
-          :selected="app.selected?.path === x.path"
+          :selected="app.selectedInstanceData?.path === x.path"
           auto-scroll
           @clicked="app.changeSelect(x.path)"
         >
@@ -134,7 +137,7 @@ const subPageData = computed(() => {
           <span> 扫描 </span>
         </BasicNavItem>
       </BasicBlock>
-      <BasicBlock v-if="app.selected">
+      <BasicBlock v-if="app.selectedInstanceData">
         <BasicNavItem
           v-for="page in subPageData"
           :name="page.value"
@@ -147,7 +150,7 @@ const subPageData = computed(() => {
     </div>
     <div class="instance-detail-container">
       <component
-        v-if="app.selected"
+        v-if="app.selectedInstanceData"
         :is="subPageData.find(x => x.value === subPage)?.page"
       />
       <NoneSelectedPage

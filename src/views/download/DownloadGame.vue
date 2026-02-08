@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import fs from "@/api/fs";
+import fs from "@/backend/fs";
 import BasicBlock from "@/components/BasicBlock.vue";
 import BasicButton from "@/components/BasicButton.vue";
 import BasicCollapse from "@/components/BasicCollapse.vue";
@@ -7,7 +7,7 @@ import BasicConfig from "@/components/BasicConfig.vue";
 import BasicInput from "@/components/BasicInput.vue";
 import BasicSwitch from "@/components/BasicSwitch.vue";
 import { useAppStore } from "@/stores/app";
-import { useFileStore } from "@/stores/fs";
+import { useInstancesStore } from "@/stores/instances";
 import { formatFileSize, toPercentage } from "@/utils/format";
 import { openDialog, sendMessage } from "@/utils/message";
 import { join, sep } from "@tauri-apps/api/path";
@@ -16,7 +16,7 @@ import { download } from "@tauri-apps/plugin-upload";
 import { computed, h, reactive, ref } from "vue";
 
 const app = useAppStore();
-const fileStore = useFileStore();
+const fileStore = useInstancesStore();
 
 type ResourceType =
   | "Ballance.zip"

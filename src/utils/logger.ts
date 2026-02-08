@@ -1,25 +1,39 @@
-import app from "@/api/app";
-import type { LogLevel } from "@/api/app";
+import backend, { type LogLevel } from "@/backend";
 
 export const registerLoggers = () => {
   // hook console functions
-  hookConsoleFunction("error", console.error);
-  hookConsoleFunction("info", console.info);
-  hookConsoleFunction("info", console.log);
-  hookConsoleFunction("warn", console.warn);
-  hookConsoleFunction("debug", console.debug);
-  hookConsoleFunction("trace", console.trace);
+  hookConsoleFunction("error", "error", console.error);
+  hookConsoleFunction("info", "info", console.info);
+  hookConsoleFunction("info", "log", console.log);
+  hookConsoleFunction("warn", "warn", console.warn);
+  hookConsoleFunction("debug", "debug", console.debug);
+  hookConsoleFunction("trace", "trace", console.trace);
 
   window.addEventListener("unhandledrejection", event => {
     console.error(event.reason);
   });
 };
 
-const hookConsoleFunction = (level: LogLevel, func: Function) => {
-  (console as any)[level] = (function (oriLogFunc) {
+const hookConsoleFunction = (
+  level: LogLevel,
+  funcName: keyof typeof console,
+  func: (...args: any[]) => void
+) => {
+  console[funcName] = (function (oriLogFunc) {
     return function () {
       oriLogFunc.call(console, ...arguments);
-      app.log(level, [...arguments].map(String).join(", "));
+      backend.log(
+        level,
+        [...arguments]
+          .map(arg =>
+            arg instanceof Error
+              ? arg.stack
+              : typeof arg === "object"
+                ? JSON.stringify(arg, null, 2)
+                : arg
+          )
+          .join(", ")
+      );
     };
-  })(func);
+  })(func) as any;
 };

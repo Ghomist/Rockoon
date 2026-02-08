@@ -1,8 +1,9 @@
 import storage from "@/utils/storage";
 import { acceptHMRUpdate, defineStore } from "pinia";
-import { useFileStore } from "./fs";
+import { useInstancesStore } from "./instances";
+import { detectSystemLanguage } from "@/i18n";
 
-const PREF_STORE_KEY = "rock-pref";
+export const PREF_STORE_KEY = "rockoon-pref";
 
 export const usePrefStore = defineStore(PREF_STORE_KEY, {
   state: () =>
@@ -11,21 +12,29 @@ export const usePrefStore = defineStore(PREF_STORE_KEY, {
       hideWinWhenLaunch: true,
       killInstanceWhenExit: true,
       highscoreDefaultPlayer: "Mr. Default",
-      theme: "blue",
       enableBgv: true,
       backgroundBlur: 8,
       maskOpacity: 0.25,
       backgroundImage: undefined,
-      customThemeColor: "#888",
-      isMaximized: undefined,
-      indexExpireTime: 120
+      indexExpireTime: 120,
+      language: detectSystemLanguage(),
+      theme: "auto",
+      route: "/game",
+      centerWindow: false,
+      showWelcome: true,
+      ingameMotd: true,
+      ingameMotdContent: "Launched from Rockoon!"
     }),
   getters: {
     hasRecent: state =>
-      useFileStore().instances.some(x => x.path === state.recent),
+      useInstancesStore().instances.some(x => x.path === state.recent),
     recentInstance: state =>
-      useFileStore().instances.find(x => x.path === state.recent),
-    expireMs: state => state.indexExpireTime * 60 * 1000
+      useInstancesStore().instances.find(x => x.path === state.recent),
+    expireMs: state => state.indexExpireTime * 60 * 1000,
+    darkMode: state =>
+      state.theme === "dark" ||
+      (state.theme === "auto" &&
+        window.matchMedia("(prefers-color-scheme: dark)").matches)
   },
   actions: {
     save() {

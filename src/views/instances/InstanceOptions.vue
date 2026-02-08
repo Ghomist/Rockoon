@@ -6,19 +6,19 @@ import BasicInput from "@/components/BasicInput.vue";
 import BasicSlider from "@/components/BasicSlider.vue";
 import BasicSwitch from "@/components/BasicSwitch.vue";
 import { useAppStore } from "@/stores/app";
-import { useFileStore } from "@/stores/fs";
-import { getKeyName } from "@/utils/key";
+import { useInstancesStore } from "@/stores/instances";
+import { getKeyName } from "@/views/components/key";
 import { keyboardDialog, openDialog, sendMessage } from "@/utils/message";
 import { open } from "@tauri-apps/plugin-shell";
 import { computed, reactive } from "vue";
 import ExtraButtons from "./components/ExtraButtons.vue";
 import { join } from "@tauri-apps/api/path";
-import ballance from "@/api/ballance";
+import ballance from "@/backend/ballance";
 import { formatTime } from "@/utils/format";
 
 const app = useAppStore();
-const fs = useFileStore();
-const instance = computed(() => app.selected!);
+const fs = useInstancesStore();
+const instance = computed(() => app.selectedInstanceData!);
 
 const basicExtraButtons = reactive([
   {

@@ -1,17 +1,6 @@
-type PageId =
-  | "home"
-  | "tools"
-  | "settings"
-  | "instances"
-  | "download"
-  | "wiki"
-  | "help";
 type AppStore = {
-  /** 当前页面 */
-  page: PageId;
-
-  /** 当前选中的实例 */
-  selected?: BallanceInstance;
+  /** 当前选中的实例信息 */
+  selectedInstanceData?: InstanceData;
 
   /** 当前运行的实例路径 */
   runningInstancePath?: string;
@@ -21,9 +10,6 @@ type AppStore = {
 
   /** 当前运行的实例启动时间 */
   runningInstanceTimestamp?: number;
-
-  /** 消息队列 */
-  messageQueue: Message[];
 };
 type Message = {
   id: number;
@@ -44,9 +30,6 @@ type PreferenceStore = {
   /** 重置高分榜时的默认玩家名称 */
   highscoreDefaultPlayer: string;
 
-  /** 主题 */
-  theme: ThemeId;
-
   /** 是否启用背景视频 */
   enableBgv: boolean;
 
@@ -59,21 +42,31 @@ type PreferenceStore = {
   /** 自定义背景图 */
   backgroundImage?: string;
 
-  /** 自定义主题色 */
-  customThemeColor?: string;
-
-  /** 窗口是否最大化 */
-  isMaximized?: boolean;
-
   /** 下载站索引过期时间（分钟） */
   indexExpireTime: number;
+
+  /** 语言 */
+  language: string;
+
+  /** 主题 */
+  theme: "light" | "dark" | "auto";
+
+  /** 当前路由（记住上次打开的页面） */
+  route: string;
+
+  /** 是否居中窗口 */
+  centerWindow: boolean;
+
+  /** 是否显示欢迎语 */
+  showWelcome: boolean;
+
+  /** 是否在游戏内显示 MOTD */
+  ingameMotd: boolean;
+
+  /** 游戏内 MOTD 内容 */
+  ingameMotdContent: string;
 };
 
-type FileStore = {
-  instances: {
-    path: string;
-    name: string;
-    playtime: number;
-  }[];
+type InstancesStore = {
+  instances: Instance[];
 };
-type BallanceInstanceStore = FileStore["instances"][number];

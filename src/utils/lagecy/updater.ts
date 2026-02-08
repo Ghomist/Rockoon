@@ -1,7 +1,6 @@
 import { check } from "@tauri-apps/plugin-updater";
-import { openDialog, sendMessage } from "./message";
 import { h, ref } from "vue";
-import { toPercentage } from "./format";
+import { toPercentage } from "../format";
 
 export const checkUpdate = async (quiet = false) => {
   let update;

@@ -1,0 +1,318 @@
+{
+  "menu": {
+    "game": "启动游戏",
+    "options": "游戏选项",
+    "resources": "资源管理",
+    "data": "游戏数据",
+    "instances": "游戏列表",
+    "download": "下载资源",
+    "tools": "工具箱",
+    "help": "帮助与支持",
+    "settings": "启动器设置",
+    "maps": "自制地图",
+    "mods": "模组",
+    "textures": "材质包",
+    "backgrounds": "背景包",
+    "musics": "音乐包"
+  },
+  "header": {
+    "currentSelection": "当前选择：",
+    "pleaseLogin": "请登录"
+  },
+  "message": {
+    "welcome": "欢迎使用 Rockoon!",
+    "noImpl": "敬请期待！"
+  },
+  "home": {
+    "launch": "启动游戏"
+  },
+  "instances": {
+    "add": {
+      "button": "添加实例",
+      "browse": {
+        "title": "请选择 Ballance 根目录",
+        "success": "添加游戏实例成功！",
+        "fail": "这不是 Ballance 游戏目录，或者游戏关键文件已经损坏！"
+      }
+    },
+    "scan": {
+      "button": "扫描实例",
+      "scanning": "正在扫描实例...",
+      "success": "扫描完成！共找到 {total} 个游戏（成功添加 {added} 个游戏）"
+    },
+    "list": {
+      "statistics": "还没有添加实例 | 共 1 个实例 | 共 {cnt} 个实例",
+      "remove": {
+        "button": "移除",
+        "message": "确定要移除此实例吗？本地游戏文件不会被删除，你仍然可以再次将游戏添加至启动器",
+        "success": "实例已移除"
+      }
+    }
+  },
+  "resources": {
+    "statistics": {
+      "map": "未找到地图 | 共 1 张自制地图 | 共 {cnt} 张自制地图",
+      "mod": "未找到模组 | 共 1 个模组 | 共 {cnt} 个模组"
+    },
+    "name": {
+      "map": "Ballance 地图文件",
+      "mod": "Ballance 模组文件"
+    },
+    "import": {
+      "tip": "请选择",
+      "success": "导入成功",
+      "button": "导入"
+    },
+    "delete": {
+      "message": "确认要删除 {name} 吗？文件将无法找回！",
+      "button": "删除",
+      "success": "文件已删除"
+    },
+    "refresh": {
+      "success": "刷新成功！"
+    }
+  },
+  "settings": {
+    "basic": "基础设置",
+    "theme": {
+      "title": "颜色主题",
+      "auto": "跟随系统",
+      "light": "浅色",
+      "dark": "深色"
+    },
+    "debug": "调试",
+    "clearStorage": {
+      "button": "清空数据",
+      "title": "确定要清空所有数据吗？"
+    },
+    "centerWindow": "居中窗口",
+    "showWelcome": "显示启动器欢迎语",
+    "ingame": "游玩设置",
+    "ingameMotd": "启用欢迎语",
+    "ingameMotdContent": "欢迎语"
+  },
+  "common": {
+    "none": "无",
+    "dialog": {
+      "confirm": "确认",
+      "cancel": "取消"
+    },
+    "action": {
+      "openFolder": "打开目录",
+      "openDevtools": "打开调试工具",
+      "refresh": "刷新"
+    },
+    "message": {
+      "warning": "警告！",
+      "error": "出错啦！"
+    },
+    "key": {
+      "changeKeyTitle": "更改按键绑定",
+      "changeKeyTip": "按下键盘或单击下方的虚拟键盘按键以更改按键绑定",
+      "unavailableKey": "该按键在 Ballance 中不可用"
+    }
+  },
+  "gameConfig": {
+    "selectInstance": "请先选择一个游戏实例",
+    "openConfigFile": "打开配置文件",
+    "tabs": {
+      "game": "游戏性",
+      "window": "窗口",
+      "graphics": "图形",
+      "startup": "启动",
+      "inGameOptions": "游戏内设置"
+    },
+    "game": {
+      "language": {
+        "label": "游戏界面语言",
+        "tip": "仅影响游戏界面菜单中的文字",
+        "options": {
+          "English": "英语",
+          "German": "德语",
+          "Spanish": "西班牙语",
+          "Italian": "意大利语",
+          "French": "法语"
+        }
+      },
+      "skipOpening": {
+        "label": "跳过启动动画",
+        "tip": "跳过打开游戏时的 Atari 以及 Ballance 动画"
+      },
+      "unlockFramerate": {
+        "label": "去除帧率限制",
+        "tip": "允许高帧率"
+      },
+      "unlockWidescreen": {
+        "label": "去除高宽限制",
+        "tip": "允许使用非 4:3 的分辨率"
+      },
+      "unlockHighResolution": {
+        "label": "允许高分辨率",
+        "tip": "允许使用高于 1600x1200 的分辨率"
+      },
+      "applyHotfix": {
+        "label": "应用热修复"
+      }
+    },
+    "window": {
+      "clipCursor": {
+        "label": "限制鼠标在窗口内"
+      },
+      "borderless": {
+        "label": "无边框模式",
+        "tip": "去除窗口边框"
+      },
+      "childWindowRendering": {
+        "label": "子窗口渲染"
+      },
+      "alwaysHandleInput": {
+        "label": "允许后台输入",
+        "tip": "窗口在后台时也可以响应鼠标/键盘输入"
+      },
+      "position": {
+        "label": "窗口位置",
+        "tip": "可以设置负数，全部设为 0 表示不做限制"
+      }
+    },
+    "graphics": {
+      "resolution": {
+        "label": "分辨率"
+      },
+      "driver": {
+        "label": "显卡 ID"
+      },
+      "disableDithering": {
+        "label": "禁用图像抖动"
+      },
+      "disableSpecular": {
+        "label": "禁用镜面高光"
+      },
+      "disableMipmap": {
+        "label": "禁用 Mipmap"
+      },
+      "disablePerspectiveCorrection": {
+        "label": "禁用透视矫正"
+      },
+      "forceLinearFog": {
+        "label": "强制线性雾效"
+      },
+      "forceSoftware": {
+        "label": "强制软件渲染"
+      },
+      "disableFilter": {
+        "label": "禁用材质过滤"
+      },
+      "ensureVertexShader": {
+        "label": "检查顶点着色器"
+      },
+      "useIndexBuffers": {
+        "label": "启用顶点缓冲"
+      },
+      "sortTransparentObjects": {
+        "label": "透明物体排序"
+      },
+      "textureCacheManagement": {
+        "label": "纹理缓存管理"
+      },
+      "enableDebugMode": {
+        "label": "启用调试渲染",
+        "tip": "逐步渲染"
+      },
+      "enableScreenDump": {
+        "label": "启用屏幕转储"
+      },
+      "antialias": {
+        "label": "抗锯齿多重采样数",
+        "tip": "最小值为2"
+      },
+      "vertexCache": {
+        "label": "顶点缓存",
+        "tip": "设置顶点缓存大小，设为 0 可禁用"
+      },
+      "bitsPerPixel": {
+        "label": "位图颜色深度",
+        "tip": "设为 0 可自动选择"
+      },
+      "spriteVideoFormat": {
+        "label": "位图视频格式"
+      },
+      "textureVideoFormat": {
+        "label": "纹理视频格式"
+      }
+    },
+    "startup": {
+      "logMode": {
+        "label": "覆盖日志",
+        "tip": "每次启动会覆盖之前的日志，否则会追加至尾部"
+      },
+      "verbose": {
+        "label": "详细日志"
+      },
+      "manualSetup": {
+        "label": "手动启动",
+        "tip": "显示启动设定的对话窗口"
+      },
+      "loadAllManagers": {
+        "label": "加载所有 Manager"
+      },
+      "loadAllBuildingBlocks": {
+        "label": "加载所有 Building Block"
+      },
+      "loadAllPlugins": {
+        "label": "加载所有插件"
+      }
+    },
+    "inGameOptions": {
+      "volume": {
+        "label": "游戏音量",
+        "tip": "由于游戏限制，该选项仅影响背景音乐"
+      },
+      "syncToScreen": {
+        "label": "垂直同步"
+      },
+      "cloudLayer": {
+        "label": "显示云层"
+      },
+      "invertCamRotation": {
+        "label": "反转相机旋转"
+      },
+      "keyForward": {
+        "label": "向前"
+      },
+      "keyBackward": {
+        "label": "向后"
+      },
+      "keyLeft": {
+        "label": "向左"
+      },
+      "keyRight": {
+        "label": "向右"
+      },
+      "keyRotateCam": {
+        "label": "旋转视角",
+        "tip": "同时按下该键和左右方向键可以旋转视角"
+      },
+      "keyLiftCam": {
+        "label": "抬升视角"
+      }
+    }
+  },
+  "gameData": {
+    "levelLabel": "第 {i} 关",
+    "title": "关卡解锁与高分榜",
+    "levelState": {
+      "unlocked": "已解锁",
+      "locked": "已锁定"
+    },
+    "action": {
+      "editHighscores": "编辑高分榜",
+      "exportHighscores": "导出高分榜",
+      "unlockAll": "解锁所有关卡"
+    },
+    "highscores": {
+      "rank": "名次",
+      "player": "玩家名称",
+      "score": "分数"
+    }
+  }
+}

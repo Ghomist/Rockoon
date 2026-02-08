@@ -1,6 +1,7 @@
 use crate::common::exception::{RcResult, RcResultWith};
 use log::info;
-use std::{fs, path};
+use std::{fs, path, process};
+use tauri::path::BaseDirectory;
 use tauri::{command, AppHandle, Manager};
 
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -10,8 +11,31 @@ pub struct File {
 }
 
 #[command]
+#[cfg(target_os = "windows")]
+pub fn open_in_explorer(path: String) -> RcResult {
+    let is_dir = path::Path::new(&path).is_dir();
+    process::Command::new("explorer.exe")
+        .args([if is_dir { "/e," } else { "/select," }, &path])
+        .spawn()?;
+    Ok(())
+}
+
+#[command]
+#[cfg(target_os = "windows")]
+pub fn open(path: String) -> RcResult {
+    let is_dir = path::Path::new(&path).is_dir();
+    if is_dir {
+        return open_in_explorer(path);
+    }
+    process::Command::new("cmd")
+        .args(["/C", "start", &path])
+        .spawn()?;
+    Ok(())
+}
+
+#[command]
 pub fn exists(path: String) -> RcResultWith<bool> {
-    let exists = std::path::Path::new(&path).exists();
+    let exists = path::Path::new(&path).exists();
     Ok(exists)
 }
 
@@ -211,4 +235,18 @@ pub fn get_common_dirs(app: AppHandle) -> RcResultWith<Vec<String>> {
     }
 
     Ok(dirs)
+}
+
+#[command]
+pub fn install_rockoon_mod(app: AppHandle, path: String) -> RcResult {
+    let mod_path = app.path().resolve(
+        "resources/builtin-mods/RockoonIO.bmodp",
+        BaseDirectory::Resource,
+    )?;
+
+    info!("Instance 'RockoonIO.bmodp' to {:?}", &path);
+
+    fs::copy(&mod_path, &path)?;
+
+    Ok(())
 }

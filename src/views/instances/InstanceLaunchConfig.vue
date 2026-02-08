@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import ballance from "@/api/ballance";
+import ballance from "@/backend/ballance";
 import BasicCollapse from "@/components/BasicCollapse.vue";
 import BasicConfig from "@/components/BasicConfig.vue";
 import BasicInput from "@/components/BasicInput.vue";
 import BasicSwitch from "@/components/BasicSwitch.vue";
-import SwitchButton from "@/components/SwitchButton.vue";
+import SwitchButton from "@/views/components/SwitchButton.vue";
 import { useAppStore } from "@/stores/app";
 import { withDefault } from "@/utils/common";
 import { join } from "@tauri-apps/api/path";
@@ -14,7 +14,7 @@ import ExtraButtons from "./components/ExtraButtons.vue";
 import NoneSelectedPage from "./NoneSelectedPage.vue";
 
 const app = useAppStore();
-const instance = computed(() => app.selected!);
+const instance = computed(() => app.selectedInstanceData!);
 
 const playerConfig = ref<NewPlayerConfig>();
 const readPlayerIni = async () => {
@@ -46,7 +46,7 @@ onMounted(async () => {
   await readPlayerIni();
 
   watchHandles.push(watch(playerConfig, savePlayerIni, { deep: true }));
-  watchHandles.push(watch(() => app.selected, readPlayerIni));
+  watchHandles.push(watch(() => app.selectedInstanceData, readPlayerIni));
 });
 onUnmounted(() => {
   watchHandles.forEach(w => w.stop());

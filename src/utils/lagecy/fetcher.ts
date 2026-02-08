@@ -1,6 +1,6 @@
 import { usePrefStore } from "@/stores/pref";
 import { fetch } from "@tauri-apps/plugin-http";
-import storage from "./storage";
+import storage from "../storage";
 
 const STORAGE_KEY = "ys-storage";
 
@@ -135,6 +135,26 @@ export const fetchFiles = async (refresh = false) => {
   storage.set(STORAGE_KEY, cache);
 
   console.info("Fetch complete");
+
+  // 测试生成地图数据信息
+  const maps: Record<string, any>[] = [];
+  for (const index of cache.folders) {
+    if (!index.name.includes("Mod")) continue;
+    for (const file of cache.files[index.id]) {
+      maps.push({
+        id: file.filename,
+        name: file.filename,
+        format: file.filename.split(".")?.pop() ?? "unknown",
+        author: file.notes.split("|")[0]?.trim() ?? "unknown",
+        difficulty: file.notes.split("|")[1]?.match(/★{1}/g)?.length ?? 0,
+        description: file.notes.split("|")[2]?.trim() ?? "",
+        hash: "",
+        tags: [file.category],
+        publishTime: file.uploadTime
+      });
+    }
+  }
+  storage.set("ys-maps", { mods: maps });
 
   return cache;
 };
