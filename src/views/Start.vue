@@ -1,12 +1,5 @@
 <script setup lang="ts">
-import {
-  NButton,
-  NCard,
-  NFlex,
-  NIcon,
-  NStatistic,
-  NTag
-} from "naive-ui";
+import { NButton, NCard, NFlex, NIcon, NStatistic, NTag } from "naive-ui";
 import { computed } from "vue";
 import { computedAsync } from "@vueuse/core";
 import { useAppStore } from "@/stores/app";

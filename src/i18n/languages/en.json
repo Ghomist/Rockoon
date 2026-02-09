@@ -58,7 +58,7 @@
     "action": {
       "openFolder": "Open directory",
       "openDevtools": "Open debugging tools",
-      "refresh": "refresh"
+      "refresh": "Refresh"
     },
     "dialog": {
       "cancel": "Cancel",
@@ -302,13 +302,24 @@
     }
   },
   "resources": {
+    "status": {
+      "disabled": "Disabled"
+    },
+    "action": {
+      "enable": "Enable",
+      "disable": "Disable"
+    },
+    "empty": {
+      "map": "No maps found",
+      "mod": "No mods found"
+    },
     "delete": {
-      "button": "delete",
+      "button": "Delete",
       "message": "Are you sure you want to delete {name}? \nThe files will not be retrieved!",
       "success": "File deleted"
     },
     "import": {
-      "button": "import",
+      "button": "Import",
       "success": "Import successful",
       "tip": "Please select"
     },
@@ -319,9 +330,18 @@
     "refresh": {
       "success": "Refresh successful!"
     },
+    "enable": {
+      "success": "File enabled successfully"
+    },
+    "disable": {
+      "success": "File disabled successfully"
+    },
+    "toggle": {
+      "error": "Failed to toggle file status"
+    },
     "statistics": {
-      "map": "No map found | 1 self-made map in total | {cnt} self-made map in total",
-      "mod": "No modules found | 1 module in total | {cnt} modules in total"
+      "map": "No map found | 1 custom map in total | {cnt} custom maps in total",
+      "mod": "No modules found | 1 mod in total | {cnt} mods in total"
     }
   }
 }

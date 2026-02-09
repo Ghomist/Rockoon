@@ -59,6 +59,17 @@
     }
   },
   "resources": {
+    "status": {
+      "disabled": "已禁用"
+    },
+    "action": {
+      "enable": "启用",
+      "disable": "禁用"
+    },
+    "empty": {
+      "map": "未找到地图",
+      "mod": "未找到模组"
+    },
     "statistics": {
       "map": "未找到地图 | 共 1 张自制地图 | 共 {cnt} 张自制地图",
       "mod": "未找到模组 | 共 1 个模组 | 共 {cnt} 个模组"
@@ -79,6 +90,15 @@
     },
     "refresh": {
       "success": "刷新成功！"
+    },
+    "enable": {
+      "success": "文件启用成功"
+    },
+    "disable": {
+      "success": "文件禁用成功"
+    },
+    "toggle": {
+      "error": "切换文件状态失败"
     }
   },
   "settings": {

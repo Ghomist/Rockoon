@@ -12,7 +12,7 @@ defineProps<{
     :class="`mgc_${icon.replace(new RegExp('-', 'g'), '_')}`"
     :style="{
       '--icon-size':
-        size === 'large' ? '32px' : size === 'small' ? '20px' : '24px',
+        size === 'large' ? '28px' : size === 'small' ? '18px' : '22px',
       '--icon-color': color ?? 'inherit'
     }"
   />
