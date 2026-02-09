@@ -46,7 +46,12 @@
     "launch": "Start Game",
     "stop": "Stop Game",
     "launching": "Launching game...",
-    "alreadyRunning": "Game is already running"
+    "alreadyRunning": "Game is already running",
+    "instanceCount": "Total Instances",
+    "totalPlaytime": "Total Playtime",
+    "mapCount": "Total Maps",
+    "modCount": "Total Mods",
+    "quickLinks": "Quick Links"
   },
   "common": {
     "none": "None",
@@ -70,6 +75,7 @@
     }
   },
   "instances": {
+    "selectInstance": "Please select a game instance first",
     "add": {
       "browse": {
         "fail": "This is not the Ballance game directory, or the key game files are corrupted!",

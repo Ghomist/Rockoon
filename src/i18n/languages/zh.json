@@ -27,9 +27,15 @@
     "launch": "启动游戏",
     "stop": "停止游戏",
     "launching": "正在启动游戏...",
-    "alreadyRunning": "游戏正在运行中"
+    "alreadyRunning": "游戏正在运行中",
+    "instanceCount": "实例总数",
+    "totalPlaytime": "游戏总时长",
+    "mapCount": "地图总数",
+    "modCount": "模组总数",
+    "quickLinks": "快捷跳转"
   },
   "instances": {
+    "selectInstance": "请先选择一个游戏实例",
     "add": {
       "button": "添加实例",
       "browse": {
