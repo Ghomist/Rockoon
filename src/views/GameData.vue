@@ -1,16 +1,15 @@
 <script setup lang="ts">
 import { useAppStore } from "@/stores/app";
 import { waitForSelectedInstance } from "@/utils/ui/router";
+import ListViewPage from "@/views/components/ListViewPage.vue";
 import {
   NButton,
   NDataTable,
   NFlex,
   NInput,
   NInputNumber,
-  NList,
   NListItem,
   NModal,
-  NScrollbar,
   NSwitch,
   NText
 } from "naive-ui";
@@ -18,7 +17,6 @@ import { h, onMounted, ref } from "vue";
 
 const app = useAppStore();
 
-const headerChildrenRef = ref<HTMLDivElement>();
 const editingLevel = ref(0);
 const editingHighscores = ref(false);
 
@@ -41,69 +39,52 @@ onMounted(async () => {
 </script>
 
 <template>
-  <n-list
-    v-if="app.selectedInstanceData"
-    class="list-header-fix"
-    hoverable
-    clickable
-    style="width: 100%"
-  >
-    <template #header>
-      <div ref="headerChildrenRef" />
-      <n-flex justify="space-between" align="center">
-        <p>
-          {{ $t("gameData.title") }}
-        </p>
-        <n-flex>
-          <n-button @click="onUnlockAll">
-            {{ $t("gameData.action.unlockAll") }}
-          </n-button>
-          <n-button>
-            {{ $t("gameData.action.exportHighscores") }}
+  <list-view-page v-if="app.selectedInstanceData">
+    <template #title>
+      {{ $t("gameData.title") }}
+    </template>
+
+    <template #actions>
+      <n-button @click="onUnlockAll">
+        {{ $t("gameData.action.unlockAll") }}
+      </n-button>
+      <n-button>
+        {{ $t("gameData.action.exportHighscores") }}
+      </n-button>
+    </template>
+
+    <n-list-item v-for="i in 12" :key="i" @click="onToggleLevelLock(i)">
+      <template #prefix>
+        <n-switch
+          v-model:value="app.selectedInstanceData!.options.levelLock[i - 1]"
+          @click.stop
+        >
+          <template #checked>
+            {{ $t("gameData.levelState.unlocked") }}
+          </template>
+          <template #unchecked>
+            {{ $t("gameData.levelState.locked") }}
+          </template>
+        </n-switch>
+      </template>
+
+      <n-text style="text-wrap: nowrap">
+        {{ $t("gameData.levelLabel", { i }) }}
+        <n-text depth="3" code style="margin-left: 8px">
+          {{ app.selectedInstanceData!.options.highscores[i - 1][0].player }}
+          {{ app.selectedInstanceData!.options.highscores[i - 1][0].score }}
+        </n-text>
+      </n-text>
+
+      <template #suffix>
+        <n-flex :wrap="false" align="center">
+          <n-button secondary type="primary" @click.stop="onEditHighscores(i)">
+            {{ $t("gameData.action.editHighscores") }}
           </n-button>
         </n-flex>
-      </n-flex>
-    </template>
-    <n-scrollbar class="list-container-fix">
-      <n-list-item
-        v-for="i in 12"
-        :key="i"
-        class="list-item-fix"
-        @click="onToggleLevelLock(i)"
-      >
-        <template #prefix>
-          <n-switch
-            v-model:value="app.selectedInstanceData!.options.levelLock[i - 1]"
-            @click.stop
-          >
-            <template #checked>
-              {{ $t("gameData.levelState.unlocked") }}
-            </template>
-            <template #unchecked>
-              {{ $t("gameData.levelState.locked") }}
-            </template>
-          </n-switch>
-        </template>
-        <n-text style="text-wrap: nowrap">
-          {{ $t("gameData.levelLabel", { i }) }}
-          <n-text depth="3" code style="margin-left: 8px">
-            {{ app.selectedInstanceData!.options.highscores[i - 1][0].player }}
-            {{ app.selectedInstanceData!.options.highscores[i - 1][0].score }}
-          </n-text>
-        </n-text>
-        <template #suffix>
-          <n-flex :wrap="false" align="center">
-            <n-button
-              secondary
-              type="primary"
-              @click.stop="onEditHighscores(i)"
-            >
-              {{ $t("gameData.action.editHighscores") }}
-            </n-button>
-          </n-flex>
-        </template>
-      </n-list-item>
-    </n-scrollbar>
+      </template>
+    </n-list-item>
+
     <n-modal
       v-model:show="editingHighscores"
       style="width: 50%"
@@ -147,5 +128,5 @@ onMounted(async () => {
         ]"
       />
     </n-modal>
-  </n-list>
+  </list-view-page>
 </template>

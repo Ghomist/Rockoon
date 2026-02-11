@@ -22,6 +22,7 @@ import {
 import { computed, onMounted, reactive, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import BasicIcon from "./components/MgcIcon.vue";
+import ListViewPage from "./components/ListViewPage.vue";
 
 const { type: rscType } = defineProps<{
   type: ResourceType;
@@ -166,113 +167,77 @@ onMounted(async () => {
 </script>
 
 <template>
-  <n-flex vertical style="height: 100%; gap: 0">
-    <!-- 头部操作栏 -->
-    <n-card size="small">
-      <n-flex justify="space-between" align="center">
-        <n-flex align="center" :size="8">
-          <n-text>
-            {{
-              t(
-                "resources.statistics." + rscType,
-                { cnt: rscList.length },
-                rscList.length
-              )
-            }}
+  <list-view-page>
+    <template #title>
+      {{
+        t(
+          "resources.statistics." + rscType,
+          { cnt: rscList.length },
+          rscList.length
+        )
+      }}
+    </template>
+
+    <template #actions>
+      <n-button @click="onRefresh(true)">
+        {{ t("common.action.refresh") }}
+      </n-button>
+      <n-button @click="onImport">
+        {{ t("resources.import.button") }}
+      </n-button>
+      <n-button @click="onOpenFolder">
+        {{ t("common.action.openFolder") }}
+      </n-button>
+    </template>
+
+    <n-list-item
+      v-for="file in rscList"
+      :key="file.name"
+      @click="onToggleDisable(file, isFileDisabled(file.name))"
+    >
+      <template #prefix>
+        <n-switch
+          :value="!isFileDisabled(file.name)"
+          @update:value="onToggleDisable(file, $event)"
+          @click.stop
+        />
+      </template>
+
+      <n-flex align="center" :size="12">
+        <n-flex vertical :size="4" style="flex: 1; min-width: 0">
+          <n-text
+            :style="{
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              textDecoration: isFileDisabled(file.name)
+                ? 'line-through'
+                : 'none'
+            }"
+          >
+            {{ getDisplayName(file.name) }}
+          </n-text>
+          <n-text depth="3" style="font-size: 12px">
+            <n-tag size="tiny" :bordered="false" type="info">
+              {{ getFileExtension(file.name) }}
+            </n-tag>
+            <span style="margin-left: 8px">{{
+              formatFileSize(file.size)
+            }}</span>
           </n-text>
         </n-flex>
-        <n-flex :size="8">
-          <n-button secondary @click="onRefresh(true)">
+      </n-flex>
+
+      <template #suffix>
+        <n-flex :wrap="false" align="center">
+          <n-button secondary type="error" @click.stop="onDelete(file)">
             <template #icon>
-              <BasicIcon icon="refresh-1-line" />
+              <BasicIcon icon="delete-2-line" />
             </template>
-            {{ t("common.action.refresh") }}
-          </n-button>
-          <n-button secondary @click="onImport">
-            <template #icon>
-              <BasicIcon icon="upload-line" />
-            </template>
-            {{ t("resources.import.button") }}
-          </n-button>
-          <n-button secondary @click="onOpenFolder">
-            <template #icon>
-              <BasicIcon icon="folder-line" />
-            </template>
-            {{ t("common.action.openFolder") }}
+            {{ t("resources.delete.button") }}
           </n-button>
         </n-flex>
-      </n-flex>
-    </n-card>
-
-    <!-- 资源列表 -->
-    <div
-      v-if="loading"
-      style="
-        flex: 1;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      "
-    >
-      <n-spin size="large" />
-    </div>
-    <n-empty
-      v-else-if="rscList.length === 0"
-      :description="t('resources.empty.' + rscType)"
-    />
-    <div v-else style="flex: 1; overflow-y: auto; padding: 4px">
-      <n-list hoverable clickable>
-        <n-list-item
-          v-for="file in rscList"
-          :key="file.name"
-          @click="onToggleDisable(file, isFileDisabled(file.name))"
-        >
-          <n-flex align="center" :size="12">
-            <n-switch
-              :value="!isFileDisabled(file.name)"
-              @update:value="onToggleDisable(file, $event)"
-              @click.stop
-            />
-            <n-flex vertical :size="4" style="flex: 1; min-width: 0">
-              <n-text
-                :style="{
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                  textDecoration: isFileDisabled(file.name)
-                    ? 'line-through'
-                    : 'none'
-                }"
-              >
-                {{ getDisplayName(file.name) }}
-              </n-text>
-              <n-text depth="3" style="font-size: 12px">
-                <n-tag size="tiny" :bordered="false" type="info">
-                  {{ getFileExtension(file.name) }}
-                </n-tag>
-                <span style="margin-left: 8px">{{
-                  formatFileSize(file.size)
-                }}</span>
-              </n-text>
-            </n-flex>
-          </n-flex>
-
-          <!-- 删除按钮 -->
-          <template #suffix>
-            <n-button
-              secondary
-              type="error"
-              style="padding: 0 10px"
-              @click.stop="onDelete(file)"
-            >
-              <template #icon>
-                <BasicIcon icon="delete-2-line" />
-              </template>
-              {{ t("resources.delete.button") }}
-            </n-button>
-          </template>
-        </n-list-item>
-      </n-list>
-    </div>
-  </n-flex>
+      </template>
+    </n-list-item>
+  </list-view-page>
 </template>

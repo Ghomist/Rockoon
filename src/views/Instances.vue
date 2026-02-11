@@ -18,6 +18,7 @@ import {
   NTag
 } from "naive-ui";
 import { useI18n } from "vue-i18n";
+import ListViewPage from "./components/ListViewPage.vue";
 
 const instances = useInstancesStore();
 const app = useAppStore();
@@ -84,55 +85,53 @@ const onOpenFolder = async (i: Instance) => {
 </script>
 
 <template>
-  <n-list class="list-header-fix" hoverable clickable style="width: 100%">
-    <template #header>
-      <n-flex justify="space-between" align="center">
-        <p>
-          {{
-            t(
-              "instances.list.statistics",
-              { cnt: instances.instances.length },
-              instances.instances.length
-            )
-          }}
-        </p>
-        <n-flex>
-          <n-button @click="onScanInstances">
-            {{ t("instances.scan.button") }}
-          </n-button>
-          <n-button @click="onAddInstance">
-            {{ t("instances.add.button") }}
-          </n-button>
-        </n-flex>
-      </n-flex>
+  <list-view-page>
+    <template #title>
+      {{
+        t(
+          "instances.list.statistics",
+          { cnt: instances.instances.length },
+          instances.instances.length
+        )
+      }}
     </template>
-    <n-scrollbar class="list-container-fix">
-      <n-list-item
-        v-for="i in instances.instances"
-        :key="i.path"
-        @click="app.changeSelect(i.path)"
-      >
-        <template #prefix>
-          <n-checkbox :checked="app.selectedInstanceData?.path === i.path" />
-        </template>
-        <n-flex vertical :size="0">
-          <n-text>{{ i.name }}</n-text>
-          <n-text depth="3" style="font-size: 12px">{{ i.path }}</n-text>
+
+    <template #actions>
+      <n-button @click="onScanInstances">
+        {{ t("instances.scan.button") }}
+      </n-button>
+      <n-button @click="onAddInstance">
+        {{ t("instances.add.button") }}
+      </n-button>
+    </template>
+
+    <n-list-item
+      v-for="i in instances.instances"
+      :key="i.path"
+      @click="app.changeSelect(i.path)"
+    >
+      <template #prefix>
+        <n-checkbox :checked="app.selectedInstanceData?.path === i.path" />
+      </template>
+
+      <n-flex vertical :size="0">
+        <n-text>{{ i.name }}</n-text>
+        <n-text depth="3" style="font-size: 12px">{{ i.path }}</n-text>
+      </n-flex>
+
+      <template #suffix>
+        <n-flex :wrap="false" align="center">
+          <n-tag size="small" :bordered="false">{{
+            formatPlaytime(i.playtime)
+          }}</n-tag>
+          <n-button secondary type="primary" @click="onOpenFolder(i)">
+            {{ t("common.action.openFolder") }}
+          </n-button>
+          <n-button secondary type="error" @click="onRemoveInstance(i)">
+            {{ t("instances.list.remove.button") }}
+          </n-button>
         </n-flex>
-        <template #suffix>
-          <n-flex :wrap="false" align="center">
-            <n-tag size="small" :bordered="false">{{
-              formatPlaytime(i.playtime)
-            }}</n-tag>
-            <n-button secondary type="primary" @click="onOpenFolder(i)">
-              {{ t("common.action.openFolder") }}
-            </n-button>
-            <n-button secondary type="error" @click="onRemoveInstance(i)">
-              {{ t("instances.list.remove.button") }}
-            </n-button>
-          </n-flex>
-        </template>
-      </n-list-item>
-    </n-scrollbar>
-  </n-list>
+      </template>
+    </n-list-item>
+  </list-view-page>
 </template>
