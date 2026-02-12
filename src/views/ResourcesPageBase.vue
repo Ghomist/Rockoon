@@ -6,23 +6,11 @@ import { dialog, message } from "@/utils/ui/feedback";
 import { join, sep } from "@tauri-apps/api/path";
 import { open as browseFile } from "@tauri-apps/plugin-dialog";
 import { computedAsync, until } from "@vueuse/core";
-import {
-  NButton,
-  NCard,
-  NEmpty,
-  NFlex,
-  NIcon,
-  NList,
-  NListItem,
-  NSpin,
-  NSwitch,
-  NTag,
-  NText
-} from "naive-ui";
+import { NButton, NFlex, NListItem, NSwitch, NTag, NText } from "naive-ui";
 import { computed, onMounted, reactive, ref } from "vue";
 import { useI18n } from "vue-i18n";
-import BasicIcon from "./components/MgcIcon.vue";
 import ListViewPage from "./components/ListViewPage.vue";
+import BasicIcon from "./components/MgcIcon.vue";
 
 const { type: rscType } = defineProps<{
   type: ResourceType;
@@ -55,9 +43,6 @@ const resourcePageSchema: Record<ResourceType, ResourceSchema> = {
 const loading = ref(true);
 const rscSchema = computed(() => resourcePageSchema[rscType]);
 const rscName = computed(() => t("resources.name." + rscType));
-const rscIcon = computed(() =>
-  rscType === "map" ? "map-line" : "auction-line"
-);
 const rscPath = computedAsync(
   async () =>
     await join(

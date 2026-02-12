@@ -110,6 +110,16 @@
       "error": "切换文件状态失败"
     }
   },
+  "skys": {
+    "statistics": "未找到天空盒 | 共 1 个天空盒 | 共 {cnt} 个天空盒",
+    "empty": "未找到天空盒文件",
+    "levelName": "第 {level} 关",
+    "previewTitle": "第 {level} 关天空盒预览",
+    "dragToRotate": "拖拽旋转",
+    "scrollToZoom": "滚轮缩放",
+    "resetView": "重置视角",
+    "missingFiles": "缺失图片"
+  },
   "settings": {
     "basic": "基础设置",
     "theme": {

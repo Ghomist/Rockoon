@@ -6,6 +6,7 @@ import GameData from "@/views/GameData.vue";
 import Instances from "@/views/Instances.vue";
 import ResourcesMaps from "@/views/ResourcesMaps.vue";
 import ResourcesMods from "@/views/ResourcesMods.vue";
+import ResourcesSkys from "@/views/ResourcesSkys.vue";
 import Settings from "@/views/Settings.vue";
 import Start from "@/views/Start.vue";
 import type { MenuOption } from "naive-ui";
@@ -70,7 +71,7 @@ export const getMenuItems = (): MenuItem[] => [
         label: t("menu.backgrounds"),
         route: "/backgrounds",
         icon: "world-2-line",
-        view: Instances
+        view: ResourcesSkys
       },
       {
         label: t("menu.musics"),

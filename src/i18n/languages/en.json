@@ -352,5 +352,15 @@
       "map": "No map found | 1 custom map in total | {cnt} custom maps in total",
       "mod": "No modules found | 1 mod in total | {cnt} mods in total"
     }
+  },
+  "skys": {
+    "statistics": "No skybox found | Total 1 skybox | Total {cnt} skyboxes",
+    "empty": "No skybox files found",
+    "levelName": "Level {level}",
+    "previewTitle": "Level {level} Skybox Preview",
+    "dragToRotate": "Drag to rotate",
+    "scrollToZoom": "Scroll to zoom",
+    "resetView": "Reset view",
+    "missingFiles": "Missing images"
   }
 }
