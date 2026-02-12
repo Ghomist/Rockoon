@@ -90,7 +90,16 @@
         "message": "Are you sure you want to remove this instance? \nLocal game files will not be deleted and you can still add the game to the launcher again",
         "success": "Instance removed"
       },
-      "statistics": "None instance add yet | Total 1 instance | Total {cnt} instances"
+      "statistics": "None instance add yet | Total 1 instance | Total {cnt} instances",
+      "switch": {
+        "success": "Switched to {name}"
+      },
+      "rename": {
+        "button": "Rename",
+        "title": "Rename Instance",
+        "placeholder": "Enter new name",
+        "success": "Rename successful"
+      }
     },
     "scan": {
       "button": "Scan instance",

@@ -7,13 +7,13 @@ import { dialog, loadingBar, message } from "@/utils/ui/feedback";
 import { sep } from "@tauri-apps/api/path";
 import { open as browseFile } from "@tauri-apps/plugin-dialog";
 import { formatPlaytime } from "@/utils/format";
+import { h, ref } from "vue";
 import {
   NButton,
   NCheckbox,
   NFlex,
-  NList,
+  NInput,
   NListItem,
-  NScrollbar,
   NText,
   NTag
 } from "naive-ui";
@@ -82,6 +82,41 @@ const onRemoveInstance = async (i: Instance) => {
 const onOpenFolder = async (i: Instance) => {
   await backend.openInExplorer(i.path);
 };
+
+const onRenameInstance = (i: Instance) => {
+  const inputValue = ref(i.name);
+
+  dialog.create({
+    title: t("instances.list.rename.title"),
+    content: () =>
+      h(NInput, {
+        value: inputValue.value,
+        placeholder: t("instances.list.rename.placeholder"),
+        onUpdateValue: (v: string) => {
+          inputValue.value = v;
+        }
+      }),
+    positiveText: t("common.dialog.confirm"),
+    negativeText: t("common.dialog.cancel"),
+    onPositiveClick: () => {
+      const newName = inputValue.value.trim();
+      if (newName && newName !== i.name) {
+        instances.renameInstance(i.path, newName);
+        message.success(t("instances.list.rename.success"));
+      }
+    }
+  });
+};
+
+const onInstanceClick = async (i: Instance) => {
+  const success = await app.changeSelect(i.path);
+  if (success) {
+    const instance = instances.findInstance(i.path);
+    message.success(
+      t("instances.list.switch.success", { name: instance?.name || i.path })
+    );
+  }
+};
 </script>
 
 <template>
@@ -108,7 +143,7 @@ const onOpenFolder = async (i: Instance) => {
     <n-list-item
       v-for="i in instances.instances"
       :key="i.path"
-      @click="app.changeSelect(i.path)"
+      @click="onInstanceClick(i)"
     >
       <template #prefix>
         <n-checkbox :checked="app.selectedInstanceData?.path === i.path" />
@@ -124,10 +159,13 @@ const onOpenFolder = async (i: Instance) => {
           <n-tag size="small" :bordered="false">{{
             formatPlaytime(i.playtime)
           }}</n-tag>
-          <n-button secondary type="primary" @click="onOpenFolder(i)">
+          <n-button secondary type="primary" @click.stop="onRenameInstance(i)">
+            {{ t("instances.list.rename.button") }}
+          </n-button>
+          <n-button secondary type="primary" @click.stop="onOpenFolder(i)">
             {{ t("common.action.openFolder") }}
           </n-button>
-          <n-button secondary type="error" @click="onRemoveInstance(i)">
+          <n-button secondary type="error" @click.stop="onRemoveInstance(i)">
             {{ t("instances.list.remove.button") }}
           </n-button>
         </n-flex>

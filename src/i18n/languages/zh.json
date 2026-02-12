@@ -51,6 +51,15 @@
     },
     "list": {
       "statistics": "还没有添加实例 | 共 1 个实例 | 共 {cnt} 个实例",
+      "switch": {
+        "success": "已切换到 {name}"
+      },
+      "rename": {
+        "button": "重命名",
+        "title": "重命名实例",
+        "placeholder": "请输入新名称",
+        "success": "重命名成功"
+      },
       "remove": {
         "button": "移除",
         "message": "确定要移除此实例吗？本地游戏文件不会被删除，你仍然可以再次将游戏添加至启动器",

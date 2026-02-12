@@ -39,6 +39,13 @@ export const useInstancesStore = defineStore(INSTANCES_STORE_KEY, {
     },
     findInstance(path: string) {
       return this.instances.find(x => x.path === path);
+    },
+    renameInstance(path: string, newName: string) {
+      const instance = this.instances.find(x => x.path === path);
+      if (instance) {
+        instance.name = newName;
+        this.save();
+      }
     }
   }
 });
