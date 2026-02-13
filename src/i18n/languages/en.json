@@ -15,6 +15,10 @@
     "musics": "Music Pack",
     "textures": "Texture Pack"
   },
+  "download": {
+    "title": "No maps found | 1 map in total | {cnt} maps in total",
+    "searchPlaceholder": "Search by map name or author"
+  },
   "header": {
     "currentSelection": "Currently selection:",
     "pleaseLogin": "Please log in"
@@ -58,7 +62,8 @@
     "action": {
       "openFolder": "Open directory",
       "openDevtools": "Open debugging tools",
-      "refresh": "Refresh"
+      "refresh": "Refresh",
+      "download": "Download"
     },
     "dialog": {
       "cancel": "Cancel",

@@ -1,5 +1,10 @@
 <script setup lang="ts">
 import { NFlex, NList, NScrollbar } from "naive-ui";
+
+// 暴露滚动事件
+const emit = defineEmits<{
+  scroll: [e: Event];
+}>();
 </script>
 
 <template>
@@ -15,7 +20,10 @@ import { NFlex, NList, NScrollbar } from "naive-ui";
       </n-flex>
     </template>
 
-    <n-scrollbar class="list-container-fix list-item-fix">
+    <n-scrollbar
+      class="list-container-fix list-item-fix"
+      @scroll="emit('scroll', $event)"
+    >
       <slot />
     </n-scrollbar>
   </n-list>

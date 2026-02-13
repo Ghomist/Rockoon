@@ -15,6 +15,10 @@
     "backgrounds": "背景包",
     "musics": "音乐包"
   },
+  "download": {
+    "title": "未找到地图 | 共 1 张地图 | 共 {cnt} 张地图",
+    "searchPlaceholder": "搜索地图名称或作者"
+  },
   "header": {
     "currentSelection": "当前选择：",
     "pleaseLogin": "请登录"
@@ -148,7 +152,8 @@
     "action": {
       "openFolder": "打开目录",
       "openDevtools": "打开调试工具",
-      "refresh": "刷新"
+      "refresh": "刷新",
+      "download": "下载"
     },
     "message": {
       "warning": "警告！",
