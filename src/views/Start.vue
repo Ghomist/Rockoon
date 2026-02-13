@@ -107,7 +107,7 @@ const quickLinks = [
 </script>
 
 <template>
-  <n-flex vertical style="height: 100%; padding: 20px; gap: 20px">
+  <n-flex vertical style=" gap: 20px;height: 100%; padding: 20px">
     <!-- 启动按钮区域 -->
     <n-card style="text-align: center">
       <n-flex vertical align="center">
@@ -115,7 +115,7 @@ const quickLinks = [
           v-if="!app.runningInstancePid"
           type="primary"
           size="large"
-          style="font-size: 20px; padding: 20px 60px"
+          style=" padding: 20px 60px;font-size: 20px"
           @click="onLaunchGame"
         >
           <template #icon>
@@ -127,7 +127,7 @@ const quickLinks = [
           v-else
           type="error"
           size="large"
-          style="font-size: 20px; padding: 20px 60px"
+          style=" padding: 20px 60px;font-size: 20px"
           @click="killInstance"
         >
           <template #icon>

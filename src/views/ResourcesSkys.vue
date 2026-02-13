@@ -190,14 +190,14 @@ onMounted(async () => {
             <div
               v-if="getThumbnailUrl(level)"
               style="
-                width: 100%;
-                aspect-ratio: 1;
-                background: #f5f5f5;
-                border-radius: 4px;
-                overflow: hidden;
                 display: flex;
                 align-items: center;
                 justify-content: center;
+                width: 100%;
+                aspect-ratio: 1;
+                overflow: hidden;
+                background: #f5f5f5;
+                border-radius: 4px;
               "
             >
               <img

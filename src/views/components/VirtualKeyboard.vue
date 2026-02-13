@@ -36,9 +36,14 @@ onMounted(() => {
     {{ t("common.key.changeKeyTip") }}
   </n-text>
 
-  <div v-for="line in keySchema" class="virtual-keyboard-line">
+  <div
+    v-for="(line, index) in keySchema"
+    :key="index"
+    class="virtual-keyboard-line"
+  >
     <n-button
       v-for="k in line"
+      :key="k.id"
       :type="modelValue == k.id ? 'primary' : 'default'"
       :style="{ width: `${(k.width ?? 1) * 36}px` }"
       :disabled="k.disabled"
@@ -55,10 +60,10 @@ onMounted(() => {
   align-items: center;
 
   * {
-    white-space: nowrap;
-    text-wrap: none;
     height: 36px;
     margin: 0;
+    text-wrap: none;
+    white-space: nowrap;
     border-radius: 0;
   }
 }

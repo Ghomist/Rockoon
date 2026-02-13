@@ -108,13 +108,15 @@ onUnmounted(() => {
     :theme
     :locale
     :date-locale="dateLocale"
-    style="--main-ctn-h: calc(100vh - 52px)"
+    style="
+
+--main-ctn-h: calc(100vh - 52px)"
   >
-    <n-layout style="height: 52px; border-bottom: 1px solid rgb(239, 239, 245)">
+    <n-layout style="height: 52px; border-bottom: 1px solid rgb(239 239 245)">
       <n-flex
         align="center"
         justify="space-between"
-        style="height: 100%; padding-left: 16px; padding-right: 16px"
+        style="height: 100%; padding-right: 16px; padding-left: 16px"
       >
         <n-flex style="flex: 1">
           <n-avatar>
@@ -197,18 +199,22 @@ onUnmounted(() => {
 .fade-slide-leave-active {
   transition: all 150ms ease;
 }
+
 .fade-slide-enter-from {
   opacity: 0;
   transform: translateY(10px);
 }
+
 .fade-slide-enter-to {
   opacity: 1;
   transform: translateY(0);
 }
+
 .fade-slide-leave-from {
   opacity: 1;
   transform: translateY(0);
 }
+
 .fade-slide-leave-to {
   opacity: 0;
   transform: translateY(-10px);

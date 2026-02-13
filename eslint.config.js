@@ -1,16 +1,30 @@
 import js from "@eslint/js";
+import { defineConfig } from "eslint/config";
 import pluginVue from "eslint-plugin-vue";
 import * as parserVue from "vue-eslint-parser";
 import configPrettier from "eslint-config-prettier";
 import pluginPrettier from "eslint-plugin-prettier";
-import { defineFlatConfig } from "eslint-define-config";
 import * as parserTypeScript from "@typescript-eslint/parser";
 import pluginTypeScript from "@typescript-eslint/eslint-plugin";
 
-export default defineFlatConfig([
+export default defineConfig([
   {
     ...js.configs.recommended,
-    ignores: ["src/assets/**", "src/**/iconfont/**"],
+    ignores: [
+      "src/assets/**",
+      "src/**/iconfont/**",
+      // 从 .eslintignore 迁移的忽略规则
+      "public",
+      "dist",
+      "**/*.d.ts",
+      "package.json",
+      "eslint.config.js",
+      ".prettierrc.js",
+      "commitlint.config.js",
+      "postcss.config.js",
+      "tailwind.config.ts",
+      "stylelint.config.js"
+    ],
     languageOptions: {
       globals: {
         // index.d.ts

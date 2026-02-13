@@ -196,17 +196,17 @@ onUnmounted(() => {
 
 <style scoped>
 .skybox-preview-container {
-  width: 100%;
-  height: 75vh;
-  perspective: 800px;
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  user-select: none;
-  cursor: grab;
-  position: relative;
+  width: 100%;
+  height: 75vh;
   overflow: hidden;
+  cursor: grab;
+  user-select: none;
+  perspective: 800px;
 }
 
 .skybox-preview-container:active {
@@ -214,108 +214,109 @@ onUnmounted(() => {
 }
 
 .skybox-cube {
+  position: relative;
   width: 300px;
   height: 300px;
-  position: relative;
-  transform-style: preserve-3d;
   transition: transform 0.05s linear;
+  transform-style: preserve-3d;
 }
 
 .skybox-face {
-  backface-visibility: hidden;
+  top: 0;
+  left: 0;
+  box-sizing: border-box;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-sizing: border-box;
-  left: 0;
-  top: 0;
-  margin: -1px; /* 消除接缝 */
   padding: 0;
+  margin: -1px; /* 消除接缝 */
+  backface-visibility: hidden;
 }
 
 .skybox-face-front {
-  left: 0;
   top: 0;
+  left: 0;
 }
 
 .skybox-face-back {
-  left: 0;
   top: 0;
+  left: 0;
 }
 
 .skybox-face-left {
-  left: 0;
   top: 0;
+  left: 0;
 }
 
 .skybox-face-right {
-  left: 0;
   top: 0;
+  left: 0;
 }
 
 .skybox-face-down {
-  left: 0;
   top: 0;
+  left: 0;
 }
 
 .skybox-controls {
   position: absolute;
   bottom: 16px;
   left: 50%;
-  transform: translateX(-50%);
+  z-index: 10;
   display: flex;
   flex-direction: row;
-  align-items: center;
   gap: 12px;
-  background: rgba(0, 0, 0, 0.7);
+  align-items: center;
   padding: 12px 20px;
-  border-radius: 8px;
   color: white;
   pointer-events: none;
-  z-index: 10;
+  background: rgb(0 0 0 / 70%);
+  border-radius: 8px;
+  transform: translateX(-50%);
 }
 
 .control-hint {
   font-size: 14px;
-  pointer-events: none;
+
   /* 禁用换行 */
   white-space: nowrap;
+  pointer-events: none;
 }
 
 .zoom-value {
+  min-width: 45px;
   font-size: 14px;
   font-weight: bold;
-  min-width: 45px;
   text-align: center;
   pointer-events: none;
 }
 
 .reset-button {
-  padding: 6px 16px;
   width: max-content;
-  border: none;
-  background: rgba(255, 255, 255, 0.2);
+  padding: 6px 16px;
   color: white;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background 0.2s;
   pointer-events: auto;
+  cursor: pointer;
+  background: rgb(255 255 255 / 20%);
+  border: none;
+  border-radius: 4px;
+  transition: background 0.2s;
 }
 
 .reset-button:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: rgb(255 255 255 / 30%);
 }
 
 .skybox-missing-hint {
   position: absolute;
   top: 16px;
   left: 50%;
-  transform: translateX(-50%);
-  background: rgba(255, 100, 100, 0.9);
-  color: white;
-  padding: 8px 16px;
-  border-radius: 4px;
-  font-size: 12px;
   z-index: 10;
+  padding: 8px 16px;
+  font-size: 12px;
+  color: white;
+  background: rgb(255 100 100 / 90%);
+  border-radius: 4px;
+  transform: translateX(-50%);
 }
 </style>

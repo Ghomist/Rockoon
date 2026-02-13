@@ -1,25 +1,24 @@
-@use "ui-fix.scss";
+@use "ui-fix";
 
 :root {
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  -webkit-text-size-adjust: 100%;
-
   // ui
   --main-header-h: 52px;
   --main-container-h: calc(100vh - var(--main-header-h));
-
   --list-header-h: 75px;
   --list-container-h: calc(var(--main-container-h) - var(--list-header-h));
+
+  font-synthesis: none;
+  text-rendering: optimizelegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-size-adjust: 100%;
 }
 
 body {
   user-select: none;
-  -ms-user-select: none;
-  -moz-user-select: none;
-  -webkit-user-select: none;
+  user-select: none;
+  user-select: none;
+  user-select: none;
 }
 
 #app {
