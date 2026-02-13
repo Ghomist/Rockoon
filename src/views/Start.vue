@@ -91,12 +91,12 @@ const quickLinks = [
   {
     label: "menu.maps",
     icon: "map-line",
-    route: "/maps"
+    route: "/resources/maps"
   },
   {
     label: "menu.mods",
     icon: "auction-line",
-    route: "/mods"
+    route: "/resources/mods"
   },
   {
     label: "menu.settings",

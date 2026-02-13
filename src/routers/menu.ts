@@ -61,24 +61,26 @@ export const getMenuItems = (): MenuItem[] => [
         icon: "auction-line",
         view: ResourcesMods
       },
-      {
-        label: t("menu.textures"),
-        route: "/textures",
-        icon: "palette-line",
-        view: Instances
-      },
+      // 暂时隐藏材质包
+      // {
+      //   label: t("menu.textures"),
+      //   route: "/textures",
+      //   icon: "palette-line",
+      //   view: Instances
+      // },
       {
         label: t("menu.backgrounds"),
         route: "/backgrounds",
         icon: "world-2-line",
         view: ResourcesSkys
-      },
-      {
-        label: t("menu.musics"),
-        route: "/musics",
-        icon: "music-line",
-        view: Instances
       }
+      // 暂时隐藏音乐包
+      // {
+      //   label: t("menu.musics"),
+      //   route: "/musics",
+      //   icon: "music-line",
+      //   view: Instances
+      // }
     ]
   },
   "-",
