@@ -209,9 +209,6 @@ onMounted(async () => {
             <n-text style="text-align: center">
               {{ t("skys.levelName", { level: level.level }) }}
             </n-text>
-            <n-text depth="3" style="font-size: 12px; text-align: center">
-              {{ Object.keys(level.files).length + "/5" }}
-            </n-text>
           </n-flex>
         </n-card>
       </n-flex>

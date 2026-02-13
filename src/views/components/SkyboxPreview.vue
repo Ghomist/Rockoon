@@ -191,12 +191,6 @@ onUnmounted(() => {
         {{ t("skys.resetView") }}
       </button>
     </div>
-
-    <!-- 缺失的图片提示 -->
-    <div v-if="Object.keys(level.files).length < 5" class="skybox-missing-hint">
-      {{ t("skys.missingFiles") }}: {{ 5 - Object.keys(level.files).length }} /
-      5
-    </div>
   </div>
 </template>
 
