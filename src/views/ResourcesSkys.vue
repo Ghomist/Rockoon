@@ -173,7 +173,12 @@ onMounted(async () => {
     </template>
 
     <n-spin :show="loading">
-      <n-flex :wrap="true" :size="16" justify="center" style="padding: 16px">
+      <n-flex
+        :wrap="true"
+        :size="16"
+        justify="space-around"
+        style="padding: 16px"
+      >
         <n-card
           v-for="level in skyboxLevels"
           :key="level.level"
