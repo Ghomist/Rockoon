@@ -29,7 +29,10 @@
     "publishTime": "Publish Time",
     "noInstance": "Please select a game instance first",
     "downloading": "Downloading: {name}",
-    "success": "Downloaded: {name}"
+    "downloadingPreparing": "Preparing to download: {name}",
+    "success": "Downloaded: {name}",
+    "extracting": "Extracting: {name}",
+    "extractingTip": "Please wait, extracting files..."
   },
   "header": {
     "currentSelection": "Currently selection:",

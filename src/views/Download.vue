@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import backend from "@/backend";
 import { useDownloadService } from "@/services/download";
 import { useAppStore } from "@/stores/app";
 import { loadingBar, message } from "@/utils/ui/feedback";
@@ -16,13 +15,12 @@ import {
   NDescriptionsItem,
   NText
 } from "naive-ui";
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted, ref, h } from "vue";
 import ListViewPage from "./components/ListViewPage.vue";
 import BasicIcon from "./components/MgcIcon.vue";
-import { join } from "@tauri-apps/api/path";
 
 const { t } = useI18n();
-const download = useDownloadService();
+const downloadService = useDownloadService();
 const app = useAppStore();
 
 const PAGE_SIZE = 30; // 每页加载的地图数量
@@ -36,11 +34,18 @@ const searchKeyword = ref(""); // 搜索关键词
 // 详情弹窗
 const showDetailModal = ref(false);
 const selectedMap = ref<BallanceMap | undefined>();
-const isDownloading = ref(false);
 
-// 构建地图下载 URL
-const buildDownloadUrl = (map: BallanceMap) => {
-  return `https://dl.bcrc.site/map/${map.id}`;
+// 下载状态
+const showDownloadModal = ref(false);
+const downloadingMapName = ref("");
+const downloadingStatus = ref<
+  "downloading" | "extracting" | "completed" | "failed"
+>("downloading");
+const downloadProgress = ref(0); // 下载进度百分比
+
+// 检查地图是否正在下载
+const isMapDownloading = (mapId: string) => {
+  return downloadService.isDownloading(mapId);
 };
 
 // 当前显示的地图列表（分页 + 筛选后的）
@@ -89,7 +94,7 @@ const onRefresh = async () => {
   loading.value = true;
   loadingBar.start();
   try {
-    data.value = await download.getMapIndexes();
+    data.value = await downloadService.getMapIndexes();
     displayCount.value = PAGE_SIZE; // 重置显示数量
     searchKeyword.value = ""; // 重置搜索
     loading.value = false;
@@ -111,61 +116,65 @@ const onShowDetail = (map: BallanceMap) => {
 };
 
 // 下载地图
-const onDownloadMap = async (map: BallanceMap) => {
+const onDownloadMap = (map: BallanceMap) => {
   // 检查是否已选择实例
   if (!app.selectedInstanceData) {
     message.error(t("download.noInstance"));
     return;
   }
 
-  selectedMap.value = map;
-  isDownloading.value = true;
-
-  const loadingMessage = message.loading(
-    t("download.downloading", { name: map.name }),
-    { duration: 0 }
-  );
-
-  try {
-    // 构建下载 URL 和保存路径
-    const downloadUrl = buildDownloadUrl(map);
-    const mapPath = await join(
-      app.selectedInstanceData.path,
-      "ModLoader",
-      "Maps",
-      map.name
-    );
-
-    // 确保地图文件夹存在
-    const mapsDir = await join(
-      app.selectedInstanceData.path,
-      "ModLoader",
-      "Maps"
-    );
-    await backend.mkdir(mapsDir);
-
-    // 下载文件
-    await backend.downloadFile(downloadUrl, mapPath);
-
-    // 如果是 ZIP 文件，解压它
-    if (map.format === "zip") {
-      const extractDir = await join(mapsDir, map.name.replace(/\.zip$/i, ""));
-      await backend.mkdir(extractDir);
-      await backend.unzip(mapPath, extractDir);
-
-      // 删除 ZIP 文件
-      await backend.delete(mapPath);
-    }
-
-    loadingMessage.destroy();
-    message.success(t("download.success", { name: map.name }));
-  } catch (error) {
-    loadingMessage.destroy();
-    message.error(t("common.message.error"));
-    console.error("Download error:", error);
-  } finally {
-    isDownloading.value = false;
+  // 检查是否已经在下载中
+  if (isMapDownloading(map.id)) {
+    message.warning(t("common.message.warning"));
+    return;
   }
+
+  selectedMap.value = map;
+  downloadingMapName.value = map.name.replace(/\..+$/g, "");
+  downloadingStatus.value = "downloading";
+  downloadProgress.value = 0;
+  showDownloadModal.value = true;
+
+  loadingBar.start();
+
+  // 不 await，让下载在后台运行，但通过模态框阻止用户离开
+  downloadService
+    .downloadMap(
+      map,
+      app.selectedInstanceData.path,
+      (progress, status, error) => {
+        // 更新下载进度
+        if (status === "downloading") {
+          downloadProgress.value = progress;
+        } else if (status === "extracting") {
+          downloadingStatus.value = "extracting";
+          downloadProgress.value = 100;
+        } else if (status === "completed") {
+          downloadingStatus.value = "completed";
+          downloadProgress.value = 100;
+          loadingBar.finish();
+          message.success(t("download.success", { name: map.name }));
+
+          // 延迟关闭模态框，让用户看到成功提示
+          setTimeout(() => {
+            showDownloadModal.value = false;
+          }, 1500);
+        } else if (status === "failed") {
+          downloadingStatus.value = "failed";
+          loadingBar.error();
+          message.error(t("common.message.error"));
+
+          // 延迟关闭模态框，让用户看到错误提示
+          setTimeout(() => {
+            showDownloadModal.value = false;
+          }, 3000);
+        }
+      }
+    )
+    .catch(error => {
+      // 捕获未在回调中处理的错误
+      console.error("Download error:", error);
+    });
 };
 
 // 处理滚动事件，加载更多数据
@@ -258,7 +267,7 @@ const loadMore = () => {
               secondary
               type="primary"
               size="small"
-              :loading="isDownloading && selectedMap?.id === map.id"
+              :loading="isMapDownloading(map.id)"
               @click="onDownloadMap(map)"
             >
               <template #icon>
@@ -315,6 +324,91 @@ const loadMore = () => {
           {{ new Date(selectedMap.publishTime).toLocaleString() }}
         </n-descriptions-item>
       </n-descriptions>
+    </n-modal>
+
+    <!-- 下载进度模态框 -->
+    <n-modal
+      v-model:show="showDownloadModal"
+      :closable="false"
+      :mask-closable="false"
+      :close-on-esc="false"
+      :auto-focus="false"
+      preset="card"
+      style="width: 500px"
+    >
+      <n-flex vertical :size="24" align="center">
+        <n-spin
+          v-if="
+            downloadingStatus === 'downloading' ||
+            downloadingStatus === 'extracting'
+          "
+          size="large"
+        />
+        <BasicIcon
+          v-else-if="downloadingStatus === 'completed'"
+          icon="check-circle-fill"
+          size="large"
+          color="#18a058"
+          style="font-size: 64px"
+        />
+        <BasicIcon
+          v-else-if="downloadingStatus === 'failed'"
+          icon="close-circle-fill"
+          size="large"
+          color="#d03050"
+          style="font-size: 64px"
+        />
+
+        <n-flex vertical :size="8" align="center">
+          <n-text
+            v-if="downloadingStatus === 'downloading' && downloadProgress === 0"
+            style="font-size: 16px; font-weight: 500"
+          >
+            {{
+              t("download.downloadingPreparing", { name: downloadingMapName })
+            }}
+          </n-text>
+          <n-text
+            v-else-if="downloadingStatus === 'downloading'"
+            style="font-size: 16px; font-weight: 500"
+          >
+            {{ t("download.downloading", { name: downloadingMapName }) }}
+          </n-text>
+          <n-text
+            v-else-if="downloadingStatus === 'extracting'"
+            style="font-size: 16px; font-weight: 500"
+          >
+            {{ t("download.extracting", { name: downloadingMapName }) }}
+          </n-text>
+          <n-text
+            v-else-if="downloadingStatus === 'completed'"
+            style="font-size: 16px; font-weight: 500; color: #18a058"
+          >
+            {{ t("download.success", { name: downloadingMapName }) }}
+          </n-text>
+          <n-text
+            v-else-if="downloadingStatus === 'failed'"
+            style="font-size: 16px; font-weight: 500; color: #d03050"
+          >
+            {{ t("common.message.error") }}
+          </n-text>
+
+          <n-text
+            v-if="downloadingStatus === 'downloading' && downloadProgress > 0"
+            depth="3"
+            style="font-size: 13px"
+          >
+            {{ downloadProgress }}%
+          </n-text>
+          <n-text
+            v-else-if="downloadingStatus === 'extracting'"
+            depth="3"
+            style="font-size: 13px"
+          >
+            {{ t("download.extractingTip") }}
+          </n-text>
+        </n-flex>
+      </n-flex>
     </n-modal>
   </list-view-page>
 </template>

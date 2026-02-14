@@ -301,3 +301,27 @@ pub fn download_file(url: String, save_path: String) -> RcResult {
 
     Ok(())
 }
+
+#[command]
+pub fn write_file(path: String, data: String) -> RcResult {
+    info!("Writing {} bytes to {}", data.len(), path);
+
+    // 确保 目标目录存在
+    if let Some(parent) = path::Path::new(&path).parent() {
+        if !parent.exists() {
+            fs::create_dir_all(parent)?;
+        }
+    }
+
+    // 解码 base64
+    let decoded = base64::decode(&data).map_err(|e| {
+        crate::common::exception::RcError::Other(format!("Base64 decode failed: {}", e))
+    })?;
+
+    // 写入文件
+    fs::write(&path, &decoded)?;
+
+    info!("Wrote {} bytes to {}", decoded.len(), path);
+
+    Ok(())
+}

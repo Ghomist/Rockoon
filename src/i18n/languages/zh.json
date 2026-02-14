@@ -29,7 +29,10 @@
     "publishTime": "发布时间",
     "noInstance": "请先选择一个游戏实例",
     "downloading": "正在下载：{name}",
-    "success": "下载成功：{name}"
+    "downloadingPreparing": "正在准备下载：{name}",
+    "success": "下载成功：{name}",
+    "extracting": "正在解压：{name}",
+    "extractingTip": "请稍候，正在解压文件..."
   },
   "header": {
     "currentSelection": "当前选择：",

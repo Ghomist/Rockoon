@@ -70,3 +70,23 @@ type PreferenceStore = {
 type InstancesStore = {
   instances: Instance[];
 };
+
+type DownloadTaskStatus =
+  | "pending"
+  | "downloading"
+  | "extracting"
+  | "completed"
+  | "failed";
+type DownloadTask = {
+  id: string;
+  mapId: string;
+  mapName: string;
+  mapFormat: string;
+  status: DownloadTaskStatus;
+  error?: string;
+  startTime: number;
+  endTime?: number;
+};
+type DownloadStore = {
+  activeDownloads: DownloadTask[];
+};
