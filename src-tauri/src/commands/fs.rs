@@ -1,6 +1,6 @@
 use crate::common::exception::{RcResult, RcResultWith};
 use log::info;
-use std::{fs, path, process};
+use std::{fs, io::Read, io::Write, path, process};
 use tauri::path::BaseDirectory;
 use tauri::{command, AppHandle, Manager};
 
@@ -247,6 +247,57 @@ pub fn install_rockoon_mod(app: AppHandle, path: String) -> RcResult {
     info!("Instance 'RockoonIO.bmodp' to {:?}", &path);
 
     fs::copy(&mod_path, &path)?;
+
+    Ok(())
+}
+
+#[command]
+pub fn download_file(url: String, save_path: String) -> RcResult {
+    info!("Downloading {} to {}", url, save_path);
+
+    // 确保目标目录存在
+    if let Some(parent) = path::Path::new(&save_path).parent() {
+        if !parent.exists() {
+            fs::create_dir_all(parent)?;
+        }
+    }
+
+    // 使用 ureq 下载文件
+    let response = ureq::get(&url).call().map_err(|e| {
+        crate::common::exception::RcError::Other(format!("HTTP request failed: {}", e))
+    })?;
+    let total_size = response
+        .header("Content-Length")
+        .and_then(|s| s.parse::<u64>().ok())
+        .unwrap_or(0);
+
+    let mut reader = response.into_reader();
+
+    // 分块读取和写入，支持大文件
+    let mut file = fs::File::create(&save_path)?;
+    let mut buffer = [0u8; 8192]; // 8KB 缓冲区
+    let mut downloaded = 0u64;
+
+    loop {
+        let bytes_read = reader.read(&mut buffer)?;
+        if bytes_read == 0 {
+            break;
+        }
+        file.write_all(&buffer[..bytes_read])?;
+        downloaded += bytes_read as u64;
+
+        // 记录进度
+        if total_size > 0 && downloaded % (1024 * 1024) == 0 {
+            info!(
+                "Download progress: {}/{} bytes ({:.1}%)",
+                downloaded,
+                total_size,
+                (downloaded as f64 / total_size as f64) * 100.0
+            );
+        }
+    }
+
+    info!("Downloaded {} bytes to {}", downloaded, save_path);
 
     Ok(())
 }

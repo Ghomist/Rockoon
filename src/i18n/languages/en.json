@@ -17,7 +17,19 @@
   },
   "download": {
     "title": "No maps found | 1 map in total | {cnt} maps in total",
-    "searchPlaceholder": "Search by map name or author"
+    "searchPlaceholder": "Search by map name or author",
+    "detail": "Detail",
+    "detailModal": "Map Details",
+    "mapName": "Map Name",
+    "author": "Author",
+    "description": "Description",
+    "difficulty": "Difficulty",
+    "format": "Format",
+    "tags": "Tags",
+    "publishTime": "Publish Time",
+    "noInstance": "Please select a game instance first",
+    "downloading": "Downloading: {name}",
+    "success": "Downloaded: {name}"
   },
   "header": {
     "currentSelection": "Currently selection:",

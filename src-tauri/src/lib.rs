@@ -36,6 +36,7 @@ pub fn run() {
             commands::fs::unzip,
             commands::fs::get_common_dirs,
             commands::fs::install_rockoon_mod,
+            commands::fs::download_file,
             commands::process::execute,
             commands::process::kill,
             commands::process::check,

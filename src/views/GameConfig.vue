@@ -37,7 +37,7 @@ onMounted(async () => {
 
 <template>
   <n-layout
-    style=" height: calc(var(--main-container-h) - 28px);margin: 14px 28px"
+    style="height: calc(var(--main-container-h) - 28px); margin: 14px 28px"
   >
     <n-tabs
       v-if="launchConfig"

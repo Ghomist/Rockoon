@@ -13,11 +13,11 @@ pub fn log(level: String, msg: String) -> RcResult {
         _ => Level::Info,
     };
     if log_enabled!(level) {
-        if msg.len() > 100 {
+        if msg.len() > 150 {
             log!(
                 level,
                 "[UI] Message is too long! {}",
-                msg[..100].to_string()
+                msg[..150].to_string()
             );
         } else {
             log!(level, "[UI] {}", msg);

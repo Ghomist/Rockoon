@@ -52,7 +52,9 @@ const fs = {
     invoke<undefined>("unzip", { zipPath, outputDir }),
   getCommonDirs: () => invoke<string[]>("get_common_dirs"),
   installRockoonMod: (path: string) =>
-    invoke<undefined>("install_rockoon_mod", { path })
+    invoke<undefined>("install_rockoon_mod", { path }),
+  downloadFile: (url: string, savePath: string) =>
+    invoke<undefined>("download_file", { url, savePath })
 };
 
 const process = {

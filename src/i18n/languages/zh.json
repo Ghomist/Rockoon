@@ -17,7 +17,19 @@
   },
   "download": {
     "title": "未找到地图 | 共 1 张地图 | 共 {cnt} 张地图",
-    "searchPlaceholder": "搜索地图名称或作者"
+    "searchPlaceholder": "搜索地图名称或作者",
+    "detail": "详情",
+    "detailModal": "地图详情",
+    "mapName": "地图名称",
+    "author": "作者",
+    "description": "描述",
+    "difficulty": "难度",
+    "format": "格式",
+    "tags": "标签",
+    "publishTime": "发布时间",
+    "noInstance": "请先选择一个游戏实例",
+    "downloading": "正在下载：{name}",
+    "success": "下载成功：{name}"
   },
   "header": {
     "currentSelection": "当前选择：",

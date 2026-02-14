@@ -16,9 +16,17 @@
     "core:window:allow-start-dragging",
     "dialog:allow-open",
     "upload:allow-download",
+    "http:allow-fetch",
+    "http:allow-fetch-cancel",
+    "http:allow-fetch-read-body",
+    "http:allow-fetch-cancel-body",
+    "http:allow-fetch-send",
     {
-      "identifier": "http:default",
-      "allow": [{ "url": "https://dl.bcrc.site/" }]
+      "identifier": "http:allow-fetch",
+      "allow": [
+        { "url": "https://dl.bcrc.site/*" },
+        { "url": "http://ballancemaps.ysepan.com/*" }
+      ]
     }
   ]
 }
