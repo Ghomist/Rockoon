@@ -161,6 +161,14 @@
       "unlockWidescreen": {
         "label": "Unlock widescreen mode",
         "tip": "Allows resolutions other than 4:3"
+      },
+      "debug": {
+        "label": "Enable debug mode",
+        "tip": "Enable in-game debug mode"
+      },
+      "rookie": {
+        "label": "Enable rookie mode",
+        "tip": "Enable in-game rookie mode"
       }
     },
     "graphics": {
@@ -209,6 +217,9 @@
       "resolution": {
         "label": "Resolution"
       },
+      "fullScreen": {
+        "label": "Fullscreen mode"
+      },
       "sortTransparentObjects": {
         "label": "Sort transparent objects"
       },
@@ -232,18 +243,9 @@
     "openConfigFile": "Open config file",
     "selectInstance": "Please select a game instance first",
     "startup": {
-      "loadAllBuildingBlocks": {
-        "label": "Load all Building Blocks"
-      },
-      "loadAllManagers": {
-        "label": "Load all Managers"
-      },
-      "loadAllPlugins": {
-        "label": "Load all plugins"
-      },
       "logMode": {
         "label": "Overwrite log",
-        "tip": "Each startup will overwrite the previous log, otherwise it will be appended to the end"
+        "tip": "Each startup will overwrite previous log, otherwise it will be appended to end"
       },
       "manualSetup": {
         "label": "Manual start",

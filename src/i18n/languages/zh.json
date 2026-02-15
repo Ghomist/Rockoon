@@ -223,6 +223,14 @@
       },
       "applyHotfix": {
         "label": "应用热修复"
+      },
+      "debug": {
+        "label": "启用调试模式",
+        "tip": "启用游戏内调试模式"
+      },
+      "rookie": {
+        "label": "启用新手模式",
+        "tip": "启用游戏内新手模式"
       }
     },
     "window": {
@@ -248,6 +256,9 @@
     "graphics": {
       "resolution": {
         "label": "分辨率"
+      },
+      "fullScreen": {
+        "label": "全屏模式"
       },
       "driver": {
         "label": "显卡 ID"
@@ -322,15 +333,6 @@
       "manualSetup": {
         "label": "手动启动",
         "tip": "显示启动设定的对话窗口"
-      },
-      "loadAllManagers": {
-        "label": "加载所有 Manager"
-      },
-      "loadAllBuildingBlocks": {
-        "label": "加载所有 Building Block"
-      },
-      "loadAllPlugins": {
-        "label": "加载所有插件"
       }
     },
     "inGameOptions": {

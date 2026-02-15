@@ -43,6 +43,8 @@ type BallanceLaunchConfig = {
     UnlockWidescreen: boolean;
     UnlockHighResolution: boolean;
     ApplyHotfix: boolean;
+    Debug: boolean;
+    Rookie: boolean;
   };
   Window: {
     ClipCursor: boolean;
@@ -55,7 +57,7 @@ type BallanceLaunchConfig = {
   Graphics: {
     Width: number;
     Height: number;
-    Fullscreen: boolean;
+    FullScreen: boolean;
     Driver: number;
     DisableDithering: boolean;
     DisableSpecular: boolean;
@@ -77,12 +79,9 @@ type BallanceLaunchConfig = {
     TextureVideoFormat: string;
   };
   Startup: {
-    LoadAllManagers: boolean;
+    LogMode: boolean;
     Verbose: boolean;
     ManualSetup: boolean;
-    LoadAllBuildingBlocks: boolean;
-    LoadAllPlugins: boolean;
-    LogMode: boolean;
   };
 };
 

@@ -12,7 +12,7 @@ export const parseBallanceLaunchConfig = (
   Graphics: {
     Width: parseInt(rawConfig["Graphics"]["Width"]),
     Height: parseInt(rawConfig["Graphics"]["Height"]),
-    Fullscreen: rawConfig["Graphics"]["Fullscreen"] === "1",
+    FullScreen: rawConfig["Graphics"]["FullScreen"] === "1",
     Driver: parseInt(rawConfig["Graphics"]["Driver"]),
     DisableDithering: rawConfig["Graphics"]["DisableDithering"] === "1",
     DisableSpecular: rawConfig["Graphics"]["DisableSpecular"] === "1",
@@ -42,16 +42,14 @@ export const parseBallanceLaunchConfig = (
     ApplyHotfix: rawConfig["Game"]["ApplyHotfix"] === "1",
     UnlockWidescreen: rawConfig["Game"]["UnlockWidescreen"] === "1",
     UnlockHighResolution: rawConfig["Game"]["UnlockHighResolution"] === "1",
-    SkipOpening: rawConfig["Game"]["SkipOpening"] === "1"
+    SkipOpening: rawConfig["Game"]["SkipOpening"] === "1",
+    Debug: rawConfig["Game"]["Debug"] === "1",
+    Rookie: rawConfig["Game"]["Rookie"] === "1"
   },
   Startup: {
-    LoadAllManagers: rawConfig["Startup"]["LoadAllManagers"] === "1",
+    LogMode: rawConfig["Startup"]["LogMode"] === "1",
     Verbose: rawConfig["Startup"]["Verbose"] === "1",
-    ManualSetup: rawConfig["Startup"]["ManualSetup"] === "1",
-    LoadAllBuildingBlocks:
-      rawConfig["Startup"]["LoadAllBuildingBlocks"] === "1",
-    LoadAllPlugins: rawConfig["Startup"]["LoadAllPlugins"] === "1",
-    LogMode: rawConfig["Startup"]["LogMode"] === "1"
+    ManualSetup: rawConfig["Startup"]["ManualSetup"] === "1"
   }
 });
 

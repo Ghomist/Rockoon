@@ -183,6 +183,18 @@ onMounted(async () => {
               label: t('gameConfig.game.applyHotfix.label'),
               type: 'switch',
               valueRef: toRef(launchConfig.Game, 'ApplyHotfix')
+            },
+            {
+              label: t('gameConfig.game.debug.label'),
+              tip: t('gameConfig.game.debug.tip'),
+              type: 'switch',
+              valueRef: toRef(launchConfig.Game, 'Debug')
+            },
+            {
+              label: t('gameConfig.game.rookie.label'),
+              tip: t('gameConfig.game.rookie.tip'),
+              type: 'switch',
+              valueRef: toRef(launchConfig.Game, 'Rookie')
             }
           ]"
         />
@@ -230,6 +242,11 @@ onMounted(async () => {
               type: 'number-pair',
               valueRef: toRef(launchConfig.Graphics, 'Width'),
               valueRef2: toRef(launchConfig.Graphics, 'Height')
+            },
+            {
+              label: t('gameConfig.graphics.fullScreen.label'),
+              type: 'switch',
+              valueRef: toRef(launchConfig.Graphics, 'FullScreen')
             },
             {
               label: t('gameConfig.graphics.driver.label'),
@@ -357,21 +374,6 @@ onMounted(async () => {
               tip: t('gameConfig.startup.manualSetup.tip'),
               type: 'switch',
               valueRef: toRef(launchConfig.Startup, 'ManualSetup')
-            },
-            {
-              label: t('gameConfig.startup.loadAllManagers.label'),
-              type: 'switch',
-              valueRef: toRef(launchConfig.Startup, 'LoadAllManagers')
-            },
-            {
-              label: t('gameConfig.startup.loadAllBuildingBlocks.label'),
-              type: 'switch',
-              valueRef: toRef(launchConfig.Startup, 'LoadAllBuildingBlocks')
-            },
-            {
-              label: t('gameConfig.startup.loadAllPlugins.label'),
-              type: 'switch',
-              valueRef: toRef(launchConfig.Startup, 'LoadAllPlugins')
             }
           ]"
         />
