@@ -158,12 +158,12 @@ const quickLinks = [
         </n-statistic>
       </n-card>
       <n-card style="flex: 1">
-        <n-statistic :label="t('home.totalPlaytime')" :value="totalPlaytime">
+        <n-statistic
+          :label="t('home.totalPlaytime')"
+          :value="formatPlaytime(totalPlaytime)"
+        >
           <template #prefix>
             <n-icon><BasicIcon icon="time-line" /></n-icon>
-          </template>
-          <template #suffix>
-            {{ formatPlaytime(totalPlaytime) }}
           </template>
         </n-statistic>
       </n-card>
