@@ -141,38 +141,34 @@ const onDownloadMap = (map: BallanceMap) => {
 
   // 不 await，让下载在后台运行，但通过模态框阻止用户离开
   downloadService
-    .downloadMap(
-      map,
-      app.selectedInstanceData.path,
-      (progress, status, error) => {
-        // 更新下载进度
-        if (status === "downloading") {
-          downloadProgress.value = progress;
-        } else if (status === "extracting") {
-          downloadingStatus.value = "extracting";
-          downloadProgress.value = 100;
-        } else if (status === "completed") {
-          downloadingStatus.value = "completed";
-          downloadProgress.value = 100;
-          loadingBar.finish();
-          message.success(t("download.success", { name: map.name }));
+    .downloadMap(map, app.selectedInstanceData.path, (progress, status, _) => {
+      // 更新下载进度
+      if (status === "downloading") {
+        downloadProgress.value = progress;
+      } else if (status === "extracting") {
+        downloadingStatus.value = "extracting";
+        downloadProgress.value = 100;
+      } else if (status === "completed") {
+        downloadingStatus.value = "completed";
+        downloadProgress.value = 100;
+        loadingBar.finish();
+        message.success(t("download.success", { name: map.name }));
 
-          // 延迟关闭模态框，让用户看到成功提示
-          setTimeout(() => {
-            showDownloadModal.value = false;
-          }, 1500);
-        } else if (status === "failed") {
-          downloadingStatus.value = "failed";
-          loadingBar.error();
-          message.error(t("common.message.error"));
+        // 延迟关闭模态框，让用户看到成功提示
+        setTimeout(() => {
+          showDownloadModal.value = false;
+        }, 1500);
+      } else if (status === "failed") {
+        downloadingStatus.value = "failed";
+        loadingBar.error();
+        message.error(t("common.message.error"));
 
-          // 延迟关闭模态框，让用户看到错误提示
-          setTimeout(() => {
-            showDownloadModal.value = false;
-          }, 3000);
-        }
+        // 延迟关闭模态框，让用户看到错误提示
+        setTimeout(() => {
+          showDownloadModal.value = false;
+        }, 3000);
       }
-    )
+    })
     .catch(error => {
       // 捕获未在回调中处理的错误
       console.error("Download error:", error);
