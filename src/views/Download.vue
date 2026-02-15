@@ -2,22 +2,22 @@
 import { useDownloadService } from "@/services/download";
 import { useAppStore } from "@/stores/app";
 import { loadingBar, message } from "@/utils/ui/feedback";
-import { useI18n } from "vue-i18n";
 import {
   NButton,
-  NFlex,
-  NListItem,
-  NTag,
-  NSpin,
-  NInput,
-  NModal,
   NDescriptions,
   NDescriptionsItem,
+  NFlex,
+  NInput,
+  NListItem,
+  NModal,
+  NSpace,
+  NSpin,
+  NTag,
   NText,
-  NThing,
-  NSpace
+  NThing
 } from "naive-ui";
-import { computed, onMounted, ref, h } from "vue";
+import { computed, onMounted, ref } from "vue";
+import { useI18n } from "vue-i18n";
 import ListViewPage from "./components/ListViewPage.vue";
 import BasicIcon from "./components/MgcIcon.vue";
 
