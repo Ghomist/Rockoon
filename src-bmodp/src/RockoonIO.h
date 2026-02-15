@@ -4,8 +4,6 @@
 #include <BML/ScriptHelper.h>
 #include <BML/Guids.h>
 
-#include "MapLoader.h"
-
 #define FLAG(f) "--rockoon:" #f "="
 
 class RockoonIO final : public IMod {

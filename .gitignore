@@ -32,3 +32,5 @@ target
 src-bmodp/build
 src-bmodp/3rd-party/*
 !src-bmodp/3rd-party/CMakeLists.txt
+!src-bmodp/3rd-party/Virtools-SDK-2.1
+# Note: BMLPlus SDK is downloaded automatically via build script and should not be committed

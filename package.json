@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "pnpm build:ui && pnpm build:bmodp",
     "build:ui": "vue-tsc --noEmit && vite build",
-    "build:bmodp": "cd src-bmodp && build.bat && cd ..",
+    "build:bmodp": "cd src-bmodp && powershell -ExecutionPolicy Bypass -File build.ps1 && cd ..",
     "preview": "vite preview",
     "tauri": "cross-env RUST_LOG=info tauri",
     "lint:eslint": "eslint --cache --max-warnings 0  \"{src,mock,build}/**/*.{vue,js,ts,tsx}\" --fix",

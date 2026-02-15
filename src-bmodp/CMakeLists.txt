@@ -17,10 +17,6 @@ message(STATUS "VirtoolsSDK_DIR=${VirtoolsSDK_DIR}")
 add_library(RockoonIO SHARED
 			src/RockoonIO.h
 			src/RockoonIO.cpp
-			src/MapLoader.h
-			src/MapLoader.cpp
-			src/PathUtils.h
-			src/PathUtils.cpp
 )
 
 target_include_directories(RockoonIO PRIVATE ${BML_INCLUDE_DIRS})

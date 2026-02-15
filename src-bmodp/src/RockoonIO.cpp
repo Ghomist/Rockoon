@@ -156,8 +156,3 @@ std::string RockoonIO::GetRockoonArg(const std::string flag)
 	LocalFree(argv);
 	return "";
 }
-
-void FakeBMLMod::LoadMap(const std::wstring& path)
-{
-	m_BML->SendIngameMessage("666666666666");
-}
