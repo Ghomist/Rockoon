@@ -45,6 +45,11 @@ const onReload = () => {
         },
         {
           type: 'switch',
+          label: $t('settings.hideWinWhenLaunch'),
+          valueRef: pref.hideWinWhenLaunch
+        },
+        {
+          type: 'switch',
           label: $t('settings.showWelcome'),
           valueRef: pref.showWelcome
         }

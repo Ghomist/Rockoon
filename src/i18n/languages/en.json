@@ -58,6 +58,7 @@
     "debug": "Debug",
     "showWelcome": "Show welcome in Rockoon",
     "centerWindow": "Center window",
+    "hideWinWhenLaunch": "Hide launcher window after launching game",
     "ingame": "Game settings",
     "ingameMotd": "Enable in-game welcome message",
     "ingameMotdContent": "In-game welcome message"

@@ -108,9 +108,7 @@ onUnmounted(() => {
     :theme
     :locale
     :date-locale="dateLocale"
-    style="
-
---main-ctn-h: calc(100vh - 52px)"
+    style="--main-ctn-h: calc(100vh - 52px)"
   >
     <n-layout style="height: 52px; border-bottom: 1px solid rgb(239 239 245)">
       <n-flex

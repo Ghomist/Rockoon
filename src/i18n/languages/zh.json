@@ -154,6 +154,7 @@
       "title": "确定要清空所有数据吗？"
     },
     "centerWindow": "居中窗口",
+    "hideWinWhenLaunch": "启动游戏后隐藏启动器窗口",
     "showWelcome": "显示启动器欢迎语",
     "ingame": "游玩设置",
     "ingameMotd": "启用欢迎语",
