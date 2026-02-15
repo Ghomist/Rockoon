@@ -1,27 +1,11 @@
-import { fetch } from "@tauri-apps/plugin-http";
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 import { join } from "@tauri-apps/api/path";
 import { ref } from "vue";
+
 import backend from "@/backend";
-import { getJson } from "@/utils/http";
 import { defineService, withCache } from "@/utils/common";
-
-// 使用 Rust 后端保存文件
-const saveFile = async (path: string, data: Uint8Array): Promise<void> => {
-  // 分块转换为字符串，避免栈溢出
-  const CHUNK_SIZE = 16384; // 16KB chunks
-  let str = "";
-  for (let i = 0; i < data.length; i += CHUNK_SIZE) {
-    const chunk = data.slice(i, i + CHUNK_SIZE);
-    str += String.fromCharCode.apply(null, Array.from(chunk) as number[]);
-  }
-
-  // 整体进行 base64 编码，保持 padding 正确
-  const base64 = btoa(str);
-
-  // 使用 Tauri invoke 调用后端保存
-  await invoke("write_file", { path, data: base64 });
-};
+import { getJson } from "@/utils/http";
 
 const CACHE_EXPIRE_MS = 1000 * 60 * 60; // 1 hour
 
@@ -56,63 +40,28 @@ export const useDownloadService = defineService(() => {
     );
   };
 
-  // 带进度的文件下载
+  // 带进度的文件下载（使用后端下载 + 事件上报）
   const downloadFileWithProgress = async (
     url: string,
     savePath: string,
     onProgress: (percent: number) => void
   ): Promise<void> => {
-    // 获取文件大小
-    const headResponse = await fetch(url, { method: "HEAD" });
-    const contentLength = headResponse.headers.get("content-length");
-    const totalBytes = contentLength ? parseInt(contentLength, 10) : 0;
+    // 监听下载进度事件
+    const unlisten = await listen<{
+      percent: number;
+      downloaded: number;
+      total: number;
+    }>("download-progress", event => {
+      onProgress(event.payload.percent);
+    });
 
-    // 开始下载
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error(`Download failed: ${response.statusText}`);
+    try {
+      // 调用后端下载命令
+      await invoke("download_file", { url, savePath });
+    } finally {
+      // 清理事件监听
+      unlisten();
     }
-
-    // 获取响应体
-    const reader = response.body?.getReader();
-    if (!reader) {
-      throw new Error("Failed to get response reader");
-    }
-
-    // 读取数据并计算进度
-    let downloadedBytes = 0;
-    const chunks: Uint8Array[] = [];
-
-    while (true) {
-      const { done, value } = await reader.read();
-
-      if (done) break;
-
-      if (value) {
-        chunks.push(value);
-        downloadedBytes += value.length;
-
-        // 计算并上报进度
-        if (totalBytes > 0) {
-          const percent = Math.min(
-            100,
-            Math.round((downloadedBytes / totalBytes) * 100)
-          );
-          onProgress(percent);
-        }
-      }
-    }
-
-    // 合并所有 chunk 并写入文件
-    const blob = new Uint8Array(downloadedBytes);
-    let offset = 0;
-    for (const chunk of chunks) {
-      blob.set(chunk, offset);
-      offset += chunk.length;
-    }
-
-    // 使用自定义函数保存文件
-    await saveFile(savePath, blob);
   };
 
   const downloadMap = async (

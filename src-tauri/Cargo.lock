@@ -3753,7 +3753,6 @@ dependencies = [
 name = "rockoon"
 version = "0.1.0"
 dependencies = [
- "base64 0.22.1",
  "encoding",
  "env_logger",
  "log",

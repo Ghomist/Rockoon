@@ -1,10 +1,9 @@
 use crate::common::exception::{RcResult, RcResultWith};
-use base64::{engine::general_purpose, Engine as _};
 use log::info;
 use regex::Regex;
 use std::{fs, io::Read, io::Write, path, process};
 use tauri::path::BaseDirectory;
-use tauri::{command, AppHandle, Manager};
+use tauri::{command, AppHandle, Emitter, Manager};
 
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct File {
@@ -194,6 +193,14 @@ pub fn unzip(zip_path: String, output_dir: String) -> RcResult {
         }
 
         let output_path = path::Path::new(&output_dir).join(file.name());
+
+        // 防止路径遍历攻击
+        if !output_path.starts_with(&output_dir) {
+            return Err(crate::common::exception::RcError::Other(
+                "Invalid file path in archive".to_string(),
+            ));
+        }
+
         if let Some(parent) = output_path.parent() {
             fs::create_dir_all(parent)?;
         }
@@ -279,8 +286,15 @@ pub fn install_rockoon_mod(app: AppHandle, path: String) -> RcResult {
     Ok(())
 }
 
+#[derive(serde::Serialize, Clone)]
+pub struct DownloadProgressEvent {
+    pub percent: u64,
+    pub downloaded: u64,
+    pub total: u64,
+}
+
 #[command]
-pub fn download_file(url: String, save_path: String) -> RcResult {
+pub fn download_file(app: AppHandle, url: String, save_path: String) -> RcResult {
     info!("Downloading {} to {}", url, save_path);
 
     // 确保目标目录存在
@@ -305,6 +319,7 @@ pub fn download_file(url: String, save_path: String) -> RcResult {
     let mut file = fs::File::create(&save_path)?;
     let mut buffer = [0u8; 8192]; // 8KB 缓冲区
     let mut downloaded = 0u64;
+    let mut last_emit_time = std::time::Instant::now();
 
     loop {
         let bytes_read = reader.read(&mut buffer)?;
@@ -314,15 +329,31 @@ pub fn download_file(url: String, save_path: String) -> RcResult {
         file.write_all(&buffer[..bytes_read])?;
         downloaded += bytes_read as u64;
 
-        // 记录进度
-        if total_size > 0 && downloaded % (1024 * 1024) == 0 {
-            info!(
-                "Download progress: {}/{} bytes ({:.1}%)",
-                downloaded,
-                total_size,
-                (downloaded as f64 / total_size as f64) * 100.0
-            );
+        // 发送进度事件（限制频率：最多每 100ms 发送一次）
+        if total_size > 0 && last_emit_time.elapsed().as_millis() >= 100 {
+            let percent = (downloaded as f64 / total_size as f64 * 100.0) as u64;
+            app.emit(
+                "download-progress",
+                DownloadProgressEvent {
+                    percent,
+                    downloaded,
+                    total: total_size,
+                },
+            )?;
+            last_emit_time = std::time::Instant::now();
         }
+    }
+
+    // 发送完成事件（100%）
+    if total_size > 0 {
+        app.emit(
+            "download-progress",
+            DownloadProgressEvent {
+                percent: 100,
+                downloaded,
+                total: total_size,
+            },
+        )?;
     }
 
     info!("Downloaded {} bytes to {}", downloaded, save_path);
@@ -331,25 +362,20 @@ pub fn download_file(url: String, save_path: String) -> RcResult {
 }
 
 #[command]
-pub fn write_file(path: String, data: String) -> RcResult {
+pub fn write_file(path: String, data: Vec<u8>) -> RcResult {
     info!("Writing {} bytes to {}", data.len(), path);
 
-    // 确保 目标目录存在
+    // 确保目标目录存在
     if let Some(parent) = path::Path::new(&path).parent() {
         if !parent.exists() {
             fs::create_dir_all(parent)?;
         }
     }
 
-    // 解码 base64
-    let decoded = general_purpose::STANDARD.decode(&data).map_err(|e| {
-        crate::common::exception::RcError::Other(format!("Base64 decode failed: {}", e))
-    })?;
+    // 直接写入二进制数据
+    fs::write(&path, &data)?;
 
-    // 写入文件
-    fs::write(&path, &decoded)?;
-
-    info!("Wrote {} bytes to {}", decoded.len(), path);
+    info!("Wrote {} bytes to {}", data.len(), path);
 
     Ok(())
 }
@@ -391,15 +417,8 @@ pub fn analyze_skybox_files(dir_path: String) -> RcResultWith<SkyboxAnalysisResu
                     .unwrap_or(false);
 
                 if !is_bmp {
-                    info!(
-                        "Skipping non-BMP file: {} (extension: {:?})",
-                        file_name,
-                        path.extension()
-                    );
                     continue;
                 }
-
-                info!("Checking BMP file: {}", file_name);
 
                 // 尝试匹配各个方向
                 let mut detected_direction = None;
@@ -424,9 +443,6 @@ pub fn analyze_skybox_files(dir_path: String) -> RcResultWith<SkyboxAnalysisResu
                         direction: direction.clone(),
                     });
                     directions_set.insert(direction.clone());
-                    info!("Found skybox file: {} -> {}", file_name, direction);
-                } else {
-                    info!("Skipping unmatched BMP file: {}", file_name);
                 }
             } else if path.is_dir() {
                 // 将子目录添加到栈中，实现递归遍历

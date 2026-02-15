@@ -1,4 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
+
 import { dumpBallanceLaunchConfig, parseBallanceLaunchConfig } from "./utils";
 
 export type LogLevel = "error" | "warn" | "info" | "debug" | "trace";
@@ -68,7 +69,9 @@ const fs = {
   installRockoonMod: (path: string) =>
     invoke<undefined>("install_rockoon_mod", { path }),
   downloadFile: (url: string, savePath: string) =>
-    invoke<undefined>("download_file", { url, savePath })
+    invoke<undefined>("download_file", { url, savePath }),
+  writeFile: (path: string, data: number[]) =>
+    invoke<undefined>("write_file", { path, data })
 };
 
 const process = {

@@ -90,3 +90,10 @@ type DownloadTask = {
 type DownloadStore = {
   activeDownloads: DownloadTask[];
 };
+
+/** 下载进度事件 */
+type DownloadProgressEvent = {
+  percent: number; // 整数百分比
+  downloaded: number;
+  total: number;
+};

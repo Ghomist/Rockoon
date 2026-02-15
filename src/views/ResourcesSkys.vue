@@ -16,7 +16,7 @@ import {
   NRadioGroup,
   NRadio
 } from "naive-ui";
-import { onMounted, ref } from "vue";
+import { onMounted, onUnmounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { message } from "@/utils/ui/feedback";
 import ListViewPage from "./components/ListViewPage.vue";
@@ -127,7 +127,10 @@ const loadSkyboxes = async () => {
         }
         const direction = capitalizeFirst(parsed.direction);
         if (["Front", "Back", "Left", "Right", "Down"].includes(direction)) {
-          (levelsMap.get(parsed.level) as any)[direction] = file.name;
+          const files = levelsMap.get(parsed.level);
+          if (files) {
+            (files as Record<string, string>)[direction] = file.name;
+          }
         }
       }
     }
@@ -364,6 +367,14 @@ const getThumbnailUrl = (level: SkyboxLevel) => {
 
 onMounted(async () => {
   await loadSkyboxes();
+});
+
+// 组件卸载时清理临时文件
+onUnmounted(async () => {
+  if (importTempDir) {
+    await cleanupTempDir(importTempDir);
+    importTempDir = null;
+  }
 });
 </script>
 
