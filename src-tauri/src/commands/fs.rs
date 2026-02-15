@@ -1,4 +1,5 @@
 use crate::common::exception::{RcResult, RcResultWith};
+use base64::{engine::general_purpose, Engine as _};
 use log::info;
 use std::{fs, io::Read, io::Write, path, process};
 use tauri::path::BaseDirectory;
@@ -314,7 +315,7 @@ pub fn write_file(path: String, data: String) -> RcResult {
     }
 
     // 解码 base64
-    let decoded = base64::decode(&data).map_err(|e| {
+    let decoded = general_purpose::STANDARD.decode(&data).map_err(|e| {
         crate::common::exception::RcError::Other(format!("Base64 decode failed: {}", e))
     })?;
 
