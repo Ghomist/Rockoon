@@ -76,6 +76,13 @@ if ($LASTEXITCODE -ne 0) {
 Write-Host "Copying to tauri resources..."
 $source = "build\Release\RockoonIO.bmodp"
 $destination = "..\src-tauri\resources\builtin-mods\"
+
+# Create destination directory if it doesn't exist
+if (-not (Test-Path $destination)) {
+    Write-Host "Creating directory: $destination"
+    New-Item -ItemType Directory -Path $destination -Force | Out-Null
+}
+
 Copy-Item -Path $source -Destination $destination -Recurse -Force
 
 Write-Host "Build completed successfully"
