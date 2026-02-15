@@ -81,6 +81,7 @@
       "openFolder": "Open directory",
       "openDevtools": "Open debugging tools",
       "refresh": "Refresh",
+      "refreshSuccess": "Refreshed successfully!",
       "download": "Download"
     },
     "dialog": {
@@ -333,6 +334,9 @@
       "rank": "Rank",
       "player": "Player Name",
       "score": "Highscore"
+    },
+    "message": {
+      "unlockAllSuccess": "All levels unlocked"
     }
   },
   "resources": {
@@ -386,6 +390,18 @@
     "dragToRotate": "Drag to rotate",
     "scrollToZoom": "Scroll to zoom",
     "resetView": "Reset view",
-    "missingFiles": "Missing images"
+    "missingFiles": "Missing images",
+    "import": {
+      "button": "Import Skybox",
+      "cancel": "Cancel Import",
+      "analyzing": "Analyzing skybox files...",
+      "selectZip": "Please select a skybox archive file",
+      "detectionSuccess": "Found {cnt} skybox images: {dirs}",
+      "detectionError": "Failed to analyze skybox files",
+      "selectLevel": "Please select a level to replace",
+      "replaceSuccess": "Successfully replaced skybox for level {level}",
+      "replaceError": "Failed to replace skybox",
+      "incomplete": "Incomplete skybox: missing {missing} direction(s)"
+    }
   }
 }

@@ -1,6 +1,7 @@
 use crate::common::exception::{RcResult, RcResultWith};
 use base64::{engine::general_purpose, Engine as _};
 use log::info;
+use regex::Regex;
 use std::{fs, io::Read, io::Write, path, process};
 use tauri::path::BaseDirectory;
 use tauri::{command, AppHandle, Manager};
@@ -9,6 +10,18 @@ use tauri::{command, AppHandle, Manager};
 pub struct File {
     name: String,
     size: u64,
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+pub struct SkyboxFile {
+    path: String,
+    direction: String,
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+pub struct SkyboxAnalysisResult {
+    files: Vec<SkyboxFile>,
+    directions: Vec<String>,
 }
 
 #[command]
@@ -135,6 +148,13 @@ pub fn delete(path: String) -> RcResult {
 }
 
 #[command]
+pub fn remove_dir(path: String) -> RcResult {
+    fs::remove_dir_all(&path)?;
+    info!("Removed directory {}", path);
+    Ok(())
+}
+
+#[command]
 pub fn disable(path: String, file_name: String) -> RcResult {
     if !file_name.ends_with(".disable") {
         let folder = fs::canonicalize(&path)?;
@@ -239,6 +259,13 @@ pub fn get_common_dirs(app: AppHandle) -> RcResultWith<Vec<String>> {
 }
 
 #[command]
+pub fn get_temp_dir() -> RcResultWith<String> {
+    let temp_dir = std::env::temp_dir();
+    info!("System temp directory: {}", temp_dir.display());
+    Ok(temp_dir.to_string_lossy().to_string())
+}
+
+#[command]
 pub fn install_rockoon_mod(app: AppHandle, path: String) -> RcResult {
     let mod_path = app.path().resolve(
         "resources/builtin-mods/RockoonIO.bmodp",
@@ -325,4 +352,90 @@ pub fn write_file(path: String, data: String) -> RcResult {
     info!("Wrote {} bytes to {}", decoded.len(), path);
 
     Ok(())
+}
+
+#[command]
+pub fn analyze_skybox_files(dir_path: String) -> RcResultWith<SkyboxAnalysisResult> {
+    info!("Analyzing skybox files in {}", dir_path);
+
+    let mut files = Vec::new();
+    let mut directions_set = std::collections::HashSet::new();
+
+    // 匹配方向的正则表达式
+    let patterns = vec![
+        Regex::new(r"(?i).*Front.*\.[Bb][Mm][Pp]$").unwrap(),
+        Regex::new(r"(?i).*Back.*\.[Bb][Mm][Pp]$").unwrap(),
+        Regex::new(r"(?i).*Left.*\.[Bb][Mm][Pp]$").unwrap(),
+        Regex::new(r"(?i).*Right.*\.[Bb][Mm][Pp]$").unwrap(),
+        Regex::new(r"(?i).*Down.*\.[Bb][Mm][Pp]$").unwrap(),
+    ];
+
+    // 递归遍历目录中的所有 BMP 文件
+    let mut stack = vec![path::PathBuf::from(&dir_path)];
+
+    while let Some(current_path) = stack.pop() {
+        for entry in fs::read_dir(&current_path)? {
+            let entry = entry?;
+            let path = entry.path();
+
+            if path.is_file() {
+                // 获取文件名用于日志
+                let file_name = path.file_name().and_then(|s| s.to_str()).ok_or_else(|| {
+                    crate::common::exception::RcError::Other("Invalid filename".to_string())
+                })?;
+
+                // 只处理 BMP 文件（不区分大小写）
+                let is_bmp = path
+                    .extension()
+                    .map(|ext| ext.to_string_lossy().to_lowercase() == "bmp")
+                    .unwrap_or(false);
+
+                if !is_bmp {
+                    info!(
+                        "Skipping non-BMP file: {} (extension: {:?})",
+                        file_name,
+                        path.extension()
+                    );
+                    continue;
+                }
+
+                info!("Checking BMP file: {}", file_name);
+
+                // 尝试匹配各个方向
+                let mut detected_direction = None;
+                for (i, pattern) in patterns.iter().enumerate() {
+                    if pattern.is_match(file_name) {
+                        let dir_name = match i {
+                            0 => "Front",
+                            1 => "Back",
+                            2 => "Left",
+                            3 => "Right",
+                            4 => "Down",
+                            _ => continue,
+                        };
+                        detected_direction = Some(dir_name.to_string());
+                        break;
+                    }
+                }
+
+                if let Some(direction) = detected_direction {
+                    files.push(SkyboxFile {
+                        path: path.to_string_lossy().to_string(),
+                        direction: direction.clone(),
+                    });
+                    directions_set.insert(direction.clone());
+                    info!("Found skybox file: {} -> {}", file_name, direction);
+                } else {
+                    info!("Skipping unmatched BMP file: {}", file_name);
+                }
+            } else if path.is_dir() {
+                // 将子目录添加到栈中，实现递归遍历
+                stack.push(path);
+            }
+        }
+    }
+
+    let directions: Vec<String> = directions_set.into_iter().collect();
+
+    Ok(SkyboxAnalysisResult { files, directions })
 }

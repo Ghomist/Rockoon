@@ -14,14 +14,18 @@ import {
   NText
 } from "naive-ui";
 import { h, onMounted, ref } from "vue";
+import { message } from "@/utils/ui/feedback";
+import { useI18n } from "vue-i18n";
 
 const app = useAppStore();
+const { t } = useI18n();
 
 const editingLevel = ref(0);
 const editingHighscores = ref(false);
 
 const onUnlockAll = () => {
   app.selectedInstanceData!.options.levelLock.fill(true);
+  message.success(t("gameData.message.unlockAllSuccess"));
 };
 const onToggleLevelLock = (level: number) => {
   app.selectedInstanceData!.options.levelLock[level - 1] =
@@ -47,9 +51,6 @@ onMounted(async () => {
     <template #actions>
       <n-button @click="onUnlockAll">
         {{ $t("gameData.action.unlockAll") }}
-      </n-button>
-      <n-button>
-        {{ $t("gameData.action.exportHighscores") }}
       </n-button>
     </template>
 

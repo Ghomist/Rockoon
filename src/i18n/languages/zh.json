@@ -138,7 +138,19 @@
     "dragToRotate": "拖拽旋转",
     "scrollToZoom": "滚轮缩放",
     "resetView": "重置视角",
-    "missingFiles": "缺失图片"
+    "missingFiles": "缺失图片",
+    "import": {
+      "button": "导入天空盒",
+      "cancel": "取消导入",
+      "analyzing": "正在分析天空盒文件...",
+      "selectZip": "请选择天空盒压缩包",
+      "detectionSuccess": "找到 {cnt} 张天空盒图片：{dirs}",
+      "detectionError": "分析天空盒文件失败",
+      "selectLevel": "请选择要替换的关卡",
+      "replaceSuccess": "成功替换第 {level} 关的天空盒",
+      "replaceError": "替换天空盒失败",
+      "incomplete": "天空盒不完整：缺少 {missing} 个方向"
+    }
   },
   "settings": {
     "basic": "基础设置",
@@ -171,7 +183,8 @@
       "openFolder": "打开目录",
       "openDevtools": "打开调试工具",
       "refresh": "刷新",
-      "download": "下载"
+      "download": "下载",
+      "refreshSuccess": "刷新成功！"
     },
     "message": {
       "warning": "警告！",
@@ -386,6 +399,9 @@
       "rank": "名次",
       "player": "玩家名称",
       "score": "分数"
+    },
+    "message": {
+      "unlockAllSuccess": "所有关卡已解锁"
     }
   }
 }
