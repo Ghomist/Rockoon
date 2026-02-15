@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import backend from "@/backend";
 import { useAppStore } from "@/stores/app";
+import { message } from "@/utils/ui/feedback";
 import { convertFileSrc } from "@tauri-apps/api/core";
-import { join, sep } from "@tauri-apps/api/path";
+import { join } from "@tauri-apps/api/path";
 import { open as browseFile } from "@tauri-apps/plugin-dialog";
 import { computedAsync, until } from "@vueuse/core";
 import {
@@ -11,14 +12,13 @@ import {
   NEmpty,
   NFlex,
   NModal,
-  NSpin,
-  NText,
+  NRadio,
   NRadioGroup,
-  NRadio
+  NSpin,
+  NText
 } from "naive-ui";
 import { onMounted, onUnmounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
-import { message } from "@/utils/ui/feedback";
 import ListViewPage from "./components/ListViewPage.vue";
 import SkyboxPreview from "./components/SkyboxPreview.vue";
 
