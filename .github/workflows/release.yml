@@ -50,6 +50,11 @@ jobs:
           # Those targets are only used on macos runners so it's in an `if` to slightly speed up windows and linux builds.
           targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
 
+      - name: install CMake 4.0+
+        uses: jwlawson/actions-setup-cmake@v3
+        with:
+          cmake-version: "4.0.x"
+
       - name: Rust cache
         uses: swatinem/rust-cache@v2
         with:
