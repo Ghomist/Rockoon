@@ -230,7 +230,7 @@ const loadMore = () => {
       </n-button>
     </template>
 
-    <n-spin :show="loading">
+    <n-spin :show="loading" style="min-height: 400px">
       <n-list-item
         v-for="map in displayedMaps"
         :key="map.id"
