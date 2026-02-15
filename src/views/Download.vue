@@ -13,7 +13,9 @@ import {
   NModal,
   NDescriptions,
   NDescriptionsItem,
-  NText
+  NText,
+  NThing,
+  NSpace
 } from "naive-ui";
 import { computed, onMounted, ref, h } from "vue";
 import ListViewPage from "./components/ListViewPage.vue";
@@ -285,45 +287,92 @@ const loadMore = () => {
       v-model:show="showDetailModal"
       preset="card"
       :title="t('download.detailModal')"
-      style="width: 600px"
+      style="width: 650px"
     >
-      <n-descriptions v-if="selectedMap" bordered :column="1">
-        <n-descriptions-item :label="t('download.mapName')">
-          {{ selectedMap.name.replace(/\..+$/g, "") }}
-        </n-descriptions-item>
-        <n-descriptions-item :label="t('download.author')">
-          <n-tag v-if="selectedMap.author" type="primary" size="small">
-            {{ selectedMap.author }}
-          </n-tag>
-          <n-text v-else depth="3">-</n-text>
-        </n-descriptions-item>
-        <n-descriptions-item :label="t('download.description')">
-          <n-text v-if="selectedMap.description">
-            {{ selectedMap.description }}
-          </n-text>
-          <n-text v-else depth="3">-</n-text>
-        </n-descriptions-item>
-        <n-descriptions-item :label="t('download.difficulty')">
-          <n-tag v-if="selectedMap.difficulty" type="warning" size="small">
-            {{ selectedMap.difficulty }}
-          </n-tag>
-          <n-text v-else depth="3">-</n-text>
-        </n-descriptions-item>
-        <n-descriptions-item :label="t('download.format')">
-          <n-tag size="small">{{ selectedMap.format.toUpperCase() }}</n-tag>
-        </n-descriptions-item>
-        <n-descriptions-item :label="t('download.tags')">
-          <n-flex v-if="selectedMap.tags.length" :size="4" align="center">
-            <n-tag v-for="tag in selectedMap.tags" :key="tag" size="small">
-              {{ tag }}
+      <n-thing v-if="selectedMap">
+        <template #header>
+          <n-flex vertical :size="4">
+            <n-text style="font-size: 18px; font-weight: 600">
+              {{ selectedMap.name.replace(/\..+$/g, "") }}
+            </n-text>
+            <n-tag v-if="selectedMap.author" type="primary" size="small">
+              {{ selectedMap.author }}
             </n-tag>
           </n-flex>
-          <n-text v-else depth="3">-</n-text>
-        </n-descriptions-item>
-        <n-descriptions-item :label="t('download.publishTime')">
-          {{ new Date(selectedMap.publishTime).toLocaleString() }}
-        </n-descriptions-item>
-      </n-descriptions>
+        </template>
+
+        <template #description>
+          <n-text v-if="selectedMap.description" depth="2">
+            {{ selectedMap.description }}
+          </n-text>
+          <n-text v-else depth="3">{{ t("download.noDescription") }}</n-text>
+        </template>
+
+        <template #footer>
+          <n-space vertical :size="16">
+            <!-- 基本信息 -->
+            <n-descriptions
+              :column="2"
+              label-style="width: 80px; font-weight: 500"
+            >
+              <n-descriptions-item :label="t('download.difficulty')">
+                <n-tag
+                  v-if="selectedMap.difficulty"
+                  type="warning"
+                  size="small"
+                >
+                  {{ selectedMap.difficulty }}
+                </n-tag>
+                <n-text v-else depth="3">{{ t("common.unknown") }}</n-text>
+              </n-descriptions-item>
+              <n-descriptions-item :label="t('download.format')">
+                <n-tag size="small">{{
+                  selectedMap.format.toUpperCase()
+                }}</n-tag>
+              </n-descriptions-item>
+              <n-descriptions-item :label="t('download.publishTime')" :span="2">
+                <n-text depth="2">
+                  {{ new Date(selectedMap.publishTime).toLocaleDateString() }}
+                </n-text>
+              </n-descriptions-item>
+            </n-descriptions>
+
+            <!-- 标签 -->
+            <n-flex v-if="selectedMap.tags.length" :size="8" align="center">
+              <n-tag
+                v-for="tag in selectedMap.tags"
+                :key="tag"
+                type="info"
+                size="small"
+                round
+              >
+                {{ tag }}
+              </n-tag>
+            </n-flex>
+            <n-text v-else depth="3">{{ t("common.none") }}</n-text>
+
+            <!-- 操作按钮 -->
+            <n-flex justify="flex-end" :size="12">
+              <n-button @click="showDetailModal = false">
+                {{ t("common.dialog.cancel") }}
+              </n-button>
+              <n-button
+                type="primary"
+                :loading="isMapDownloading(selectedMap.id)"
+                @click="
+                  showDetailModal = false;
+                  onDownloadMap(selectedMap);
+                "
+              >
+                <template #icon>
+                  <BasicIcon icon="download-2-line" />
+                </template>
+                {{ t("common.action.download") }}
+              </n-button>
+            </n-flex>
+          </n-space>
+        </template>
+      </n-thing>
     </n-modal>
 
     <!-- 下载进度模态框 -->

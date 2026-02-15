@@ -23,6 +23,7 @@
     "mapName": "地图名称",
     "author": "作者",
     "description": "描述",
+    "noDescription": "暂无描述",
     "difficulty": "难度",
     "format": "格式",
     "tags": "标签",
@@ -160,6 +161,7 @@
   },
   "common": {
     "none": "无",
+    "unknown": "未知",
     "dialog": {
       "confirm": "确认",
       "cancel": "取消"

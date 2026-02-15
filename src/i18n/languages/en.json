@@ -23,6 +23,7 @@
     "mapName": "Map Name",
     "author": "Author",
     "description": "Description",
+    "noDescription": "No description",
     "difficulty": "Difficulty",
     "format": "Format",
     "tags": "Tags",
@@ -74,6 +75,7 @@
   },
   "common": {
     "none": "None",
+    "unknown": "Unknown",
     "action": {
       "openFolder": "Open directory",
       "openDevtools": "Open debugging tools",
