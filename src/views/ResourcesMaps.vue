@@ -63,6 +63,15 @@ const mapCount = computed(
   () => directoryList.filter(item => !item.isDir).length
 );
 
+// 计算父目录路径（用于返回上一级）
+const parentPath = computed(() => {
+  const relativePath = currentPath.value.replace(rootPath.value, "").trim();
+  if (!relativePath) return "";
+  const parts = relativePath.split(/[\\/]/).filter(Boolean);
+  if (parts.length <= 1) return "";
+  return parts.slice(0, -1).join("/");
+});
+
 // 检查文件是否被禁用（以 .disable 结尾）
 const isFileDisabled = (fileName: string) => fileName.endsWith(".disable");
 
@@ -233,16 +242,19 @@ const handleMoveFile = async (targetPath: string) => {
   }
 
   try {
-    const sourcePath = await join(currentPath.value, itemToMove.value.name);
+    // 根据是否是文件夹使用不同的路径计算方式
+    const sourcePath = itemToMove.value.isDir
+      ? await join(rootPath.value, itemToMove.value.path)
+      : await join(currentPath.value, itemToMove.value.name);
     const targetFilePath = await join(targetPath, itemToMove.value.name);
-    console.log("Moving file:", { sourcePath, targetFilePath });
+    console.log("Moving item:", { sourcePath, targetFilePath });
     await backend.rename(sourcePath, targetFilePath);
     message.success(t("resources.move.success"));
     showMoveDialog.value = false;
     itemToMove.value = null;
     await onRefresh();
   } catch (error) {
-    console.error("Move file failed:", error);
+    console.error("Move failed:", error);
     message.error(`${t("resources.move.error")}: ${error}`);
   }
 };
@@ -291,7 +303,7 @@ onMounted(async () => {
     <n-list-item
       v-if="currentPath && currentPath !== rootPath"
       :key="'..'"
-      @click="onBreadcrumbClick('')"
+      @click="onBreadcrumbClick(parentPath)"
     >
       <template #prefix>
         <BasicIcon icon="arrow-left-up-line" />
@@ -365,6 +377,12 @@ onMounted(async () => {
           </n-button>
         </n-flex>
         <n-flex v-else :wrap="false" align="center">
+          <n-button secondary type="primary" @click.stop="onMoveFile(item)">
+            <template #icon>
+              <BasicIcon icon="file-export-line" />
+            </template>
+            {{ t("resources.move.button") }}
+          </n-button>
           <n-button secondary type="error" @click.stop="onDelete(item)">
             <template #icon>
               <BasicIcon icon="delete-2-line" />
@@ -408,6 +426,7 @@ onMounted(async () => {
       v-model:show="showMoveDialog"
       :root-path="rootPath"
       :current-path="currentPath"
+      :item-to-move-path="itemToMove?.isDir ? itemToMove.path : undefined"
       @confirm="handleMoveFile"
     />
   </list-view-page>

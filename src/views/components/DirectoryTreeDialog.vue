@@ -9,6 +9,7 @@ interface Props {
   show: boolean;
   rootPath: string;
   currentPath: string;
+  itemToMovePath?: string; // 要移动的项的相对路径（相对于 rootPath）
 }
 
 const props = defineProps<Props>();
@@ -24,6 +25,7 @@ type TreeNode = {
   label: string;
   children?: TreeNode[];
   isRoot?: boolean;
+  disabled?: boolean;
 };
 
 const treeData = ref<TreeNode[]>([]);
@@ -62,9 +64,27 @@ const buildTree = async (
       const currentRelativePath = relativePath
         ? await join(relativePath, dirName)
         : dirName;
+
+      // 判断是否应该禁用此节点
+      const shouldDisable = props.itemToMovePath
+        ? currentRelativePath === props.itemToMovePath ||
+          currentRelativePath.startsWith(props.itemToMovePath + "/")
+        : false;
+
+      // 如果节点应该被禁用，就不加载其子节点（这样就不能展开了）
+      if (shouldDisable) {
+        nodes.push({
+          key: currentRelativePath,
+          label: dirName,
+          disabled: true
+        });
+        continue;
+      }
+
       const node: TreeNode = {
         key: currentRelativePath,
-        label: dirName
+        label: dirName,
+        disabled: false
       };
 
       try {
