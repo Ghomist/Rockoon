@@ -128,6 +128,29 @@
     },
     "toggle": {
       "error": "切换文件状态失败"
+    },
+    "breadcrumb": {
+      "root": "根目录",
+      "backToParent": "返回上一级"
+    },
+    "folder": {
+      "name": "文件夹"
+    },
+    "createFolder": {
+      "button": "新建文件夹",
+      "title": "新建文件夹",
+      "placeholder": "请输入文件夹名称",
+      "success": "文件夹创建成功",
+      "error": "文件夹创建失败"
+    },
+    "move": {
+      "button": "移动",
+      "title": "移动文件",
+      "selectLocation": "选择目标位置",
+      "empty": "暂无可用目录",
+      "selectedPath": "目标路径",
+      "success": "文件移动成功",
+      "error": "文件移动失败"
     }
   },
   "skys": {

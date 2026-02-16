@@ -34,6 +34,7 @@ pub fn run() {
             commands::fs::remove_dir,
             commands::fs::disable,
             commands::fs::enable,
+            commands::fs::rename,
             commands::fs::unzip,
             commands::fs::get_common_dirs,
             commands::fs::get_temp_dir,

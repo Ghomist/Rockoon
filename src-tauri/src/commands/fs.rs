@@ -455,3 +455,10 @@ pub fn analyze_skybox_files(dir_path: String) -> RcResultWith<SkyboxAnalysisResu
 
     Ok(SkyboxAnalysisResult { files, directions })
 }
+
+#[command]
+pub fn rename(from: String, to: String) -> RcResult {
+    fs::rename(&from, &to)?;
+    info!("Renamed {} to {}", from, to);
+    Ok(())
+}

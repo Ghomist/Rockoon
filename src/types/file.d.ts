@@ -4,6 +4,14 @@ type ManagedFile = {
   size: number;
 };
 
+/** 目录项类型（文件或文件夹） */
+type DirectoryItem = {
+  name: string;
+  size?: number;
+  isDir: boolean;
+  path: string;
+};
+
 /** 永硕云盘目录 */
 type YsFolder = {
   id: string;

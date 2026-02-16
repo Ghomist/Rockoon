@@ -377,6 +377,29 @@
     "toggle": {
       "error": "Failed to toggle file status"
     },
+    "breadcrumb": {
+      "root": "Root",
+      "backToParent": "Back to Parent"
+    },
+    "folder": {
+      "name": "Folder"
+    },
+    "createFolder": {
+      "button": "New Folder",
+      "title": "Create New Folder",
+      "placeholder": "Enter folder name",
+      "success": "Folder created successfully",
+      "error": "Failed to create folder"
+    },
+    "move": {
+      "button": "Move",
+      "title": "Move File",
+      "selectLocation": "Select target location",
+      "empty": "No available directories",
+      "selectedPath": "Target path",
+      "success": "File moved successfully",
+      "error": "Failed to move file"
+    },
     "statistics": {
       "map": "No map found | 1 custom map in total | {cnt} custom maps in total",
       "mod": "No modules found | 1 mod in total | {cnt} mods in total"

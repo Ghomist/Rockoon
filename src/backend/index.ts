@@ -53,6 +53,8 @@ const fs = {
     invoke<ManagedFile[]>("list", { path: dir, exts }),
   listDirs: (dir: string) => invoke<string[]>("list_dirs", { path: dir }),
   copy: (from: string, to: string) => invoke<undefined>("copy", { from, to }),
+  rename: (from: string, to: string) =>
+    invoke<undefined>("rename", { from, to }),
   mkdir: (dir: string) => invoke<undefined>("mkdir", { path: dir }),
   delete: (file: string) => invoke<undefined>("delete", { path: file }),
   remove_dir: (dir: string) => invoke<undefined>("remove_dir", { path: dir }),
