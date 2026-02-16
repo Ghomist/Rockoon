@@ -1,6 +1,5 @@
 import "@/assets/styles.scss";
 import "mingcute_icon/font/Mingcute.css";
-import "naive-ui/dist/index.css";
 
 import { moveWindow, Position } from "@tauri-apps/plugin-positioner";
 import { createPinia } from "pinia";
