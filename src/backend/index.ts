@@ -77,8 +77,8 @@ const fs = {
 };
 
 const process = {
-  execute: (cwd: string, bin: string) =>
-    invoke<number>("execute", { cwd, bin }),
+  execute: (cwd: string, bin: string, env?: Record<string, string>) =>
+    invoke<number>("execute", { cwd, bin, env }),
   kill: (pid: number) => invoke<undefined>("kill", { pid }),
   check: (pid: number) => invoke<boolean>("check", { pid })
 };

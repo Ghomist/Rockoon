@@ -143,6 +143,9 @@
       "success": "文件夹创建成功",
       "error": "文件夹创建失败"
     },
+    "launch": {
+      "button": "启动"
+    },
     "move": {
       "button": "移动",
       "title": "移动文件",

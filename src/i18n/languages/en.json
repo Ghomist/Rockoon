@@ -391,6 +391,9 @@
       "success": "Folder created successfully",
       "error": "Failed to create folder"
     },
+    "launch": {
+      "button": "Launch"
+    },
     "move": {
       "button": "Move",
       "title": "Move File",

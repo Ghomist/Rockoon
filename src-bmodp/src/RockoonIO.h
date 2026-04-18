@@ -4,7 +4,9 @@
 #include <BML/ScriptHelper.h>
 #include <BML/Guids.h>
 
-#define FLAG(f) "--rockoon:" #f "="
+#include "MapLoader.h"
+
+#define ENV_PREFIX "ROCKOON_"
 
 class RockoonIO final : public IMod {
 public:
@@ -17,26 +19,16 @@ public:
 	DECLARE_BML_VERSION;
 
 	virtual void OnLoad() override;
-	/*
 	virtual void OnPostStartMenu() override;
-	virtual void OnLoadObject(CKSTRING filename, BOOL isMap, CKSTRING masterName,
-		CK_CLASSID filterClass, BOOL addtoscene, BOOL reuseMeshes, BOOL reuseMaterials,
-		BOOL dynamic, XObjectArray* objArray, CKObject* masterObj) override;
-	*/
-	void OnLoadScript(const char* filename, CKBehavior* script);
+	virtual void OnPostExitLevel() override;
 
 private:
-	inline static const std::string F_MOTD = FLAG(motd);
-	inline static const std::string F_STARTUP = FLAG(startup);
+	inline static const wchar_t* E_MOTD = L"ROCKOON_MOTD";
+	inline static const wchar_t* E_STARTUP = L"ROCKOON_STARTUP";
 
-	void LoadMap(const std::string& path);
-	std::string GetRockoonArg(std::string flag);
+	std::wstring GetRockoonEnv(const wchar_t* name);
 
-	CKBehavior* m_ExitStart = nullptr;
-	CKParameter* m_LoadCustom = nullptr;
-	CKParameter* m_MapFile = nullptr;
-	CKParameter* m_LevelRow = nullptr;
-	CKDataArray* m_CurLevel = nullptr;
+	bml::MapLoader m_MapLoader;
 };
 
 extern "C" __declspec(dllexport) IMod* BMLEntry(IBML* bml) {

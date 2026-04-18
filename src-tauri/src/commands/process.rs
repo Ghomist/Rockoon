@@ -1,10 +1,16 @@
 use crate::common::exception::{RcError, RcResult, RcResultWith};
+use std::collections::HashMap;
 use std::{os::windows::process::CommandExt, path::PathBuf};
 use tauri::command;
 
 #[command]
-pub fn execute(cwd: String, bin: String) -> RcResultWith<u32> {
-    let child = std::process::Command::new(&bin).current_dir(&cwd).spawn()?;
+pub fn execute(cwd: String, bin: String, env: Option<HashMap<String, String>>) -> RcResultWith<u32> {
+    let mut cmd = std::process::Command::new(&bin);
+    cmd.current_dir(&cwd);
+    if let Some(env_vars) = env {
+        cmd.envs(env_vars);
+    }
+    let child = cmd.spawn()?;
 
     log::info!(
         "Started {} (pid: {})",

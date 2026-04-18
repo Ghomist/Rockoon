@@ -10,11 +10,14 @@ add_subdirectory(3rd-party)
 set(BML_DIR "${CMAKE_CURRENT_LIST_DIR}/3rd-party/BMLPlus/lib/cmake/BML")
 set(VirtoolsSDK_DIR "${CMAKE_CURRENT_LIST_DIR}/3rd-party/Virtools-SDK-2.1/CMake")
 find_package(BML REQUIRED)
+find_package(VirtoolsSDK REQUIRED)
 
 message(STATUS "BML_DIR=${BML_DIR}")
 message(STATUS "VirtoolsSDK_DIR=${VirtoolsSDK_DIR}")
 
 add_library(RockoonIO SHARED
+			src/MapLoader.h
+			src/MapLoader.cpp
 			src/RockoonIO.h
 			src/RockoonIO.cpp
 )

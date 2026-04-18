@@ -17,6 +17,20 @@ export const useLauncherService = () => {
     appStore.runningInstanceTimestamp = Date.now();
   }
 
+  async function launchMap(mapAbsolutePath: string) {
+    const instance = appStore.selectedInstanceData;
+    if (!instance) return;
+    const cwd = await join(instance.path, "Bin");
+    const bin = await join(cwd, "Player.exe");
+    const pid = await backend.execute(cwd, bin, {
+      ROCKOON_STARTUP: mapAbsolutePath
+    });
+    if (prefStore.hideWinWhenLaunch) await backend.hideWindow();
+    appStore.runningInstancePid = pid;
+    appStore.runningInstancePath = instance.path;
+    appStore.runningInstanceTimestamp = Date.now();
+  }
+
   async function killInstance() {
     if (!appStore.runningInstancePid) return;
 
@@ -43,5 +57,5 @@ export const useLauncherService = () => {
     return true;
   }
 
-  return { checkRunningInstance, killInstance, launchInstance };
+  return { checkRunningInstance, killInstance, launchInstance, launchMap };
 };

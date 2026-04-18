@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import backend from "@/backend";
 import { useAppStore } from "@/stores/app";
+import { useLauncherService } from "@/services/launcher";
 import { formatFileSize } from "@/utils/format";
 import { dialog, message } from "@/utils/ui/feedback";
 import { join, sep } from "@tauri-apps/api/path";
@@ -25,6 +26,7 @@ import ListViewPage from "./components/ListViewPage.vue";
 import BasicIcon from "./components/MgcIcon.vue";
 
 const app = useAppStore();
+const { launchMap } = useLauncherService();
 const { t } = useI18n();
 
 type BreadcrumbItem = {
@@ -363,6 +365,19 @@ onMounted(async () => {
 
       <template #suffix>
         <n-flex v-if="!item.isDir" :wrap="false" align="center">
+          <n-button
+            v-if="!isFileDisabled(item.name)"
+            secondary
+            type="success"
+            @click.stop="
+              launchMap([currentPath, item.name].join('/'))
+            "
+          >
+            <template #icon>
+              <BasicIcon icon="play-line" />
+            </template>
+            {{ t("resources.launch.button") }}
+          </n-button>
           <n-button secondary type="primary" @click.stop="onMoveFile(item)">
             <template #icon>
               <BasicIcon icon="file-export-line" />
