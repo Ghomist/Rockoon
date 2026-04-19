@@ -1,8 +1,12 @@
 import BasicIcon from "@/views/components/MgcIcon.vue";
 import { t } from "@/i18n";
-import Download from "@/views/Download.vue";
 import GameConfig from "@/views/GameConfig.vue";
 import GameData from "@/views/GameData.vue";
+import HubAdmin from "@/views/hub/HubAdmin.vue";
+import HubAuthors from "@/views/hub/HubAuthors.vue";
+import HubBatch from "@/views/hub/HubBatch.vue";
+import HubMaps from "@/views/hub/HubMaps.vue";
+import HubUpload from "@/views/hub/HubUpload.vue";
 import Instances from "@/views/Instances.vue";
 import ResourcesMaps from "@/views/ResourcesMaps.vue";
 import ResourcesMods from "@/views/ResourcesMods.vue";
@@ -91,10 +95,41 @@ export const getMenuItems = (): MenuItem[] => [
     view: Instances
   },
   {
-    label: t("menu.download"),
-    icon: "download-2-line",
-    route: "/download",
-    view: Download
+    label: t("menu.hub"),
+    route: "/hub",
+    icon: "web-line",
+    children: [
+      {
+        label: t("menu.hubMaps"),
+        route: "/hub-maps",
+        icon: "map-line",
+        view: HubMaps
+      },
+      {
+        label: t("menu.hubAuthors"),
+        route: "/hub-authors",
+        icon: "user-1-line",
+        view: HubAuthors
+      },
+      {
+        label: t("menu.hubUpload"),
+        route: "/hub-upload",
+        icon: "upload-2-line",
+        view: HubUpload
+      },
+      {
+        label: t("menu.hubBatch"),
+        route: "/hub-batch",
+        icon: "file-zip-line",
+        view: HubBatch
+      },
+      {
+        label: t("menu.hubAdmin"),
+        route: "/hub-admin",
+        icon: "shield-line",
+        view: HubAdmin
+      }
+    ]
   },
   "-",
   {

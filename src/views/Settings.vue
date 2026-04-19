@@ -70,6 +70,16 @@ const onReload = () => {
         }
       ]"
     />
+    <n-h2 prefix="primary">{{ $t("settings.hub") }}</n-h2>
+    <NFormWrapper
+      :schema="[
+        {
+          type: 'input',
+          label: $t('settings.hubApiUrl'),
+          valueRef: pref.hubApiUrl
+        }
+      ]"
+    />
     <n-h2 prefix="primary">{{ $t("settings.debug") }}</n-h2>
     <NFormWrapper
       :schema="[

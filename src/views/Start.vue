@@ -84,9 +84,9 @@ const quickLinks = [
     route: "/instances"
   },
   {
-    label: "menu.download",
+    label: "menu.hubMaps",
     icon: "download-2-line",
-    route: "/download"
+    route: "/hub/hub-maps"
   },
   {
     label: "menu.maps",

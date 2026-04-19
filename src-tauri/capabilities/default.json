@@ -25,7 +25,10 @@
       "identifier": "http:allow-fetch",
       "allow": [
         { "url": "https://dl.bcrc.site/*" },
-        { "url": "http://ballancemaps.ysepan.com/*" }
+        { "url": "http://ballancemaps.ysepan.com/*" },
+        { "url": "https://api.bcrc.site/*" },
+        { "url": "http://127.0.0.1:8000/*" },
+        { "url": "http://localhost:8000/*" }
       ]
     }
   ]

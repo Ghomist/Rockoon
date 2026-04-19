@@ -116,21 +116,3 @@ type KeySchema = {
   width?: number;
   disabled?: boolean;
 };
-
-type BallanceResourceFile = {
-  id: string; // MD5
-  name: string;
-  format: string;
-  author: string;
-  description: string;
-  tags: string[];
-  publishTime: Date;
-};
-
-type BallanceMap = BallanceResourceFile & {
-  difficulty: number;
-};
-
-type BallanceMapsResponse = {
-  maps: BallanceMap[];
-};

@@ -27,6 +27,9 @@ type PreferenceStore = {
   /** 退出启动器时关闭运行中的实例 */
   killInstanceWhenExit: boolean;
 
+  /** 资源社区 API 地址 */
+  hubApiUrl: string;
+
   /** 重置高分榜时的默认玩家名称 */
   highscoreDefaultPlayer: string;
 
@@ -69,31 +72,4 @@ type PreferenceStore = {
 
 type InstancesStore = {
   instances: Instance[];
-};
-
-type DownloadTaskStatus =
-  | "pending"
-  | "downloading"
-  | "extracting"
-  | "completed"
-  | "failed";
-type DownloadTask = {
-  id: string;
-  mapId: string;
-  mapName: string;
-  mapFormat: string;
-  status: DownloadTaskStatus;
-  error?: string;
-  startTime: number;
-  endTime?: number;
-};
-type DownloadStore = {
-  activeDownloads: DownloadTask[];
-};
-
-/** 下载进度事件 */
-type DownloadProgressEvent = {
-  percent: number; // 整数百分比
-  downloaded: number;
-  total: number;
 };
