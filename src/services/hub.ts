@@ -4,7 +4,7 @@ import { useHubStore } from "@/stores/hub";
 import { usePrefStore } from "@/stores/pref";
 
 function getBaseUrl(): string {
-  return usePrefStore().hubApiUrl || "https://api.bcrc.site";
+  return usePrefStore().hubApiUrl || "http://127.0.0.1:8000";
 }
 
 function getAuthHeaders(): Record<string, string> {

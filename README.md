@@ -4,9 +4,9 @@ Rockoon 是一款集成了 **下载、管理、启动** 于一体的 Ballance �
 
 本启动器借助 [Tauri 2.0](https://v2.tauri.app/) 开发，需要 webview 才能正常运行与显示。最低支持的系统以及 webview 版本参见[官方文档](https://v2.tauri.app/reference/webview-versions/)。
 
-功能列表：
+## 功能
 
-- 启动 Ballance
+- 启动 Ballance（支持一键启动指定地图）
 - 管理 Ballance 实例
   - 外部更改游戏设置
   - 解锁原版关卡
@@ -18,9 +18,15 @@ Rockoon 是一款集成了 **下载、管理、启动** 于一体的 Ballance �
     - 更改 Mod 设置
   - 新 Player 支持
     - 修改启动参数
-- 下载功能（由地图下载站支持）
-  - 下载安装游戏
-  - 搜索、下载地图和 Mod
+- 资源管理
+  - 本地地图、Mod、天空盒浏览与管理
+- 资源中心（Resource Hub）
+  - 搜索、下载社区地图和 Mod
+  - 上传地图、管理预览图
+  - 批量上传（模板导入）
+  - 作者管理与别名系统
+- 多实例管理（游玩时间统计）
+- 支持中文/英文双语切换
 
 如有功能需求，欢迎提交 issue，或前往 Ballance 中文社区进一步交流。
 
@@ -28,10 +34,9 @@ Rockoon 是一款集成了 **下载、管理、启动** 于一体的 Ballance �
 
 依赖：
 
-- `rust (stable)`
-- `cargo 1.84.0`
-- `node.js v22.13.1`
-- `pnpm 9.15.4`
+- Rust (stable)
+- Node.js v22+
+- pnpm 9+
 
 安装依赖并以调试模式启动：
 
@@ -45,6 +50,26 @@ pnpm tauri dev
 ```shell
 pnpm dev
 ```
+
+构建：
+
+```shell
+pnpm build        # 构建完整应用（UI + C++ 模块）
+pnpm build:ui     # 仅构建前端
+pnpm build:bmodp  # 仅构建 C++ BMLPlus 模块
+```
+
+代码检查：
+
+```shell
+pnpm lint  # 运行 eslint + prettier + stylelint
+```
+
+## 技术栈
+
+- **前端**: Vue 3 + TypeScript + Naive UI + Pinia + Vue I18n + Vue Router
+- **后端**: Tauri 2.0 (Rust)
+- **原生模块**: C++ (BMLPlus plugin, CMake 构建)
 
 ## 引用与鸣谢
 

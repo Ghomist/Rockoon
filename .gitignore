@@ -29,6 +29,7 @@ target
 .secrets
 
 # Ballance mod files
+src-bmodp/.clangd
 src-bmodp/build
 src-bmodp/3rd-party/*
 !src-bmodp/3rd-party/CMakeLists.txt
