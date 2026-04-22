@@ -1,6 +1,3 @@
-#include <filesystem>
-#include <vector>
-
 #include <BML/ExecuteBB.h>
 #include <BML/Guids/Visuals.h>
 #include <BML/IMod.h>
@@ -35,7 +32,6 @@ private:
 	void DoScreenshot();
 
 	bml::MapLoader m_MapLoader;
-	std::vector<std::filesystem::path> m_SavedScreenshots;
 };
 
 extern "C" __declspec(dllexport) IMod* BMLEntry(IBML* bml) {

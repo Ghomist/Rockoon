@@ -7,14 +7,19 @@
 #include <gdiplus.h>
 #include <memory>
 #include <numbers>
+#include <filesystem>
+#include <vector>
 
 #include "RockoonIO.h"
 
 namespace {
+	CKDataArray* current_level_array = nullptr;
+
 	CKCamera* screenshot_camera = nullptr;
 
 	bool screenshot_mode = false;
 	std::wstring screenshot_dir;
+	std::vector<std::filesystem::path> saved_screenshots;
 
 	ULONG_PTR gdiplus_token;
 	Gdiplus::GdiplusStartupInput gdiplus_startup_input;
@@ -81,6 +86,7 @@ void RockoonIO::OnLoad()
 
 void RockoonIO::OnPostStartMenu()
 {
+	current_level_array = m_BML->GetArrayByName("CurrentLevel");
 	auto startup_map = this->GetRockoonEnv(this->E_STARTUP);
 	if (!startup_map.empty())
 	{
@@ -108,6 +114,19 @@ void RockoonIO::OnStartLevel()
 
 	m_BML->AddTimer(CKDWORD{10}, [this]
 	{
+		// // remove skybox
+		// static const char *material_names[] = {"Sky_Back", "Sky_Front", "Sky_Left", "Sky_Right", "Sky_Down"};
+		// for (const auto& name : material_names) {
+		// 	auto mat = m_BML->GetMaterialByName(name);
+		// 	if (!mat) continue;
+		// 	mat->SetTexture0(nullptr);
+		// 	static const VxColor gray_color{255, 64, 64, 64}; // test
+		// 	mat->SetAmbient(gray_color);
+		// 	mat->SetDiffuse(gray_color);
+		// 	mat->SetSpecular(gray_color);
+		// 	mat->SetEmissive(gray_color);
+		// }
+
 		auto ingame_camera = m_BML->GetTargetCameraByName("InGameCam");
 		assert(ingame_camera);
 
@@ -119,10 +138,19 @@ void RockoonIO::OnStartLevel()
 		screenshot_camera->SetFov(ingame_camera->GetFov() * 1.1f); // increase FOV a bit to capture more of the scene in screenshots
 
 		static const VxVector rotation_x {1, 0, 0}, back_translation {0, 0, -80.0};
-		screenshot_camera->Rotate(&rotation_x, 0.42f, screenshot_camera);
+		static constexpr float rotation_angle = std::numbers::pi_v<float> / 8; // 22.5 degrees
 		screenshot_camera->Translate(&back_translation, screenshot_camera);
+		screenshot_camera->Rotate(&rotation_x, rotation_angle, screenshot_camera);
 
 		m_BML->GetRenderContext()->AttachViewpointToCamera(screenshot_camera);
+
+		auto player_ball = static_cast<CK3dObject*>(current_level_array->GetElementObject(0, 1));
+		static VxVector player_ball_offset, reverse_player_ball_offset;
+		VxVector ball_pos, camera_pos;
+		player_ball->GetPosition(&ball_pos);
+		screenshot_camera->GetPosition(&camera_pos);
+		player_ball_offset = {0, 0, (camera_pos - ball_pos).Magnitude()};
+		reverse_player_ball_offset = -player_ball_offset;
 
 		// hide HUD
 		m_BML->GetGroupByName("HUD_sprites")->Show(CKHIDE);
@@ -131,27 +159,29 @@ void RockoonIO::OnStartLevel()
 		// wait for the skybox / remaining modules to stabilize
 		m_BML->AddTimer(1500.0f, [this]
 		{
-			m_SavedScreenshots.clear();
+			saved_screenshots.clear();
 			for (CKDWORD i = 0; i < 24; ++i) {
-				m_BML->AddTimer(2 * i, [this]
+				m_BML->AddTimer(6 * i, [this]
 				{
 					DoScreenshot();
-					// rotate the camera 45 degrees around the Y axis to capture different angles of the scene, increasing chances of getting a good screenshot without HUD elements
-					static const VxVector reverse_back_translation = -back_translation, rotation_y {0, 1, 0};
-					screenshot_camera->Translate(&reverse_back_translation, screenshot_camera);
+					// rotate the camera 15 degrees around the Y axis to capture different angles of the scene, increasing chances of getting a good screenshot
+					static const VxVector rotation_y {0, 1, 0};
+					screenshot_camera->Rotate(&rotation_x, -rotation_angle, screenshot_camera); // rotate back to original angle to keep the horizon level
+					screenshot_camera->Translate(&player_ball_offset, screenshot_camera);
 					screenshot_camera->Rotate(&rotation_y, std::numbers::pi_v<float> / 12); // 15 degrees
-					screenshot_camera->Translate(&back_translation, screenshot_camera);
+					screenshot_camera->Translate(&reverse_player_ball_offset, screenshot_camera);
+					screenshot_camera->Rotate(&rotation_x, rotation_angle, screenshot_camera); // rotate back to original angle
 				});
 			}
 
-			m_BML->AddTimer(CKDWORD{50}, [this]
+			m_BML->AddTimer(CKDWORD{150}, [this]
 			{
 				// only save the biggest (most likely to be the best) screenshot
-				if (m_SavedScreenshots.empty()) return;
+				if (saved_screenshots.empty()) return;
 
-				std::filesystem::path best_screenshot = m_SavedScreenshots[0];
+				std::filesystem::path best_screenshot = saved_screenshots[0];
 				uintmax_t max_size = std::filesystem::file_size(best_screenshot);
-				for (const auto& path : m_SavedScreenshots) {
+				for (const auto& path : saved_screenshots) {
 					auto size = std::filesystem::file_size(path);
 					if (size > max_size) {
 						max_size = size;
@@ -160,7 +190,7 @@ void RockoonIO::OnStartLevel()
 				}
 
 				// delete the rest
-				for (const auto& path : m_SavedScreenshots) {
+				for (const auto& path : saved_screenshots) {
 					if (path != best_screenshot) {
 						std::filesystem::remove(path);
 					}
@@ -219,7 +249,7 @@ void RockoonIO::DoScreenshot()
 		screenshot_path = base;
 		screenshot_path += L".png";
 	}
-	m_SavedScreenshots.push_back(screenshot_path);
+	saved_screenshots.push_back(screenshot_path);
 
 	Gdiplus::Bitmap bitmap(hbmp, nullptr);
 	bitmap.Save(screenshot_path.c_str(), &png_clsid);
