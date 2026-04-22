@@ -1,3 +1,6 @@
+#include <filesystem>
+#include <vector>
+
 #include <BML/ExecuteBB.h>
 #include <BML/Guids/Visuals.h>
 #include <BML/IMod.h>
@@ -29,8 +32,10 @@ private:
 	inline static const wchar_t* E_SCREENSHOT_DIR = L"ROCKOON_SCREENSHOT_DIR";
 
 	std::wstring GetRockoonEnv(const wchar_t* name);
+	void DoScreenshot();
 
 	bml::MapLoader m_MapLoader;
+	std::vector<std::filesystem::path> m_SavedScreenshots;
 };
 
 extern "C" __declspec(dllexport) IMod* BMLEntry(IBML* bml) {
