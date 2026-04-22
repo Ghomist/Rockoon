@@ -21,10 +21,12 @@ public:
 	virtual void OnLoad() override;
 	virtual void OnPostStartMenu() override;
 	virtual void OnPostExitLevel() override;
+	virtual void OnStartLevel() override;
 
 private:
 	inline static const wchar_t* E_MOTD = L"ROCKOON_MOTD";
 	inline static const wchar_t* E_STARTUP = L"ROCKOON_STARTUP";
+	inline static const wchar_t* E_SCREENSHOT_DIR = L"ROCKOON_SCREENSHOT_DIR";
 
 	std::wstring GetRockoonEnv(const wchar_t* name);
 

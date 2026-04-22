@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 4.0)
+cmake_minimum_required(VERSION 3.31)
 
 project(RockoonIO)
 set(CMAKE_CXX_STANDARD 20)
@@ -26,6 +26,7 @@ target_include_directories(RockoonIO PRIVATE ${BML_INCLUDE_DIRS})
 target_link_libraries(RockoonIO
 	PUBLIC
 	BML
+	gdiplus  # for screenshots
 )
 set_target_properties(RockoonIO PROPERTIES OUTPUT_NAME "RockoonIO")
 set_target_properties(RockoonIO PROPERTIES SUFFIX ".bmodp")
