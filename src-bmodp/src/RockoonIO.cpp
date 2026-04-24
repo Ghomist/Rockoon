@@ -137,7 +137,7 @@ void RockoonIO::OnStartLevel()
 		screenshot_camera->SetBackPlane(16384.0f);
 		screenshot_camera->SetFov(ingame_camera->GetFov() * 1.1f); // increase FOV a bit to capture more of the scene in screenshots
 
-		static const VxVector rotation_x {1, 0, 0}, back_translation {0, 0, -80.0};
+		static const VxVector rotation_x {1, 0, 0}, back_translation {0, 0, -90}, vertical_offset {0, -10, 0};
 		static constexpr float rotation_angle = std::numbers::pi_v<float> / 8; // 22.5 degrees
 		screenshot_camera->Translate(&back_translation, screenshot_camera);
 		screenshot_camera->Rotate(&rotation_x, rotation_angle, screenshot_camera);
@@ -152,12 +152,14 @@ void RockoonIO::OnStartLevel()
 		player_ball_offset = {0, 0, (camera_pos - ball_pos).Magnitude()};
 		reverse_player_ball_offset = -player_ball_offset;
 
+		screenshot_camera->Translate(&vertical_offset); // not relative
+
 		// hide HUD
 		m_BML->GetGroupByName("HUD_sprites")->Show(CKHIDE);
 		m_BML->GetGroupByName("LifeBalls")->Show(CKHIDE);
 
 		// wait for the skybox / remaining modules to stabilize
-		m_BML->AddTimer(1500.0f, [this]
+		m_BML->AddTimer(1500.0f, [this, ingame_camera]
 		{
 			saved_screenshots.clear();
 			for (CKDWORD i = 0; i < 24; ++i) {
@@ -165,16 +167,18 @@ void RockoonIO::OnStartLevel()
 				{
 					DoScreenshot();
 					// rotate the camera 15 degrees around the Y axis to capture different angles of the scene, increasing chances of getting a good screenshot
-					static const VxVector rotation_y {0, 1, 0};
+					static const VxVector rotation_y {0, 1, 0}, reverse_vertical_offset = -vertical_offset;
+					screenshot_camera->Translate(&reverse_vertical_offset);
 					screenshot_camera->Rotate(&rotation_x, -rotation_angle, screenshot_camera); // rotate back to original angle to keep the horizon level
 					screenshot_camera->Translate(&player_ball_offset, screenshot_camera);
 					screenshot_camera->Rotate(&rotation_y, std::numbers::pi_v<float> / 12); // 15 degrees
 					screenshot_camera->Translate(&reverse_player_ball_offset, screenshot_camera);
 					screenshot_camera->Rotate(&rotation_x, rotation_angle, screenshot_camera); // rotate back to original angle
+					screenshot_camera->Translate(&vertical_offset);
 				});
 			}
 
-			m_BML->AddTimer(CKDWORD{150}, [this]
+			m_BML->AddTimer(CKDWORD{150}, [this, ingame_camera]
 			{
 				// only save the biggest (most likely to be the best) screenshot
 				if (saved_screenshots.empty()) return;
@@ -197,6 +201,10 @@ void RockoonIO::OnStartLevel()
 				}
 
 				GetLogger()->Info("Saved final screenshot as %s", WString2String(best_screenshot.wstring()).c_str());
+
+				m_BML->GetRenderContext()->AttachViewpointToCamera(ingame_camera);
+				m_BML->GetGroupByName("HUD_sprites")->Show(CKSHOW);
+				m_BML->GetGroupByName("LifeBalls")->Show(CKSHOW);
 			});
 		});
 	});
