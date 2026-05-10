@@ -316,6 +316,17 @@
       }
     }
   },
+  "updater": {
+    "title": "Update Available",
+    "available": "A new version {version} is available. Update now?",
+    "downloading": "Downloading update...",
+    "downloadProgress": "Downloading update... {downloaded} / {total}",
+    "installing": "Installing update...",
+    "updateNow": "Update Now",
+    "later": "Later",
+    "notes": "Release Notes",
+    "error": "Update failed, please try again later"
+  },
   "gameData": {
     "levelLabel": "Level {i}",
     "action": {

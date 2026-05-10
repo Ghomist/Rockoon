@@ -9,6 +9,7 @@ import { i18n, switchLanguage } from "./i18n";
 import { router } from "./routers";
 import { initStores } from "./stores";
 import { usePrefStore } from "./stores/pref";
+import { checkForUpdate } from "./services/updater";
 import { registerLoggers } from "./utils/logger";
 
 const app = createApp(App);
@@ -46,7 +47,6 @@ await initStores();
 // });
 
 window.addEventListener("keydown", e => {
-  // 举例：Ctrl + S
   if (e.ctrlKey && e.key.toLowerCase() === "t") {
     e.preventDefault();
     switchLanguage(i18n.global.locale === "zh" ? "en" : "zh");
@@ -58,8 +58,9 @@ if (pref.centerWindow) {
   await moveWindow(Position.Center);
 }
 
-// await checkUpdate(true);
-
 app.mount("#app");
+
+// background check for updates after startup
+setTimeout(checkForUpdate, 3000);
 
 console.info("Rockoon UI initialized");

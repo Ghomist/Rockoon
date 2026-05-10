@@ -513,6 +513,17 @@
       }
     }
   },
+  "updater": {
+    "title": "发现新版本",
+    "available": "发现新版本 {version}，是否立即更新？",
+    "downloading": "正在下载更新...",
+    "downloadProgress": "正在下载更新... {downloaded} / {total}",
+    "installing": "正在安装更新...",
+    "updateNow": "立即更新",
+    "later": "稍后再说",
+    "notes": "更新日志",
+    "error": "更新失败，请稍后重试"
+  },
   "gameData": {
     "levelLabel": "第 {i} 关",
     "title": "关卡解锁与高分榜",
