@@ -18,6 +18,8 @@ import {
   NButton,
   NCard,
   NFlex,
+  NImage,
+  NImageGroup,
   NInput,
   NModal,
   NScrollbar,
@@ -572,10 +574,11 @@ onMounted(async () => {
           <!-- Preview management -->
           <n-flex vertical :size="4">
             <n-text depth="3" style="font-size: 12px">{{ t("hub.maps.editPreviews") }}</n-text>
-            <n-flex v-if="selectedMap.preview_images.length" :size="6" :wrap="true">
-              <div v-for="(img, i) in selectedMap.preview_images" :key="i" style="position: relative">
-                <img :src="img" style="width: 100px; height: 68px; object-fit: cover; border-radius: 4px" />
-                <n-button
+            <n-image-group v-if="selectedMap.preview_images.length">
+              <n-flex :size="6" :wrap="true">
+                <div v-for="(img, i) in selectedMap.preview_images" :key="i" style="position: relative">
+                  <n-image :src="img" object-fit="cover" width="100" height="68" style="border-radius: 4px" />
+                  <n-button
                   size="tiny"
                   circle
                   type="error"
@@ -586,7 +589,8 @@ onMounted(async () => {
                 </n-button>
               </div>
             </n-flex>
-            <n-text v-else depth="3" style="font-size: 12px">{{ t("hub.maps.noPreview") }}</n-text>
+            </n-image-group>
+            <n-text v-if="!selectedMap.preview_images.length" depth="3" style="font-size: 12px">{{ t("hub.maps.noPreview") }}</n-text>
             <n-flex :size="8">
               <n-button size="small" :loading="uploadingPreview" @click="handleAddPreview">
                 {{ t("hub.maps.addPreview") }}
@@ -638,14 +642,19 @@ onMounted(async () => {
           <n-text depth="3" style="font-size: 12px">
             {{ new Date(selectedMap.created_at).toLocaleDateString() }}
           </n-text>
-          <n-flex v-if="selectedMap.preview_images.length" :size="8" :wrap="true">
-            <img
-              v-for="(img, i) in selectedMap.preview_images"
-              :key="i"
-              :src="img"
-              style="width: 120px; height: 80px; object-fit: cover; border-radius: 4px"
-            />
-          </n-flex>
+          <n-image-group v-if="selectedMap.preview_images.length">
+            <n-flex :size="8" :wrap="true">
+              <n-image
+                v-for="(img, i) in selectedMap.preview_images"
+                :key="i"
+                :src="img"
+                object-fit="cover"
+                width="120"
+                height="80"
+                style="border-radius: 4px"
+              />
+            </n-flex>
+          </n-image-group>
         </template>
       </n-flex>
 

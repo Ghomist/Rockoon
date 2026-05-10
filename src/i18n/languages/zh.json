@@ -263,6 +263,7 @@
       "detail": "详情",
       "previews": "预览图"
     },
+    "authRequired": "请先在「管理登录」中登录管理员",
     "admin": {
       "title": "管理登录",
       "checking": "检查登录状态...",

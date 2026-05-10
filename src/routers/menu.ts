@@ -94,6 +94,7 @@ export const getMenuItems = (): MenuItem[] => [
     icon: "classify-2-line",
     view: Instances
   },
+  "-",
   {
     label: t("menu.hub"),
     route: "/hub",
