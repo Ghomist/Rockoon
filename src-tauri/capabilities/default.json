@@ -15,6 +15,7 @@
     "core:window:allow-toggle-maximize",
     "core:window:allow-start-dragging",
     "dialog:allow-open",
+    "shell:allow-open",
     "upload:allow-download",
     "http:allow-fetch",
     "http:allow-fetch-cancel",

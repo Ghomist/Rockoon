@@ -13,7 +13,11 @@
     "textures": "材质包",
     "backgrounds": "背景包",
     "musics": "音乐包",
-    "hub": "资源社区",
+    "community": "平衡社区",
+    "wiki": "官方 Wiki",
+    "mappingManual": "制图手册",
+    "forum": "社区论坛",
+    "hub": "资源中心",
     "hubMaps": "地图仓库",
     "hubAuthors": "作者列表",
     "hubUpload": "上传地图",
@@ -285,7 +289,7 @@
       "dark": "深色"
     },
     "debug": "调试",
-    "hub": "资源社区",
+    "hub": "资源中心",
     "hubApiUrl": "API 地址",
     "clearStorage": {
       "button": "清空数据",

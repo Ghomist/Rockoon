@@ -13,6 +13,7 @@ import ResourcesMods from "@/views/ResourcesMods.vue";
 import ResourcesSkys from "@/views/ResourcesSkys.vue";
 import Settings from "@/views/Settings.vue";
 import Start from "@/views/Start.vue";
+import { open } from "@tauri-apps/plugin-shell";
 import type { MenuOption } from "naive-ui";
 import { type DefineComponent, h } from "vue";
 import { RouterLink } from "vue-router";
@@ -29,6 +30,30 @@ export type MenuItem =
     ))
   | "-";
 
+export type ExternalLinkItem = {
+  label: string;
+  url: string;
+  icon: string;
+};
+
+export const getExternalLinks = (): ExternalLinkItem[] => [
+  {
+    label: t("menu.wiki"),
+    url: "https://ballance.jxpxxzj.cn/wiki/",
+    icon: "book-2-line"
+  },
+  {
+    label: t("menu.mappingManual"),
+    url: "https://ghomist.github.io/ballance-mapping-manual/",
+    icon: "map-pin-line"
+  },
+  {
+    label: t("menu.forum"),
+    url: "https://forum.ballance.top/",
+    icon: "chat-3-line"
+  }
+];
+
 export const getMenuItems = (): MenuItem[] => [
   {
     label: t("menu.game"),
@@ -36,6 +61,13 @@ export const getMenuItems = (): MenuItem[] => [
     icon: "game-2-line",
     view: Start
   },
+  {
+    label: t("menu.instances"),
+    route: "/instances",
+    icon: "classify-2-line",
+    view: Instances
+  },
+  "-",
   {
     label: t("menu.options"),
     route: "/options",
@@ -65,36 +97,21 @@ export const getMenuItems = (): MenuItem[] => [
         icon: "auction-line",
         view: ResourcesMods
       },
-      // 暂时隐藏材质包
-      // {
-      //   label: t("menu.textures"),
-      //   route: "/textures",
-      //   icon: "palette-line",
-      //   view: Instances
-      // },
       {
         label: t("menu.backgrounds"),
         route: "/backgrounds",
         icon: "world-2-line",
         view: ResourcesSkys
       }
-      // 暂时隐藏音乐包
-      // {
-      //   label: t("menu.musics"),
-      //   route: "/musics",
-      //   icon: "music-line",
-      //   view: Instances
-      // }
     ]
   },
   "-",
   {
-    label: t("menu.instances"),
-    route: "/instances",
-    icon: "classify-2-line",
-    view: Instances
+    label: t("menu.community"),
+    route: "/community",
+    icon: "question-line",
+    children: []
   },
-  "-",
   {
     label: t("menu.hub"),
     route: "/hub",
@@ -147,6 +164,31 @@ export const getMenuItems = (): MenuItem[] => [
   }
 ];
 
+const externalLinkToMenuOption = (link: ExternalLinkItem): MenuOption => ({
+  label: () =>
+    h(
+      "a",
+      {
+        href: link.url,
+        onClick: (e: Event) => {
+          e.preventDefault();
+          open(link.url);
+        },
+        style:
+          "text-decoration: none; color: inherit; display: inline-flex; align-items: center; gap: 4px"
+      },
+      [
+        link.label,
+        h(BasicIcon, {
+          icon: "external-link-line",
+          style: "font-size: 12px; opacity: 0.5"
+        })
+      ]
+    ),
+  key: link.url,
+  icon: () => h(BasicIcon, { icon: link.icon })
+});
+
 const mapToMenuOption = (item: MenuItem, parentPath = ""): MenuOption => {
   if (item === "-") return { type: "divider" };
 
@@ -161,4 +203,16 @@ const mapToMenuOption = (item: MenuItem, parentPath = ""): MenuOption => {
   };
 };
 
-export const getMenuOptions = () => getMenuItems().map(x => mapToMenuOption(x));
+export const getMenuOptions = (): MenuOption[] =>
+  getMenuItems().map(item => {
+    if (item === "-") return { type: "divider" };
+    if (item.route === "/community") {
+      return {
+        label: item.label,
+        key: item.route,
+        icon: () => h(BasicIcon, { icon: item.icon }),
+        children: getExternalLinks().map(externalLinkToMenuOption)
+      };
+    }
+    return mapToMenuOption(item);
+  });
