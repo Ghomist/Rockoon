@@ -32,6 +32,13 @@
     "vue-i18n": "^11.2.8",
     "vue-router": "^4.6.4"
   },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@parcel/watcher",
+      "esbuild",
+      "vue-demi"
+    ]
+  },
   "devDependencies": {
     "@eslint/js": "^9.39.2",
     "@tauri-apps/cli": "^2.10.0",
