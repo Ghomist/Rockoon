@@ -54,6 +54,8 @@
     "debug": "Debug",
     "hub": "Community Hub",
     "hubApiUrl": "API URL",
+    "hubApiDefault": "Default Hub",
+    "hubApiLocal": "Local Debug",
     "showWelcome": "Show welcome in Rockoon",
     "centerWindow": "Center window",
     "hideWinWhenLaunch": "Hide launcher window after launching game",

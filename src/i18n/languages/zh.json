@@ -291,6 +291,8 @@
     "debug": "调试",
     "hub": "资源中心",
     "hubApiUrl": "API 地址",
+    "hubApiDefault": "默认资源站",
+    "hubApiLocal": "本地调试",
     "clearStorage": {
       "button": "清空数据",
       "title": "确定要清空所有数据吗？"

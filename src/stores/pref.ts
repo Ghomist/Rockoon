@@ -11,7 +11,7 @@ export const usePrefStore = defineStore(PREF_STORE_KEY, {
       recent: undefined,
       hideWinWhenLaunch: true,
       killInstanceWhenExit: true,
-      hubApiUrl: "http://127.0.0.1:8000",
+      hubApiUrl: "http://114.132.240.62:8000",
       highscoreDefaultPlayer: "Mr. Default",
       enableBgv: true,
       backgroundBlur: 8,

@@ -29,6 +29,7 @@
         { "url": "http://ballancemaps.ysepan.com/*" },
         { "url": "https://api.bcrc.site/*" },
         { "url": "http://127.0.0.1:8000/*" },
+        { "url": "http://114.132.240.62:8000/*" },
         { "url": "http://localhost:8000/*" }
       ]
     }
