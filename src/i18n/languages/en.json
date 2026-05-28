@@ -51,6 +51,10 @@
       "button": "Clear all data",
       "title": "Are you sure you want to clear all data?"
     },
+    "update": "Current version: ",
+    "checkUpdate": "Check for updates",
+    "checkingUpdate": "Checking for updates...",
+    "noUpdate": "Already up to date",
     "debug": "Debug",
     "hub": "Community Hub",
     "hubApiUrl": "API URL",
@@ -329,7 +333,8 @@
     "updateNow": "Update Now",
     "later": "Later",
     "notes": "Release Notes",
-    "error": "Update failed, please try again later"
+    "error": "Update failed, please try again later",
+    "dismiss": "You can check for updates in Settings"
   },
   "gameData": {
     "levelLabel": "Level {i}",

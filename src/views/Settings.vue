@@ -2,12 +2,24 @@
 import backend from "@/backend";
 import { usePrefStore } from "@/stores/pref";
 import { NFlex, NH2 } from "naive-ui";
-import { toRefs } from "vue";
+import { toRefs, ref } from "vue";
+import { getVersion } from "@tauri-apps/api/app";
+import { checkForUpdate } from "@/services/updater";
 import NFormWrapper from "./components/NFormWrapper.vue";
-import { dialog } from "@/utils/ui/feedback";
+import { dialog, message } from "@/utils/ui/feedback";
+import { useI18n } from "vue-i18n";
 import storage from "@/utils/storage";
 
 const pref = toRefs(usePrefStore());
+const appVersion = ref("");
+const { t } = useI18n();
+getVersion().then(v => (appVersion.value = v));
+
+const onCheckUpdate = async () => {
+  const msg = message.loading(t("settings.checkingUpdate"), { duration: 0 });
+  await checkForUpdate();
+  msg.destroy();
+};
 
 const onReload = () => {
   location.reload();
@@ -84,8 +96,14 @@ const onReload = () => {
           label: $t('settings.hubApiUrl'),
           valueRef: pref.hubApiUrl,
           options: [
-            { value: 'http://114.132.240.62:8000', label: $t('settings.hubApiDefault') },
-            { value: 'http://127.0.0.1:8000', label: $t('settings.hubApiLocal') }
+            {
+              value: 'http://114.132.240.62:8000',
+              label: $t('settings.hubApiDefault')
+            },
+            {
+              value: 'http://127.0.0.1:8000',
+              label: $t('settings.hubApiLocal')
+            }
           ]
         }
       ]"
@@ -93,6 +111,12 @@ const onReload = () => {
     <n-h2 prefix="primary">{{ $t("settings.debug") }}</n-h2>
     <NFormWrapper
       :schema="[
+        {
+          type: 'button',
+          label: $t('settings.checkUpdate'),
+          tip: $t('settings.update') + appVersion,
+          onClick: onCheckUpdate
+        },
         {
           type: 'button',
           label: $t('common.action.openDevtools'),

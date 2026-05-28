@@ -2,14 +2,17 @@ import { check, type Update } from "@tauri-apps/plugin-updater";
 import { dialog, message } from "@/utils/ui/feedback";
 import { t } from "@/i18n";
 
-export async function checkForUpdate() {
+export async function checkForUpdate(): Promise<void> {
   try {
-    const update = await check();
-    if (!update) return;
-
-    showUpdateDialog(update);
+    const update = await check({ timeout: 15 * 1000 }); // timeout in 15s
+    if (update) {
+      showUpdateDialog(update);
+    } else {
+      message.success(t("settings.noUpdate"));
+    }
   } catch (e) {
     console.warn("Update check failed:", e);
+    message.error(t("updater.error"));
   }
 }
 
@@ -29,6 +32,9 @@ function showUpdateDialog(update: Update) {
     onPositiveClick: () => {
       downloadAndInstall(update);
       return false;
+    },
+    onClose: () => {
+      message.info(t("updater.dismiss"));
     }
   });
 }
