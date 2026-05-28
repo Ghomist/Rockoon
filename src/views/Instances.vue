@@ -56,7 +56,7 @@ const onAddInstance = async () => {
     title: t("instances.add.browse.title")
   });
   if (folder) {
-    const data = await instanceBackend.getInstanceData(folder);
+    const data = await instances.addInstance(folder);
     if (data) {
       app.selectedInstanceData = data;
       message.success(t("instances.add.browse.success"));
