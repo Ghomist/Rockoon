@@ -43,7 +43,10 @@ void RockoonIO::OnPostStartMenu()
 
 void RockoonIO::OnPostExitLevel()
 {
-	PostQuitMessage(0);
+	auto startup_map = this->GetRockoonEnv(this->E_STARTUP);
+	auto map_only = this->GetRockoonEnv(this->E_MAP_ONLY);
+	if (!startup_map.empty() && map_only == L"1")
+		PostQuitMessage(0);
 }
 
 std::wstring RockoonIO::GetRockoonEnv(const wchar_t* name)

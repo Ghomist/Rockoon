@@ -63,6 +63,9 @@ type PreferenceStore = {
   /** 是否显示欢迎语 */
   showWelcome: boolean;
 
+  /** 仅地图模式：直接启动地图时退出地图自动退出游戏 */
+  mapOnlyMode: boolean;
+
   /** 是否在游戏内显示 MOTD */
   ingameMotd: boolean;
 

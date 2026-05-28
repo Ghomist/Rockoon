@@ -25,6 +25,7 @@ public:
 private:
 	inline static const wchar_t* E_MOTD = L"ROCKOON_MOTD";
 	inline static const wchar_t* E_STARTUP = L"ROCKOON_STARTUP";
+	inline static const wchar_t* E_MAP_ONLY = L"ROCKOON_MAP_ONLY";
 
 	std::wstring GetRockoonEnv(const wchar_t* name);
 

@@ -60,6 +60,12 @@ const onReload = () => {
       :schema="[
         {
           type: 'switch',
+          label: $t('settings.mapOnlyMode'),
+          tip: $t('settings.mapOnlyModeTip'),
+          valueRef: pref.mapOnlyMode
+        },
+        {
+          type: 'switch',
           label: $t('settings.ingameMotd'),
           valueRef: pref.ingameMotd
         },

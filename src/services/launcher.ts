@@ -23,7 +23,8 @@ export const useLauncherService = () => {
     const cwd = await join(instance.path, "Bin");
     const bin = await join(cwd, "Player.exe");
     const pid = await backend.execute(cwd, bin, {
-      ROCKOON_STARTUP: mapAbsolutePath
+      ROCKOON_STARTUP: mapAbsolutePath,
+      ROCKOON_MAP_ONLY: prefStore.mapOnlyMode ? "1" : "0"
     });
     if (prefStore.hideWinWhenLaunch) await backend.hideWindow();
     appStore.runningInstancePid = pid;

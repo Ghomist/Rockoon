@@ -301,6 +301,8 @@
     "hideWinWhenLaunch": "启动游戏后隐藏启动器窗口",
     "showWelcome": "显示启动器欢迎语",
     "ingame": "游玩设置",
+    "mapOnlyMode": "仅地图模式",
+    "mapOnlyModeTip": "当直接启动某张自制地图时，退出地图将自动退出游戏",
     "ingameMotd": "启用欢迎语",
     "ingameMotdContent": "欢迎语"
   },

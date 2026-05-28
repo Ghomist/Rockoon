@@ -23,6 +23,7 @@ export const usePrefStore = defineStore(PREF_STORE_KEY, {
       route: "/game",
       centerWindow: false,
       showWelcome: true,
+      mapOnlyMode: true,
       ingameMotd: true,
       ingameMotdContent: "Launched from Rockoon!"
     }),
