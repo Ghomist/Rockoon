@@ -20,6 +20,11 @@ import {
 } from "naive-ui";
 import { computed, h, onMounted, onUnmounted, ref } from "vue";
 import { useRouter } from "vue-router";
+import { getCurrentWebview } from "@tauri-apps/api/webview";
+import {
+  getCurrent as getCurrentDeepLink,
+  onOpenUrl
+} from "@tauri-apps/plugin-deep-link";
 import BasicIcon from "./views/components/MgcIcon.vue";
 import { t } from "./i18n";
 import { getMenuOptions } from "./routers/menu";
@@ -28,6 +33,7 @@ import { usePrefStore } from "./stores/pref";
 import { useProfilesStore } from "./stores/profiles";
 import { dialog, message } from "./utils/ui/feedback";
 import { useLauncherService } from "./services/launcher";
+import { useBrpService } from "./services/brp";
 import Onboarding from "./views/Onboarding.vue";
 
 const app = useAppStore();
@@ -36,6 +42,7 @@ const profiles = useProfilesStore();
 const router = useRouter();
 const { checkRunningInstance, killInstance, launchInstance } =
   useLauncherService();
+const { importFromFile, importFromUrl } = useBrpService();
 
 const theme = computed(() => (pref.darkMode ? darkTheme : lightTheme));
 const locale = computed(() => (pref.language === "zh" ? zhCN : enUS));
@@ -48,6 +55,35 @@ const menuRef = ref<InstanceType<typeof NMenu>>();
 const collapsed = ref(false);
 const selectedKey = ref("");
 const checkInterval = ref<ReturnType<typeof setInterval>>();
+
+// unlisten handles for global BRP listeners (drag-drop + deep-link)
+let unlistenDragDrop: (() => void) | undefined;
+let unlistenDeepLink: (() => void) | undefined;
+
+/**
+ * Parse and handle a rockoon:// deep-link URL.
+ * Supported action: `rockoon://import?url=<encoded-brp-url>`
+ */
+const handleDeepLinkUrl = (raw: string) => {
+  try {
+    const parsed = new URL(raw);
+    if (parsed.protocol !== "rockoon:") return;
+    if (parsed.host === "import") {
+      const brpUrl = parsed.searchParams.get("url");
+      if (brpUrl) {
+        importFromUrl(brpUrl);
+      } else {
+        message.warning(t("brp.error.invalidFile"));
+      }
+    }
+  } catch {
+    // ignore malformed URLs
+  }
+};
+
+const handleDeepLinkUrls = (urls: string[]) => {
+  urls.forEach(handleDeepLinkUrl);
+};
 
 const onLaunchGame = async () => {
   if (!app.selectedInstanceData) return;
@@ -155,7 +191,7 @@ const onProfileSelect = async (key: string) => {
   }
 };
 
-onMounted(() => {
+onMounted(async () => {
   // react to route change
   router.afterEach(() => {
     const currentPath = router.currentRoute.value.path;
@@ -185,6 +221,23 @@ onMounted(() => {
       app.updateInstanceRunningTime();
     }
   }, 1000);
+
+  // BRP drag-drop: accept .brp / .zip anywhere in the window
+  unlistenDragDrop = await getCurrentWebview().onDragDropEvent(event => {
+    if (event.payload.type === "drop") {
+      const brpFiles = event.payload.paths.filter(
+        p => p.toLowerCase().endsWith(".brp") || p.toLowerCase().endsWith(".zip")
+      );
+      brpFiles.forEach(p => importFromFile(p));
+    }
+  });
+
+  // rockoon:// deep-link: handle while app is running
+  unlistenDeepLink = await onOpenUrl(handleDeepLinkUrls);
+
+  // cold-start: app launched via rockoon:// — check startup URLs
+  const startupUrls = await getCurrentDeepLink();
+  if (startupUrls) handleDeepLinkUrls(startupUrls);
 });
 
 onUnmounted(() => {
@@ -192,6 +245,9 @@ onUnmounted(() => {
   if (checkInterval.value) {
     clearInterval(checkInterval.value);
   }
+  // 清理 BRP 监听器
+  unlistenDragDrop?.();
+  unlistenDeepLink?.();
 });
 </script>
 

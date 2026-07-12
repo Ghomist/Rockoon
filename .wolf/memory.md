@@ -84,3 +84,30 @@
 | 22:55 | Edited src/i18n/languages/zh.json | inline fix | ~1 |
 | 22:55 | Edited src/i18n/languages/zh.json | inline fix | ~8 |
 | 22:55 | Edited src/i18n/languages/en.json | inline fix | ~11 |
+| 00:54 | Created src-tauri/src/ballance/brp.rs | — | ~4301 |
+| 00:54 | Edited src-tauri/src/ballance/mod.rs | 3→4 lines | ~17 |
+| 00:55 | Created src-tauri/src/commands/brp.rs | — | ~670 |
+| 00:55 | Edited src-tauri/src/commands/mod.rs | 4→5 lines | ~20 |
+| 00:55 | Edited src-tauri/src/lib.rs | 7→10 lines | ~115 |
+| 00:55 | Edited src-tauri/Cargo.toml | 13→14 lines | ~101 |
+| 00:55 | Created src/types/brp.d.ts | — | ~253 |
+| 00:55 | Edited src/backend/index.ts | expanded (+7 lines) | ~181 |
+| 00:56 | Created src/services/brp.ts | — | ~831 |
+| 00:56 | Edited src/i18n/languages/zh.json | expanded (+22 lines) | ~263 |
+| 00:57 | Edited src/i18n/languages/en.json | expanded (+22 lines) | ~323 |
+| 00:57 | Edited src/views/ResourcesPageBase.vue | 24→27 lines | ~260 |
+| 00:57 | Edited src/views/ResourcesPageBase.vue | 2→1 lines | ~13 |
+| 00:58 | Edited src/views/ResourcesPageBase.vue | CSS: multiple, filters, extensions | ~241 |
+| 00:58 | Edited src/views/ResourcesPageBase.vue | 11→14 lines | ~120 |
+| 00:59 | Edited src-tauri/src/ballance/brp.rs | reduced (-9 lines) | ~26 |
+| 00:59 | Edited src-tauri/src/ballance/brp.rs | vErr() → v_err() | ~21 |
+| 01:01 | Edited src/types/brp.d.ts | 8→8 lines | ~80 |
+| 01:06 | Edited src-tauri/src/lib.rs | modified run() | ~243 |
+| 01:06 | Edited src-tauri/tauri.conf.json | 2→7 lines | ~33 |
+| 01:06 | Edited src-tauri/capabilities/default.json | 15→16 lines | ~139 |
+| 01:08 | Edited src-tauri/Cargo.toml | inline fix | ~20 |
+| 01:08 | Edited src/App.vue | expanded (+7 lines) | ~338 |
+| 01:09 | Edited src/App.vue | added error handling | ~259 |
+| 01:09 | Edited src/App.vue | added 2 condition(s) | ~237 |
+| 01:09 | Edited src/App.vue | added optional chaining | ~46 |
+| 01:10 | Edited src/App.vue | inline fix | ~7 |

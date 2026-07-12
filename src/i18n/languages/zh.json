@@ -18,6 +18,28 @@
     "forum": "社区论坛",
     "downloadSite": "资源下载站"
   },
+  "brp": {
+    "importButton": "导入资源包",
+    "importing": "正在导入资源包...",
+    "downloading": "正在下载并导入资源包...",
+    "import": {
+      "success": "导入成功：{what}（{count} 个文件 → {target}）",
+      "failed": "导入失败：{reason}"
+    },
+    "error": {
+      "noInstance": "请先选择一个游戏实例",
+      "invalidFile": "不支持的文件类型，仅支持 .brp 或 .zip"
+    },
+    "category": {
+      "map": "地图",
+      "bmod": "BML Mod",
+      "bmodp": "BMLPlus Mod",
+      "sound": "声音替换",
+      "sky": "天空盒",
+      "texture": "材质替换",
+      "xpatch": "自由补丁"
+    }
+  },
   "header": {
     "pleaseLogin": "请登录"
   },

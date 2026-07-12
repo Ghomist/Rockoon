@@ -7,7 +7,7 @@
       "first_read": "2026-07-12T07:29:49.075Z"
     },
     "D:/Codes/rockoon/package.json": {
-      "count": 1,
+      "count": 2,
       "tokens": 685,
       "first_read": "2026-07-12T07:29:49.219Z"
     },
@@ -27,7 +27,7 @@
       "first_read": "2026-07-12T07:29:57.327Z"
     },
     "D:/Codes/rockoon/tsconfig.json": {
-      "count": 1,
+      "count": 2,
       "tokens": 207,
       "first_read": "2026-07-12T07:29:57.480Z"
     },
@@ -87,12 +87,12 @@
       "first_read": "2026-07-12T07:30:56.790Z"
     },
     "D:/Codes/rockoon/src-tauri/Cargo.toml": {
-      "count": 1,
+      "count": 3,
       "tokens": 397,
       "first_read": "2026-07-12T07:30:56.984Z"
     },
     "D:/Codes/rockoon/src-tauri/tauri.conf.json": {
-      "count": 1,
+      "count": 4,
       "tokens": 477,
       "first_read": "2026-07-12T07:30:57.202Z"
     },
@@ -107,8 +107,8 @@
       "first_read": "2026-07-12T07:30:57.603Z"
     },
     "D:/Codes/rockoon/src/backend/index.ts": {
-      "count": 3,
-      "tokens": 1036,
+      "count": 5,
+      "tokens": 1093,
       "first_read": "2026-07-12T07:30:57.764Z"
     },
     "D:/Codes/rockoon/src-tauri/src": {
@@ -127,12 +127,12 @@
       "first_read": "2026-07-12T07:31:09.661Z"
     },
     "D:/Codes/rockoon/src-tauri/src/lib.rs": {
-      "count": 2,
-      "tokens": 687,
+      "count": 5,
+      "tokens": 699,
       "first_read": "2026-07-12T07:31:09.890Z"
     },
     "D:/Codes/rockoon/src-tauri/src/common": {
-      "count": 1,
+      "count": 2,
       "tokens": 0,
       "first_read": "2026-07-12T07:31:10.103Z"
     },
@@ -147,7 +147,7 @@
       "first_read": "2026-07-12T07:31:10.498Z"
     },
     "D:/Codes/rockoon/src-tauri/src/common/exception.rs": {
-      "count": 1,
+      "count": 3,
       "tokens": 215,
       "first_read": "2026-07-12T07:31:21.262Z"
     },
@@ -162,8 +162,8 @@
       "first_read": "2026-07-12T07:31:21.449Z"
     },
     "D:/Codes/rockoon/src/stores/index.ts": {
-      "count": 2,
-      "tokens": 458,
+      "count": 3,
+      "tokens": 402,
       "first_read": "2026-07-12T07:31:21.679Z"
     },
     "D:/Codes/rockoon/src/routers": {
@@ -172,8 +172,8 @@
       "first_read": "2026-07-12T07:31:21.968Z"
     },
     "D:/Codes/rockoon/src/routers/menu.ts": {
-      "count": 3,
-      "tokens": 931,
+      "count": 5,
+      "tokens": 915,
       "first_read": "2026-07-12T07:38:03.863Z"
     },
     "D:/Codes/rockoon/src/routers/index.ts": {
@@ -222,8 +222,8 @@
       "first_read": "2026-07-12T07:38:29.284Z"
     },
     "D:/Codes/rockoon/src/types/store.d.ts": {
-      "count": 2,
-      "tokens": 376,
+      "count": 4,
+      "tokens": 411,
       "first_read": "2026-07-12T07:38:29.499Z"
     },
     "D:/Codes/rockoon/src/types/hub.d.ts": {
@@ -232,18 +232,18 @@
       "first_read": "2026-07-12T07:38:29.729Z"
     },
     "D:/Codes/rockoon/src/i18n/languages/zh.json": {
-      "count": 10,
-      "tokens": 2797,
+      "count": 12,
+      "tokens": 2804,
       "first_read": "2026-07-12T07:38:38.597Z"
     },
     "D:/Codes/rockoon/src/i18n/languages/en.json": {
-      "count": 11,
-      "tokens": 3717,
+      "count": 14,
+      "tokens": 3722,
       "first_read": "2026-07-12T07:38:38.954Z"
     },
     "D:/Codes/rockoon/src/App.vue": {
-      "count": 2,
-      "tokens": 1488,
+      "count": 5,
+      "tokens": 2299,
       "first_read": "2026-07-12T07:38:39.162Z"
     },
     "D:/Codes/rockoon/src/views/components": {
@@ -257,38 +257,38 @@
       "first_read": "2026-07-12T12:28:51.330Z"
     },
     "D:/Codes/rockoon/src/stores/instances.ts": {
-      "count": 1,
+      "count": 3,
       "tokens": 499,
       "first_read": "2026-07-12T12:28:51.446Z"
     },
     "D:/Codes/rockoon/src/stores/app.ts": {
-      "count": 1,
-      "tokens": 498,
+      "count": 3,
+      "tokens": 368,
       "first_read": "2026-07-12T12:28:51.685Z"
     },
     "D:/Codes/rockoon/src/services/launcher.ts": {
-      "count": 1,
-      "tokens": 637,
+      "count": 2,
+      "tokens": 636,
       "first_read": "2026-07-12T12:28:51.873Z"
     },
     "D:/Codes/rockoon/src/types/ballance.d.ts": {
-      "count": 1,
-      "tokens": 706,
+      "count": 3,
+      "tokens": 917,
       "first_read": "2026-07-12T12:29:01.839Z"
     },
     "D:/Codes/rockoon/src/types/common.d.ts": {
-      "count": 1,
+      "count": 2,
       "tokens": 14,
       "first_read": "2026-07-12T12:29:01.884Z"
     },
     "D:/Codes/rockoon/src/backend/instance.ts": {
-      "count": 1,
-      "tokens": 1504,
+      "count": 3,
+      "tokens": 1110,
       "first_read": "2026-07-12T12:29:01.925Z"
     },
     "D:/Codes/rockoon/src/views/ResourcesPageBase.vue": {
-      "count": 1,
-      "tokens": 1793,
+      "count": 4,
+      "tokens": 1825,
       "first_read": "2026-07-12T12:29:14.175Z"
     },
     "D:/Codes/rockoon/src/views/ResourcesMaps.vue": {
@@ -312,12 +312,12 @@
       "first_read": "2026-07-12T12:48:25.504Z"
     },
     "D:/Codes/rockoon/src-tauri/src/commands/fs.rs": {
-      "count": 1,
-      "tokens": 3712,
+      "count": 3,
+      "tokens": 3593,
       "first_read": "2026-07-12T12:54:11.011Z"
     },
     "D:/Codes/rockoon/src/types/file.d.ts": {
-      "count": 1,
+      "count": 2,
       "tokens": 192,
       "first_read": "2026-07-12T12:54:53.646Z"
     },
@@ -325,9 +325,79 @@
       "count": 1,
       "tokens": 239,
       "first_read": "2026-07-12T13:09:58.188Z"
+    },
+    "D:/Codes/ballance-resource-hub/docs/BRP.md": {
+      "count": 2,
+      "tokens": 0,
+      "first_read": "2026-07-12T16:46:14.610Z"
+    },
+    "D:/Codes/rockoon/src/views/ResourcesMods.vue": {
+      "count": 1,
+      "tokens": 43,
+      "first_read": "2026-07-12T16:47:01.995Z"
+    },
+    "D:/Codes/rockoon/src/main.ts": {
+      "count": 1,
+      "tokens": 506,
+      "first_read": "2026-07-12T16:47:14.886Z"
+    },
+    "D:/Codes/rockoon/src-tauri/capabilities/default.json": {
+      "count": 3,
+      "tokens": 330,
+      "first_read": "2026-07-12T16:47:27.830Z"
+    },
+    "D:/Codes/rockoon/src-tauri/capabilities/desktop.json": {
+      "count": 2,
+      "tokens": 66,
+      "first_read": "2026-07-12T16:47:27.843Z"
+    },
+    "D:/Codes/rockoon/src/i18n/index.ts": {
+      "count": 1,
+      "tokens": 318,
+      "first_read": "2026-07-12T16:47:40.095Z"
+    },
+    "D:/Codes/rockoon/tauri.conf.json": {
+      "count": 1,
+      "tokens": 0,
+      "first_read": "2026-07-12T16:48:55.728Z"
+    },
+    "D:/Codes/rockoon/src/stores/profiles.ts": {
+      "count": 1,
+      "tokens": 2881,
+      "first_read": "2026-07-12T16:49:27.700Z"
+    },
+    "D:/Codes/rockoon/src/utils/ui/feedback.ts": {
+      "count": 1,
+      "tokens": 101,
+      "first_read": "2026-07-12T16:49:57.377Z"
+    },
+    "D:/Codes/rockoon/src-tauri/src/commands/app.rs": {
+      "count": 1,
+      "tokens": 381,
+      "first_read": "2026-07-12T16:50:19.152Z"
+    },
+    "D:/Codes/rockoon/src-tauri/src/commands/mod.rs": {
+      "count": 1,
+      "tokens": 19,
+      "first_read": "2026-07-12T16:50:20.285Z"
+    },
+    "D:/Codes/rockoon/src-tauri/src/ballance/mod.rs": {
+      "count": 1,
+      "tokens": 16,
+      "first_read": "2026-07-12T16:51:15.022Z"
+    },
+    "D:/Codes/rockoon/src/types/brp.d.ts": {
+      "count": 1,
+      "tokens": 253,
+      "first_read": "2026-07-12T17:01:18.398Z"
+    },
+    "D:/Codes/rockoon/node_modules/@tauri-apps/plugin-deep-link/dist-js/index.d.ts": {
+      "count": 1,
+      "tokens": 0,
+      "first_read": "2026-07-12T17:07:18.674Z"
     }
   },
-  "anatomy_hits": 47,
-  "anatomy_misses": 18,
-  "repeated_reads_warned": 31
+  "anatomy_hits": 58,
+  "anatomy_misses": 21,
+  "repeated_reads_warned": 79
 }

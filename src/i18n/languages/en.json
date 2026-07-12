@@ -18,6 +18,28 @@
     "forum": "Forum",
     "downloadSite": "Downloads"
   },
+  "brp": {
+    "importButton": "Import Package",
+    "importing": "Importing package...",
+    "downloading": "Downloading and importing package...",
+    "import": {
+      "success": "Imported: {what} ({count} file(s) → {target})",
+      "failed": "Import failed: {reason}"
+    },
+    "error": {
+      "noInstance": "Please select a game instance first",
+      "invalidFile": "Unsupported file type; only .brp or .zip are accepted"
+    },
+    "category": {
+      "map": "Map",
+      "bmod": "BML Mod",
+      "bmodp": "BMLPlus Mod",
+      "sound": "Sound Replacement",
+      "sky": "Skybox",
+      "texture": "Texture Replacement",
+      "xpatch": "Free Patch"
+    }
+  },
   "header": {
     "pleaseLogin": "Please log in"
   },

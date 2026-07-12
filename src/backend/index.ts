@@ -77,7 +77,14 @@ const fs = {
   readTextFile: (path: string) =>
     invoke<string>("read_text_file", { path }),
   writeTextFile: (path: string, content: string) =>
-    invoke<undefined>("write_text_file", { path, content })
+    invoke<undefined>("write_text_file", { path, content }),
+  // BRP (Ballance Resource Package)
+  validateBrp: (archivePath: string, instancePath: string) =>
+    invoke<BrpInfo>("validate_brp", { archivePath, instancePath }),
+  importBrp: (archivePath: string, instancePath: string) =>
+    invoke<BrpImportResult>("import_brp", { archivePath, instancePath }),
+  importBrpFromUrl: (url: string, instancePath: string) =>
+    invoke<BrpImportResult>("import_brp_from_url", { url, instancePath })
 };
 
 const process = {

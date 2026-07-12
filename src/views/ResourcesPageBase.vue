@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import backend from "@/backend";
 import { useAppStore } from "@/stores/app";
+import { useBrpService } from "@/services/brp";
 import { formatFileSize } from "@/utils/format";
 import { dialog, message } from "@/utils/ui/feedback";
 import { join, sep } from "@tauri-apps/api/path";
@@ -16,12 +17,14 @@ const { type: rscType } = defineProps<{
   type: ResourceType;
 }>();
 
-defineEmits<{
+const emit = defineEmits<{
   (event: "open", file: ManagedFile): void;
+  (event: "brpImported"): void;
 }>();
 
 const app = useAppStore();
 const { t } = useI18n();
+const { importFromFile } = useBrpService();
 
 type ResourceType = "map" | "mod";
 type ResourceSchema = {
@@ -106,6 +109,26 @@ const onImport = async () => {
   }
 };
 
+const onImportBrp = async () => {
+  const files = await browseFile({
+    title: t("brp.importButton"),
+    multiple: true,
+    filters: [
+      { name: "BRP", extensions: ["brp", "zip"] }
+    ]
+  });
+  if (!files || !files.length) return;
+  let any = false;
+  for (const f of files) {
+    const result = await importFromFile(f);
+    if (result) any = true;
+  }
+  if (any) {
+    await onRefresh();
+    emit("brpImported");
+  }
+};
+
 const onDelete = async (file: ManagedFile) => {
   dialog.warning({
     title: t("common.message.warning"),
@@ -169,6 +192,9 @@ onMounted(async () => {
       </n-button>
       <n-button @click="onImport">
         {{ t("resources.import.button") }}
+      </n-button>
+      <n-button type="primary" ghost @click="onImportBrp">
+        {{ t("brp.importButton") }}
       </n-button>
       <n-button @click="onOpenFolder">
         {{ t("common.action.openFolder") }}

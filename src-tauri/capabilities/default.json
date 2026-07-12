@@ -17,6 +17,7 @@
     "dialog:allow-open",
     "shell:allow-open",
     "upload:allow-download",
+    "deep-link:default",
     "http:allow-fetch",
     "http:allow-fetch-cancel",
     "http:allow-fetch-read-body",

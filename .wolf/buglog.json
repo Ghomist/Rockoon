@@ -368,6 +368,118 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-07-12T14:55:28.115Z"
+    },
+    {
+      "id": "bug-024",
+      "timestamp": "2026-07-12T16:57:28.040Z",
+      "error_message": "CSS fix: event",
+      "file": "src/views/ResourcesPageBase.vue",
+      "root_cause": "event: \"open\", file: ManagedFile): void → \"brpImported\"): void",
+      "fix": "Changed event: \"open\", file: ManagedFile): void → \"brpImported\"): void",
+      "tags": [
+        "auto-detected",
+        "style-fix",
+        "vue"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-12T16:57:28.040Z"
+    },
+    {
+      "id": "bug-025",
+      "timestamp": "2026-07-12T16:58:01.890Z",
+      "error_message": "Missing guard clause",
+      "file": "src/views/ResourcesPageBase.vue",
+      "root_cause": "No early return/throw for edge case: !files || !files.length",
+      "fix": "Added guard clause: if (!files || !files.length)",
+      "tags": [
+        "auto-detected",
+        "guard-clause",
+        "vue"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-12T16:58:01.890Z"
+    },
+    {
+      "id": "bug-026",
+      "timestamp": "2026-07-12T16:59:54.656Z",
+      "error_message": "Significant refactor of ",
+      "file": "src-tauri/src/ballance/brp.rs",
+      "root_cause": "7 lines replaced/restructured",
+      "fix": "Rewrote 12→3 lines (7 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "rs"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-12T16:59:54.656Z"
+    },
+    {
+      "id": "bug-027",
+      "timestamp": "2026-07-12T16:59:55.354Z",
+      "error_message": "Wrong reference: vErr should be v_err",
+      "file": "src-tauri/src/ballance/brp.rs",
+      "root_cause": "Used \"vErr\" instead of \"v_err\"",
+      "fix": "Changed vErr → v_err",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "rs"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-12T16:59:55.354Z"
+    },
+    {
+      "id": "bug-028",
+      "timestamp": "2026-07-12T17:09:01.392Z",
+      "error_message": "Missing error handling in unknown",
+      "file": "src/App.vue",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
+      "fix": "Added try/catch block",
+      "tags": [
+        "auto-detected",
+        "error-handling",
+        "vue"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-12T17:09:01.392Z"
+    },
+    {
+      "id": "bug-029",
+      "timestamp": "2026-07-12T17:09:15.064Z",
+      "error_message": "Missing await",
+      "file": "src/App.vue",
+      "root_cause": "Async call without await — returned Promise instead of value",
+      "fix": "Added await to async call",
+      "tags": [
+        "auto-detected",
+        "async-fix",
+        "vue"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-07-12T17:10:16.158Z"
+    },
+    {
+      "id": "bug-030",
+      "timestamp": "2026-07-12T17:09:16.156Z",
+      "error_message": "Null/undefined access in ",
+      "file": "src/App.vue",
+      "root_cause": "Property access on potentially null/undefined value",
+      "fix": "Added null safety (optional chaining or null check)",
+      "tags": [
+        "auto-detected",
+        "null-safety",
+        "vue"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-12T17:09:16.156Z"
     }
   ]
 }

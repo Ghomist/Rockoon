@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-07-12T14:55:28.103Z
-> Files: 339 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-07-12T17:10:16.138Z
+> Files: 343 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ./
 
@@ -313,12 +313,12 @@
 
 - `.gitignore` — Git ignore rules (~72 tok)
 - `build.rs` (~12 tok)
-- `Cargo.toml` — Rust package manifest (~397 tok)
-- `tauri.conf.json` (~477 tok)
+- `Cargo.toml` — Rust package manifest (~389 tok)
+- `tauri.conf.json` (~502 tok)
 
 ## src-tauri/capabilities/
 
-- `default.json` (~330 tok)
+- `default.json` (~338 tok)
 - `desktop.json` (~66 tok)
 
 ## src-tauri/gen/schemas/
@@ -334,13 +334,14 @@
 
 ## src-tauri/src/
 
-- `lib.rs` — run (~664 tok)
+- `lib.rs` — run (~790 tok)
 - `main.rs` — Prevents additional console window on Windows in release, DO NOT REMOVE!! (~121 tok)
 
 ## src-tauri/src/ballance/
 
+- `brp.rs` — BRP (Ballance Resource Package) support — see BRP.md for the format spec. (~4235 tok)
 - `mod_config.rs` — [derive(Serialize, Deserialize, Clone, Debug)] (~192 tok)
-- `mod.rs` (~16 tok)
+- `mod.rs` (~18 tok)
 - `options.rs` — [derive(Serialize, Deserialize, Clone, Debug)] (~2398 tok)
 
 ## src-tauri/src/ballance/tdb/
@@ -356,8 +357,9 @@
 
 - `app.rs` — [command] (~381 tok)
 - `ballance.rs` — read_options, save_options, read_launch_config, save_launch_config + 2 more (~1324 tok)
+- `brp.rs` — Tauri commands wrapping the BRP validate/install logic. (~670 tok)
 - `fs.rs` — [derive(serde::Serialize, serde::Deserialize)] (~3593 tok)
-- `mod.rs` (~19 tok)
+- `mod.rs` (~21 tok)
 - `process.rs` — [command] (~648 tok)
 
 ## src-tauri/src/common/
@@ -367,7 +369,7 @@
 
 ## src/
 
-- `App.vue` — Vue component (~2299 tok)
+- `App.vue` — Parse and handle a rockoon:// deep-link URL. (~2772 tok)
 - `main.ts` — Declares app (~506 tok)
 - `vite-env.d.ts` — / <reference types="vite/client" /> (~82 tok)
 
@@ -378,7 +380,7 @@
 
 ## src/backend/
 
-- `index.ts` — Exports LogLevel, SkyboxAnalysisResult (~1093 tok)
+- `index.ts` — Exports LogLevel, SkyboxAnalysisResult (~1219 tok)
 - `instance.ts` — Exports instanceBackend (~1110 tok)
 - `utils.ts` — Exports parseBallanceLaunchConfig, dumpBallanceLaunchConfig (~989 tok)
 
@@ -388,8 +390,8 @@
 
 ## src/i18n/languages/
 
-- `en.json` — Declares language (~3722 tok)
-- `zh.json` (~2804 tok)
+- `en.json` — Declares language (~3919 tok)
+- `zh.json` (~2957 tok)
 
 ## src/routers/
 
@@ -398,6 +400,7 @@
 
 ## src/services/
 
+- `brp.ts` — Render a short description of what the manifest contains, for notifications. (~831 tok)
 - `hub.ts` — Exports fetchMaps, fetchMap, fetchTags, getDownloadUrl + 14 more (~1324 tok)
 - `launcher.ts` — Exports useLauncherService (~636 tok)
 - `updater.ts` — Exports checkForUpdate (~660 tok)
@@ -414,6 +417,7 @@
 ## src/types/
 
 - `ballance.d.ts` — Profile 中捕获的游戏选项子集（不含成绩/进度，那些全局共享） (~917 tok)
+- `brp.d.ts` — BRP manifest — mirrors the snake_case field names defined in the BRP spec. (~258 tok)
 - `common.d.ts` — Declares HintType (~14 tok)
 - `file.d.ts` — 由启动器管理的文件类型/数据 (~192 tok)
 - `hub.d.ts` — Declares HubMapResponse (~258 tok)
@@ -439,7 +443,7 @@
 - `Onboarding.vue` — Vue: setup (~694 tok)
 - `ResourcesMaps.vue` — Vue: setup, TS (~3697 tok)
 - `ResourcesMods.vue` — Vue: setup, TS (~43 tok)
-- `ResourcesPageBase.vue` — Vue: setup, TS, 1 props, emits (~1793 tok)
+- `ResourcesPageBase.vue` — Vue: BRP, setup (~1982 tok)
 - `ResourcesSkys.vue` — Vue: Archive, setup, TS (~3382 tok)
 - `Settings.vue` — Vue: setup (~1264 tok)
 - `Start.vue` — Vue: setup (~1820 tok)

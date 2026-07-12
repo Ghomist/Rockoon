@@ -48,6 +48,11 @@
     ]
   },
   "plugins": {
+    "deep-link": {
+      "desktop": {
+        "schemes": ["rockoon"]
+      }
+    },
     "updater": {
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDRCMUU2REZEMzMzMEY1QTUKUldTbDlUQXovVzBlUzZLYWNxL0Q1SUlFdXZRcVpDalZrQ3U2YnlVNHduVi9COVZUNjJKVk94NmQK",
       "endpoints": [

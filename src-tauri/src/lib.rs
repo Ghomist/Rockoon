@@ -3,6 +3,7 @@ mod commands;
 mod common;
 
 use tauri::{AppHandle, Builder, Manager};
+use tauri_plugin_deep_link::DeepLinkExt;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -16,6 +17,15 @@ pub fn run() {
         .plugin(tauri_plugin_positioner::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_deep_link::init())
+        .setup(|app| {
+            // Register the rockoon:// URL scheme in the Windows registry.
+            #[cfg(desktop)]
+            {
+                let _ = app.deep_link().register_all();
+            }
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             commands::app::log,
             commands::app::hide_window,
@@ -52,7 +62,10 @@ pub fn run() {
             commands::ballance::read_launch_config,
             commands::ballance::save_launch_config,
             commands::ballance::read_mod_config,
-            commands::ballance::save_mod_config
+            commands::ballance::save_mod_config,
+            commands::brp::validate_brp,
+            commands::brp::import_brp,
+            commands::brp::import_brp_from_url
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
