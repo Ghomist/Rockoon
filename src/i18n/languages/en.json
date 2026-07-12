@@ -4,7 +4,6 @@
     "options": "Options",
     "resources": "Resources",
     "data": "Game Data",
-    "instances": "Instances",
     "tools": "Tools",
     "help": "Help",
     "settings": "Settings",
@@ -16,10 +15,10 @@
     "community": "Community",
     "wiki": "Wiki",
     "mappingManual": "Mapping",
-    "forum": "Forum"
+    "forum": "Forum",
+    "downloadSite": "Downloads"
   },
   "header": {
-    "currentSelection": "Currently selection:",
     "pleaseLogin": "Please log in"
   },
   "message": {
@@ -27,6 +26,11 @@
     "noImpl": "Coming Soon!"
   },
   "settings": {
+    "instance": {
+      "title": "Game Directory",
+      "change": "Change Game Directory",
+      "changed": "Game directory changed"
+    },
     "basic": "Basic Settings",
     "theme": {
       "auto": "Follow the system",
@@ -57,7 +61,7 @@
     "stop": "Stop Game",
     "launching": "Launching game...",
     "alreadyRunning": "Game is already running",
-    "instanceCount": "Total Instances",
+    "profileCount": "Profiles",
     "totalPlaytime": "Total Playtime",
     "mapCount": "Total Maps",
     "modCount": "Total Mods",
@@ -87,38 +91,32 @@
       "unavailableKey": "This key is not available in Ballance"
     }
   },
-  "instances": {
-    "selectInstance": "Please select a game instance first",
-    "add": {
-      "browse": {
-        "fail": "This is not the Ballance game directory, or the key game files are corrupted!",
-        "success": "Adding game instance successfully!",
-        "title": "Please select the Ballance root directory"
-      },
-      "button": "Add instance"
+  "profile": {
+    "currentLabel": "Current profile",
+    "current": "current",
+    "create": "New Profile",
+    "rename": "Rename Profile",
+    "delete": "Delete Profile",
+    "deleteConfirm": "Delete profile \"{name}\"? Its saved enablement state will be lost.",
+    "defaultName": "New Profile",
+    "namePlaceholder": "Enter profile name",
+    "switching": "Switching profile...",
+    "switched": "Profile switched",
+    "switchFailed": "Failed to switch profile",
+    "created": "Profile created",
+    "renamed": "Profile renamed",
+    "deleted": "Profile deleted"
+  },
+  "onboarding": {
+    "title": "Welcome to Rockoon",
+    "desc": "Select your Ballance game directory to get started. Rockoon will create a .rockoon folder inside it to manage profiles.",
+    "pick": "Select Ballance Directory",
+    "hint": "The directory should contain Bin/Player.exe, Database.tdb, etc.",
+    "browse": {
+      "title": "Please select the Ballance root directory"
     },
-    "list": {
-      "remove": {
-        "button": "Remove",
-        "message": "Are you sure you want to remove this instance? \nLocal game files will not be deleted and you can still add the game to the launcher again",
-        "success": "Instance removed"
-      },
-      "statistics": "None instance add yet | Total 1 instance | Total {cnt} instances",
-      "switch": {
-        "success": "Switched to {name}"
-      },
-      "rename": {
-        "button": "Rename",
-        "title": "Rename Instance",
-        "placeholder": "Enter new name",
-        "success": "Rename successful"
-      }
-    },
-    "scan": {
-      "button": "Scan instance",
-      "scanning": "Scanning instances...",
-      "success": "Scan completed! \n{total} games found ({added} games successfully added)"
-    }
+    "invalid": "This is not a valid Ballance game directory, or key files are corrupted!",
+    "success": "Setup complete!"
   },
   "gameConfig": {
     "game": {

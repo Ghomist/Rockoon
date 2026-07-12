@@ -7,7 +7,9 @@ export const useLauncherService = () => {
   const appStore = useAppStore();
   const prefStore = usePrefStore();
 
-  async function launchInstance(instance: Instance) {
+  async function launchInstance() {
+    const instance = appStore.selectedInstanceData;
+    if (!instance) return;
     const cwd = await join(instance.path, "Bin");
     const bin = await join(cwd, "Player.exe");
     const pid = await backend.execute(cwd, bin);

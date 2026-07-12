@@ -18,8 +18,11 @@ type Message = {
 
 type ThemeId = "blue" | "red" | "green" | "pink" | "gray" | "custom";
 type PreferenceStore = {
-  /** 最近一次启动的实例路径 */
-  recent?: string;
+  /** 唯一实例（Ballance 安装目录）路径 */
+  instancePath?: string;
+
+  /** 总游玩时间（单位：秒），单一实例全局累计 */
+  playtime: number;
 
   /** 启动后隐藏启动器窗口 */
   hideWinWhenLaunch: boolean;
@@ -70,6 +73,7 @@ type PreferenceStore = {
   ingameMotdContent: string;
 };
 
-type InstancesStore = {
-  instances: Instance[];
+type ProfileStore = {
+  /** .rockoon/profiles.json 的内容（配置档索引 + 当前 profile） */
+  index: ProfileIndex;
 };

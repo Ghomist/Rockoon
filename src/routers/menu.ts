@@ -2,7 +2,6 @@ import BasicIcon from "@/views/components/MgcIcon.vue";
 import { t } from "@/i18n";
 import GameConfig from "@/views/GameConfig.vue";
 import GameData from "@/views/GameData.vue";
-import Instances from "@/views/Instances.vue";
 import ResourcesMaps from "@/views/ResourcesMaps.vue";
 import ResourcesMods from "@/views/ResourcesMods.vue";
 import ResourcesSkys from "@/views/ResourcesSkys.vue";
@@ -45,6 +44,11 @@ export const getExternalLinks = (): ExternalLinkItem[] => [
     label: t("menu.forum"),
     url: "https://forum.ballance.top/",
     icon: "chat-3-line"
+  },
+  {
+    label: t("menu.downloadSite"),
+    url: "https://dl.ballance.top/",
+    icon: "download-2-line"
   }
 ];
 
@@ -54,12 +58,6 @@ export const getMenuItems = (): MenuItem[] => [
     route: "/game",
     icon: "game-2-line",
     view: Start
-  },
-  {
-    label: t("menu.instances"),
-    route: "/instances",
-    icon: "classify-2-line",
-    view: Instances
   },
   "-",
   {

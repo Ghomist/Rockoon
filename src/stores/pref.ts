@@ -1,6 +1,5 @@
 import storage from "@/utils/storage";
 import { acceptHMRUpdate, defineStore } from "pinia";
-import { useInstancesStore } from "./instances";
 import { detectSystemLanguage } from "@/i18n";
 
 export const PREF_STORE_KEY = "rockoon-pref";
@@ -8,7 +7,8 @@ export const PREF_STORE_KEY = "rockoon-pref";
 export const usePrefStore = defineStore(PREF_STORE_KEY, {
   state: () =>
     storage.getWithDefault<PreferenceStore>(PREF_STORE_KEY, {
-      recent: undefined,
+      instancePath: undefined,
+      playtime: 0,
       hideWinWhenLaunch: true,
       killInstanceWhenExit: true,
       highscoreDefaultPlayer: "Mr. Default",
@@ -27,10 +27,6 @@ export const usePrefStore = defineStore(PREF_STORE_KEY, {
       ingameMotdContent: "Launched from Rockoon!"
     }),
   getters: {
-    hasRecent: state =>
-      useInstancesStore().instances.some(x => x.path === state.recent),
-    recentInstance: state =>
-      useInstancesStore().instances.find(x => x.path === state.recent),
     expireMs: state => state.indexExpireTime * 60 * 1000,
     darkMode: state =>
       state.theme === "dark" ||

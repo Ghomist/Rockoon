@@ -24,3 +24,63 @@
 | 15:59 | Edited src/views/Start.vue | 6→6 lines | ~68 |
 | 15:59 | Edited src/views/Start.vue | 9→9 lines | ~100 |
 | 16:00 | Edited src/views/Start.vue | CSS: padding | ~71 |
+| 20:54 | Edited src-tauri/src/commands/fs.rs | modified read_text_file() | ~168 |
+| 20:54 | Edited src-tauri/src/lib.rs | 2→4 lines | ~46 |
+| 20:55 | Edited src/types/ballance.d.ts | expanded (+37 lines) | ~258 |
+| 20:55 | Edited src/types/store.d.ts | 7→10 lines | ~72 |
+| 20:55 | Edited src/types/store.d.ts | 3→8 lines | ~45 |
+| 20:56 | Edited src/backend/index.ts | 3→7 lines | ~85 |
+| 20:56 | Edited src/backend/instance.ts | modified getInstanceFiles() | ~181 |
+| 20:56 | Edited src/backend/instance.ts | 6→5 lines | ~27 |
+| 20:57 | Edited src/backend/instance.ts | removed 27 lines | ~24 |
+| 20:57 | Edited src/backend/instance.ts | 5→4 lines | ~22 |
+| 20:57 | Edited src/stores/pref.ts | 39→35 lines | ~312 |
+| 20:58 | Created src/stores/app.ts | — | ~368 |
+| 20:59 | Edited src/types/ballance.d.ts | 2→2 lines | ~23 |
+| 21:00 | Created src/stores/profiles.ts | — | ~2732 |
+| 21:01 | Created src/stores/index.ts | — | ~402 |
+| 21:01 | Created src/services/launcher.ts | — | ~636 |
+| 21:02 | Created src/App.vue | — | ~2290 |
+| 21:03 | Created src/views/Onboarding.vue | — | ~691 |
+| 21:03 | Edited src/views/Onboarding.vue | modified if() | ~304 |
+| 21:04 | Edited src/routers/menu.ts | 6→5 lines | ~67 |
+| 21:04 | Edited src/routers/menu.ts | reduced (-6 lines) | ~40 |
+| 21:05 | Edited src/types/store.d.ts | 8→4 lines | ~30 |
+| 21:05 | Edited src/types/ballance.d.ts | reduced (-7 lines) | ~50 |
+| 21:05 | Edited src/views/Start.vue | added 1 import(s) | ~267 |
+| 21:06 | Edited src/views/Start.vue | modified if() | ~294 |
+| 21:07 | Edited src/views/Settings.vue | CSS: directory, title | ~400 |
+| 21:07 | Edited src/views/Settings.vue | CSS: vertical, word-break | ~123 |
+| 21:08 | Edited src/i18n/languages/zh.json | 3→2 lines | ~12 |
+| 21:08 | Edited src/i18n/languages/zh.json | 3→3 lines | ~26 |
+| 21:08 | Edited src/i18n/languages/zh.json | reduced (-7 lines) | ~214 |
+| 21:08 | Edited src/i18n/languages/zh.json | 2→7 lines | ~40 |
+| 21:09 | Edited src/i18n/languages/en.json | 3→2 lines | ~14 |
+| 21:09 | Edited src/i18n/languages/en.json | 2→7 lines | ~54 |
+| 21:09 | Edited src/i18n/languages/en.json | 3→3 lines | ~34 |
+| 21:09 | Edited src/i18n/languages/en.json | reduced (-7 lines) | ~307 |
+| 21:10 | Edited src/utils/ui/router.ts | "/instances" → "/game" | ~8 |
+| 21:13 | Edited src/App.vue | 20→18 lines | ~58 |
+| 21:13 | Edited src/stores/profiles.ts | reduced (-17 lines) | ~28 |
+| 21:13 | Edited src/stores/profiles.ts | modified if() | ~192 |
+| 21:14 | Edited src/stores/profiles.ts | modified if() | ~185 |
+| 21:16 | Edited src/views/Onboarding.vue | modified if() | ~236 |
+| 22:28 | Edited src/App.vue | 3→4 lines | ~13 |
+| 22:28 | Edited src/App.vue | 14→17 lines | ~182 |
+| 22:28 | Edited src/i18n/languages/zh.json | 4→3 lines | ~13 |
+| 22:28 | Edited src/i18n/languages/zh.json | 2→3 lines | ~19 |
+| 22:28 | Edited src/i18n/languages/en.json | 4→3 lines | ~16 |
+| 22:28 | Edited src/i18n/languages/en.json | 2→3 lines | ~24 |
+| 22:40 | Edited src/App.vue | 7→4 lines | ~61 |
+| 22:40 | Edited src/App.vue | modified h() | ~180 |
+| 22:43 | Edited src/routers/menu.ts | 6→11 lines | ~61 |
+| 22:44 | Edited src/i18n/languages/zh.json | 1→2 lines | ~14 |
+| 22:44 | Edited src/i18n/languages/en.json | 1→2 lines | ~16 |
+| 22:45 | Edited src/views/Start.vue | 12→15 lines | ~109 |
+| 22:45 | Edited src/views/Start.vue | 5→1 lines | ~5 |
+| 22:49 | Edited src/views/Start.vue | 15→15 lines | ~109 |
+| 22:51 | Edited src/views/Start.vue | 2→2 lines | ~23 |
+| 22:51 | Edited src/views/Start.vue | 3→7 lines | ~17 |
+| 22:55 | Edited src/i18n/languages/zh.json | inline fix | ~1 |
+| 22:55 | Edited src/i18n/languages/zh.json | inline fix | ~8 |
+| 22:55 | Edited src/i18n/languages/en.json | inline fix | ~11 |

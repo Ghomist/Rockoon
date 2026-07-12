@@ -1,10 +1,3 @@
-type Instance = {
-  path: string;
-  name: string;
-  /** 游玩时间（单位：秒） */
-  playtime: number;
-};
-
 type InstanceData = {
   path: string;
   playerType: "original" | "new";
@@ -115,4 +108,41 @@ type KeySchema = {
   display?: string;
   width?: number;
   disabled?: boolean;
+};
+
+/** Profile 中捕获的游戏选项子集（不含成绩/进度，那些全局共享） */
+type ProfileGameOptions = Pick<
+  BallanceOptions,
+  | "volume"
+  | "syncToScreen"
+  | "keyForward"
+  | "keyBackward"
+  | "keyLeft"
+  | "keyRight"
+  | "keyRotateCam"
+  | "keyLiftCam"
+  | "invertCamRotation"
+  | "cloudLayer"
+  | "lastPlayer"
+>;
+
+/** 一个配置档：对当前启用状态及相关配置的快照 */
+type Profile = {
+  id: string;
+  name: string;
+  createdAt: number;
+  /** 被禁用的逻辑相对路径（相对实例根目录，例如 ModLoader/Maps/foo.nmo） */
+  disabledFiles: string[];
+  /** 游戏选项子集（成绩/进度不随 profile 切换） */
+  gameOptions: ProfileGameOptions;
+  /** 启动配置（Bin/Player.ini）；若实例无该文件则为空 */
+  launchConfig?: BallanceLaunchConfig;
+  /** 各 mod 配置（文件名 → ModConfig） */
+  modConfigs: Record<string, ModConfig>;
+};
+
+/** .rockoon/profiles.json 的结构 */
+type ProfileIndex = {
+  profiles: Profile[];
+  currentId: string;
 };

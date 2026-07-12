@@ -4,7 +4,6 @@
     "options": "游戏选项",
     "resources": "资源管理",
     "data": "游戏数据",
-    "instances": "游戏列表",
     "tools": "工具箱",
     "help": "帮助与支持",
     "settings": "启动器设置",
@@ -16,10 +15,10 @@
     "community": "平衡社区",
     "wiki": "官方 Wiki",
     "mappingManual": "制图手册",
-    "forum": "社区论坛"
+    "forum": "社区论坛",
+    "downloadSite": "资源下载站"
   },
   "header": {
-    "currentSelection": "当前选择：",
     "pleaseLogin": "请登录"
   },
   "message": {
@@ -31,44 +30,38 @@
     "stop": "停止游戏",
     "launching": "正在启动游戏...",
     "alreadyRunning": "游戏正在运行中",
-    "instanceCount": "实例总数",
+    "profileCount": "配置数量",
     "totalPlaytime": "游戏总时长",
     "mapCount": "地图总数",
     "modCount": "模组总数",
     "quickLinks": "快捷跳转"
   },
-  "instances": {
-    "selectInstance": "请先选择一个游戏实例",
-    "add": {
-      "button": "添加实例",
-      "browse": {
-        "title": "请选择 Ballance 根目录",
-        "success": "添加游戏实例成功！",
-        "fail": "这不是 Ballance 游戏目录，或者游戏关键文件已经损坏！"
-      }
+  "profile": {
+    "currentLabel": "当前配置",
+    "current": "当前",
+    "create": "新建配置",
+    "rename": "重命名配置",
+    "delete": "删除配置",
+    "deleteConfirm": "确定要删除配置「{name}」吗？其保存的启用状态将丢失。",
+    "defaultName": "新配置",
+    "namePlaceholder": "请输入配置名称",
+    "switching": "正在切换配置...",
+    "switched": "配置已切换",
+    "switchFailed": "切换配置失败",
+    "created": "配置已创建",
+    "renamed": "配置已重命名",
+    "deleted": "配置已删除"
+  },
+  "onboarding": {
+    "title": "欢迎使用 Rockoon",
+    "desc": "请选择你的 Ballance 游戏目录以开始。Rockoon 将在该目录下创建 .rockoon 文件夹用于管理配置。",
+    "pick": "选择 Ballance 目录",
+    "hint": "目录中应包含 Bin/Player.exe、Database.tdb 等文件",
+    "browse": {
+      "title": "请选择 Ballance 根目录"
     },
-    "scan": {
-      "button": "扫描实例",
-      "scanning": "正在扫描实例...",
-      "success": "扫描完成！共找到 {total} 个游戏（成功添加 {added} 个游戏）"
-    },
-    "list": {
-      "statistics": "还没有添加实例 | 共 1 个实例 | 共 {cnt} 个实例",
-      "switch": {
-        "success": "已切换到 {name}"
-      },
-      "rename": {
-        "button": "重命名",
-        "title": "重命名实例",
-        "placeholder": "请输入新名称",
-        "success": "重命名成功"
-      },
-      "remove": {
-        "button": "移除",
-        "message": "确定要移除此实例吗？本地游戏文件不会被删除，你仍然可以再次将游戏添加至启动器",
-        "success": "实例已移除"
-      }
-    }
+    "invalid": "这不是有效的 Ballance 游戏目录，或关键文件已损坏！",
+    "success": "设置成功！"
   },
   "resources": {
     "status": {
@@ -162,6 +155,11 @@
     }
   },
   "settings": {
+    "instance": {
+      "title": "游戏目录",
+      "change": "更改游戏目录",
+      "changed": "游戏目录已更改"
+    },
     "basic": "基础设置",
     "theme": {
       "title": "颜色主题",

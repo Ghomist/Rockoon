@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-07-12T08:00:01.594Z
-> Files: 337 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-07-12T14:55:28.103Z
+> Files: 339 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ./
 
@@ -334,7 +334,7 @@
 
 ## src-tauri/src/
 
-- `lib.rs` — run (~687 tok)
+- `lib.rs` — run (~664 tok)
 - `main.rs` — Prevents additional console window on Windows in release, DO NOT REMOVE!! (~121 tok)
 
 ## src-tauri/src/ballance/
@@ -356,7 +356,7 @@
 
 - `app.rs` — [command] (~381 tok)
 - `ballance.rs` — read_options, save_options, read_launch_config, save_launch_config + 2 more (~1324 tok)
-- `fs.rs` — [derive(serde::Serialize, serde::Deserialize)] (~3712 tok)
+- `fs.rs` — [derive(serde::Serialize, serde::Deserialize)] (~3593 tok)
 - `mod.rs` (~19 tok)
 - `process.rs` — [command] (~648 tok)
 
@@ -367,7 +367,7 @@
 
 ## src/
 
-- `App.vue` — Vue: TS (~1488 tok)
+- `App.vue` — Vue component (~2299 tok)
 - `main.ts` — Declares app (~506 tok)
 - `vite-env.d.ts` — / <reference types="vite/client" /> (~82 tok)
 
@@ -378,8 +378,8 @@
 
 ## src/backend/
 
-- `index.ts` — Exports LogLevel, SkyboxAnalysisResult (~1036 tok)
-- `instance.ts` — Exports instanceBackend (~1504 tok)
+- `index.ts` — Exports LogLevel, SkyboxAnalysisResult (~1093 tok)
+- `instance.ts` — Exports instanceBackend (~1110 tok)
 - `utils.ts` — Exports parseBallanceLaunchConfig, dumpBallanceLaunchConfig (~989 tok)
 
 ## src/i18n/
@@ -388,35 +388,36 @@
 
 ## src/i18n/languages/
 
-- `en.json` — Declares language (~3717 tok)
-- `zh.json` (~2797 tok)
+- `en.json` — Declares language (~3722 tok)
+- `zh.json` (~2804 tok)
 
 ## src/routers/
 
 - `index.ts` — Exports router (~236 tok)
-- `menu.ts` — Exports MenuItem, ExternalLinkItem, getExternalLinks, getMenuItems, getMenuOptions (~931 tok)
+- `menu.ts` — Exports MenuItem, ExternalLinkItem, getExternalLinks, getMenuItems, getMenuOptions (~915 tok)
 
 ## src/services/
 
 - `hub.ts` — Exports fetchMaps, fetchMap, fetchTags, getDownloadUrl + 14 more (~1324 tok)
-- `launcher.ts` — Exports useLauncherService (~637 tok)
+- `launcher.ts` — Exports useLauncherService (~636 tok)
 - `updater.ts` — Exports checkForUpdate (~660 tok)
 
 ## src/stores/
 
-- `app.ts` — Exports useAppStore (~498 tok)
+- `app.ts` — 加载单一实例的 InstanceData 并安装 RockoonIO mod (~368 tok)
 - `hub.ts` — Exports useHubStore (~242 tok)
-- `index.ts` — Exports initStores (~458 tok)
+- `index.ts` — Exports initStores (~402 tok)
 - `instances.ts` — Exports useInstancesStore (~499 tok)
-- `pref.ts` — Exports PREF_STORE_KEY, usePrefStore (~464 tok)
+- `pref.ts` — Exports PREF_STORE_KEY, usePrefStore (~400 tok)
+- `profiles.ts` — 需要捕获禁用状态的资源目录 + 扩展名 (~2881 tok)
 
 ## src/types/
 
-- `ballance.d.ts` — 游玩时间（单位：秒） (~706 tok)
+- `ballance.d.ts` — Profile 中捕获的游戏选项子集（不含成绩/进度，那些全局共享） (~917 tok)
 - `common.d.ts` — Declares HintType (~14 tok)
 - `file.d.ts` — 由启动器管理的文件类型/数据 (~192 tok)
 - `hub.d.ts` — Declares HubMapResponse (~258 tok)
-- `store.d.ts` — 当前选中的实例信息 (~376 tok)
+- `store.d.ts` — 当前选中的实例信息 (~411 tok)
 
 ## src/utils/
 
@@ -428,19 +429,20 @@
 ## src/utils/ui/
 
 - `feedback.ts` — Exports message, notification, loadingBar, dialog (~101 tok)
-- `router.ts` — Exports waitForSelectedInstance (~239 tok)
+- `router.ts` — Exports waitForSelectedInstance (~238 tok)
 
 ## src/views/
 
 - `GameConfig.vue` — Vue: setup, TS (~3759 tok)
 - `GameData.vue` — Vue: setup, TS (~1014 tok)
 - `Instances.vue` — Vue: setup, TS (~1343 tok)
+- `Onboarding.vue` — Vue: setup (~694 tok)
 - `ResourcesMaps.vue` — Vue: setup, TS (~3697 tok)
 - `ResourcesMods.vue` — Vue: setup, TS (~43 tok)
 - `ResourcesPageBase.vue` — Vue: setup, TS, 1 props, emits (~1793 tok)
 - `ResourcesSkys.vue` — Vue: Archive, setup, TS (~3382 tok)
-- `Settings.vue` — Vue: setup (~973 tok)
-- `Start.vue` — Vue: setup (~1866 tok)
+- `Settings.vue` — Vue: setup (~1264 tok)
+- `Start.vue` — Vue: setup (~1820 tok)
 
 ## src/views/components/
 

@@ -11,7 +11,8 @@ import {
 import { computed } from "vue";
 import { computedAsync } from "@vueuse/core";
 import { useAppStore } from "@/stores/app";
-import { useInstancesStore } from "@/stores/instances";
+import { usePrefStore } from "@/stores/pref";
+import { useProfilesStore } from "@/stores/profiles";
 import { useLauncherService } from "@/services/launcher";
 import { formatPlaytime } from "@/utils/format";
 import { useI18n } from "vue-i18n";
@@ -24,7 +25,8 @@ import { getExternalLinks } from "@/routers/menu";
 import { message } from "@/utils/ui/feedback";
 
 const app = useAppStore();
-const instancesStore = useInstancesStore();
+const pref = usePrefStore();
+const profiles = useProfilesStore();
 const { t } = useI18n();
 const router = useRouter();
 const themeVars = useThemeVars();
@@ -32,10 +34,8 @@ const { checkRunningInstance, killInstance, launchInstance } =
   useLauncherService();
 
 // 统计数据
-const instanceCount = computed(() => instancesStore.instances.length);
-const totalPlaytime = computed(() =>
-  instancesStore.instances.reduce((sum, inst) => sum + inst.playtime, 0)
-);
+const profileCount = computed(() => profiles.profiles.length);
+const totalPlaytime = computed(() => pref.playtime);
 
 const mapCount = computedAsync(async () => {
   if (!app.selectedInstanceData) return 0;
@@ -69,9 +69,9 @@ const modCount = computedAsync(async () => {
 
 const stats = computed(() => [
   {
-    label: "home.instanceCount",
-    value: instanceCount.value,
-    icon: "classify-2-line"
+    label: "home.profileCount",
+    value: profileCount.value,
+    icon: "stack-line"
   },
   {
     label: "home.totalPlaytime",
@@ -84,10 +84,7 @@ const stats = computed(() => [
 
 // 启动游戏
 const onLaunchGame = async () => {
-  if (!app.selectedInstance) {
-    message.warning(t("instances.selectInstance"));
-    return;
-  }
+  if (!app.selectedInstanceData) return;
 
   if (app.runningInstancePid) {
     const isRunning = await checkRunningInstance();
@@ -97,17 +94,12 @@ const onLaunchGame = async () => {
     }
   }
 
-  await launchInstance(app.selectedInstance);
+  await launchInstance();
   message.success(t("home.launching"));
 };
 
 // 快捷跳转
 const quickLinks = [
-  {
-    label: "menu.instances",
-    icon: "classify-2-line",
-    route: "/instances"
-  },
   {
     label: "menu.options",
     icon: "settings-1-line",
@@ -175,16 +167,19 @@ const communityLinks = computed(() => getExternalLinks());
     </n-card>
 
     <!-- 统计 -->
-    <n-flex :wrap="true" :size="16">
-      <n-card v-for="stat in stats" :key="stat.label" class="stat-card">
-        <n-statistic :label="t(stat.label)" :value="stat.value">
-          <template #prefix>
-            <n-icon :color="themeVars?.primaryColor">
-              <BasicIcon :icon="stat.icon" />
-            </n-icon>
-          </template>
-        </n-statistic>
-      </n-card>
+    <n-flex justify="space-around" align="center" class="stats-row">
+      <n-statistic
+        v-for="stat in stats"
+        :key="stat.label"
+        :label="t(stat.label)"
+        :value="stat.value"
+      >
+        <template #prefix>
+          <n-icon :color="themeVars?.primaryColor">
+            <BasicIcon :icon="stat.icon" />
+          </n-icon>
+        </template>
+      </n-statistic>
     </n-flex>
 
     <!-- 快捷跳转 -->
@@ -248,6 +243,10 @@ const communityLinks = computed(() => getExternalLinks());
   padding: 14px 0;
 }
 
+.stats-row {
+  padding-right: 12px;
+}
+
 .launch-btn {
   height: auto;
   padding: 20px 64px;
@@ -259,10 +258,6 @@ const communityLinks = computed(() => getExternalLinks());
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.stat-card {
-  flex: 1 1 200px;
 }
 
 .section-title {

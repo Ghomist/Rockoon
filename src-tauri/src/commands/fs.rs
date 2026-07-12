@@ -381,6 +381,25 @@ pub fn write_file(path: String, data: Vec<u8>) -> RcResult {
 }
 
 #[command]
+pub fn read_text_file(path: String) -> RcResultWith<String> {
+    let content = fs::read_to_string(&path)?;
+    Ok(content)
+}
+
+#[command]
+pub fn write_text_file(path: String, content: String) -> RcResult {
+    // 确保目标目录存在
+    if let Some(parent) = path::Path::new(&path).parent() {
+        if !parent.exists() {
+            fs::create_dir_all(parent)?;
+        }
+    }
+    fs::write(&path, content)?;
+    info!("Wrote text to {}", path);
+    Ok(())
+}
+
+#[command]
 pub fn analyze_skybox_files(dir_path: String) -> RcResultWith<SkyboxAnalysisResult> {
     info!("Analyzing skybox files in {}", dir_path);
 

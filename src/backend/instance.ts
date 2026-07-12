@@ -133,57 +133,6 @@ const getInstanceData = async (
   return instance;
 };
 
-/** 扫描可能的 Ballance 实例，返回实例列表 */
-const scanPossibleInstances = async (): Promise<InstanceData[]> => {
-  const newInstanceList: InstanceData[] = [];
-
-  const scanInstances = async (dir: string, depth: number) => {
-    if (depth) {
-      try {
-        const dirs = await backend.listDirs(dir);
-        for (const dir of dirs) {
-          const instance = await getInstanceData(dir);
-          if (instance) {
-            newInstanceList.push(instance);
-          } else {
-            await scanInstances(dir, depth - 1);
-          }
-        }
-      } catch {} // ignore error
-    }
-  };
-
-  const dirs = await backend.getCommonDirs();
-  for (const dir of dirs) {
-    await scanInstances(dir, 2);
-  }
-
-  return newInstanceList;
-};
-
-/** 获取实例的文件列表 */
-async function getInstanceFiles(
-  path: string,
-  folderType: "map" | "mod" | "modCfg" | "bb"
-) {
-  return await backend
-    .list(
-      await {
-        map: join(path, "ModLoader", "Maps"),
-        mod: join(path, "ModLoader", "Mods"),
-        modCfg: join(path, "ModLoader", "Configs"),
-        bb: join(path, "BuildingBlocks")
-      }[folderType],
-      {
-        map: ["nmo"],
-        mod: ["bmod", "bmodp", "zip"],
-        modCfg: ["cfg"],
-        bb: ["dll"]
-      }[folderType]
-    )
-    .catch(() => [] as ManagedFile[]);
-}
-
 async function installRockoonMod(instance: InstanceData) {
   const modPath = await join(
     instance.path,
@@ -196,7 +145,5 @@ async function installRockoonMod(instance: InstanceData) {
 
 export const instanceBackend = {
   getInstanceData,
-  getInstanceFiles,
-  scanPossibleInstances,
   installRockoonMod
 };

@@ -5,37 +5,35 @@ import { withDebounce } from "@/utils/common";
 import { join } from "@tauri-apps/api/path";
 import { watch } from "vue";
 import { useAppStore } from "./app";
-import { useInstancesStore } from "./instances";
 import { usePrefStore } from "./pref";
+import { useProfilesStore } from "./profiles";
 
 export const initStores = async () => {
   const appStore = useAppStore();
   const prefStore = usePrefStore();
-  const instancesStore = useInstancesStore();
+  const profilesStore = useProfilesStore();
 
-  // auto save instance options
+  // pref 自动保存（含 instancePath、playtime 等）
   prefStore.$subscribe(withDebounce(prefStore.save));
-  instancesStore.$subscribe(withDebounce(instancesStore.save));
 
-  // select a instance as default
-  if (prefStore.recent) {
-    await appStore.changeSelect(prefStore.recent);
-  }
-  if (!appStore.selectedInstanceData && instancesStore.instances.length) {
-    await appStore.changeSelect(instancesStore.instances[0].path);
+  // 加载单一实例 + 配置档
+  if (prefStore.instancePath) {
+    await appStore.loadInstance(prefStore.instancePath);
+    if (appStore.selectedInstanceData) {
+      await profilesStore.load();
+    }
   }
 
-  if (!appStore.selectedInstanceData) {
-    router.replace("/instances");
-  } else if (prefStore.route) {
+  // 恢复上次路由（未配置实例时由 App.vue 显示引导页）
+  if (appStore.selectedInstanceData && prefStore.route) {
     router.replace(prefStore.route);
   }
 
-  // switch language
+  // 语言切换
   watch(() => prefStore.language, switchLanguage);
   switchLanguage(prefStore.language);
 
-  // dump instance options
+  // 实例选项深监听 → 自动写回 Database.tdb
   watch(
     () => appStore.selectedInstanceData?.options,
     async () => {

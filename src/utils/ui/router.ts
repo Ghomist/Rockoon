@@ -13,7 +13,7 @@ export const waitForSelectedInstance = (
 
     const timeout = setTimeout(() => {
       message.error(t("gameConfig.selectInstance"));
-      router.push("/instances");
+      router.push("/game");
       detach();
       reject();
     }, 300);

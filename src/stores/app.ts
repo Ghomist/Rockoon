@@ -1,6 +1,5 @@
 import { instanceBackend } from "@/backend/instance";
 import { acceptHMRUpdate, defineStore } from "pinia";
-import { useInstancesStore } from "./instances";
 import { usePrefStore } from "./pref";
 
 export const useAppStore = defineStore("app", {
@@ -10,18 +9,12 @@ export const useAppStore = defineStore("app", {
     runningInstancePath: undefined,
     runningInstanceTimestamp: 0
   }),
-  getters: {
-    selectedInstance: state =>
-      state.selectedInstanceData
-        ? useInstancesStore().findInstance(state.selectedInstanceData.path)
-        : undefined
-  },
   actions: {
-    async changeSelect(path: string) {
+    /** 加载单一实例的 InstanceData 并安装 RockoonIO mod */
+    async loadInstance(path: string) {
       const newInstanceData = await instanceBackend.getInstanceData(path);
       if (newInstanceData) {
         this.selectedInstanceData = newInstanceData;
-        usePrefStore().recent = newInstanceData.path;
         instanceBackend.installRockoonMod(newInstanceData);
         return true;
       }
@@ -29,17 +22,13 @@ export const useAppStore = defineStore("app", {
     },
     updateInstanceRunningTime() {
       if (this.runningInstancePath && this.runningInstanceTimestamp > 0) {
-        const instancesStore = useInstancesStore();
-        const instance = instancesStore.findInstance(this.runningInstancePath);
-        if (instance) {
-          const elapsedSeconds = Math.floor(
-            (Date.now() - this.runningInstanceTimestamp) / 1000
-          );
-          if (elapsedSeconds > 0) {
-            instance.playtime += elapsedSeconds;
-            this.runningInstanceTimestamp = Date.now();
-            instancesStore.save();
-          }
+        const prefStore = usePrefStore();
+        const elapsedSeconds = Math.floor(
+          (Date.now() - this.runningInstanceTimestamp) / 1000
+        );
+        if (elapsedSeconds > 0) {
+          prefStore.playtime += elapsedSeconds;
+          this.runningInstanceTimestamp = Date.now();
         }
       }
     }

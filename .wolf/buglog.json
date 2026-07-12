@@ -80,6 +80,294 @@
       "related_bugs": [],
       "occurrences": 3,
       "last_seen": "2026-07-12T08:00:01.607Z"
+    },
+    {
+      "id": "bug-006",
+      "timestamp": "2026-07-12T12:55:40.844Z",
+      "error_message": "Significant refactor of ",
+      "file": "src/types/store.d.ts",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 7→10 lines (2 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-12T12:55:40.844Z"
+    },
+    {
+      "id": "bug-007",
+      "timestamp": "2026-07-12T12:56:22.225Z",
+      "error_message": "Significant refactor of ",
+      "file": "src/backend/instance.ts",
+      "root_cause": "18 lines replaced/restructured",
+      "fix": "Rewrote 54→27 lines (18 removed) | Also: /** 获取实例的文件列表 */; async function getInstanceFiles(",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-07-12T12:57:12.354Z"
+    },
+    {
+      "id": "bug-008",
+      "timestamp": "2026-07-12T13:04:28.793Z",
+      "error_message": "Significant refactor of ",
+      "file": "src/routers/menu.ts",
+      "root_cause": "4 lines replaced/restructured",
+      "fix": "Rewrote 15→9 lines (4 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-12T13:04:28.793Z"
+    },
+    {
+      "id": "bug-009",
+      "timestamp": "2026-07-12T13:05:06.710Z",
+      "error_message": "Significant refactor of ",
+      "file": "src/types/store.d.ts",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 8→4 lines (2 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-12T13:05:06.710Z"
+    },
+    {
+      "id": "bug-010",
+      "timestamp": "2026-07-12T13:05:17.008Z",
+      "error_message": "Significant refactor of ",
+      "file": "src/types/ballance.d.ts",
+      "root_cause": "4 lines replaced/restructured",
+      "fix": "Rewrote 14→7 lines (4 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-12T13:05:17.008Z"
+    },
+    {
+      "id": "bug-011",
+      "timestamp": "2026-07-12T13:06:05.270Z",
+      "error_message": "Missing guard clause",
+      "file": "src/views/Start.vue",
+      "root_cause": "No early return/throw for edge case: !app.selectedInstanceData",
+      "fix": "Added guard clause: if (!app.selectedInstanceData)",
+      "tags": [
+        "auto-detected",
+        "guard-clause",
+        "vue"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-12T13:06:05.270Z"
+    },
+    {
+      "id": "bug-012",
+      "timestamp": "2026-07-12T13:07:09.502Z",
+      "error_message": "Missing guard clause",
+      "file": "src/views/Settings.vue",
+      "root_cause": "No early return/throw for edge case: !folder",
+      "fix": "Added guard clause: if (!folder)",
+      "tags": [
+        "auto-detected",
+        "guard-clause",
+        "vue"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-12T13:07:09.502Z"
+    },
+    {
+      "id": "bug-013",
+      "timestamp": "2026-07-12T13:08:21.585Z",
+      "error_message": "Incorrect value in code",
+      "file": "src/i18n/languages/zh.json",
+      "root_cause": "Had \"instances\"",
+      "fix": "Changed to \"tools\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "json"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-07-12T13:08:29.583Z"
+    },
+    {
+      "id": "bug-014",
+      "timestamp": "2026-07-12T13:09:17.360Z",
+      "error_message": "Incorrect value in code",
+      "file": "src/i18n/languages/en.json",
+      "root_cause": "Had \"instances\"",
+      "fix": "Changed to \"tools\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "json"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-07-12T13:09:31.893Z"
+    },
+    {
+      "id": "bug-015",
+      "timestamp": "2026-07-12T13:10:15.744Z",
+      "error_message": "Incorrect value in code",
+      "file": "src/utils/ui/router.ts",
+      "root_cause": "Had \"/instances\"",
+      "fix": "Changed to \"/game\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-12T13:10:15.744Z"
+    },
+    {
+      "id": "bug-016",
+      "timestamp": "2026-07-12T13:13:44.666Z",
+      "error_message": "Significant refactor of ",
+      "file": "src/stores/profiles.ts",
+      "root_cause": "15 lines replaced/restructured",
+      "fix": "Rewrote 21→4 lines (15 removed) | Also: for (const k of GAME_OPTION_KEYS) {; gameOptions[k] = app.selectedInstanceData.options[ | Also: for (const k of GAME_OPTION_KEYS) {; app.selectedInstanceData.options[k] = profile.game",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 3,
+      "last_seen": "2026-07-12T13:14:06.748Z"
+    },
+    {
+      "id": "bug-017",
+      "timestamp": "2026-07-12T14:28:40.971Z",
+      "error_message": "Incorrect value in code",
+      "file": "src/i18n/languages/zh.json",
+      "root_cause": "Had \"current\"",
+      "fix": "Changed to \"currentLabel\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "json"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-12T14:28:40.971Z"
+    },
+    {
+      "id": "bug-018",
+      "timestamp": "2026-07-12T14:28:57.369Z",
+      "error_message": "Incorrect value in code",
+      "file": "src/i18n/languages/en.json",
+      "root_cause": "Had \"current\"",
+      "fix": "Changed to \"currentLabel\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "json"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-12T14:28:57.369Z"
+    },
+    {
+      "id": "bug-019",
+      "timestamp": "2026-07-12T14:40:21.454Z",
+      "error_message": "Significant refactor of ",
+      "file": "src/App.vue",
+      "root_cause": "3 lines replaced/restructured",
+      "fix": "Rewrote 7→4 lines (3 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "vue"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-12T14:40:21.454Z"
+    },
+    {
+      "id": "bug-020",
+      "timestamp": "2026-07-12T14:45:04.883Z",
+      "error_message": "CSS fix: n-flex",
+      "file": "src/views/Start.vue",
+      "root_cause": "n-flex: wrap=\"true\" :size=\"16\"> → wrap=\"true\" :size=\"32\" align=\"center\">",
+      "fix": "Changed n-flex: wrap=\"true\" :size=\"16\"> → wrap=\"true\" :size=\"32\" align=\"center\">",
+      "tags": [
+        "auto-detected",
+        "style-fix",
+        "vue"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-12T14:45:04.883Z"
+    },
+    {
+      "id": "bug-021",
+      "timestamp": "2026-07-12T14:51:28.756Z",
+      "error_message": "CSS fix: padding",
+      "file": "src/views/Start.vue",
+      "root_cause": "padding: 14px 0 → 0 16px",
+      "fix": "Changed padding: 14px 0 → 0 16px",
+      "tags": [
+        "auto-detected",
+        "style-fix",
+        "vue"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-12T14:51:28.756Z"
+    },
+    {
+      "id": "bug-022",
+      "timestamp": "2026-07-12T14:55:23.908Z",
+      "error_message": "Incorrect value in code",
+      "file": "src/i18n/languages/zh.json",
+      "root_cause": "Had \"当前配置：\"",
+      "fix": "Changed to \"当前配置\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "json"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-12T14:55:23.908Z"
+    },
+    {
+      "id": "bug-023",
+      "timestamp": "2026-07-12T14:55:28.115Z",
+      "error_message": "Incorrect value in code",
+      "file": "src/i18n/languages/en.json",
+      "root_cause": "Had \"Current profile: \"",
+      "fix": "Changed to \"Current profile\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "json"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-12T14:55:28.115Z"
     }
   ]
 }

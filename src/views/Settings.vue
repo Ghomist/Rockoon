@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import backend from "@/backend";
+import { useAppStore } from "@/stores/app";
 import { usePrefStore } from "@/stores/pref";
-import { NFlex, NH2 } from "naive-ui";
+import { useProfilesStore } from "@/stores/profiles";
+import { NButton, NFlex, NH2, NText } from "naive-ui";
 import { toRefs, ref } from "vue";
 import { getVersion } from "@tauri-apps/api/app";
 import { checkForUpdate } from "@/services/updater";
@@ -9,8 +11,12 @@ import NFormWrapper from "./components/NFormWrapper.vue";
 import { dialog, message } from "@/utils/ui/feedback";
 import { useI18n } from "vue-i18n";
 import storage from "@/utils/storage";
+import { open as browseDir } from "@tauri-apps/plugin-dialog";
 
-const pref = toRefs(usePrefStore());
+const prefStore = usePrefStore();
+const pref = toRefs(prefStore);
+const app = useAppStore();
+const profiles = useProfilesStore();
 const appVersion = ref("");
 const { t } = useI18n();
 getVersion().then(v => (appVersion.value = v));
@@ -24,10 +30,36 @@ const onCheckUpdate = async () => {
 const onReload = () => {
   location.reload();
 };
+
+const onChangeInstancePath = async () => {
+  const folder = await browseDir({
+    directory: true,
+    title: t("onboarding.browse.title")
+  });
+  if (!folder) return;
+  const ok = await app.loadInstance(folder);
+  if (!ok) {
+    message.error(t("onboarding.invalid"));
+    return;
+  }
+  prefStore.instancePath = folder;
+  await profiles.load(); // 读取新实例的 .rockoon（不存在则建默认 profile）
+  message.success(t("settings.instance.changed"));
+};
 </script>
 
 <template>
   <n-flex vertical style="padding: 28px">
+    <n-h2 prefix="primary"> {{ $t("settings.instance.title") }} </n-h2>
+    <n-flex vertical :size="10">
+      <n-text depth="3" style="word-break: break-all">
+        {{ pref.instancePath || $t("common.none") }}
+      </n-text>
+      <n-button @click="onChangeInstancePath">
+        {{ $t("settings.instance.change") }}
+      </n-button>
+    </n-flex>
+
     <n-h2 prefix="primary"> {{ $t("settings.basic") }} </n-h2>
     <NFormWrapper
       :schema="[
