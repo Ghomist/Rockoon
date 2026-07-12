@@ -88,26 +88,6 @@ const onReload = () => {
         }
       ]"
     />
-    <n-h2 prefix="primary">{{ $t("settings.hub") }}</n-h2>
-    <NFormWrapper
-      :schema="[
-        {
-          type: 'select',
-          label: $t('settings.hubApiUrl'),
-          valueRef: pref.hubApiUrl,
-          options: [
-            {
-              value: 'http://114.132.240.62:8000',
-              label: $t('settings.hubApiDefault')
-            },
-            {
-              value: 'http://127.0.0.1:8000',
-              label: $t('settings.hubApiLocal')
-            }
-          ]
-        }
-      ]"
-    />
     <n-h2 prefix="primary">{{ $t("settings.debug") }}</n-h2>
     <NFormWrapper
       :schema="[

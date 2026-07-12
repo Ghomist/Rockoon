@@ -2,20 +2,14 @@ import BasicIcon from "@/views/components/MgcIcon.vue";
 import { t } from "@/i18n";
 import GameConfig from "@/views/GameConfig.vue";
 import GameData from "@/views/GameData.vue";
-import HubAdmin from "@/views/hub/HubAdmin.vue";
-import HubAuthors from "@/views/hub/HubAuthors.vue";
-import HubBatch from "@/views/hub/HubBatch.vue";
-import HubMaps from "@/views/hub/HubMaps.vue";
-import HubUpload from "@/views/hub/HubUpload.vue";
 import Instances from "@/views/Instances.vue";
 import ResourcesMaps from "@/views/ResourcesMaps.vue";
 import ResourcesMods from "@/views/ResourcesMods.vue";
 import ResourcesSkys from "@/views/ResourcesSkys.vue";
 import Settings from "@/views/Settings.vue";
 import Start from "@/views/Start.vue";
-import { open } from "@tauri-apps/plugin-shell";
-import type { MenuOption } from "naive-ui";
 import { type DefineComponent, h } from "vue";
+import type { MenuOption } from "naive-ui";
 import { RouterLink } from "vue-router";
 
 type VueComponent = DefineComponent<object, object, any>;
@@ -107,50 +101,6 @@ export const getMenuItems = (): MenuItem[] => [
   },
   "-",
   {
-    label: t("menu.community"),
-    route: "/community",
-    icon: "question-line",
-    children: []
-  },
-  {
-    label: t("menu.hub"),
-    route: "/hub",
-    icon: "web-line",
-    children: [
-      {
-        label: t("menu.hubMaps"),
-        route: "/hub-maps",
-        icon: "map-line",
-        view: HubMaps
-      },
-      {
-        label: t("menu.hubAuthors"),
-        route: "/hub-authors",
-        icon: "user-1-line",
-        view: HubAuthors
-      },
-      {
-        label: t("menu.hubUpload"),
-        route: "/hub-upload",
-        icon: "upload-2-line",
-        view: HubUpload
-      },
-      {
-        label: t("menu.hubBatch"),
-        route: "/hub-batch",
-        icon: "file-zip-line",
-        view: HubBatch
-      },
-      {
-        label: t("menu.hubAdmin"),
-        route: "/hub-admin",
-        icon: "shield-line",
-        view: HubAdmin
-      }
-    ]
-  },
-  "-",
-  {
     label: t("menu.tools"),
     icon: "tool-line",
     route: "/tools",
@@ -163,31 +113,6 @@ export const getMenuItems = (): MenuItem[] => [
     view: Settings
   }
 ];
-
-const externalLinkToMenuOption = (link: ExternalLinkItem): MenuOption => ({
-  label: () =>
-    h(
-      "a",
-      {
-        href: link.url,
-        onClick: (e: Event) => {
-          e.preventDefault();
-          open(link.url);
-        },
-        style:
-          "text-decoration: none; color: inherit; display: inline-flex; align-items: center; gap: 4px"
-      },
-      [
-        link.label,
-        h(BasicIcon, {
-          icon: "external-link-line",
-          style: "font-size: 12px; opacity: 0.5"
-        })
-      ]
-    ),
-  key: link.url,
-  icon: () => h(BasicIcon, { icon: link.icon })
-});
 
 const mapToMenuOption = (item: MenuItem, parentPath = ""): MenuOption => {
   if (item === "-") return { type: "divider" };
@@ -204,15 +129,4 @@ const mapToMenuOption = (item: MenuItem, parentPath = ""): MenuOption => {
 };
 
 export const getMenuOptions = (): MenuOption[] =>
-  getMenuItems().map(item => {
-    if (item === "-") return { type: "divider" };
-    if (item.route === "/community") {
-      return {
-        label: item.label,
-        key: item.route,
-        icon: () => h(BasicIcon, { icon: item.icon }),
-        children: getExternalLinks().map(externalLinkToMenuOption)
-      };
-    }
-    return mapToMenuOption(item);
-  });
+  getMenuItems().map(item => mapToMenuOption(item));

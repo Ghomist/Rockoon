@@ -1,5 +1,13 @@
 <script setup lang="ts">
-import { NButton, NCard, NFlex, NIcon, NStatistic, NTag } from "naive-ui";
+import {
+  NButton,
+  NCard,
+  NFlex,
+  NIcon,
+  NStatistic,
+  NText,
+  useThemeVars
+} from "naive-ui";
 import { computed } from "vue";
 import { computedAsync } from "@vueuse/core";
 import { useAppStore } from "@/stores/app";
@@ -10,13 +18,16 @@ import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 import backend from "@/backend";
 import { join } from "@tauri-apps/api/path";
+import { open } from "@tauri-apps/plugin-shell";
 import BasicIcon from "@/views/components/MgcIcon.vue";
+import { getExternalLinks } from "@/routers/menu";
 import { message } from "@/utils/ui/feedback";
 
 const app = useAppStore();
 const instancesStore = useInstancesStore();
 const { t } = useI18n();
 const router = useRouter();
+const themeVars = useThemeVars();
 const { checkRunningInstance, killInstance, launchInstance } =
   useLauncherService();
 
@@ -26,7 +37,6 @@ const totalPlaytime = computed(() =>
   instancesStore.instances.reduce((sum, inst) => sum + inst.playtime, 0)
 );
 
-// 获取地图和 mod 数量
 const mapCount = computedAsync(async () => {
   if (!app.selectedInstanceData) return 0;
   try {
@@ -57,6 +67,21 @@ const modCount = computedAsync(async () => {
   }
 }, 0);
 
+const stats = computed(() => [
+  {
+    label: "home.instanceCount",
+    value: instanceCount.value,
+    icon: "classify-2-line"
+  },
+  {
+    label: "home.totalPlaytime",
+    value: formatPlaytime(totalPlaytime.value),
+    icon: "time-line"
+  },
+  { label: "home.mapCount", value: mapCount.value, icon: "map-line" },
+  { label: "home.modCount", value: modCount.value, icon: "auction-line" }
+]);
+
 // 启动游戏
 const onLaunchGame = async () => {
   if (!app.selectedInstance) {
@@ -84,9 +109,9 @@ const quickLinks = [
     route: "/instances"
   },
   {
-    label: "menu.hubMaps",
-    icon: "download-2-line",
-    route: "/hub/hub-maps"
+    label: "menu.options",
+    icon: "settings-1-line",
+    route: "/options"
   },
   {
     label: "menu.maps",
@@ -104,18 +129,22 @@ const quickLinks = [
     route: "/settings"
   }
 ];
+
+// 社区链接（由 menu.ts 集中维护，语言切换时响应式刷新）
+const communityLinks = computed(() => getExternalLinks());
 </script>
 
 <template>
-  <n-flex vertical style="gap: 20px; height: 100%; padding: 20px">
-    <!-- 启动按钮区域 -->
-    <n-card style="text-align: center">
-      <n-flex vertical align="center">
+  <div class="home">
+    <!-- 启动 Hero -->
+    <n-card class="hero" :bordered="false">
+      <n-flex vertical align="center" :size="14">
         <n-button
           v-if="!app.runningInstancePid"
           type="primary"
           size="large"
-          style="padding: 20px 60px; font-size: 20px"
+          round
+          class="launch-btn"
           @click="onLaunchGame"
         >
           <template #icon>
@@ -127,7 +156,8 @@ const quickLinks = [
           v-else
           type="error"
           size="large"
-          style="padding: 20px 60px; font-size: 20px"
+          round
+          class="launch-btn"
           @click="killInstance"
         >
           <template #icon>
@@ -135,72 +165,136 @@ const quickLinks = [
           </template>
           {{ t("home.stop") }}
         </n-button>
-        <div v-if="app.selectedInstanceData" style="margin-top: 10px">
-          <n-tag type="info" size="small">
-            {{ app.selectedInstanceData.path }}
-          </n-tag>
-        </div>
-        <div v-else style="margin-top: 10px">
-          <n-tag type="warning" size="small">
-            {{ t("gameConfig.selectInstance") }}
-          </n-tag>
-        </div>
+        <n-text v-if="app.selectedInstanceData" depth="3" class="hero-path">
+          {{ app.selectedInstanceData.path }}
+        </n-text>
+        <n-text v-else type="warning">
+          {{ t("gameConfig.selectInstance") }}
+        </n-text>
       </n-flex>
     </n-card>
 
-    <!-- 统计信息区域 -->
-    <n-flex :wrap="false">
-      <n-card style="flex: 1">
-        <n-statistic :label="t('home.instanceCount')" :value="instanceCount">
+    <!-- 统计 -->
+    <n-flex :wrap="true" :size="16">
+      <n-card v-for="stat in stats" :key="stat.label" class="stat-card">
+        <n-statistic :label="t(stat.label)" :value="stat.value">
           <template #prefix>
-            <n-icon><BasicIcon icon="classify-2-line" /></n-icon>
-          </template>
-        </n-statistic>
-      </n-card>
-      <n-card style="flex: 1">
-        <n-statistic
-          :label="t('home.totalPlaytime')"
-          :value="formatPlaytime(totalPlaytime)"
-        >
-          <template #prefix>
-            <n-icon><BasicIcon icon="time-line" /></n-icon>
+            <n-icon :color="themeVars?.primaryColor">
+              <BasicIcon :icon="stat.icon" />
+            </n-icon>
           </template>
         </n-statistic>
       </n-card>
     </n-flex>
 
-    <n-flex :wrap="false">
-      <n-card style="flex: 1">
-        <n-statistic :label="t('home.mapCount')" :value="mapCount">
-          <template #prefix>
-            <n-icon><BasicIcon icon="map-line" /></n-icon>
-          </template>
-        </n-statistic>
-      </n-card>
-      <n-card style="flex: 1">
-        <n-statistic :label="t('home.modCount')" :value="modCount">
-          <template #prefix>
-            <n-icon><BasicIcon icon="auction-line" /></n-icon>
-          </template>
-        </n-statistic>
-      </n-card>
-    </n-flex>
-
-    <!-- 快捷跳转区域 -->
-    <n-card :title="t('home.quickLinks')">
-      <n-flex :wrap="true" style="gap: 10px">
-        <n-button
+    <!-- 快捷跳转 -->
+    <section>
+      <n-text depth="3" class="section-title">{{ t("home.quickLinks") }}</n-text>
+      <n-flex :wrap="true" :size="16" class="tiles">
+        <n-card
           v-for="link in quickLinks"
           :key="link.route"
-          style="flex: 1; min-width: 120px"
+          hoverable
+          class="tile"
           @click="router.push(link.route)"
         >
-          <template #icon>
-            <BasicIcon :icon="link.icon" />
-          </template>
-          {{ t(link.label) }}
-        </n-button>
+          <n-flex vertical align="center" :size="6">
+            <n-icon :color="themeVars?.primaryColor" size="20">
+              <BasicIcon :icon="link.icon" />
+            </n-icon>
+            <n-text>{{ t(link.label) }}</n-text>
+          </n-flex>
+        </n-card>
       </n-flex>
-    </n-card>
-  </n-flex>
+    </section>
+
+    <!-- 平衡社区 -->
+    <section>
+      <n-text depth="3" class="section-title">{{ t("menu.community") }}</n-text>
+      <n-flex :wrap="true" :size="16" class="tiles">
+        <n-card
+          v-for="link in communityLinks"
+          :key="link.url"
+          hoverable
+          class="tile"
+          @click="open(link.url)"
+        >
+          <n-flex vertical align="center" :size="6">
+            <n-icon :color="themeVars?.primaryColor" size="20">
+              <BasicIcon :icon="link.icon" />
+            </n-icon>
+            <n-text>{{ link.label }}</n-text>
+            <n-text depth="3" class="tile-ext">
+              <BasicIcon icon="external-link-line" />
+            </n-text>
+          </n-flex>
+        </n-card>
+      </n-flex>
+    </section>
+  </div>
 </template>
+
+<style scoped>
+.home {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  height: 100%;
+  padding: 24px;
+  box-sizing: border-box;
+}
+
+.hero {
+  padding: 14px 0;
+}
+
+.launch-btn {
+  height: auto;
+  padding: 20px 64px;
+  font-size: 20px;
+}
+
+.hero-path {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stat-card {
+  flex: 1 1 200px;
+}
+
+.section-title {
+  display: block;
+  margin-bottom: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+}
+
+.tiles {
+  margin-top: 0;
+}
+
+.tile {
+  flex: 1 1 130px;
+  cursor: pointer;
+  transition:
+    transform 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.tile :deep(.n-card__content) {
+  padding: 12px;
+}
+
+.tile:hover {
+  transform: translateY(-2px);
+}
+
+.tile-ext {
+  font-size: 10px;
+  opacity: 0.5;
+}
+</style>

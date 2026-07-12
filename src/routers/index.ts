@@ -4,11 +4,6 @@ import {
   type RouteRecordRaw
 } from "vue-router";
 import { getMenuItems, type MenuItem } from "./menu";
-import { useHubStore } from "@/stores/hub";
-import { message } from "@/utils/ui/feedback";
-import { i18n } from "@/i18n";
-
-const AUTH_REQUIRED_ROUTES = new Set(["hub-upload", "hub-batch", "hub-authors"]);
 
 const mapToRoute = (
   item: MenuItem,
@@ -42,14 +37,4 @@ export const router = createRouter({
   routes: getMenuItems()
     .map(x => mapToRoute(x, true))
     .filter(x => !!x)
-});
-
-router.beforeEach(to => {
-  if (
-    AUTH_REQUIRED_ROUTES.has(to.name as string) &&
-    !useHubStore().isAuthenticated
-  ) {
-    message.warning(i18n.global.t("hub.authRequired"));
-    return { name: "hub-admin" };
-  }
 });

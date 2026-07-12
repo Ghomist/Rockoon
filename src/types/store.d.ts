@@ -27,9 +27,6 @@ type PreferenceStore = {
   /** 退出启动器时关闭运行中的实例 */
   killInstanceWhenExit: boolean;
 
-  /** 资源社区 API 地址 */
-  hubApiUrl: string;
-
   /** 重置高分榜时的默认玩家名称 */
   highscoreDefaultPlayer: string;
 

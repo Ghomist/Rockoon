@@ -1,0 +1,85 @@
+{
+  "version": 1,
+  "bugs": [
+    {
+      "id": "bug-001",
+      "timestamp": "2026-07-12T07:40:36.885Z",
+      "error_message": "Significant refactor of ",
+      "file": "src/routers/menu.ts",
+      "root_cause": "5 lines replaced/restructured",
+      "fix": "Rewrote 15→10 lines (5 removed) | Also: label: t(\"menu.community\"),; route: \"/community\",",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-07-12T07:40:57.737Z"
+    },
+    {
+      "id": "bug-002",
+      "timestamp": "2026-07-12T07:41:20.430Z",
+      "error_message": "Incorrect value in code",
+      "file": "src/routers/menu.ts",
+      "root_cause": "Had \"@tauri-apps/plugin-shell\"",
+      "fix": "Changed to \"vue\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-12T07:41:20.430Z"
+    },
+    {
+      "id": "bug-003",
+      "timestamp": "2026-07-12T07:43:06.047Z",
+      "error_message": "Significant refactor of ",
+      "file": "src/i18n/languages/zh.json",
+      "root_cause": "7 lines replaced/restructured",
+      "fix": "Rewrote 11→5 lines (7 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "json"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-12T07:43:06.047Z"
+    },
+    {
+      "id": "bug-004",
+      "timestamp": "2026-07-12T07:44:57.639Z",
+      "error_message": "Significant refactor of ",
+      "file": "src/i18n/languages/en.json",
+      "root_cause": "7 lines replaced/restructured",
+      "fix": "Rewrote 11→5 lines (7 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "json"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-12T07:44:57.639Z"
+    },
+    {
+      "id": "bug-005",
+      "timestamp": "2026-07-12T07:59:57.865Z",
+      "error_message": "CSS fix: n-icon",
+      "file": "src/views/Start.vue",
+      "root_cause": "n-icon: color=\"themeVars?.primaryColor\" size=\"26\"> → color=\"themeVars?.primaryColor\" size=\"20\">",
+      "fix": "Changed n-icon: color=\"themeVars?.primaryColor\" size=\"26\"> → color=\"themeVars?.primaryColor\" size=\"20\">",
+      "tags": [
+        "auto-detected",
+        "style-fix",
+        "vue"
+      ],
+      "related_bugs": [],
+      "occurrences": 3,
+      "last_seen": "2026-07-12T08:00:01.607Z"
+    }
+  ]
+}
