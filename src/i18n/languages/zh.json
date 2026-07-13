@@ -142,7 +142,9 @@
       "error": "文件夹创建失败"
     },
     "launch": {
-      "button": "启动"
+      "button": "启动",
+      "confirmMessage": "是否启动地图 {name}？",
+      "dontAskAgain": "不再提示"
     },
     "move": {
       "button": "移动",

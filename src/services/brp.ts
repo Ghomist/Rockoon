@@ -24,67 +24,64 @@ export const describeBrp = (m: BrpManifest): string => {
   return head;
 };
 
-export const useBrpService = () => {
-  const appStore = useAppStore();
-
-  /** Import a BRP file from a local path. Validates first; on success shows a
-   *  notification describing what was imported. Returns the result or null. */
-  async function importFromFile(filePath: string): Promise<BrpImportResult | null> {
-    const instance = appStore.selectedInstanceData;
-    if (!instance) {
-      message.error(t("brp.error.noInstance"));
-      return null;
-    }
-    const loading = message.loading(t("brp.importing"), { duration: 0 });
-    try {
-      const result = await backend.importBrp(filePath, instance.path);
-      loading.destroy();
-      message.success(
-        t("brp.import.success", {
-          what: describeBrp(result.manifest),
-          count: result.installedPaths.length,
-          target: result.targetDescription
-        }),
-        { duration: 6000 }
-      );
-      return result;
-    } catch (e) {
-      loading.destroy();
-      message.error(t("brp.import.failed", { reason: String(e) }), {
-        duration: 8000
-      });
-      return null;
-    }
+/** Import a BRP file from a local path. */
+export async function importFromFile(
+  filePath: string
+): Promise<BrpImportResult | null> {
+  const instance = useAppStore.getState().selectedInstanceData;
+  if (!instance) {
+    message.error(t("brp.error.noInstance"));
+    return null;
   }
-
-  /** Download a BRP from `url`, then validate + install. */
-  async function importFromUrl(url: string): Promise<BrpImportResult | null> {
-    const instance = appStore.selectedInstanceData;
-    if (!instance) {
-      message.error(t("brp.error.noInstance"));
-      return null;
-    }
-    const loading = message.loading(t("brp.downloading"), { duration: 0 });
-    try {
-      const result = await backend.importBrpFromUrl(url, instance.path);
-      loading.destroy();
-      message.success(
-        t("brp.import.success", {
-          what: describeBrp(result.manifest),
-          count: result.installedPaths.length,
-          target: result.targetDescription
-        }),
-        { duration: 6000 }
-      );
-      return result;
-    } catch (e) {
-      loading.destroy();
-      message.error(t("brp.import.failed", { reason: String(e) }), {
-        duration: 8000
-      });
-      return null;
-    }
+  const loading = message.loading(t("brp.importing"), { duration: 0 });
+  try {
+    const result = await backend.importBrp(filePath, instance.path);
+    loading.destroy();
+    message.success(
+      t("brp.import.success", {
+        what: describeBrp(result.manifest),
+        count: result.installedPaths.length,
+        target: result.targetDescription
+      }),
+      { duration: 6000 }
+    );
+    return result;
+  } catch (e) {
+    loading.destroy();
+    message.error(t("brp.import.failed", { reason: String(e) }), {
+      duration: 8000
+    });
+    return null;
   }
+}
 
-  return { importFromFile, importFromUrl };
-};
+/** Download a BRP from `url`, then validate + install. */
+export async function importFromUrl(
+  url: string
+): Promise<BrpImportResult | null> {
+  const instance = useAppStore.getState().selectedInstanceData;
+  if (!instance) {
+    message.error(t("brp.error.noInstance"));
+    return null;
+  }
+  const loading = message.loading(t("brp.downloading"), { duration: 0 });
+  try {
+    const result = await backend.importBrpFromUrl(url, instance.path);
+    loading.destroy();
+    message.success(
+      t("brp.import.success", {
+        what: describeBrp(result.manifest),
+        count: result.installedPaths.length,
+        target: result.targetDescription
+      }),
+      { duration: 6000 }
+    );
+    return result;
+  } catch (e) {
+    loading.destroy();
+    message.error(t("brp.import.failed", { reason: String(e) }), {
+      duration: 8000
+    });
+    return null;
+  }
+}

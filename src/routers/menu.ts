@@ -1,12 +1,12 @@
+import type { ComponentType } from "react";
 import { t } from "@/i18n";
-import GameConfig from "@/views/GameConfig.vue";
-import GameData from "@/views/GameData.vue";
-import ResourcesMaps from "@/views/ResourcesMaps.vue";
-import ResourcesMods from "@/views/ResourcesMods.vue";
-import ResourcesSkys from "@/views/ResourcesSkys.vue";
-import Settings from "@/views/Settings.vue";
-import Start from "@/views/Start.vue";
-import type { Component } from "vue";
+import Start from "@/views/Start";
+import GameConfig from "@/views/GameConfig";
+import GameData from "@/views/GameData";
+import ResourcesMaps from "@/views/ResourcesMaps";
+import ResourcesMods from "@/views/ResourcesMods";
+import ResourcesSkys from "@/views/ResourcesSkys";
+import Settings from "@/views/Settings";
 
 export type MenuItem =
   | ({
@@ -14,7 +14,7 @@ export type MenuItem =
       route: string;
       icon: string;
     } & (
-      | { view: Component; children?: undefined }
+      | { view: ComponentType; children?: undefined }
       | { view?: undefined; children: MenuItem[] }
     ))
   | "-";
@@ -49,12 +49,7 @@ export const getExternalLinks = (): ExternalLinkItem[] => [
 ];
 
 export const getMenuItems = (): MenuItem[] => [
-  {
-    label: t("menu.game"),
-    route: "/game",
-    icon: "gamepad-2",
-    view: Start
-  },
+  { label: t("menu.game"), route: "/game", icon: "gamepad-2", view: Start },
   "-",
   {
     label: t("menu.options"),
@@ -62,36 +57,25 @@ export const getMenuItems = (): MenuItem[] => [
     icon: "sliders-horizontal",
     view: GameConfig
   },
+  { label: t("menu.data"), route: "/data", icon: "flag", view: GameData },
+  "-",
   {
-    label: t("menu.data"),
-    route: "/data",
-    icon: "flag",
-    view: GameData
+    label: t("menu.maps"),
+    route: "/maps",
+    icon: "map",
+    view: ResourcesMaps
   },
   {
-    label: t("menu.resources"),
-    route: "/resources",
-    icon: "folder",
-    children: [
-      {
-        label: t("menu.maps"),
-        route: "/maps",
-        icon: "map",
-        view: ResourcesMaps
-      },
-      {
-        label: t("menu.mods"),
-        route: "/mods",
-        icon: "puzzle",
-        view: ResourcesMods
-      },
-      {
-        label: t("menu.backgrounds"),
-        route: "/backgrounds",
-        icon: "image",
-        view: ResourcesSkys
-      }
-    ]
+    label: t("menu.mods"),
+    route: "/mods",
+    icon: "puzzle",
+    view: ResourcesMods
+  },
+  {
+    label: t("menu.backgrounds"),
+    route: "/backgrounds",
+    icon: "image",
+    view: ResourcesSkys
   },
   "-",
   {

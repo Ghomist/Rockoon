@@ -1,5 +1,9 @@
-import { toast } from "vue-sonner";
-import { dialogApi, type DialogOptions, type DialogVariant } from "./dialog-store";
+import { toast } from "sonner";
+import {
+  useDialogStore,
+  type DialogOptions,
+  type DialogVariant
+} from "./dialog-store";
 
 type ToastOptions = { duration?: number; description?: string };
 
@@ -29,7 +33,7 @@ const wrap =
 
 /**
  * Drop-in replacement for Naive UI's discrete `message` API.
- * Backed by vue-sonner toasts.
+ * Backed by sonner toasts.
  */
 export const message = {
   success: wrap("success"),
@@ -39,9 +43,13 @@ export const message = {
   loading: wrap("loading")
 };
 
+/** Open a dialog with the given variant. */
+const openVariant = (variant: DialogVariant) => (opts: DialogOptions) =>
+  useDialogStore.getState().open(variant, opts);
+
 /**
  * Drop-in replacement for Naive UI's discrete `dialog` API.
- * Backed by a reactive store + shadcn Dialog host mounted in App.vue.
+ * Backed by a Zustand store + shadcn Dialog host mounted in App.tsx.
  */
 export const dialog: {
   create: (opts: DialogOptions) => void;
@@ -51,12 +59,12 @@ export const dialog: {
   success: (opts: DialogOptions) => void;
   destroyAll: () => void;
 } = {
-  create: (opts: DialogOptions) => dialogApi.open("default", opts),
-  info: (opts: DialogOptions) => dialogApi.open("info", opts),
-  warning: (opts: DialogOptions) => dialogApi.open("warning", opts),
-  error: (opts: DialogOptions) => dialogApi.open("error", opts),
-  success: (opts: DialogOptions) => dialogApi.open("success", opts),
-  destroyAll: () => dialogApi.closeAll()
+  create: openVariant("default"),
+  info: openVariant("info"),
+  warning: openVariant("warning"),
+  error: openVariant("error"),
+  success: openVariant("success"),
+  destroyAll: () => useDialogStore.getState().closeAll()
 };
 
 export type { DialogOptions, DialogVariant };

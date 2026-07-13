@@ -848,6 +848,326 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-07-13T12:02:52.013Z"
+    },
+    {
+      "id": "bug-054",
+      "timestamp": "2026-07-13T12:19:41.071Z",
+      "error_message": "Incorrect value in code",
+      "file": "package.json",
+      "root_cause": "Had \"core-js\"",
+      "fix": "Changed to \"cross-env\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "json"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-13T12:19:41.071Z"
+    },
+    {
+      "id": "bug-055",
+      "timestamp": "2026-07-13T12:20:33.885Z",
+      "error_message": "Incorrect value in code",
+      "file": "index.html",
+      "root_cause": "Had \"/src/main.ts\"",
+      "fix": "Changed to \"/src/main.tsx\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "html"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-13T12:20:33.885Z"
+    },
+    {
+      "id": "bug-056",
+      "timestamp": "2026-07-13T12:30:56.580Z",
+      "error_message": "Significant refactor of ",
+      "file": "src/components/TitleBarControls.tsx",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 7→4 lines (2 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-13T12:30:56.580Z"
+    },
+    {
+      "id": "bug-057",
+      "timestamp": "2026-07-13T12:34:24.983Z",
+      "error_message": "Wrong operator: ?? should be !==",
+      "file": "src/routers/index.tsx",
+      "root_cause": "Used \"??\" instead of \"!==\"",
+      "fix": "Changed operator ?? → !==",
+      "tags": [
+        "auto-detected",
+        "operator-fix",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-13T12:34:24.983Z"
+    },
+    {
+      "id": "bug-058",
+      "timestamp": "2026-07-13T12:34:56.249Z",
+      "error_message": "Incorrect value in code",
+      "file": "src/main.tsx",
+      "root_cause": "Had \"@/routers\"",
+      "fix": "Changed to \"@/App\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-13T12:34:56.249Z"
+    },
+    {
+      "id": "bug-059",
+      "timestamp": "2026-07-13T12:45:17.494Z",
+      "error_message": "Missing guard clause",
+      "file": "src/views/components/NFormWrapper.tsx",
+      "root_cause": "No early return/throw for edge case: !el",
+      "fix": "Added guard clause: if (!el)",
+      "tags": [
+        "auto-detected",
+        "guard-clause",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-13T12:45:17.494Z"
+    },
+    {
+      "id": "bug-060",
+      "timestamp": "2026-07-13T12:55:30.586Z",
+      "error_message": "Significant refactor of ",
+      "file": "src/views/GameConfig.tsx",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 4→3 lines (2 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-13T12:55:30.586Z"
+    },
+    {
+      "id": "bug-061",
+      "timestamp": "2026-07-13T13:03:52.993Z",
+      "error_message": "Null/undefined access in ",
+      "file": "src/i18n/index.ts",
+      "root_cause": "Property access on potentially null/undefined value",
+      "fix": "Added null safety (optional chaining or null check)",
+      "tags": [
+        "auto-detected",
+        "null-safety",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-13T13:03:52.993Z"
+    },
+    {
+      "id": "bug-062",
+      "timestamp": "2026-07-13T13:04:12.051Z",
+      "error_message": "Wrong condition in logic",
+      "file": "src/views/ResourcesSkys.tsx",
+      "root_cause": "Condition was: if (!zipFile || (zipFile as string[])",
+      "fix": "Changed to: if (!zipFile || (zipFile as unknown as string[])",
+      "tags": [
+        "auto-detected",
+        "logic-fix",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-13T13:04:12.051Z"
+    },
+    {
+      "id": "bug-063",
+      "timestamp": "2026-07-13T13:19:52.947Z",
+      "error_message": "Incorrect value in code",
+      "file": "src/assets/styles.css",
+      "root_cause": "Had \"vue-sonner/style.css\"",
+      "fix": "Changed to \"sonner/dist/styles.css\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "css"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-13T13:19:52.947Z"
+    },
+    {
+      "id": "bug-064",
+      "timestamp": "2026-07-13T14:45:43.005Z",
+      "error_message": "Significant refactor of ",
+      "file": "src/i18n/index.ts",
+      "root_cause": "5 lines replaced/restructured",
+      "fix": "Rewrote 8→13 lines (5 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-13T14:45:43.005Z"
+    },
+    {
+      "id": "bug-065",
+      "timestamp": "2026-07-13T14:49:08.113Z",
+      "error_message": "Null/undefined access in ",
+      "file": "src/views/GameData.tsx",
+      "root_cause": "Property access on potentially null/undefined value",
+      "fix": "Added null safety (optional chaining or null check)",
+      "tags": [
+        "auto-detected",
+        "null-safety",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-13T14:49:08.113Z"
+    },
+    {
+      "id": "bug-066",
+      "timestamp": "2026-07-13T14:49:22.466Z",
+      "error_message": "Significant refactor of ",
+      "file": "src/views/GameData.tsx",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 29→39 lines (2 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-13T14:49:22.466Z"
+    },
+    {
+      "id": "bug-067",
+      "timestamp": "2026-07-13T15:12:37.307Z",
+      "error_message": "CSS fix: last",
+      "file": "src/views/components/NFormWrapper.tsx",
+      "root_cause": "last: border-b-0 md:flex-row md:items-start\" → border-b-0 md:flex-row md:items-center\"",
+      "fix": "Changed last: border-b-0 md:flex-row md:items-start\" → border-b-0 md:flex-row md:items-center\"",
+      "tags": [
+        "auto-detected",
+        "style-fix",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-13T15:12:37.307Z"
+    },
+    {
+      "id": "bug-068",
+      "timestamp": "2026-07-13T15:18:57.245Z",
+      "error_message": "CSS fix: name",
+      "file": "src/views/ResourcesMaps.tsx",
+      "root_cause": "name: shouldEnable → getDisplayName(item.name)",
+      "fix": "Changed name: shouldEnable → getDisplayName(item.name)",
+      "tags": [
+        "auto-detected",
+        "style-fix",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-07-13T15:19:26.719Z"
+    },
+    {
+      "id": "bug-069",
+      "timestamp": "2026-07-13T15:19:48.157Z",
+      "error_message": "Missing error handling in unknown",
+      "file": "src/views/ResourcesMaps.tsx",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
+      "fix": "Added try/catch block",
+      "tags": [
+        "auto-detected",
+        "error-handling",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-13T15:19:48.157Z"
+    },
+    {
+      "id": "bug-070",
+      "timestamp": "2026-07-13T15:26:03.405Z",
+      "error_message": "Incorrect value in code",
+      "file": "src/views/ResourcesMaps.tsx",
+      "root_cause": "Had \"flex cursor-pointer items-center gap-3 px-4 py-2.",
+      "fix": "Changed to \"flex cursor-pointer items-center gap-3 px-4 py-2.",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-13T15:26:03.405Z"
+    },
+    {
+      "id": "bug-071",
+      "timestamp": "2026-07-13T15:26:17.419Z",
+      "error_message": "Incorrect value in code",
+      "file": "src/views/ResourcesPageBase.tsx",
+      "root_cause": "Had \"flex cursor-pointer items-center gap-3 px-4 py-2.",
+      "fix": "Changed to \"flex cursor-pointer items-center gap-3 px-4 py-2.",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-13T15:26:17.419Z"
+    },
+    {
+      "id": "bug-072",
+      "timestamp": "2026-07-13T15:26:24.815Z",
+      "error_message": "Incorrect value in code",
+      "file": "src/views/GameData.tsx",
+      "root_cause": "Had \"flex items-center gap-3 px-4 py-2.5\"",
+      "fix": "Changed to \"flex cursor-pointer items-center gap-3 px-4 py-2.",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-13T15:26:24.815Z"
+    },
+    {
+      "id": "bug-073",
+      "timestamp": "2026-07-13T15:29:21.348Z",
+      "error_message": "CSS fix: hover",
+      "file": "src/views/ResourcesPageBase.tsx",
+      "root_cause": "hover: text-destructive\" → bg-red-50 hover:text-red-700 dark:hover:bg-red-950/40\"",
+      "fix": "Changed hover: text-destructive\" → bg-red-50 hover:text-red-700 dark:hover:bg-red-950/40\"",
+      "tags": [
+        "auto-detected",
+        "style-fix",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-13T15:29:21.348Z"
     }
   ]
 }

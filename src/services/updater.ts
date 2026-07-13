@@ -4,7 +4,7 @@ import { t } from "@/i18n";
 
 export async function checkForUpdate(): Promise<void> {
   try {
-    const update = await check({ timeout: 15 * 1000 }); // timeout in 15s
+    const update = await check({ timeout: 15 * 1000 });
     if (update) {
       showUpdateDialog(update);
     } else {
@@ -16,7 +16,7 @@ export async function checkForUpdate(): Promise<void> {
   }
 }
 
-function showUpdateDialog(update: Update) {
+function showUpdateDialog(update: Update): void {
   const version = update.version;
   const notes = update.body ?? "";
 
@@ -30,7 +30,7 @@ function showUpdateDialog(update: Update) {
     positiveText: t("updater.updateNow"),
     negativeText: t("updater.later"),
     onPositiveClick: () => {
-      downloadAndInstall(update);
+      void downloadAndInstall(update);
       return false;
     },
     onClose: () => {
@@ -39,13 +39,11 @@ function showUpdateDialog(update: Update) {
   });
 }
 
-async function downloadAndInstall(update: Update) {
+async function downloadAndInstall(update: Update): Promise<void> {
   const msg = message.loading(t("updater.downloading"), { duration: 0 });
-
   try {
     let downloaded = 0;
     let total = 0;
-
     await update.downloadAndInstall(event => {
       switch (event.event) {
         case "Started":
@@ -67,7 +65,6 @@ async function downloadAndInstall(update: Update) {
           break;
       }
     });
-
     msg.destroy();
     message.success(t("updater.installing"));
   } catch (e) {

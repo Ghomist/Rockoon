@@ -211,3 +211,109 @@
 | 20:01 | Edited src/assets/styles.css | CSS: background-image, background-size | ~78 |
 | 20:02 | Edited src/App.vue | reduced (-10 lines) | ~75 |
 | 20:02 | Edited src/assets/styles.css | removed 12 lines | ~11 |
+| 20:15 | Created package.json | — | ~747 |
+| 20:16 | Created vite.config.ts | — | ~282 |
+| 20:16 | Created tsconfig.json | — | ~204 |
+| 20:16 | Created components.json | — | ~124 |
+| 20:18 | Created src/main.tsx | — | ~100 |
+| 20:19 | Edited package.json | 3→2 lines | ~19 |
+| 20:20 | Edited index.html | inline fix | ~15 |
+| 20:22 | Created src/i18n/index.ts | — | ~815 |
+| 20:23 | Created src/stores/pref.ts | — | ~355 |
+| 20:23 | Created src/stores/app.ts | — | ~446 |
+| 20:23 | Created src/stores/profiles.ts | — | ~3221 |
+| 20:24 | Created src/utils/ui/dialog-store.ts | — | ~622 |
+| 20:24 | Created src/utils/ui/feedback.ts | — | ~573 |
+| 20:24 | Created src/stores/index.ts | — | ~550 |
+| 20:24 | Created src/services/launcher.ts | — | ~692 |
+| 20:24 | Created src/services/brp.ts | — | ~746 |
+| 20:24 | Created src/services/updater.ts | — | ~647 |
+| 20:25 | Edited src/stores/pref.ts | added 1 import(s) | ~52 |
+| 20:25 | Edited src/stores/pref.ts | 9→11 lines | ~80 |
+| 20:25 | Edited src/stores/app.ts | modified loadInstance() | ~455 |
+| 20:26 | Edited src/stores/index.ts | modified async() | ~503 |
+| 20:29 | Created src/views/Start.tsx | — | ~134 |
+| 20:29 | Created src/views/Settings.tsx | — | ~74 |
+| 20:29 | Created src/views/GameConfig.tsx | — | ~74 |
+| 20:29 | Created src/views/GameData.tsx | — | ~73 |
+| 20:29 | Created src/views/ResourcesMaps.tsx | — | ~74 |
+| 20:29 | Created src/views/ResourcesMods.tsx | — | ~74 |
+| 20:29 | Created src/views/ResourcesSkys.tsx | — | ~76 |
+| 20:30 | Created src/routers/menu.ts | — | ~633 |
+| 20:30 | Created src/routers/index.tsx | — | ~223 |
+| 20:30 | Created src/components/TitleBarControls.tsx | — | ~557 |
+| 20:30 | Edited src/components/TitleBarControls.tsx | 3→3 lines | ~46 |
+| 20:30 | Edited src/components/TitleBarControls.tsx | removed 7 lines | ~10 |
+| 20:31 | Created src/components/AppSidebar.tsx | — | ~2089 |
+| 20:31 | Created src/components/GlobalDialogHost.tsx | — | ~810 |
+| 20:31 | Edited src/components/GlobalDialogHost.tsx | added 1 import(s) | ~115 |
+| 20:32 | Edited src/components/GlobalDialogHost.tsx | 6→4 lines | ~7 |
+| 20:32 | Created src/views/Onboarding.tsx | — | ~826 |
+| 20:33 | Created src/main.tsx | — | ~434 |
+| 20:34 | Edited src/routers/index.tsx | CSS: items, out | ~316 |
+| 20:34 | Edited src/main.tsx | 3→3 lines | ~41 |
+| 20:35 | Edited src/main.tsx | 1→5 lines | ~25 |
+| 20:36 | Created src/App.tsx | — | ~3002 |
+| 20:36 | Edited src/App.tsx | 41→38 lines | ~382 |
+| 20:37 | Edited src/App.tsx | CSS: route | ~744 |
+| 20:37 | Edited src/App.tsx | 14→11 lines | ~79 |
+| 20:38 | Edited src/App.tsx | 10→9 lines | ~103 |
+| 20:38 | Edited src/views/Onboarding.tsx | 5→4 lines | ~60 |
+| 20:43 | Created src/views/components/key.ts | — | ~1188 |
+| 20:44 | Created src/views/components/VirtualKeyboard.tsx | — | ~545 |
+| 20:44 | Created src/views/components/NFormWrapper.tsx | — | ~3057 |
+| 20:45 | Edited src/views/components/NFormWrapper.tsx | 3→8 lines | ~42 |
+| 20:45 | Edited src/views/components/NFormWrapper.tsx | added 1 condition(s) | ~130 |
+| 20:45 | Created src/views/components/FormSection.tsx | — | ~311 |
+| 20:45 | Created src/views/components/SettingsNav.tsx | — | ~378 |
+| 20:46 | Created src/views/components/ListViewPage.tsx | — | ~211 |
+| 20:46 | Created src/utils/ui/waitForInstance.ts | — | ~318 |
+| 20:47 | Edited src/views/components/NFormWrapper.tsx | 6→6 lines | ~68 |
+| 20:47 | Edited src/views/components/NFormWrapper.tsx | 25→29 lines | ~308 |
+| 20:52 | Created src/views/Start.tsx | — | ~2036 |
+| 20:53 | Created src/views/Settings.tsx | — | ~1777 |
+| 20:54 | Created src/views/GameConfig.tsx | — | ~5005 |
+| 20:54 | Created src/views/GameData.tsx | — | ~1534 |
+| 20:55 | Edited src/views/GameConfig.tsx | 4→3 lines | ~12 |
+| 20:57 | Created src/views/components/TreeItem.tsx | — | ~673 |
+| 20:58 | Created src/views/components/DirectoryTreeDialog.tsx | — | ~1583 |
+| 20:58 | Created src/views/components/SkyboxPreview.tsx | — | ~1503 |
+| 20:59 | Edited src/views/components/DirectoryTreeDialog.tsx | 8→8 lines | ~50 |
+| 20:59 | Edited src/views/components/DirectoryTreeDialog.tsx | CSS: currentPath | ~42 |
+| 21:00 | Created src/views/ResourcesPageBase.tsx | — | ~2022 |
+| 21:00 | Created src/views/ResourcesMods.tsx | — | ~41 |
+| 21:02 | Created src/views/ResourcesMaps.tsx | — | ~4218 |
+| 21:02 | Created src/views/ResourcesSkys.tsx | — | ~3842 |
+| 21:03 | Edited src/i18n/index.ts | added 5 condition(s) | ~351 |
+| 21:04 | Edited src/views/ResourcesSkys.tsx | inline fix | ~22 |
+| 21:07 | Created eslint.config.js | — | ~1027 |
+| 21:17 | Edited eslint.config.js | 14→15 lines | ~96 |
+| 21:17 | Edited eslint.config.js | 2→3 lines | ~54 |
+| 21:18 | Edited eslint.config.js | 9→6 lines | ~67 |
+| 21:18 | Edited eslint.config.js | 24→27 lines | ~158 |
+| 21:19 | Edited src/assets/styles.css | "vue-sonner/style.css" → "sonner/dist/styles.css" | ~10 |
+| 22:38 | Created src/main.tsx | — | ~438 |
+| 22:45 | Edited src/i18n/index.ts | keys() → langs() | ~166 |
+| 22:49 | Edited src/views/GameData.tsx | added optional chaining | ~93 |
+| 22:49 | Edited src/views/GameData.tsx | expanded (+10 lines) | ~465 |
+| 22:52 | Edited src/App.tsx | 1→4 lines | ~34 |
+| 22:56 | Edited src/App.tsx | CSS: -webkit-app-region | ~23 |
+| 23:00 | Edited src/App.tsx | 20→20 lines | ~229 |
+| 23:08 | Edited src/components/ui/button.tsx | modified Button() | ~164 |
+| 23:10 | Edited src/App.tsx | inline fix | ~16 |
+| 23:12 | Edited src/views/components/NFormWrapper.tsx | 7→7 lines | ~82 |
+| 23:18 | Edited src/types/store.d.ts | 3→6 lines | ~32 |
+| 23:18 | Edited src/stores/pref.ts | 3→4 lines | ~27 |
+| 23:18 | Edited src/i18n/languages/zh.json | 3→5 lines | ~33 |
+| 23:18 | Edited src/i18n/languages/en.json | 3→5 lines | ~39 |
+| 23:18 | Edited src/views/ResourcesMaps.tsx | expanded (+7 lines) | ~242 |
+| 23:18 | Edited src/views/ResourcesMaps.tsx | added 2 condition(s) | ~677 |
+| 23:19 | Edited src/views/ResourcesMaps.tsx | modified loadDirectory() | ~860 |
+| 23:19 | Edited src/views/ResourcesMaps.tsx | removed 76 lines | ~11 |
+| 23:19 | Edited src/views/ResourcesMaps.tsx | added 2 condition(s) | ~443 |
+| 23:22 | Edited src/views/ResourcesMaps.tsx | 11→12 lines | ~125 |
+| 23:26 | Edited src/views/ResourcesMaps.tsx | "flex cursor-pointer items" → "flex cursor-pointer items" | ~31 |
+| 23:26 | Edited src/views/ResourcesPageBase.tsx | "flex cursor-pointer items" → "flex cursor-pointer items" | ~31 |
+| 23:26 | Edited src/views/GameData.tsx | "flex items-center gap-3 p" → "flex cursor-pointer items" | ~31 |
+| 23:29 | Edited src/views/ResourcesPageBase.tsx | CSS: dark | ~118 |
+| 23:33 | Edited src/routers/menu.ts | reduced (-7 lines) | ~139 |

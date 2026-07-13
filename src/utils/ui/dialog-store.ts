@@ -1,4 +1,5 @@
-import { ref } from "vue";
+import { create } from "zustand";
+import type { ReactNode } from "react";
 
 export type DialogVariant =
   | "default"
@@ -9,7 +10,7 @@ export type DialogVariant =
 
 export interface DialogOptions {
   title?: string;
-  content?: string | (() => unknown);
+  content?: string | (() => ReactNode);
   positiveText?: string;
   negativeText?: string;
   onPositiveClick?: () => void | boolean | Promise<void | boolean>;
@@ -22,40 +23,67 @@ export interface DialogInstance extends DialogOptions {
   variant: DialogVariant;
 }
 
-const dialogs = ref<DialogInstance[]>([]);
+interface DialogState {
+  dialogs: DialogInstance[];
+  open: (variant: DialogVariant, opts: DialogOptions) => void;
+  confirm: (id: number) => Promise<void>;
+  cancel: (id: number) => Promise<void>;
+  dismiss: (id: number) => void;
+  closeAll: () => void;
+}
+
 let nextId = 1;
 
-const close = (id: number) => {
-  const idx = dialogs.value.findIndex(d => d.id === id);
-  if (idx === -1) return;
-  const [removed] = dialogs.value.splice(idx, 1);
-  removed?.onClose?.();
+const close = (
+  dialogs: DialogInstance[],
+  id: number
+): { next: DialogInstance[]; onClose?: () => void } => {
+  const removed = dialogs.find(d => d.id === id);
+  return {
+    next: dialogs.filter(d => d.id !== id),
+    onClose: removed?.onClose
+  };
 };
 
-export const dialogApi = {
-  list: dialogs,
-  open(variant: DialogVariant, opts: DialogOptions) {
-    dialogs.value.push({ id: nextId++, variant, ...opts });
+export const useDialogStore = create<DialogState>((set, get) => ({
+  dialogs: [],
+
+  open(variant, opts) {
+    set(s => ({ dialogs: [...s.dialogs, { id: nextId++, variant, ...opts }] }));
   },
-  async confirm(id: number) {
-    const d = dialogs.value.find(x => x.id === id);
+
+  async confirm(id) {
+    const d = get().dialogs.find(x => x.id === id);
     if (!d) return;
-    // Naive-UI compatibility: returning false keeps the dialog open.
+    // Naive-UI compat: returning false keeps the dialog open.
     const result = await d.onPositiveClick?.();
     if (result === false) return;
-    close(id);
+    const { next, onClose } = close(get().dialogs, id);
+    set({ dialogs: next });
+    onClose?.();
   },
-  async cancel(id: number) {
-    const d = dialogs.value.find(x => x.id === id);
+
+  async cancel(id) {
+    const d = get().dialogs.find(x => x.id === id);
     if (!d) return;
     try {
       await d.onNegativeClick?.();
     } finally {
-      close(id);
+      const { next, onClose } = close(get().dialogs, id);
+      set({ dialogs: next });
+      onClose?.();
     }
   },
-  dismiss: close,
+
+  dismiss(id) {
+    const { next, onClose } = close(get().dialogs, id);
+    set({ dialogs: next });
+    onClose?.();
+  },
+
   closeAll() {
-    while (dialogs.value.length) close(dialogs.value[0].id);
+    const all = get().dialogs;
+    set({ dialogs: [] });
+    for (const d of all) d.onClose?.();
   }
-};
+}));

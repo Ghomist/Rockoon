@@ -71,6 +71,9 @@ type PreferenceStore = {
 
   /** 游戏内 MOTD 内容 */
   ingameMotdContent: string;
+
+  /** 点击地图行时是否弹出确认启动对话框 */
+  confirmLaunchMap: boolean;
 };
 
 type ProfileStore = {

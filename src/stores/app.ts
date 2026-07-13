@@ -1,41 +1,47 @@
+import { create } from "zustand";
+import { subscribeWithSelector } from "zustand/middleware";
 import { instanceBackend } from "@/backend/instance";
-import { acceptHMRUpdate, defineStore } from "pinia";
 import { usePrefStore } from "./pref";
 
-export const useAppStore = defineStore("app", {
-  state: (): AppStore => ({
+interface AppState {
+  selectedInstanceData: InstanceData | undefined;
+  runningInstancePid: number | undefined;
+  runningInstancePath: string | undefined;
+  runningInstanceTimestamp: number;
+  loadInstance: (path: string) => Promise<boolean>;
+  updateInstanceRunningTime: () => void;
+}
+
+export const useAppStore = create<AppState>()(
+  subscribeWithSelector((set, get) => ({
     selectedInstanceData: undefined,
     runningInstancePid: undefined,
     runningInstancePath: undefined,
-    runningInstanceTimestamp: 0
-  }),
-  actions: {
-    /** 加载单一实例的 InstanceData 并安装 RockoonIO mod */
-    async loadInstance(path: string) {
+    runningInstanceTimestamp: 0,
+
+    /** Load the single instance's InstanceData and install RockoonIO mod. */
+    async loadInstance(path) {
       const newInstanceData = await instanceBackend.getInstanceData(path);
       if (newInstanceData) {
-        this.selectedInstanceData = newInstanceData;
+        set({ selectedInstanceData: newInstanceData });
         instanceBackend.installRockoonMod(newInstanceData);
         return true;
       }
       return false;
     },
+
     updateInstanceRunningTime() {
-      if (this.runningInstancePath && this.runningInstanceTimestamp > 0) {
-        const prefStore = usePrefStore();
-        const elapsedSeconds = Math.floor(
-          (Date.now() - this.runningInstanceTimestamp) / 1000
-        );
-        if (elapsedSeconds > 0) {
-          prefStore.playtime += elapsedSeconds;
-          this.runningInstanceTimestamp = Date.now();
-        }
+      const { runningInstancePath, runningInstanceTimestamp } = get();
+      if (!runningInstancePath || runningInstanceTimestamp <= 0) return;
+      const elapsedSeconds = Math.floor(
+        (Date.now() - runningInstanceTimestamp) / 1000
+      );
+      if (elapsedSeconds > 0) {
+        usePrefStore.setState(prev => ({
+          playtime: prev.playtime + elapsedSeconds
+        }));
+        set({ runningInstanceTimestamp: Date.now() });
       }
     }
-  }
-});
-
-// 热更新
-if (import.meta.hot) {
-  import.meta.hot.accept(acceptHMRUpdate(useAppStore, import.meta.hot));
-}
+  }))
+);

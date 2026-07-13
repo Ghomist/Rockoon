@@ -417,7 +417,9 @@
       "error": "Failed to create folder"
     },
     "launch": {
-      "button": "Launch"
+      "button": "Launch",
+      "confirmMessage": "Launch map {name}?",
+      "dontAskAgain": "Don't ask again"
     },
     "move": {
       "button": "Move",

@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-07-13T12:02:52.001Z
-> Files: 358 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-07-13T15:33:48.678Z
+> Files: 383 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ./
 
@@ -13,19 +13,19 @@
 - `.stylelintignore` (~14 tok)
 - `AGENTS.md` — AGENTS.md (~1715 tok)
 - `CLAUDE.md` — OpenWolf (~1516 tok)
-- `components.json` (~120 tok)
+- `components.json` (~124 tok)
 - `DEV.md` — DEV (~32 tok)
-- `eslint.config.js` — ESLint flat configuration (~1506 tok)
+- `eslint.config.js` (~1044 tok)
 - `index.html` — Rockoon (~99 tok)
-- `package.json` — Node.js package manifest (~755 tok)
+- `package.json` — Node.js package manifest (~739 tok)
 - `pnpm-lock.yaml` — pnpm lock file (~38432 tok)
 - `pnpm-workspace.yaml` (~22 tok)
 - `README.md` — Project documentation (~451 tok)
 - `stylelint.config.js` — @ts-check (~574 tok)
 - `TODO.md` — TODO (~254 tok)
-- `tsconfig.json` — TypeScript configuration (~207 tok)
+- `tsconfig.json` — TypeScript configuration (~204 tok)
 - `tsconfig.node.json` (~64 tok)
-- `vite.config.ts` — Declares host (~280 tok)
+- `vite.config.ts` — Declares host (~282 tok)
 
 ## .claude/
 
@@ -374,13 +374,15 @@
 
 ## src/
 
+- `App.tsx` — Compute dark-mode state from pref.theme + system preference. (~2837 tok)
 - `App.vue` — Vue component (~2404 tok)
 - `main.ts` — Declares app (~330 tok)
+- `main.tsx` — Register console hooks → forward to Rust log stream. (~438 tok)
 - `vite-env.d.ts` — / <reference types="vite/client" /> (~82 tok)
 
 ## src/assets/
 
-- `styles.css` — Styles: 7 rules, 105 vars (~1382 tok)
+- `styles.css` — Styles: 7 rules, 105 vars (~1383 tok)
 - `styles.scss` — Styles: 2 rules, 4 vars (~139 tok)
 - `ui-fix.scss` — Styles: 3 rules (~60 tok)
 
@@ -392,9 +394,16 @@
 
 ## src/components/
 
+- `AppSidebar.tsx` — resolveIcon (~2089 tok)
 - `AppSidebar.vue` — Vue: setup (~1694 tok)
+- `GlobalDialogHost.tsx` — Renders all open dialogs from the store. Mount once at the app root. (~810 tok)
 - `GlobalDialogHost.vue` — Vue: setup (~638 tok)
+- `TitleBarControls.tsx` — Minimize / Maximize-Restore / Close window controls. (~528 tok)
 - `TitleBarControls.vue` — Vue: setup (~430 tok)
+
+## src/components/ui/
+
+- `button.tsx` — buttonVariants (~708 tok)
 
 ## src/components/ui/animated-grid-pattern/
 
@@ -408,12 +417,12 @@
 
 ## src/i18n/
 
-- `index.ts` — Detect system locale (~318 tok)
+- `index.ts` — Resolve a dotted key (e.g. "menu.game") against the message tree. (~1080 tok)
 
 ## src/i18n/languages/
 
-- `en.json` — Declares language (~3951 tok)
-- `zh.json` (~2983 tok)
+- `en.json` — Declares language (~3976 tok)
+- `zh.json` (~3004 tok)
 
 ## src/lib/
 
@@ -422,23 +431,24 @@
 ## src/routers/
 
 - `index.ts` — Exports router (~267 tok)
-- `menu.ts` — Exports MenuItem, ExternalLinkItem, getExternalLinks, getMenuItems (~649 tok)
+- `index.tsx` — Build the route tree from `getMenuItems()`. (~316 tok)
+- `menu.ts` — Exports MenuItem, ExternalLinkItem, getExternalLinks, getMenuItems (~582 tok)
 
 ## src/services/
 
-- `brp.ts` — Render a short description of what the manifest contains, for notifications. (~831 tok)
+- `brp.ts` — Render a short description of what the manifest contains, for notifications. (~746 tok)
 - `hub.ts` — Exports fetchMaps, fetchMap, fetchTags, getDownloadUrl + 14 more (~1324 tok)
-- `launcher.ts` — Exports useLauncherService (~636 tok)
-- `updater.ts` — Exports checkForUpdate (~669 tok)
+- `launcher.ts` — Launch the Ballance Player.exe for the selected instance. (~692 tok)
+- `updater.ts` — Exports checkForUpdate (~647 tok)
 
 ## src/stores/
 
-- `app.ts` — 加载单一实例的 InstanceData 并安装 RockoonIO mod (~368 tok)
+- `app.ts` — Load the single instance's InstanceData and install RockoonIO mod. (~455 tok)
 - `hub.ts` — Exports useHubStore (~242 tok)
-- `index.ts` — Exports initStores (~430 tok)
+- `index.ts` — Wire up store subscriptions and load initial state. (~503 tok)
 - `instances.ts` — Exports useInstancesStore (~499 tok)
-- `pref.ts` — Exports PREF_STORE_KEY, usePrefStore (~400 tok)
-- `profiles.ts` — 需要捕获禁用状态的资源目录 + 扩展名 (~2881 tok)
+- `pref.ts` — Persist the entire store state to localStorage. (~393 tok)
+- `profiles.ts` — Resource dirs whose disable-state we capture per-profile. (~3221 tok)
 
 ## src/types/
 
@@ -447,7 +457,7 @@
 - `common.d.ts` — Declares HintType (~14 tok)
 - `file.d.ts` — 由启动器管理的文件类型/数据 (~192 tok)
 - `hub.d.ts` — Declares HubMapResponse (~258 tok)
-- `store.d.ts` — 当前选中的实例信息 (~411 tok)
+- `store.d.ts` — 当前选中的实例信息 (~428 tok)
 
 ## src/utils/
 
@@ -458,34 +468,52 @@
 
 ## src/utils/ui/
 
-- `dialog-store.ts` — Exports DialogVariant, DialogOptions, DialogInstance, dialogApi (~430 tok)
-- `feedback.ts` — Drop-in replacement for Naive UI's discrete `message` API. (~567 tok)
+- `dialog-store.ts` — Exports DialogVariant, DialogOptions, DialogInstance, useDialogStore (~622 tok)
+- `feedback.ts` — Drop-in replacement for Naive UI's discrete `message` API. (~573 tok)
 - `router.ts` — Exports waitForSelectedInstance (~238 tok)
+- `waitForInstance.ts` — Subscribes to selectedInstanceData. When available, calls `initFn` once. (~318 tok)
 
 ## src/views/
 
+- `GameConfig.tsx` — mutateOptions (~5000 tok)
 - `GameConfig.vue` — Vue: setup (~5226 tok)
+- `GameData.tsx` — mutateOptions — renders table, modal (~1686 tok)
 - `GameData.vue` — Vue: setup (~1158 tok)
 - `Instances.vue` — Vue: setup, TS (~1343 tok)
+- `Onboarding.tsx` — Initial instance picker shown when no Ballance install is configured. (~809 tok)
 - `Onboarding.vue` — Vue: setup (~666 tok)
+- `ResourcesMaps.tsx` — Launch a map file, optionally with a confirm dialog (skippable via pref). (~4368 tok)
 - `ResourcesMaps.vue` — Vue: setup (~3389 tok)
+- `ResourcesMods.tsx` — ResourcesMods (~41 tok)
 - `ResourcesMods.vue` — Vue: setup, TS (~43 tok)
+- `ResourcesPageBase.tsx` — resourcePageSchema (~1987 tok)
 - `ResourcesPageBase.vue` — Vue: BRP, setup (~1772 tok)
+- `ResourcesSkys.tsx` — LEVEL_LETTERS — renders modal (~3845 tok)
 - `ResourcesSkys.vue` — Vue: Archive, setup (~3263 tok)
+- `Settings.tsx` — usePrefFields (~1777 tok)
 - `Settings.vue` — Vue: setup (~1436 tok)
+- `Start.tsx` — resolveIcon (~2036 tok)
 - `Start.vue` — Vue: setup (~1699 tok)
 
 ## src/views/components/
 
+- `DirectoryTreeDialog.tsx` — buildTree — renders modal (~1588 tok)
 - `DirectoryTreeDialog.vue` — Vue: setup (~1364 tok)
+- `FormSection.tsx` — FormSection (~311 tok)
 - `FormSection.vue` — Vue: setup (~247 tok)
-- `key.ts` — Database 按键（布局）映射 (~1225 tok)
+- `key.ts` — Database 按键（布局）映射 (~1188 tok)
+- `ListViewPage.tsx` — ListViewPage (~211 tok)
 - `ListViewPage.vue` — Vue: setup (~157 tok)
 - `MgcIcon.vue` — Vue: setup, TS, 3 props (~148 tok)
+- `NFormWrapper.tsx` — Reactive field handle. Replaces Vue's MaybeRef pattern. (~3059 tok)
 - `NFormWrapper.vue` — Vue: setup (~2430 tok)
+- `SettingsNav.tsx` — SettingsNav (~378 tok)
 - `SettingsNav.vue` — Vue: setup (~285 tok)
+- `SkyboxPreview.tsx` — INITIAL_ROTATION_X (~1503 tok)
 - `SkyboxPreview.vue` — Vue: setup, TS, 4 props (~1887 tok)
+- `TreeItem.tsx` — TreeItem (~673 tok)
 - `TreeItem.vue` — Vue: setup (~574 tok)
+- `VirtualKeyboard.tsx` — VirtualKeyboard (~545 tok)
 - `VirtualKeyboard.vue` — Vue: setup (~447 tok)
 
 ## src/views/hub/

@@ -74,8 +74,7 @@ const fs = {
     invoke<undefined>("download_file", { url, savePath }),
   writeFile: (path: string, data: number[]) =>
     invoke<undefined>("write_file", { path, data }),
-  readTextFile: (path: string) =>
-    invoke<string>("read_text_file", { path }),
+  readTextFile: (path: string) => invoke<string>("read_text_file", { path }),
   writeTextFile: (path: string, content: string) =>
     invoke<undefined>("write_text_file", { path, content }),
   // BRP (Ballance Resource Package)

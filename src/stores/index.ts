@@ -1,50 +1,54 @@
 import backend from "@/backend";
 import { switchLanguage } from "@/i18n";
-import { router } from "@/routers";
 import { withDebounce } from "@/utils/common";
 import { join } from "@tauri-apps/api/path";
-import { watch } from "vue";
 import { useAppStore } from "./app";
 import { usePrefStore } from "./pref";
 import { useProfilesStore } from "./profiles";
 
-export const initStores = async () => {
-  const appStore = useAppStore();
-  const prefStore = usePrefStore();
-  const profilesStore = useProfilesStore();
+/**
+ * Wire up store subscriptions and load initial state.
+ * Call once on app startup. Router restoration is left to the App component
+ * (needs access to the router instance).
+ */
+export const initStores = async (): Promise<void> => {
+  const prefStore = usePrefStore.getState();
 
-  // pref 自动保存（含 instancePath、playtime 等）
-  prefStore.$subscribe(withDebounce(prefStore.save));
+  // 1. Persist pref to localStorage (debounced).
+  usePrefStore.subscribe(withDebounce(() => usePrefStore.getState().save()));
 
-  // 加载单一实例 + 配置档
+  // 2. Load single instance + profiles.
   if (prefStore.instancePath) {
-    await appStore.loadInstance(prefStore.instancePath);
-    if (appStore.selectedInstanceData) {
-      await profilesStore.load();
+    const ok = await useAppStore
+      .getState()
+      .loadInstance(prefStore.instancePath);
+    if (ok) {
+      await useProfilesStore.getState().load();
     }
   }
 
-  // 恢复上次路由（未配置实例时由 App.vue 显示引导页）
-  if (appStore.selectedInstanceData && prefStore.route) {
-    const target = router.resolve(prefStore.route).matched.length
-      ? prefStore.route
-      : "/game";
-    router.replace(target);
-  }
-
-  // 语言切换
-  watch(() => prefStore.language, switchLanguage);
+  // 3. Sync initial language.
   switchLanguage(prefStore.language);
 
-  // 实例选项深监听 → 自动写回 Database.tdb
-  watch(
-    () => appStore.selectedInstanceData?.options,
-    async () => {
-      if (!appStore.selectedInstanceData) return;
-      const instance = appStore.selectedInstanceData;
-      const dbPath = await join(instance.path, "Database.tdb");
-      await backend.saveOptions(dbPath, instance.options);
-    },
-    { deep: true }
+  // 4. Subscribe to language changes (selector form needs subscribeWithSelector).
+  usePrefStore.subscribe(
+    s => s.language,
+    lang => switchLanguage(lang)
+  );
+
+  // 5. selectedInstanceData.options changes → write back to Database.tdb.
+  //    applyState produces a new options object, so reference equality is enough.
+  useAppStore.subscribe(
+    s => s.selectedInstanceData?.options,
+    async o => {
+      const instance = useAppStore.getState().selectedInstanceData;
+      if (!instance || !o) return;
+      try {
+        const dbPath = await join(instance.path, "Database.tdb");
+        await backend.saveOptions(dbPath, instance.options);
+      } catch {
+        // ignore: instance may have been torn down
+      }
+    }
   );
 };

@@ -1,6 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
-@import "vue-sonner/style.css";
+@import "sonner/dist/styles.css";
 
 @custom-variant dark (&:is(.dark *));
 
