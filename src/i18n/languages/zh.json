@@ -210,6 +210,7 @@
   "common": {
     "none": "无",
     "unknown": "未知",
+    "advanced": "高级",
     "dialog": {
       "confirm": "确认",
       "cancel": "取消"
@@ -234,12 +235,15 @@
   "gameConfig": {
     "selectInstance": "请先选择一个游戏实例",
     "openConfigFile": "打开配置文件",
-    "tabs": {
-      "game": "游戏性",
-      "window": "窗口",
+    "nav": {
+      "display": "显示",
+      "audio": "声音",
+      "controls": "操作",
+      "gameplay": "玩法",
+      "compat": "兼容性",
       "graphics": "图形",
-      "startup": "启动",
-      "inGameOptions": "游戏内设置"
+      "advanced": "高级",
+      "startup": "启动"
     },
     "game": {
       "language": {

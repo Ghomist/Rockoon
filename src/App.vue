@@ -1,143 +1,95 @@
 <script lang="ts" setup>
-import {
-  darkTheme,
-  dateEnUS,
-  dateZhCN,
-  enUS,
-  lightTheme,
-  NAvatar,
-  NButton,
-  NConfigProvider,
-  NDropdown,
-  NFlex,
-  NInput,
-  NLayout,
-  NLayoutSider,
-  NMenu,
-  NScrollbar,
-  NText,
-  zhCN
-} from "naive-ui";
-import { computed, h, onMounted, onUnmounted, ref } from "vue";
+import { computed, h, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import {
   getCurrent as getCurrentDeepLink,
   onOpenUrl
 } from "@tauri-apps/plugin-deep-link";
-import BasicIcon from "./views/components/MgcIcon.vue";
-import { t } from "./i18n";
-import { getMenuOptions } from "./routers/menu";
-import { useAppStore } from "./stores/app";
-import { usePrefStore } from "./stores/pref";
-import { useProfilesStore } from "./stores/profiles";
-import { dialog, message } from "./utils/ui/feedback";
-import { useLauncherService } from "./services/launcher";
-import { useBrpService } from "./services/brp";
-import Onboarding from "./views/Onboarding.vue";
+import {
+  ChevronDown,
+  Check,
+  Plus,
+  Pencil,
+  Trash2
+} from "@lucide/vue";
+import { Toaster } from "@/components/ui/sonner";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import AppSidebar from "@/components/AppSidebar.vue";
+import GlobalDialogHost from "@/components/GlobalDialogHost.vue";
+import TitleBarControls from "@/components/TitleBarControls.vue";
+import { t } from "@/i18n";
+import { useAppStore } from "@/stores/app";
+import { usePrefStore } from "@/stores/pref";
+import { useProfilesStore } from "@/stores/profiles";
+import { dialog, message } from "@/utils/ui/feedback";
+import { useLauncherService } from "@/services/launcher";
+import { useBrpService } from "@/services/brp";
+import Onboarding from "@/views/Onboarding.vue";
 
 const app = useAppStore();
 const pref = usePrefStore();
 const profiles = useProfilesStore();
 const router = useRouter();
-const { checkRunningInstance, killInstance, launchInstance } =
-  useLauncherService();
+const { checkRunningInstance } = useLauncherService();
 const { importFromFile, importFromUrl } = useBrpService();
 
-const theme = computed(() => (pref.darkMode ? darkTheme : lightTheme));
-const locale = computed(() => (pref.language === "zh" ? zhCN : enUS));
-const dateLocale = computed(() =>
-  pref.language === "zh" ? dateZhCN : dateEnUS
+// --- Theme: drive .dark class on <html> from pref.darkMode ---
+watch(
+  () => pref.darkMode,
+  isDark => {
+    document.documentElement.classList.toggle("dark", isDark);
+  },
+  { immediate: true }
 );
 
-// menu related props
-const menuRef = ref<InstanceType<typeof NMenu>>();
+// --- Sidebar collapse ---
 const collapsed = ref(false);
-const selectedKey = ref("");
-const checkInterval = ref<ReturnType<typeof setInterval>>();
 
-// unlisten handles for global BRP listeners (drag-drop + deep-link)
+// --- Helpers ---
 let unlistenDragDrop: (() => void) | undefined;
 let unlistenDeepLink: (() => void) | undefined;
+const checkInterval = ref<ReturnType<typeof setInterval>>();
 
-/**
- * Parse and handle a rockoon:// deep-link URL.
- * Supported action: `rockoon://import?url=<encoded-brp-url>`
- */
 const handleDeepLinkUrl = (raw: string) => {
   try {
     const parsed = new URL(raw);
     if (parsed.protocol !== "rockoon:") return;
     if (parsed.host === "import") {
       const brpUrl = parsed.searchParams.get("url");
-      if (brpUrl) {
-        importFromUrl(brpUrl);
-      } else {
-        message.warning(t("brp.error.invalidFile"));
-      }
+      if (brpUrl) importFromUrl(brpUrl);
+      else message.warning(t("brp.error.invalidFile"));
     }
   } catch {
     // ignore malformed URLs
   }
 };
 
-const handleDeepLinkUrls = (urls: string[]) => {
-  urls.forEach(handleDeepLinkUrl);
-};
+const handleDeepLinkUrls = (urls: string[]) => urls.forEach(handleDeepLinkUrl);
 
-const onLaunchGame = async () => {
-  if (!app.selectedInstanceData) return;
-
-  if (app.runningInstancePid) {
-    const isRunning = await checkRunningInstance();
-    if (isRunning) {
-      message.warning(t("home.alreadyRunning"));
-      return;
-    }
-  }
-
-  await launchInstance();
-  message.success(t("home.launching"));
-};
-
-// profile dropdown
-const profileOptions = computed(() => [
-  ...profiles.profiles.map(p => ({
-    label: p.name,
-    key: `switch:${p.id}`,
-    icon:
-      p.id === profiles.currentProfile?.id
-        ? () => h(BasicIcon, { icon: "check-line" })
-        : undefined
-  })),
-  { type: "divider", key: "d" },
-  {
-    label: t("profile.create"),
-    key: "create",
-    icon: () => h(BasicIcon, { icon: "add-line" })
-  },
-  {
-    label: t("profile.rename"),
-    key: "rename",
-    icon: () => h(BasicIcon, { icon: "edit-line" })
-  },
-  {
-    label: t("profile.delete"),
-    key: "delete",
-    disabled: profiles.profiles.length <= 1,
-    icon: () => h(BasicIcon, { icon: "delete-2-line" })
-  }
-]);
-
-const promptName = (title: string, initial: string, onOk: (v: string) => void) => {
+// --- Profile management ---
+const promptName = (
+  title: string,
+  initial: string,
+  onOk: (v: string) => void
+) => {
   const inputValue = ref(initial);
   dialog.create({
     title,
     content: () =>
-      h(NInput, {
+      h(Input, {
         value: inputValue.value,
         placeholder: t("profile.namePlaceholder"),
-        onUpdateValue: (v: string) => {
+        "onUpdate:value": (v: string) => {
           inputValue.value = v;
         }
       }),
@@ -150,79 +102,72 @@ const promptName = (title: string, initial: string, onOk: (v: string) => void) =
   });
 };
 
-const onProfileSelect = async (key: string) => {
-  if (key.startsWith("switch:")) {
-    const id = key.slice("switch:".length);
-    if (id === profiles.currentProfile?.id) return;
-    const loading = message.loading(t("profile.switching"));
-    try {
-      await profiles.switchProfile(id);
-      message.success(t("profile.switched"));
-    } catch {
-      message.error(t("profile.switchFailed"));
-    } finally {
-      loading.destroy();
-    }
-  } else if (key === "create") {
-    promptName(t("profile.create"), t("profile.defaultName"), async name => {
-      await profiles.createProfile(name);
-      message.success(t("profile.created"));
-    });
-  } else if (key === "rename") {
-    const cur = profiles.currentProfile;
-    if (!cur) return;
-    promptName(t("profile.rename"), cur.name, async name => {
-      await profiles.renameProfile(cur.id, name);
-      message.success(t("profile.renamed"));
-    });
-  } else if (key === "delete") {
-    const cur = profiles.currentProfile;
-    if (!cur) return;
-    dialog.warning({
-      title: t("common.message.warning"),
-      content: t("profile.deleteConfirm", { name: cur.name }),
-      positiveText: t("common.dialog.confirm"),
-      negativeText: t("common.dialog.cancel"),
-      onPositiveClick: async () => {
-        await profiles.deleteProfile(cur.id);
-        message.success(t("profile.deleted"));
-      }
-    });
+const onSwitchProfile = async (id: string) => {
+  if (id === profiles.currentProfile?.id) return;
+  const loading = message.loading(t("profile.switching"));
+  try {
+    await profiles.switchProfile(id);
+    message.success(t("profile.switched"));
+  } catch {
+    message.error(t("profile.switchFailed"));
+  } finally {
+    loading.destroy();
   }
 };
 
-onMounted(async () => {
-  // react to route change
-  router.afterEach(() => {
-    const currentPath = router.currentRoute.value.path;
-
-    // update selected key
-    selectedKey.value = currentPath;
-
-    // remember latest route
-    pref.route = currentPath;
-
-    // auto-expand selected submenu
-    menuRef.value?.showOption(currentPath);
+const onCreateProfile = () =>
+  promptName(t("profile.create"), t("profile.defaultName"), async name => {
+    await profiles.createProfile(name);
+    message.success(t("profile.created"));
   });
 
-  // show welcome message
+const onRenameProfile = () => {
+  const cur = profiles.currentProfile;
+  if (!cur) return;
+  promptName(t("profile.rename"), cur.name, async name => {
+    await profiles.renameProfile(cur.id, name);
+    message.success(t("profile.renamed"));
+  });
+};
+
+const onDeleteProfile = () => {
+  const cur = profiles.currentProfile;
+  if (!cur) return;
+  dialog.warning({
+    title: t("common.message.warning"),
+    content: t("profile.deleteConfirm", { name: cur.name }),
+    positiveText: t("common.dialog.confirm"),
+    negativeText: t("common.dialog.cancel"),
+    onPositiveClick: async () => {
+      await profiles.deleteProfile(cur.id);
+      message.success(t("profile.deleted"));
+    }
+  });
+};
+
+const currentProfileName = computed(
+  () => profiles.currentProfile?.name ?? t("common.none")
+);
+const deleteDisabled = computed(() => profiles.profiles.length <= 1);
+
+// --- Lifecycle ---
+// Persist current route so we can restore it next launch.
+router.afterEach(to => {
+  pref.route = to.path;
+});
+
+onMounted(async () => {
   if (pref.showWelcome) {
-    setTimeout(() => {
-      message.info(t("message.welcome"));
-    }, 50);
+    setTimeout(() => message.info(t("message.welcome")), 50);
   }
 
-  // 定期检查游戏进程状态并保存游玩时间（每1秒检查一次）
+  // poll running instance status + update play time
   checkInterval.value = setInterval(() => {
     checkRunningInstance();
-    // 更新当前的游玩时间（即使游戏还在运行）
-    if (app.runningInstancePid) {
-      app.updateInstanceRunningTime();
-    }
+    if (app.runningInstancePid) app.updateInstanceRunningTime();
   }, 1000);
 
-  // BRP drag-drop: accept .brp / .zip anywhere in the window
+  // BRP drag-drop
   unlistenDragDrop = await getCurrentWebview().onDragDropEvent(event => {
     if (event.payload.type === "drop") {
       const brpFiles = event.payload.paths.filter(
@@ -232,122 +177,107 @@ onMounted(async () => {
     }
   });
 
-  // rockoon:// deep-link: handle while app is running
+  // rockoon:// deep-link
   unlistenDeepLink = await onOpenUrl(handleDeepLinkUrls);
-
-  // cold-start: app launched via rockoon:// — check startup URLs
   const startupUrls = await getCurrentDeepLink();
   if (startupUrls) handleDeepLinkUrls(startupUrls);
 });
 
 onUnmounted(() => {
-  // 清理定时器
-  if (checkInterval.value) {
-    clearInterval(checkInterval.value);
-  }
-  // 清理 BRP 监听器
+  if (checkInterval.value) clearInterval(checkInterval.value);
   unlistenDragDrop?.();
   unlistenDeepLink?.();
 });
 </script>
 
 <template>
-  <n-config-provider
-    :theme
-    :locale
-    :date-locale="dateLocale"
-    style="--main-ctn-h: calc(100vh - 52px)"
-  >
-    <template v-if="app.selectedInstanceData">
-      <n-layout
-        style="height: 52px; border-bottom: 1px solid rgb(239 239 245)"
+  <Toaster rich-colors close-button position="top-right" />
+  <GlobalDialogHost />
+
+  <template v-if="app.selectedInstanceData">
+    <div class="flex h-screen flex-col bg-background text-foreground">
+      <!-- Top bar (also serves as window drag region) -->
+      <header
+        data-tauri-drag-region
+        class="flex h-13 shrink-0 items-center justify-between gap-4 border-b bg-background pl-4 pr-0"
       >
-        <n-flex
-          align="center"
-          justify="space-between"
-          style="height: 100%; padding-right: 16px; padding-left: 16px"
-        >
-          <n-flex style="flex: 1">
-            <n-avatar>
-              <BasicIcon icon="avatar-line" />
-            </n-avatar>
-            <n-button @click="message.info(t('message.noImpl'))">
-              {{ t("header.pleaseLogin") }}
-            </n-button>
-          </n-flex>
+        <!-- Left: app name -->
+        <div class="flex items-center">
+          <span class="select-none text-base font-semibold tracking-tight">
+            Rockoon
+          </span>
+        </div>
 
-          <n-flex align="center" :size="6">
-            <n-text depth="3">{{ t("profile.currentLabel") }}</n-text>
-            <n-dropdown
-              :options="profileOptions"
-              trigger="click"
-              placement="bottom"
-              @select="onProfileSelect"
-            >
-              <n-button quaternary type="primary">
-                {{ profiles.currentProfile?.name ?? t("common.none") }}
-                <BasicIcon icon="arrow-down-s-line" style="margin-left: 4px" />
-              </n-button>
-            </n-dropdown>
-          </n-flex>
+        <!-- Right: profile dropdown + window controls -->
+        <div class="flex items-center gap-2">
+          <span class="hidden text-sm text-muted-foreground sm:inline">
+            {{ t("profile.currentLabel") }}
+          </span>
+          <DropdownMenu>
+            <DropdownMenuTrigger as-child>
+              <Button
+                variant="ghost"
+                size="sm"
+              >
+                {{ currentProfileName }}
+                <ChevronDown class="ml-1 size-4 opacity-70" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" class="min-w-[180px]">
+              <DropdownMenuLabel>
+                {{ t("profile.currentLabel") }}
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                v-for="p in profiles.profiles"
+                :key="p.id"
+                @select="onSwitchProfile(p.id)"
+              >
+                <Check
+                  v-if="p.id === profiles.currentProfile?.id"
+                  class="size-4"
+                />
+                <span v-else class="size-4" />
+                {{ p.name }}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem @select="onCreateProfile">
+                <Plus class="size-4" />
+                {{ t("profile.create") }}
+              </DropdownMenuItem>
+              <DropdownMenuItem @select="onRenameProfile">
+                <Pencil class="size-4" />
+                {{ t("profile.rename") }}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                :disabled="deleteDisabled"
+                @select="onDeleteProfile"
+              >
+                <Trash2 class="size-4" />
+                {{ t("profile.delete") }}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
 
-          <n-flex justify="flex-end" style="flex: 1">
-            <n-button
-              v-if="!app.runningInstancePid"
-              type="primary"
-              @click="onLaunchGame"
-            >
-              <template #icon>
-                <BasicIcon icon="play-line" />
-              </template>
-              {{ t("home.launch") }}
-            </n-button>
-            <n-button v-else type="error" @click="killInstance">
-              <template #icon>
-                <BasicIcon icon="stop-line" />
-              </template>
-              {{ t("home.stop") }}
-            </n-button>
-          </n-flex>
-        </n-flex>
-      </n-layout>
+          <TitleBarControls />
+        </div>
+      </header>
 
-      <n-layout has-sider style="width: 100vw; height: var(--main-ctn-h)">
-        <n-layout-sider
-          bordered
-          show-trigger
-          collapse-mode="width"
-          :width="180"
-          :collapsed-width="50"
-          :collapsed="collapsed"
-          @collapse="collapsed = true"
-          @expand="collapsed = false"
-        >
-          <n-scrollbar>
-            <n-menu
-              ref="menuRef"
-              v-model:value="selectedKey"
-              :options="getMenuOptions()"
-              :indent="20"
-            />
-          </n-scrollbar>
-        </n-layout-sider>
+      <!-- Body -->
+      <div class="flex flex-1 overflow-hidden">
+        <AppSidebar v-model:collapsed="collapsed" />
 
-        <n-layout
-          class="main-container-scrollbar-fix"
-          style="height: 100%"
-          :native-scrollbar="false"
-        >
+        <main class="relative flex-1 overflow-auto">
           <router-view v-slot="{ Component }">
             <transition name="fade-slide" mode="out-in">
               <component :is="Component" class="view" />
             </transition>
           </router-view>
-        </n-layout>
-      </n-layout>
-    </template>
-    <Onboarding v-else />
-  </n-config-provider>
+        </main>
+      </div>
+    </div>
+  </template>
+  <Onboarding v-else />
 </template>
 
 <style scoped>
@@ -355,22 +285,18 @@ onUnmounted(() => {
 .fade-slide-leave-active {
   transition: all 150ms ease;
 }
-
 .fade-slide-enter-from {
   opacity: 0;
   transform: translateY(10px);
 }
-
 .fade-slide-enter-to {
   opacity: 1;
   transform: translateY(0);
 }
-
 .fade-slide-leave-from {
   opacity: 1;
   transform: translateY(0);
 }
-
 .fade-slide-leave-to {
   opacity: 0;
   transform: translateY(-10px);

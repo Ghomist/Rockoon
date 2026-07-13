@@ -1,5 +1,4 @@
-import "@/assets/styles.scss";
-import "mingcute_icon/font/Mingcute.css";
+import "@/assets/styles.css";
 
 import { moveWindow, Position } from "@tauri-apps/plugin-positioner";
 import { createPinia } from "pinia";
@@ -23,28 +22,7 @@ registerLoggers();
 // disable context menu
 document.addEventListener("contextmenu", e => e.preventDefault());
 
-// let tray: TrayIcon | null = null;
 await initStores();
-
-// if (!tray) {
-//   tray = await TrayIcon.new({
-//     icon: (await defaultWindowIcon())!,
-//     action: e => {
-//       if (e.type === "Click") {
-//         tauriApp.toggleWindow();
-//       }
-//     },
-//     menu: await Menu.new({
-//       items: [await MenuItem.new({ text: "退出" })]
-//     })
-//   });
-//   await tray.setShowMenuOnLeftClick(false);
-//   await tray.setTooltip("Rockoon");
-// }
-// app.onUnmount(() => {
-//   tray?.close();
-//   tray = null;
-// });
 
 window.addEventListener("keydown", e => {
   if (e.ctrlKey && e.key.toLowerCase() === "t") {

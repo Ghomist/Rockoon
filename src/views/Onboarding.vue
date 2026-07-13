@@ -4,11 +4,10 @@ import { usePrefStore } from "@/stores/pref";
 import { useProfilesStore } from "@/stores/profiles";
 import { message } from "@/utils/ui/feedback";
 import { open as browseDir } from "@tauri-apps/plugin-dialog";
-import { NButton, NCard, NFlex, NIcon, NText } from "naive-ui";
+import { Rocket, FolderOpen, Loader2 } from "@lucide/vue";
 import { ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
-import BasicIcon from "./components/MgcIcon.vue";
 
 const app = useAppStore();
 const pref = usePrefStore();
@@ -32,7 +31,7 @@ const onPickFolder = async () => {
       return;
     }
     pref.instancePath = folder;
-    await profiles.load(); // 创建 .rockoon + 默认 profile
+    await profiles.load(); // create .rockoon + default profile
     message.success(t("onboarding.success"));
     router.replace(pref.route || "/game");
   } finally {
@@ -42,66 +41,40 @@ const onPickFolder = async () => {
 </script>
 
 <template>
-  <div class="onboarding">
-    <n-card class="panel" :bordered="false" size="huge">
-      <n-flex vertical align="center" :size="20">
-        <n-icon :size="72" :color="pref.darkMode ? '#fff' : '#18a058'">
-          <BasicIcon icon="rocket-2-line" />
-        </n-icon>
+  <div
+    class="flex h-screen w-screen items-center justify-center bg-background p-6"
+  >
+    <div class="w-full max-w-[520px] rounded-2xl border bg-card p-8 text-card-foreground shadow-sm">
+      <div class="flex flex-col items-center gap-5">
+        <Rocket
+          :size="72"
+          :class="pref.darkMode ? 'text-foreground' : 'text-emerald-500'"
+        />
 
-        <n-flex vertical align="center" :size="6">
-          <h1 class="title">{{ t("onboarding.title") }}</h1>
-          <n-text depth="3" class="desc">
+        <div class="flex flex-col items-center gap-1.5">
+          <h1 class="m-0 text-[22px] font-semibold">
+            {{ t("onboarding.title") }}
+          </h1>
+          <p class="text-center text-sm text-muted-foreground">
             {{ t("onboarding.desc") }}
-          </n-text>
-        </n-flex>
+          </p>
+        </div>
 
-        <n-button
-          type="primary"
-          size="large"
-          :loading="picking"
+        <button
+          type="button"
+          class="inline-flex h-10 items-center gap-2 rounded-md bg-primary px-6 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
+          :disabled="picking"
           @click="onPickFolder"
         >
-          <template #icon>
-            <BasicIcon icon="folder-open-line" />
-          </template>
+          <Loader2 v-if="picking" class="size-4 animate-spin" />
+          <FolderOpen v-else class="size-4" />
           {{ t("onboarding.pick") }}
-        </n-button>
+        </button>
 
-        <n-text depth="2" class="hint">
+        <p class="text-center text-xs text-muted-foreground/80">
           {{ t("onboarding.hint") }}
-        </n-text>
-      </n-flex>
-    </n-card>
+        </p>
+      </div>
+    </div>
   </div>
 </template>
-
-<style scoped>
-.onboarding {
-  height: 100vh;
-  width: 100vw;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
-}
-.panel {
-  max-width: 520px;
-  width: 100%;
-  border-radius: 16px;
-}
-.title {
-  margin: 0;
-  font-size: 22px;
-  font-weight: 600;
-}
-.desc {
-  font-size: 14px;
-  text-align: center;
-}
-.hint {
-  font-size: 12px;
-  opacity: 0.7;
-  text-align: center;
-}
-</style>

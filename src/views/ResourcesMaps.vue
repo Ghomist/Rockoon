@@ -8,22 +8,33 @@ import { join, sep } from "@tauri-apps/api/path";
 import { open as browseFile } from "@tauri-apps/plugin-dialog";
 import { computedAsync, until } from "@vueuse/core";
 import {
-  NBreadcrumb,
-  NBreadcrumbItem,
-  NButton,
-  NFlex,
-  NInput,
-  NListItem,
-  NModal,
-  NSwitch,
-  NTag,
-  NText
-} from "naive-ui";
+  ArrowLeft,
+  Folder,
+  Play,
+  FolderInput,
+  Trash2
+} from "@lucide/vue";
 import { computed, onMounted, reactive, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import DirectoryTreeDialog from "./components/DirectoryTreeDialog.vue";
 import ListViewPage from "./components/ListViewPage.vue";
-import BasicIcon from "./components/MgcIcon.vue";
+import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbList,
+  BreadcrumbSeparator
+} from "@/components/ui/breadcrumb";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle
+} from "@/components/ui/dialog";
 
 const app = useAppStore();
 const { launchMap } = useLauncherService();
@@ -64,8 +75,6 @@ const breadcrumbItems = computed<BreadcrumbItem[]>(() => {
 const mapCount = computed(
   () => directoryList.filter(item => !item.isDir).length
 );
-
-// 计算父目录路径（用于返回上一级）
 const parentPath = computed(() => {
   const relativePath = currentPath.value.replace(rootPath.value, "").trim();
   if (!relativePath) return "";
@@ -74,18 +83,9 @@ const parentPath = computed(() => {
   return parts.slice(0, -1).join("/");
 });
 
-// 检查文件是否被禁用（以 .disable 结尾）
 const isFileDisabled = (fileName: string) => fileName.endsWith(".disable");
-
-// 获取显示的文件名（移除 .disable 后缀）
-const getDisplayName = (fileName: string) => {
-  if (isFileDisabled(fileName)) {
-    return fileName.replace(".disable", "");
-  }
-  return fileName;
-};
-
-// 获取文件扩展名
+const getDisplayName = (fileName: string) =>
+  isFileDisabled(fileName) ? fileName.replace(".disable", "") : fileName;
 const getFileExtension = (fileName: string) => {
   const name = getDisplayName(fileName);
   const parts = name.split(".");
@@ -100,7 +100,6 @@ const loadDirectory = async (relativePath: string = "") => {
   currentPath.value = fullPath;
   directoryList.length = 0;
 
-  // 加载子目录
   const dirs = await backend.listDirs(fullPath);
   for (const dir of dirs) {
     const dirName = dir.split(/[\\/]/).pop()!;
@@ -111,7 +110,6 @@ const loadDirectory = async (relativePath: string = "") => {
     });
   }
 
-  // 加载地图文件
   const files = await backend.list(fullPath, ["cmo", "nmo"]);
   for (const file of files) {
     directoryList.push({
@@ -122,7 +120,6 @@ const loadDirectory = async (relativePath: string = "") => {
     });
   }
 
-  // 按类型排序：文件夹在前，文件在后
   directoryList.sort((a, b) => {
     if (a.isDir && !b.isDir) return -1;
     if (!a.isDir && b.isDir) return 1;
@@ -130,9 +127,7 @@ const loadDirectory = async (relativePath: string = "") => {
   });
 };
 
-const onBreadcrumbClick = (path: string) => {
-  loadDirectory(path);
-};
+const onBreadcrumbClick = (path: string) => loadDirectory(path);
 
 const onRefresh = async (showMessage = false) => {
   const relativePath = currentPath.value.replace(rootPath.value, "").trim();
@@ -145,10 +140,7 @@ const onImport = async () => {
     title: t("resources.import.tip") + " " + t("resources.name.map"),
     multiple: true,
     filters: [
-      {
-        name: t("resources.name.map"),
-        extensions: ["cmo", "nmo"]
-      }
+      { name: t("resources.name.map"), extensions: ["cmo", "nmo"] }
     ]
   });
   if (files && files.length) {
@@ -170,11 +162,8 @@ const onDelete = async (item: DirectoryItem) => {
     negativeText: t("common.dialog.cancel"),
     onPositiveClick: async () => {
       const fullPath = await join(currentPath.value, item.name);
-      if (item.isDir) {
-        await backend.remove_dir(fullPath);
-      } else {
-        await backend.delete(fullPath);
-      }
+      if (item.isDir) await backend.remove_dir(fullPath);
+      else await backend.delete(fullPath);
       await onRefresh();
       message.success(t("resources.delete.success"));
     }
@@ -184,7 +173,6 @@ const onDelete = async (item: DirectoryItem) => {
 const onToggleDisable = async (file: DirectoryItem, newValue?: boolean) => {
   const shouldEnable =
     newValue !== undefined ? newValue : isFileDisabled(file.name);
-
   try {
     if (shouldEnable) {
       await backend.enable(currentPath.value, file.name);
@@ -193,16 +181,13 @@ const onToggleDisable = async (file: DirectoryItem, newValue?: boolean) => {
       await backend.disable(currentPath.value, file.name);
       message.success(t("resources.disable.success"));
     }
-
-    // 直接更新列表中的文件名，避免重新加载导致闪烁
-    const item = directoryList.find(item => item.name === file.name);
+    const item = directoryList.find(i => i.name === file.name);
     if (item) {
-      const newFileName = shouldEnable
+      item.name = shouldEnable
         ? file.name.replace(".disable", "")
         : `${file.name}.disable`;
-      item.name = newFileName;
     }
-  } catch (error) {
+  } catch {
     message.error(t("resources.toggle.error"));
   }
 };
@@ -217,10 +202,7 @@ const onCreateFolder = () => {
 };
 
 const handleCreateFolder = async () => {
-  if (!newFolderName.value.trim()) {
-    return;
-  }
-
+  if (!newFolderName.value.trim()) return;
   try {
     const targetDir = currentPath.value || rootPath.value;
     const folderPath = await join(targetDir, newFolderName.value.trim());
@@ -228,7 +210,7 @@ const handleCreateFolder = async () => {
     message.success(t("resources.createFolder.success"));
     showCreateFolderDialog.value = false;
     await onRefresh();
-  } catch (error) {
+  } catch {
     message.error(t("resources.createFolder.error"));
   }
 };
@@ -239,24 +221,18 @@ const onMoveFile = (item: DirectoryItem) => {
 };
 
 const handleMoveFile = async (targetPath: string) => {
-  if (!itemToMove.value) {
-    return;
-  }
-
+  if (!itemToMove.value) return;
   try {
-    // 根据是否是文件夹使用不同的路径计算方式
     const sourcePath = itemToMove.value.isDir
       ? await join(rootPath.value, itemToMove.value.path)
       : await join(currentPath.value, itemToMove.value.name);
     const targetFilePath = await join(targetPath, itemToMove.value.name);
-    console.log("Moving item:", { sourcePath, targetFilePath });
     await backend.rename(sourcePath, targetFilePath);
     message.success(t("resources.move.success"));
     showMoveDialog.value = false;
     itemToMove.value = null;
     await onRefresh();
   } catch (error) {
-    console.error("Move failed:", error);
     message.error(`${t("resources.move.error")}: ${error}`);
   }
 };
@@ -267,182 +243,163 @@ onMounted(async () => {
 </script>
 
 <template>
-  <list-view-page>
+  <ListViewPage>
     <template #title>
-      <n-flex align="center" :size="12">
-        <n-breadcrumb v-if="breadcrumbItems.length > 0">
-          <n-breadcrumb-item
-            v-for="(item, index) in breadcrumbItems"
-            :key="index"
-            style="cursor: pointer"
-            @click="onBreadcrumbClick(item.path)"
-          >
-            {{ item.label }}
-          </n-breadcrumb-item>
-        </n-breadcrumb>
-        <span style="margin-left: 8px">
+      <div class="flex items-center gap-3">
+        <Breadcrumb v-if="breadcrumbItems.length > 0">
+          <BreadcrumbList>
+            <template v-for="(item, idx) in breadcrumbItems" :key="idx">
+              <BreadcrumbItem>
+                <button
+                  type="button"
+                  class="cursor-pointer text-sm hover:text-primary"
+                  @click="onBreadcrumbClick(item.path)"
+                >
+                  {{ item.label }}
+                </button>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator
+                v-if="idx < breadcrumbItems.length - 1"
+              />
+            </template>
+          </BreadcrumbList>
+        </Breadcrumb>
+        <span class="text-sm">
           {{ t("resources.statistics.map", { cnt: mapCount }, mapCount) }}
         </span>
-      </n-flex>
+      </div>
     </template>
 
     <template #actions>
-      <n-button @click="onRefresh(true)">
+      <Button variant="outline" size="sm" @click="onRefresh(true)">
         {{ t("common.action.refresh") }}
-      </n-button>
-      <n-button @click="onCreateFolder">
+      </Button>
+      <Button variant="outline" size="sm" @click="onCreateFolder">
         {{ t("resources.createFolder.button") }}
-      </n-button>
-      <n-button @click="onImport">
+      </Button>
+      <Button variant="outline" size="sm" @click="onImport">
         {{ t("resources.import.button") }}
-      </n-button>
-      <n-button @click="onOpenFolder">
+      </Button>
+      <Button variant="outline" size="sm" @click="onOpenFolder">
         {{ t("common.action.openFolder") }}
-      </n-button>
+      </Button>
     </template>
 
-    <!-- 返回上一级虚拟目录（仅在非根目录时显示） -->
-    <n-list-item
+    <!-- Parent dir row -->
+    <div
       v-if="currentPath && currentPath !== rootPath"
-      :key="'..'"
+      class="flex cursor-pointer items-center gap-2 px-4 py-2.5 hover:bg-accent"
       @click="onBreadcrumbClick(parentPath)"
     >
-      <template #prefix>
-        <BasicIcon icon="arrow-left-up-line" />
-      </template>
-      <n-text>{{ t("resources.breadcrumb.backToParent") }}</n-text>
-    </n-list-item>
+      <ArrowLeft class="size-4" />
+      <span class="text-sm">{{ t("resources.breadcrumb.backToParent") }}</span>
+    </div>
 
-    <n-list-item
+    <div
       v-for="item in directoryList"
       :key="item.name"
+      class="flex items-center gap-3 px-4 py-2.5"
       @click="
         item.isDir
           ? loadDirectory(item.path)
           : onToggleDisable(item, isFileDisabled(item.name))
       "
     >
-      <template #prefix>
-        <BasicIcon v-if="item.isDir" icon="folder-3-line" />
-        <n-switch
-          v-else
-          :value="!isFileDisabled(item.name)"
-          @update:value="onToggleDisable(item, $event)"
-          @click.stop
-        />
-      </template>
-
-      <n-flex align="center" :size="12">
-        <n-flex vertical :size="4" style="flex: 1; min-width: 0">
-          <n-text
-            :style="{
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-              textDecoration:
-                !item.isDir && isFileDisabled(item.name)
-                  ? 'line-through'
-                  : 'none'
-            }"
-          >
-            {{ item.isDir ? item.name : getDisplayName(item.name) }}
-          </n-text>
-          <n-text v-if="!item.isDir" depth="3" style="font-size: 12px">
-            <n-tag size="tiny" :bordered="false" type="info">
-              {{ getFileExtension(item.name) }}
-            </n-tag>
-            <span style="margin-left: 8px">{{
-              formatFileSize(item.size!)
-            }}</span>
-          </n-text>
-          <n-text v-else depth="3" style="font-size: 12px">
-            <n-tag size="tiny" :bordered="false" type="info">
-              {{ t("resources.folder.name") }}
-            </n-tag>
-          </n-text>
-        </n-flex>
-      </n-flex>
-
-      <template #suffix>
-        <n-flex v-if="!item.isDir" :wrap="false" align="center">
-          <n-button
-            v-if="!isFileDisabled(item.name)"
-            secondary
-            type="success"
-            @click.stop="
-              launchMap([currentPath, item.name].join('/'))
-            "
-          >
-            <template #icon>
-              <BasicIcon icon="play-line" />
-            </template>
-            {{ t("resources.launch.button") }}
-          </n-button>
-          <n-button secondary type="primary" @click.stop="onMoveFile(item)">
-            <template #icon>
-              <BasicIcon icon="file-export-line" />
-            </template>
-            {{ t("resources.move.button") }}
-          </n-button>
-          <n-button secondary type="error" @click.stop="onDelete(item)">
-            <template #icon>
-              <BasicIcon icon="delete-2-line" />
-            </template>
-            {{ t("resources.delete.button") }}
-          </n-button>
-        </n-flex>
-        <n-flex v-else :wrap="false" align="center">
-          <n-button secondary type="primary" @click.stop="onMoveFile(item)">
-            <template #icon>
-              <BasicIcon icon="file-export-line" />
-            </template>
-            {{ t("resources.move.button") }}
-          </n-button>
-          <n-button secondary type="error" @click.stop="onDelete(item)">
-            <template #icon>
-              <BasicIcon icon="delete-2-line" />
-            </template>
-            {{ t("resources.delete.button") }}
-          </n-button>
-        </n-flex>
-      </template>
-    </n-list-item>
-
-    <!-- 新建文件夹对话框 -->
-    <n-modal
-      v-model:show="showCreateFolderDialog"
-      preset="card"
-      :title="t('resources.createFolder.title')"
-      :style="{ width: '400px' }"
-    >
-      <n-input
-        v-model:value="newFolderName"
-        :placeholder="t('resources.createFolder.placeholder')"
-        @keyup.enter="handleCreateFolder"
+      <Folder v-if="item.isDir" class="size-4 text-muted-foreground" />
+      <Switch
+        v-else
+        :model-value="!isFileDisabled(item.name)"
+        @update:model-value="v => onToggleDisable(item, v)"
+        @click.stop
       />
-      <template #footer>
-        <n-flex justify="end" :size="12">
-          <n-button @click="showCreateFolderDialog = false">
-            {{ t("common.dialog.cancel") }}
-          </n-button>
-          <n-button
-            type="primary"
-            :disabled="!newFolderName.trim()"
-            @click="handleCreateFolder"
-          >
-            {{ t("common.dialog.confirm") }}
-          </n-button>
-        </n-flex>
-      </template>
-    </n-modal>
 
-    <!-- 移动文件对话框 -->
-    <directory-tree-dialog
+      <div class="flex min-w-0 flex-1 flex-col gap-0.5">
+        <span
+          class="truncate text-sm"
+          :class="
+            !item.isDir && isFileDisabled(item.name)
+              ? 'line-through opacity-60'
+              : ''
+          "
+        >
+          {{ item.isDir ? item.name : getDisplayName(item.name) }}
+        </span>
+        <div
+          v-if="!item.isDir"
+          class="flex items-center gap-2 text-xs text-muted-foreground"
+        >
+          <Badge variant="secondary" class="px-1.5 py-0 text-[10px]">
+            {{ getFileExtension(item.name) }}
+          </Badge>
+          <span>{{ formatFileSize(item.size!) }}</span>
+        </div>
+        <div v-else>
+          <Badge variant="outline" class="px-1.5 py-0 text-[10px]">
+            {{ t("resources.folder.name") }}
+          </Badge>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-1">
+        <Button
+          v-if="!item.isDir && !isFileDisabled(item.name)"
+          variant="ghost"
+          size="sm"
+          class="text-emerald-600 hover:text-emerald-700"
+          @click.stop="launchMap([currentPath, item.name].join('/'))"
+        >
+          <Play class="size-4" />
+          {{ t("resources.launch.button") }}
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          @click.stop="onMoveFile(item)"
+        >
+          <FolderInput class="size-4" />
+          {{ t("resources.move.button") }}
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          class="text-destructive hover:text-destructive"
+          @click.stop="onDelete(item)"
+        >
+          <Trash2 class="size-4" />
+          {{ t("resources.delete.button") }}
+        </Button>
+      </div>
+    </div>
+
+    <!-- Create folder dialog -->
+    <Dialog v-model:open="showCreateFolderDialog">
+      <DialogContent class="max-w-[400px]">
+        <DialogHeader>
+          <DialogTitle>{{ t("resources.createFolder.title") }}</DialogTitle>
+        </DialogHeader>
+        <Input
+          v-model="newFolderName"
+          :placeholder="t('resources.createFolder.placeholder')"
+          @keyup.enter="handleCreateFolder"
+        />
+        <DialogFooter>
+          <Button variant="outline" @click="showCreateFolderDialog = false">
+            {{ t("common.dialog.cancel") }}
+          </Button>
+          <Button :disabled="!newFolderName.trim()" @click="handleCreateFolder">
+            {{ t("common.dialog.confirm") }}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
+    <!-- Move dialog -->
+    <DirectoryTreeDialog
       v-model:show="showMoveDialog"
       :root-path="rootPath"
       :current-path="currentPath"
       :item-to-move-path="itemToMove?.isDir ? itemToMove.path : undefined"
       @confirm="handleMoveFile"
     />
-  </list-view-page>
+  </ListViewPage>
 </template>

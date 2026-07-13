@@ -3,7 +3,6 @@ import backend from "@/backend";
 import { useAppStore } from "@/stores/app";
 import { usePrefStore } from "@/stores/pref";
 import { useProfilesStore } from "@/stores/profiles";
-import { NButton, NFlex, NH2, NText } from "naive-ui";
 import { toRefs, ref } from "vue";
 import { getVersion } from "@tauri-apps/api/app";
 import { checkForUpdate } from "@/services/updater";
@@ -43,114 +42,140 @@ const onChangeInstancePath = async () => {
     return;
   }
   prefStore.instancePath = folder;
-  await profiles.load(); // 读取新实例的 .rockoon（不存在则建默认 profile）
+  await profiles.load();
   message.success(t("settings.instance.changed"));
 };
 </script>
 
 <template>
-  <n-flex vertical style="padding: 28px">
-    <n-h2 prefix="primary"> {{ $t("settings.instance.title") }} </n-h2>
-    <n-flex vertical :size="10">
-      <n-text depth="3" style="word-break: break-all">
-        {{ pref.instancePath || $t("common.none") }}
-      </n-text>
-      <n-button @click="onChangeInstancePath">
-        {{ $t("settings.instance.change") }}
-      </n-button>
-    </n-flex>
-
-    <n-h2 prefix="primary"> {{ $t("settings.basic") }} </n-h2>
-    <NFormWrapper
-      :schema="[
-        {
-          type: 'select',
-          label: '语言 / Language',
-          valueRef: pref.language,
-          options: [
-            { value: 'en', label: 'English' },
-            { value: 'zh', label: '简体中文' }
-          ]
-        },
-        {
-          type: 'select',
-          label: $t('settings.theme.title'),
-          valueRef: pref.theme,
-          options: [
-            { value: 'auto', label: $t('settings.theme.auto') },
-            { value: 'light', label: $t('settings.theme.light') },
-            { value: 'dark', label: $t('settings.theme.dark') }
-          ]
-        },
-        {
-          type: 'switch',
-          label: $t('settings.centerWindow'),
-          valueRef: pref.centerWindow
-        },
-        {
-          type: 'switch',
-          label: $t('settings.hideWinWhenLaunch'),
-          valueRef: pref.hideWinWhenLaunch
-        },
-        {
-          type: 'switch',
-          label: $t('settings.showWelcome'),
-          valueRef: pref.showWelcome
-        }
-      ]"
-    />
-    <n-h2 prefix="primary"> {{ $t("settings.ingame") }} </n-h2>
-    <NFormWrapper
-      :schema="[
-        {
-          type: 'switch',
-          label: $t('settings.mapOnlyMode'),
-          tip: $t('settings.mapOnlyModeTip'),
-          valueRef: pref.mapOnlyMode
-        },
-        {
-          type: 'switch',
-          label: $t('settings.ingameMotd'),
-          valueRef: pref.ingameMotd
-        },
-        {
-          type: 'input',
-          label: $t('settings.ingameMotdContent'),
-          valueRef: pref.ingameMotdContent
-        }
-      ]"
-    />
-    <n-h2 prefix="primary">{{ $t("settings.debug") }}</n-h2>
-    <NFormWrapper
-      :schema="[
-        {
-          type: 'button',
-          label: $t('settings.checkUpdate'),
-          tip: $t('settings.update') + appVersion,
-          onClick: onCheckUpdate
-        },
-        {
-          type: 'button',
-          label: $t('common.action.openDevtools'),
-          onClick: () => backend.openDevtools()
-        },
-        {
-          type: 'button',
-          label: $t('settings.clearStorage.button'),
-          onClick: () => {
-            dialog.error({
-              title: $t('common.message.warning'),
-              content: $t('settings.clearStorage.title'),
-              positiveText: $t('common.dialog.confirm'),
-              negativeText: $t('common.dialog.cancel'),
-              onPositiveClick: () => {
-                storage.clear();
-                onReload();
-              }
-            });
+  <div class="flex flex-col gap-6 p-7">
+    <section class="flex flex-col gap-2.5">
+      <h2 class="flex items-center gap-2 text-lg font-semibold">
+        <span class="size-1.5 rounded-full bg-primary" />
+        {{ $t("settings.instance.title") }}
+      </h2>
+      <p class="text-sm text-muted-foreground break-all">
+        {{ prefStore.instancePath || $t("common.none") }}
+      </p>
+      <NFormWrapper
+        :schema="[
+          {
+            type: 'button',
+            label: $t('settings.instance.change'),
+            onClick: onChangeInstancePath
           }
-        }
-      ]"
-    />
-  </n-flex>
+        ]"
+      />
+    </section>
+
+    <section class="flex flex-col gap-2.5">
+      <h2 class="flex items-center gap-2 text-lg font-semibold">
+        <span class="size-1.5 rounded-full bg-primary" />
+        {{ $t("settings.basic") }}
+      </h2>
+      <NFormWrapper
+        :schema="[
+          {
+            type: 'select',
+            label: '语言 / Language',
+            valueRef: pref.language,
+            options: [
+              { value: 'en', label: 'English' },
+              { value: 'zh', label: '简体中文' }
+            ]
+          },
+          {
+            type: 'select',
+            label: $t('settings.theme.title'),
+            valueRef: pref.theme,
+            options: [
+              { value: 'auto', label: $t('settings.theme.auto') },
+              { value: 'light', label: $t('settings.theme.light') },
+              { value: 'dark', label: $t('settings.theme.dark') }
+            ]
+          },
+          {
+            type: 'switch',
+            label: $t('settings.centerWindow'),
+            valueRef: pref.centerWindow
+          },
+          {
+            type: 'switch',
+            label: $t('settings.hideWinWhenLaunch'),
+            valueRef: pref.hideWinWhenLaunch
+          },
+          {
+            type: 'switch',
+            label: $t('settings.showWelcome'),
+            valueRef: pref.showWelcome
+          }
+        ]"
+      />
+    </section>
+
+    <section class="flex flex-col gap-2.5">
+      <h2 class="flex items-center gap-2 text-lg font-semibold">
+        <span class="size-1.5 rounded-full bg-primary" />
+        {{ $t("settings.ingame") }}
+      </h2>
+      <NFormWrapper
+        :schema="[
+          {
+            type: 'switch',
+            label: $t('settings.mapOnlyMode'),
+            tip: $t('settings.mapOnlyModeTip'),
+            valueRef: pref.mapOnlyMode
+          },
+          {
+            type: 'switch',
+            label: $t('settings.ingameMotd'),
+            valueRef: pref.ingameMotd
+          },
+          {
+            type: 'input',
+            label: $t('settings.ingameMotdContent'),
+            valueRef: pref.ingameMotdContent
+          }
+        ]"
+      />
+    </section>
+
+    <section class="flex flex-col gap-2.5">
+      <h2 class="flex items-center gap-2 text-lg font-semibold">
+        <span class="size-1.5 rounded-full bg-primary" />
+        {{ $t("settings.debug") }}
+      </h2>
+      <NFormWrapper
+        :schema="[
+          {
+            type: 'button',
+            label: $t('settings.checkUpdate'),
+            tip: $t('settings.update') + appVersion,
+            onClick: onCheckUpdate
+          },
+          {
+            type: 'button',
+            label: $t('common.action.openDevtools'),
+            onClick: () => backend.openDevtools()
+          },
+          {
+            type: 'button',
+            label: $t('settings.clearStorage.button'),
+            onClick: () => {
+              dialog.error({
+                title: $t('common.message.warning'),
+                content: $t('settings.clearStorage.title'),
+                positiveText: $t('common.dialog.confirm'),
+                negativeText: $t('common.dialog.cancel'),
+                onPositiveClick: () => {
+                  storage.clear();
+                  onReload();
+                }
+              });
+            }
+          }
+        ]"
+      />
+    </section>
+  </div>
 </template>

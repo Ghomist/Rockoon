@@ -60,7 +60,7 @@ BMLPlus plugin (`RockoonIO.bmodp`) built via CMake + `build.ps1`. Sources in `sr
 - **Prettier**: double quotes, `arrowParens: "avoid"`, `trailingComma: "none"`, `bracketSpacing: true`.
 - **ESLint**: flat config is `eslint.config.js` (the active one). `.eslintrc.js` is legacy — do not edit. `@typescript-eslint/no-explicit-any` is OFF. Unused vars/args prefixed with `_` are ignored. `consistent-type-imports` enforced (inline `import type`). Vue HTML elements always self-close (void/normal/component).
 - **TypeScript**: `strict`, `noUnusedLocals`, `noUnusedParameters`, `noFallthroughCasesInSwitch`. Target ES2022.
-- Vue: `<script setup lang="ts">`. Reusable UI components use the `Basic` prefix. Naive UI for all components.
+- Vue: `<script setup lang="ts">`. Reusable UI components use the `Basic` prefix. UI is **shadcn-vue** (Reka UI primitives + Tailwind v4) on top of `@/components/ui/*` (added via shadcn-vue CLI). Icons are `@lucide/vue` (kebab-case names, e.g. `<Rocket />`). Toasts via `vue-sonner`; modal dialogs via `@/utils/ui/dialog-store` + `GlobalDialogHost.vue`. Avoid adding any new UI library — extend the existing shadcn-vue set instead.
 - Rust: `?` propagation, `thiserror` for errors, `log` crate macros (`info!`, etc.).
 
 ## Operational gotchas

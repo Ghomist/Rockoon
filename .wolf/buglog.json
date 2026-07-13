@@ -480,6 +480,374 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-07-12T17:09:16.156Z"
+    },
+    {
+      "id": "bug-031",
+      "timestamp": "2026-07-12T18:17:49.356Z",
+      "error_message": "CSS fix: update, component",
+      "file": "src/components/GlobalDialogHost.vue",
+      "root_cause": "update: open=\"v => !v && dialogApi.dismiss(d.id)\" → open=\"(v: boolean) => !v && dialogApi.dismiss(d.id)\"; component: is=\"renderContent(d.content)\" /> → is=\"iconFor(d.variant)\"",
+      "fix": "Changed update: open=\"v => !v && dialogApi.dismiss(d.id)\" → open=\"(v: boolean) => !v && dialogApi.dismiss(d.id)\"; component: is=\"renderContent(d.content)\" /> → is=\"iconFor(d.variant)\"",
+      "tags": [
+        "auto-detected",
+        "style-fix",
+        "vue"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-12T18:17:49.356Z"
+    },
+    {
+      "id": "bug-032",
+      "timestamp": "2026-07-12T18:19:17.204Z",
+      "error_message": "Incorrect value in code",
+      "file": "src/components/AppSidebar.vue",
+      "root_cause": "Had \"@/routers/menu\"",
+      "fix": "Changed to \"@/i18n\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "vue"
+      ],
+      "related_bugs": [],
+      "occurrences": 3,
+      "last_seen": "2026-07-12T18:21:27.581Z"
+    },
+    {
+      "id": "bug-033",
+      "timestamp": "2026-07-12T18:19:29.675Z",
+      "error_message": "CSS fix: component",
+      "file": "src/components/AppSidebar.vue",
+      "root_cause": "component: is=\"resolveIcon(child === '-' ? 'circle' : child.icon)\" → is=\"resolveIcon(child.icon)\"",
+      "fix": "Changed component: is=\"resolveIcon(child === '-' ? 'circle' : child.icon)\" → is=\"resolveIcon(child.icon)\"",
+      "tags": [
+        "auto-detected",
+        "style-fix",
+        "vue"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-07-12T18:21:40.153Z"
+    },
+    {
+      "id": "bug-034",
+      "timestamp": "2026-07-12T18:19:38.155Z",
+      "error_message": "Significant refactor of ",
+      "file": "src/components/AppSidebar.vue",
+      "root_cause": "3 lines replaced/restructured",
+      "fix": "Rewrote 15→13 lines (3 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "vue"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-12T18:19:38.155Z"
+    },
+    {
+      "id": "bug-035",
+      "timestamp": "2026-07-12T18:20:30.330Z",
+      "error_message": "Incorrect value in code",
+      "file": "src/App.vue",
+      "root_cause": "Had \"@/stores/pref\"",
+      "fix": "Changed to \"@/stores/app\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "vue"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-12T18:20:30.330Z"
+    },
+    {
+      "id": "bug-036",
+      "timestamp": "2026-07-12T18:21:23.164Z",
+      "error_message": "Missing import: @tauri-apps/plugin-shell",
+      "file": "src/components/AppSidebar.vue",
+      "root_cause": "Module(s) not imported: @tauri-apps/plugin-shell",
+      "fix": "Added import(s) for @tauri-apps/plugin-shell",
+      "tags": [
+        "auto-detected",
+        "missing-import",
+        "vue"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-12T18:21:23.164Z"
+    },
+    {
+      "id": "bug-037",
+      "timestamp": "2026-07-12T18:22:10.631Z",
+      "error_message": "Significant refactor of ",
+      "file": "src/utils/ui/dialog-store.ts",
+      "root_cause": "6 lines replaced/restructured",
+      "fix": "Rewrote 14→8 lines (6 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-12T18:22:10.631Z"
+    },
+    {
+      "id": "bug-038",
+      "timestamp": "2026-07-12T18:25:22.423Z",
+      "error_message": "Significant refactor of ",
+      "file": "src/views/components/DirectoryTreeDialog.vue",
+      "root_cause": "31 lines replaced/restructured",
+      "fix": "Rewrote 46→22 lines (31 removed) | Also: type TreeNode = {; key: string;",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "vue"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-07-12T18:25:31.370Z"
+    },
+    {
+      "id": "bug-039",
+      "timestamp": "2026-07-12T18:26:20.449Z",
+      "error_message": "CSS fix: update",
+      "file": "src/views/components/NFormWrapper.vue",
+      "root_cause": "update: model-value=\"v => setRef(x.valueRef, v)\" → model-value=\"",
+      "fix": "Changed update: model-value=\"v => setRef(x.valueRef, v)\" → model-value=\"",
+      "tags": [
+        "auto-detected",
+        "style-fix",
+        "vue"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-12T18:26:20.449Z"
+    },
+    {
+      "id": "bug-040",
+      "timestamp": "2026-07-12T18:33:00.794Z",
+      "error_message": "Incorrect value in code",
+      "file": "src/views/components/NFormWrapper.vue",
+      "root_cause": "Had \"arr => setRef(x.valueRef, arr?.[0])\"",
+      "fix": "Changed to \"(arr: number[] | undefined) => setRef(x.valueRef,",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "vue"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-12T18:33:00.794Z"
+    },
+    {
+      "id": "bug-041",
+      "timestamp": "2026-07-12T19:33:43.066Z",
+      "error_message": "Missing import: vue-sonner/lib/index.css",
+      "file": "src/assets/styles.css",
+      "root_cause": "Module(s) not imported: vue-sonner/lib/index.css",
+      "fix": "Added import(s) for vue-sonner/lib/index.css",
+      "tags": [
+        "auto-detected",
+        "missing-import",
+        "css"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-12T19:33:43.067Z"
+    },
+    {
+      "id": "bug-042",
+      "timestamp": "2026-07-12T19:37:19.154Z",
+      "error_message": "Incorrect value in code",
+      "file": "src/assets/styles.css",
+      "root_cause": "Had \"vue-sonner/lib/index.css\"",
+      "fix": "Changed to \"vue-sonner/style.css\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "css"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-12T19:37:19.154Z"
+    },
+    {
+      "id": "bug-043",
+      "timestamp": "2026-07-12T19:40:02.448Z",
+      "error_message": "Type error",
+      "file": "src/routers/index.ts",
+      "root_cause": "Missing or incorrect type annotation",
+      "fix": "Added type assertion/annotation",
+      "tags": [
+        "auto-detected",
+        "type-fix",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-12T19:40:02.448Z"
+    },
+    {
+      "id": "bug-044",
+      "timestamp": "2026-07-12T19:41:17.186Z",
+      "error_message": "Wrong condition in logic",
+      "file": "src/App.vue",
+      "root_cause": "Condition was: if (pref.route)",
+      "fix": "Changed to: if (pref.route && router.hasRoute(pref.route)",
+      "tags": [
+        "auto-detected",
+        "logic-fix",
+        "vue"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-12T19:41:17.186Z"
+    },
+    {
+      "id": "bug-045",
+      "timestamp": "2026-07-12T19:49:40.772Z",
+      "error_message": "Significant refactor of ",
+      "file": "src/i18n/languages/zh.json",
+      "root_cause": "5 lines replaced/restructured",
+      "fix": "Rewrote 7→10 lines (5 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "json"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-12T19:49:40.772Z"
+    },
+    {
+      "id": "bug-046",
+      "timestamp": "2026-07-12T19:49:47.862Z",
+      "error_message": "Significant refactor of ",
+      "file": "src/i18n/languages/en.json",
+      "root_cause": "5 lines replaced/restructured",
+      "fix": "Rewrote 7→10 lines (5 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "json"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-12T19:49:47.862Z"
+    },
+    {
+      "id": "bug-047",
+      "timestamp": "2026-07-12T19:51:44.281Z",
+      "error_message": "Significant refactor of ",
+      "file": "src/views/components/NFormWrapper.vue",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 10→26 lines (2 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "vue"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-12T19:51:44.281Z"
+    },
+    {
+      "id": "bug-048",
+      "timestamp": "2026-07-12T19:55:34.501Z",
+      "error_message": "Significant refactor of ",
+      "file": "src/views/GameConfig.vue",
+      "root_cause": "10 lines replaced/restructured",
+      "fix": "Rewrote 25→18 lines (10 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "vue"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-12T19:55:34.501Z"
+    },
+    {
+      "id": "bug-049",
+      "timestamp": "2026-07-13T11:28:04.546Z",
+      "error_message": "Significant refactor of ",
+      "file": "src/App.vue",
+      "root_cause": "5 lines replaced/restructured",
+      "fix": "Rewrote 13→9 lines (5 removed) | Also: const onLaunchGame = async () => {; if (!app.selectedInstanceData) return;",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "vue"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-07-13T11:29:05.722Z"
+    },
+    {
+      "id": "bug-050",
+      "timestamp": "2026-07-13T11:39:35.561Z",
+      "error_message": "Wrong reference: false should be true",
+      "file": "src-tauri/tauri.conf.json",
+      "root_cause": "Used \"false\" instead of \"true\"",
+      "fix": "Changed false → true",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "json"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-13T11:39:35.561Z"
+    },
+    {
+      "id": "bug-051",
+      "timestamp": "2026-07-13T12:01:10.212Z",
+      "error_message": "Incorrect value in code",
+      "file": "src/App.vue",
+      "root_cause": "Had \"@/components/ui/animated-grid-pattern\"",
+      "fix": "Changed to \"@/i18n\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "vue"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-13T12:01:10.212Z"
+    },
+    {
+      "id": "bug-052",
+      "timestamp": "2026-07-13T12:02:42.430Z",
+      "error_message": "Significant refactor of ",
+      "file": "src/App.vue",
+      "root_cause": "10 lines replaced/restructured",
+      "fix": "Rewrote 17→7 lines (10 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "vue"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-13T12:02:42.430Z"
+    },
+    {
+      "id": "bug-053",
+      "timestamp": "2026-07-13T12:02:52.013Z",
+      "error_message": "Significant refactor of ",
+      "file": "src/assets/styles.css",
+      "root_cause": "6 lines replaced/restructured",
+      "fix": "Rewrote 12→4 lines (6 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "css"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-13T12:02:52.013Z"
     }
   ]
 }

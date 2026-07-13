@@ -26,7 +26,10 @@ export const initStores = async () => {
 
   // 恢复上次路由（未配置实例时由 App.vue 显示引导页）
   if (appStore.selectedInstanceData && prefStore.route) {
-    router.replace(prefStore.route);
+    const target = router.resolve(prefStore.route).matched.length
+      ? prefStore.route
+      : "/game";
+    router.replace(target);
   }
 
   // 语言切换

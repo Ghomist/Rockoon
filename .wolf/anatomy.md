@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-07-12T17:10:16.138Z
-> Files: 343 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-07-13T12:02:52.001Z
+> Files: 358 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ./
 
@@ -11,12 +11,13 @@
 - `.gitmodules` (~40 tok)
 - `.prettierrc.js` — @ts-check (~51 tok)
 - `.stylelintignore` (~14 tok)
-- `AGENTS.md` — AGENTS.md (~1634 tok)
+- `AGENTS.md` — AGENTS.md (~1715 tok)
 - `CLAUDE.md` — OpenWolf (~1516 tok)
+- `components.json` (~120 tok)
 - `DEV.md` — DEV (~32 tok)
 - `eslint.config.js` — ESLint flat configuration (~1506 tok)
 - `index.html` — Rockoon (~99 tok)
-- `package.json` — Node.js package manifest (~685 tok)
+- `package.json` — Node.js package manifest (~755 tok)
 - `pnpm-lock.yaml` — pnpm lock file (~38432 tok)
 - `pnpm-workspace.yaml` (~22 tok)
 - `README.md` — Project documentation (~451 tok)
@@ -24,7 +25,7 @@
 - `TODO.md` — TODO (~254 tok)
 - `tsconfig.json` — TypeScript configuration (~207 tok)
 - `tsconfig.node.json` (~64 tok)
-- `vite.config.ts` — Vite build configuration (~263 tok)
+- `vite.config.ts` — Declares host (~280 tok)
 
 ## .claude/
 
@@ -37,6 +38,10 @@
 ## .github/workflows/
 
 - `release.yml` — CI: "Publish (Windows only)" (~792 tok)
+
+## C:/Users/ghomist/AppData/Local/pnpm/bin/
+
+- `pnpm.CMD` (~5 tok)
 
 ## src-bmodp/
 
@@ -369,12 +374,13 @@
 
 ## src/
 
-- `App.vue` — Parse and handle a rockoon:// deep-link URL. (~2772 tok)
-- `main.ts` — Declares app (~506 tok)
+- `App.vue` — Vue component (~2404 tok)
+- `main.ts` — Declares app (~330 tok)
 - `vite-env.d.ts` — / <reference types="vite/client" /> (~82 tok)
 
 ## src/assets/
 
+- `styles.css` — Styles: 7 rules, 105 vars (~1382 tok)
 - `styles.scss` — Styles: 2 rules, 4 vars (~139 tok)
 - `ui-fix.scss` — Styles: 3 rules (~60 tok)
 
@@ -384,32 +390,52 @@
 - `instance.ts` — Exports instanceBackend (~1110 tok)
 - `utils.ts` — Exports parseBallanceLaunchConfig, dumpBallanceLaunchConfig (~989 tok)
 
+## src/components/
+
+- `AppSidebar.vue` — Vue: setup (~1694 tok)
+- `GlobalDialogHost.vue` — Vue: setup (~638 tok)
+- `TitleBarControls.vue` — Vue: setup (~430 tok)
+
+## src/components/ui/animated-grid-pattern/
+
+- `AnimatedGridPattern.vue` — Vue: setup (~883 tok)
+- `index.ts` (~22 tok)
+
+## src/components/ui/slider/
+
+- `index.ts` (~15 tok)
+- `Slider.vue` — Vue: setup (~414 tok)
+
 ## src/i18n/
 
 - `index.ts` — Detect system locale (~318 tok)
 
 ## src/i18n/languages/
 
-- `en.json` — Declares language (~3919 tok)
-- `zh.json` (~2957 tok)
+- `en.json` — Declares language (~3951 tok)
+- `zh.json` (~2983 tok)
+
+## src/lib/
+
+- `utils.ts` — Exports cn (~49 tok)
 
 ## src/routers/
 
-- `index.ts` — Exports router (~236 tok)
-- `menu.ts` — Exports MenuItem, ExternalLinkItem, getExternalLinks, getMenuItems, getMenuOptions (~915 tok)
+- `index.ts` — Exports router (~267 tok)
+- `menu.ts` — Exports MenuItem, ExternalLinkItem, getExternalLinks, getMenuItems (~649 tok)
 
 ## src/services/
 
 - `brp.ts` — Render a short description of what the manifest contains, for notifications. (~831 tok)
 - `hub.ts` — Exports fetchMaps, fetchMap, fetchTags, getDownloadUrl + 14 more (~1324 tok)
 - `launcher.ts` — Exports useLauncherService (~636 tok)
-- `updater.ts` — Exports checkForUpdate (~660 tok)
+- `updater.ts` — Exports checkForUpdate (~669 tok)
 
 ## src/stores/
 
 - `app.ts` — 加载单一实例的 InstanceData 并安装 RockoonIO mod (~368 tok)
 - `hub.ts` — Exports useHubStore (~242 tok)
-- `index.ts` — Exports initStores (~402 tok)
+- `index.ts` — Exports initStores (~430 tok)
 - `instances.ts` — Exports useInstancesStore (~499 tok)
 - `pref.ts` — Exports PREF_STORE_KEY, usePrefStore (~400 tok)
 - `profiles.ts` — 需要捕获禁用状态的资源目录 + 扩展名 (~2881 tok)
@@ -432,31 +458,35 @@
 
 ## src/utils/ui/
 
-- `feedback.ts` — Exports message, notification, loadingBar, dialog (~101 tok)
+- `dialog-store.ts` — Exports DialogVariant, DialogOptions, DialogInstance, dialogApi (~430 tok)
+- `feedback.ts` — Drop-in replacement for Naive UI's discrete `message` API. (~567 tok)
 - `router.ts` — Exports waitForSelectedInstance (~238 tok)
 
 ## src/views/
 
-- `GameConfig.vue` — Vue: setup, TS (~3759 tok)
-- `GameData.vue` — Vue: setup, TS (~1014 tok)
+- `GameConfig.vue` — Vue: setup (~5226 tok)
+- `GameData.vue` — Vue: setup (~1158 tok)
 - `Instances.vue` — Vue: setup, TS (~1343 tok)
-- `Onboarding.vue` — Vue: setup (~694 tok)
-- `ResourcesMaps.vue` — Vue: setup, TS (~3697 tok)
+- `Onboarding.vue` — Vue: setup (~666 tok)
+- `ResourcesMaps.vue` — Vue: setup (~3389 tok)
 - `ResourcesMods.vue` — Vue: setup, TS (~43 tok)
-- `ResourcesPageBase.vue` — Vue: BRP, setup (~1982 tok)
-- `ResourcesSkys.vue` — Vue: Archive, setup, TS (~3382 tok)
-- `Settings.vue` — Vue: setup (~1264 tok)
-- `Start.vue` — Vue: setup (~1820 tok)
+- `ResourcesPageBase.vue` — Vue: BRP, setup (~1772 tok)
+- `ResourcesSkys.vue` — Vue: Archive, setup (~3263 tok)
+- `Settings.vue` — Vue: setup (~1436 tok)
+- `Start.vue` — Vue: setup (~1699 tok)
 
 ## src/views/components/
 
-- `DirectoryTreeDialog.vue` — Vue: setup, TS, emits (~1525 tok)
+- `DirectoryTreeDialog.vue` — Vue: setup (~1364 tok)
+- `FormSection.vue` — Vue: setup (~247 tok)
 - `key.ts` — Database 按键（布局）映射 (~1225 tok)
-- `ListViewPage.vue` — Vue: setup, TS, emits (~180 tok)
+- `ListViewPage.vue` — Vue: setup (~157 tok)
 - `MgcIcon.vue` — Vue: setup, TS, 3 props (~148 tok)
-- `NFormWrapper.vue` — Vue: setup, TS, 1 props (~1233 tok)
+- `NFormWrapper.vue` — Vue: setup (~2430 tok)
+- `SettingsNav.vue` — Vue: setup (~285 tok)
 - `SkyboxPreview.vue` — Vue: setup, TS, 4 props (~1887 tok)
-- `VirtualKeyboard.vue` — Vue: setup, TS, 3 props, emits (~419 tok)
+- `TreeItem.vue` — Vue: setup (~574 tok)
+- `VirtualKeyboard.vue` — Vue: setup (~447 tok)
 
 ## src/views/hub/
 

@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { message } from "@/utils/ui/feedback";
-import { NButton, NText } from "naive-ui";
 import { onMounted, ref } from "vue";
 import { getKeyByPhysicCode, keySchema } from "./key";
 
@@ -28,43 +27,37 @@ onMounted(() => {
   <div
     ref="focusHook"
     tabindex="0"
+    class="outline-none"
     @blur="focusHook?.focus()"
     @keydown.stop.prevent="onKeyDown"
   />
 
-  <n-text>
+  <p class="text-sm text-muted-foreground">
     {{ t("common.key.changeKeyTip") }}
-  </n-text>
+  </p>
 
   <div
     v-for="(line, index) in keySchema"
     :key="index"
-    class="virtual-keyboard-line"
+    class="flex items-center"
   >
-    <n-button
+    <button
       v-for="k in line"
       :key="k.id"
-      :type="modelValue == k.id ? 'primary' : 'default'"
+      type="button"
+      :class="[
+        'inline-flex h-9 items-center justify-center border border-r-0 last:border-r px-2 text-sm transition-colors',
+        'last:rounded-r-md first:rounded-l-md',
+        modelValue === k.id
+          ? 'bg-primary text-primary-foreground border-primary'
+          : 'bg-background hover:bg-accent hover:text-accent-foreground',
+        k.disabled && 'pointer-events-none opacity-50'
+      ]"
       :style="{ width: `${(k.width ?? 1) * 36}px` }"
       :disabled="k.disabled"
       @click="$emit('update:modelValue', k.id)"
     >
       {{ k.display ?? k.name }}
-    </n-button>
+    </button>
   </div>
 </template>
-
-<style scoped>
-.virtual-keyboard-line {
-  display: flex;
-  align-items: center;
-
-  * {
-    height: 36px;
-    margin: 0;
-    text-wrap: none;
-    white-space: nowrap;
-    border-radius: 0;
-  }
-}
-</style>

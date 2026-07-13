@@ -54,14 +54,16 @@ async function downloadAndInstall(update: Update) {
         case "Progress":
           downloaded += event.data.chunkLength;
           if (total > 0) {
-            msg.content = t("updater.downloadProgress", {
-              downloaded: formatBytes(downloaded),
-              total: formatBytes(total)
-            });
+            msg.update(
+              t("updater.downloadProgress", {
+                downloaded: formatBytes(downloaded),
+                total: formatBytes(total)
+              })
+            );
           }
           break;
         case "Finished":
-          msg.content = t("updater.installing");
+          msg.update(t("updater.installing"));
           break;
       }
     });

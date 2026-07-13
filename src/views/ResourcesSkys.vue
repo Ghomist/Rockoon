@@ -6,72 +6,52 @@ import { convertFileSrc } from "@tauri-apps/api/core";
 import { join } from "@tauri-apps/api/path";
 import { open as browseFile } from "@tauri-apps/plugin-dialog";
 import { computedAsync, until } from "@vueuse/core";
-import {
-  NButton,
-  NCard,
-  NEmpty,
-  NFlex,
-  NModal,
-  NRadio,
-  NRadioGroup,
-  NSpin,
-  NText
-} from "naive-ui";
+import { Loader2 } from "@lucide/vue";
 import { onMounted, onUnmounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import ListViewPage from "./components/ListViewPage.vue";
 import SkyboxPreview from "./components/SkyboxPreview.vue";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent
+} from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle
+} from "@/components/ui/dialog";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 
 const app = useAppStore();
 const { t } = useI18n();
 
-// 导入天空盒分析结果类型
-type SkyboxFile = {
-  path: string;
-  direction: string;
-};
+type SkyboxFile = { path: string; direction: string };
 
-// 12关标识对应字母
 const LEVEL_LETTERS = [
-  "L",
-  "E",
-  "A",
-  "F",
-  "C",
-  "H",
-  "D",
-  "G",
-  "K",
-  "B",
-  "J",
-  "I"
+  "L", "E", "A", "F", "C", "H", "D", "G", "K", "B", "J", "I"
 ] as const;
 
 type SkyboxFiles = {
   [key in "Front" | "Back" | "Left" | "Right" | "Down"]?: string;
 };
-
 type SkyboxLevel = {
   level: number;
   letter: string;
   files: SkyboxFiles;
 };
-
-// 后端返回的文件类型
-type BackendFile = {
-  name: string;
-  size: number;
-};
+type BackendFile = { name: string; size: number };
 
 const loading = ref(true);
 const skyboxLevels = ref<SkyboxLevel[]>([]);
 const showPreview = ref(false);
 const selectedLevel = ref<SkyboxLevel | null>(null);
 
-// 图片刷新键（用于打破浏览器缓存）
 const refreshKey = ref(Date.now());
 
-// 导入相关状态
 const importing = ref(false);
 const importLoading = ref(false);
 const showLevelPicker = ref(false);
@@ -80,7 +60,6 @@ const selectedImportLevel = ref<number | null>(null);
 let abortController: AbortController | null = null;
 let importTempDir: string | null = null;
 
-// Skybox路径
 const skysPath = computedAsync(
   async () =>
     app.selectedInstanceData
@@ -90,68 +69,50 @@ const skysPath = computedAsync(
   { evaluating: loading }
 );
 
-// 解析文件名，格式：Sky_X_Dir.bmp
 const parseSkyboxFilename = (
   filename: string
 ): { level: number; direction: string } | null => {
   const match = filename.match(/^Sky_([A-Z]+)_([A-Za-z]+)\.bmp$/i);
   if (!match) return null;
-
   const letter = match[1].toUpperCase();
   const direction = match[2];
-
-  // 查找关卡编号
-  const levelIndex = LEVEL_LETTERS.indexOf(letter as any);
+  const levelIndex = LEVEL_LETTERS.indexOf(letter as (typeof LEVEL_LETTERS)[number]);
   if (levelIndex === -1) return null;
-
   return { level: levelIndex + 1, direction };
 };
 
-// 加载天空盒列表
+const capitalizeFirst = (str: string): string => {
+  if (!str) return str;
+  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+};
+
 const loadSkyboxes = async () => {
   await until(loading).toBe(false);
-
   try {
     const files = (await backend.list(skysPath.value, [
       "bmp"
     ])) as BackendFile[];
-
-    // 按关卡分组
     const levelsMap = new Map<number, SkyboxFiles>();
-
     for (const file of files) {
       const parsed = parseSkyboxFilename(file.name);
       if (parsed) {
-        if (!levelsMap.has(parsed.level)) {
-          levelsMap.set(parsed.level, {});
-        }
+        if (!levelsMap.has(parsed.level)) levelsMap.set(parsed.level, {});
         const direction = capitalizeFirst(parsed.direction);
         if (["Front", "Back", "Left", "Right", "Down"].includes(direction)) {
-          const files = levelsMap.get(parsed.level);
-          if (files) {
-            (files as Record<string, string>)[direction] = file.name;
-          }
+          const entry = levelsMap.get(parsed.level);
+          if (entry) (entry as Record<string, string>)[direction] = file.name;
         }
       }
     }
-
-    // 转换为数组，按关卡排序
     const levels: SkyboxLevel[] = [];
-    for (const level of LEVEL_LETTERS) {
-      const levelNum = LEVEL_LETTERS.indexOf(level) + 1;
+    for (const letter of LEVEL_LETTERS) {
+      const levelNum = LEVEL_LETTERS.indexOf(letter) + 1;
       const files = levelsMap.get(levelNum);
       if (files && Object.keys(files).length > 0) {
-        levels.push({
-          level: levelNum,
-          letter: level,
-          files
-        });
+        levels.push({ level: levelNum, letter, files });
       }
     }
-
     skyboxLevels.value = levels;
-
-    // 更新刷新键以打破图片缓存
     refreshKey.value = Date.now();
   } catch (error) {
     console.error("Failed to load skyboxes:", error);
@@ -159,63 +120,44 @@ const loadSkyboxes = async () => {
   } finally {
     loading.value = false;
   }
-
-  // 刷新成功提示
   message.success(t("common.action.refreshSuccess"));
 };
 
-// 首字母大写
-const capitalizeFirst = (str: string): string => {
-  if (!str) return str;
-  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
-};
-
-// 打开天空盒预览
 const openPreview = (level: SkyboxLevel) => {
   selectedLevel.value = level;
   showPreview.value = true;
 };
 
-// 打开天空盒文件夹
 const onOpenFolder = async () => {
-  if (skysPath.value) {
-    await backend.openInExplorer(skysPath.value);
+  if (skysPath.value) await backend.openInExplorer(skysPath.value);
+};
+
+const cleanupTempDir = async (dirPath: string) => {
+  try {
+    await backend.remove_dir(dirPath);
+  } catch (error) {
+    console.error("Cleanup error:", error);
   }
 };
 
-// 导入天空盒
 const onImportSkybox = async () => {
   const zipFile = await browseFile({
     title: t("skys.import.selectZip"),
     multiple: false,
-    filters: [
-      {
-        name: "Archive",
-        extensions: ["zip"]
-      }
-    ]
+    filters: [{ name: "Archive", extensions: ["zip"] }]
   });
+  if (!zipFile || zipFile.length === 0) return;
 
-  if (!zipFile || zipFile.length === 0) {
-    return;
-  }
-
-  // 开始导入流程
   importing.value = true;
   importLoading.value = true;
   abortController = new AbortController();
 
-  // 使用系统临时目录创建临时文件夹
   const systemTempDir = await backend.getTempDir();
   const tempDir = await join(systemTempDir, "rockoon_skybox_" + Date.now());
 
   try {
     await backend.mkdir(tempDir);
-
-    // 解压文件
     await backend.unzip(zipFile as string, tempDir);
-
-    // 分析天空盒文件
     const analysis = await backend.analyzeSkyboxFiles(tempDir);
 
     if (analysis.files.length === 0) {
@@ -224,7 +166,6 @@ const onImportSkybox = async () => {
       return;
     }
 
-    // 检查是否完整（需要5个方向）
     const requiredDirections = ["Front", "Back", "Left", "Right", "Down"];
     const missingDirections = requiredDirections.filter(
       dir => !analysis.directions.includes(dir)
@@ -236,21 +177,14 @@ const onImportSkybox = async () => {
       );
     }
 
-    // 保存找到的文件
     selectedImportFiles.value = analysis.files;
-
-    // 保存临时目录引用，用于后续清理
     importTempDir = tempDir;
-
-    // 显示检测结果
     message.success(
       t("skys.import.detectionSuccess", {
         cnt: analysis.files.length,
         dirs: analysis.directions.join(", ")
       })
     );
-
-    // 显示关卡选择器
     selectedImportLevel.value = null;
     showLevelPicker.value = true;
     importLoading.value = false;
@@ -258,24 +192,19 @@ const onImportSkybox = async () => {
     console.error("Import error:", error);
     message.error(t("skys.import.detectionError"));
     importLoading.value = false;
-    // 导入失败时清理临时目录
     await cleanupTempDir(tempDir);
   }
 };
 
-// 取消导入
 const onCancelImport = async () => {
   if (abortController) {
     abortController.abort();
     abortController = null;
   }
-
-  // 清理解压时创建的临时目录
   if (importTempDir) {
     await cleanupTempDir(importTempDir);
     importTempDir = null;
   }
-
   importing.value = false;
   importLoading.value = false;
   showLevelPicker.value = false;
@@ -283,18 +212,15 @@ const onCancelImport = async () => {
   selectedImportLevel.value = null;
 };
 
-// 选择关卡并替换天空盒
 const onSelectLevel = async () => {
   if (selectedImportLevel.value === null) {
     message.warning(t("skys.import.selectLevel"));
     return;
   }
-
   if (!importTempDir) {
     message.error("Import temp directory not found");
     return;
   }
-
   const levelNum = selectedImportLevel.value;
   const levelLetter = LEVEL_LETTERS[levelNum - 1];
   const targetDir = await join(
@@ -302,9 +228,7 @@ const onSelectLevel = async () => {
     "Textures",
     "Sky"
   );
-
   try {
-    // 直接从临时目录复制文件到目标目录，同时重命名
     for (const file of selectedImportFiles.value) {
       const targetFile = await join(
         targetDir,
@@ -312,16 +236,9 @@ const onSelectLevel = async () => {
       );
       await backend.copy(file.path, targetFile);
     }
-
     message.success(t("skys.import.replaceSuccess", { level: levelNum }));
-
-    // 刷新天空盒列表
     await loadSkyboxes();
-
-    // 更新刷新键以打破图片缓存
     refreshKey.value = Date.now();
-
-    // 关闭选择器并重置状态
     showLevelPicker.value = false;
     importing.value = false;
     selectedImportFiles.value = [];
@@ -330,7 +247,6 @@ const onSelectLevel = async () => {
     console.error("Replace error:", error);
     message.error(t("skys.import.replaceError"));
   } finally {
-    // 无论成功失败都清理解压时创建的临时目录
     if (importTempDir) {
       await cleanupTempDir(importTempDir);
       importTempDir = null;
@@ -338,28 +254,15 @@ const onSelectLevel = async () => {
   }
 };
 
-// 清理临时目录
-const cleanupTempDir = async (dirPath: string) => {
-  try {
-    await backend.remove_dir(dirPath);
-  } catch (error) {
-    console.error("Cleanup error:", error);
-  }
-};
-
-// 获取图片URL
 const getImageUrl = (filename: string) => {
   if (!filename || !skysPath.value) return "";
   const fullPath = `${skysPath.value}/${filename}`;
-  // 添加时间戳参数以打破浏览器缓存
   return convertFileSrc(fullPath) + `?t=${refreshKey.value}`;
 };
 
-// 获取缩略图（使用Down方向）
 const getThumbnailUrl = (level: SkyboxLevel) => {
   if (level.files.Down && skysPath.value) {
     const fullPath = `${skysPath.value}/${level.files.Down}`;
-    // 添加时间戳参数以打破浏览器缓存
     return convertFileSrc(fullPath) + `?t=${refreshKey.value}`;
   }
   return "";
@@ -369,7 +272,6 @@ onMounted(async () => {
   await loadSkyboxes();
 });
 
-// 组件卸载时清理临时文件
 onUnmounted(async () => {
   if (importTempDir) {
     await cleanupTempDir(importTempDir);
@@ -379,7 +281,7 @@ onUnmounted(async () => {
 </script>
 
 <template>
-  <list-view-page>
+  <ListViewPage>
     <template #title>
       {{
         t("skys.statistics", { cnt: skyboxLevels.length }, skyboxLevels.length)
@@ -387,115 +289,126 @@ onUnmounted(async () => {
     </template>
 
     <template #actions>
-      <n-button @click="loadSkyboxes">
+      <Button variant="outline" size="sm" @click="loadSkyboxes">
         {{ t("common.action.refresh") }}
-      </n-button>
-      <n-button @click="onOpenFolder">
+      </Button>
+      <Button variant="outline" size="sm" @click="onOpenFolder">
         {{ t("common.action.openFolder") }}
-      </n-button>
-      <n-button
-        type="primary"
-        :loading="importLoading"
+      </Button>
+      <Button
+        variant="secondary"
+        size="sm"
+        :disabled="importLoading"
         @click="importing ? onCancelImport() : onImportSkybox()"
       >
+        <Loader2 v-if="importLoading" class="size-4 animate-spin" />
         {{ importing ? t("skys.import.cancel") : t("skys.import.button") }}
-      </n-button>
+      </Button>
     </template>
 
-    <n-spin :show="loading">
-      <n-flex
-        :wrap="true"
-        :size="16"
-        justify="space-around"
-        style="padding: 16px"
+    <div class="relative">
+      <div
+        v-if="loading"
+        class="flex items-center justify-center py-16"
       >
-        <n-card
+        <Loader2 class="size-6 animate-spin text-muted-foreground" />
+      </div>
+
+      <div
+        v-else-if="skyboxLevels.length === 0"
+        class="py-16 text-center text-sm text-muted-foreground"
+      >
+        {{ t("skys.empty") }}
+      </div>
+
+      <div
+        v-else
+        class="flex flex-wrap justify-around gap-4 p-4"
+      >
+        <Card
           v-for="level in skyboxLevels"
           :key="level.level"
-          hoverable
-          style="width: 200px; cursor: pointer"
+          class="w-[200px] cursor-pointer transition-transform hover:-translate-y-0.5"
           @click="openPreview(level)"
         >
-          <n-flex vertical align="center" :size="8">
+          <CardContent class="flex flex-col items-center gap-2 py-3">
             <div
               v-if="getThumbnailUrl(level)"
-              style="
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                width: 100%;
-                aspect-ratio: 1;
-                overflow: hidden;
-                background: #f5f5f5;
-                border-radius: 4px;
-              "
+              class="flex aspect-square w-full items-center justify-center overflow-hidden rounded bg-muted"
             >
               <img
                 :src="getThumbnailUrl(level)"
                 :alt="'Level ' + level.level"
-                style="width: 100%; height: 100%; object-fit: contain"
+                class="h-full w-full object-contain"
               />
             </div>
-            <n-text style="text-align: center">
+            <p class="text-center text-sm">
               {{ t("skys.levelName", { level: level.level }) }}
-            </n-text>
-          </n-flex>
-        </n-card>
-      </n-flex>
-    </n-spin>
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
 
-    <n-empty
-      v-if="!loading && skyboxLevels.length === 0"
-      :description="t('skys.empty')"
-    />
+    <!-- Skybox preview -->
+    <Dialog v-model:open="showPreview">
+      <DialogContent class="max-w-[60vw]">
+        <DialogHeader>
+          <DialogTitle>
+            {{ t("skys.previewTitle", { level: selectedLevel?.level || 0 }) }}
+          </DialogTitle>
+        </DialogHeader>
+        <SkyboxPreview
+          v-if="selectedLevel"
+          :level="selectedLevel"
+          :skys-path="skysPath"
+          :get-image-url="getImageUrl"
+        />
+      </DialogContent>
+    </Dialog>
 
-    <!-- 天空盒预览弹窗 -->
-    <n-modal
-      v-model:show="showPreview"
-      preset="card"
-      style="width: 60%"
-      :title="t('skys.previewTitle', { level: selectedLevel?.level || 0 })"
-    >
-      <skybox-preview
-        v-if="selectedLevel"
-        :level="selectedLevel"
-        :skys-path="skysPath"
-        :get-image-url="getImageUrl"
-      />
-    </n-modal>
+    <!-- Level picker -->
+    <Dialog v-model:open="showLevelPicker">
+      <DialogContent class="max-w-[400px]">
+        <DialogHeader>
+          <DialogTitle>{{ t("skys.import.selectLevel") }}</DialogTitle>
+        </DialogHeader>
 
-    <!-- 关卡选择弹窗 -->
-    <n-modal
-      v-model:show="showLevelPicker"
-      preset="card"
-      style="width: 400px"
-      :title="t('skys.import.selectLevel')"
-      :mask-closable="false"
-    >
-      <n-spin :show="importLoading">
-        <n-flex vertical :size="16">
-          <n-text depth="2">
+        <div v-if="importLoading" class="flex items-center justify-center py-12">
+          <Loader2 class="size-6 animate-spin text-muted-foreground" />
+        </div>
+
+        <div v-else class="flex flex-col gap-4">
+          <p class="text-sm text-muted-foreground">
             {{ t("skys.import.selectLevel") }}
-          </n-text>
+          </p>
 
-          <n-radio-group v-model:value="selectedImportLevel">
-            <n-flex vertical :size="8">
-              <n-radio v-for="i in 12" :key="i" :value="i">
+          <RadioGroup
+            v-model="selectedImportLevel"
+            class="flex flex-col gap-2"
+          >
+            <div
+              v-for="i in 12"
+              :key="i"
+              class="flex items-center gap-2"
+            >
+              <RadioGroupItem :id="`lvl-${i}`" :value="i" />
+              <Label :for="`lvl-${i}`" class="text-sm">
                 {{ t("skys.levelName", { level: i }) }}
-              </n-radio>
-            </n-flex>
-          </n-radio-group>
+              </Label>
+            </div>
+          </RadioGroup>
 
-          <n-flex justify="end" :size="12" style="margin-top: 16px">
-            <n-button @click="onCancelImport">
+          <DialogFooter>
+            <Button variant="outline" @click="onCancelImport">
               {{ t("common.dialog.cancel") }}
-            </n-button>
-            <n-button type="primary" @click="onSelectLevel">
+            </Button>
+            <Button @click="onSelectLevel">
               {{ t("common.dialog.confirm") }}
-            </n-button>
-          </n-flex>
-        </n-flex>
-      </n-spin>
-    </n-modal>
-  </list-view-page>
+            </Button>
+          </DialogFooter>
+        </div>
+      </DialogContent>
+    </Dialog>
+  </ListViewPage>
 </template>

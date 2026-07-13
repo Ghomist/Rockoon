@@ -92,6 +92,7 @@
   "common": {
     "none": "None",
     "unknown": "Unknown",
+    "advanced": "Advanced",
     "action": {
       "openFolder": "Open directory",
       "openDevtools": "Open debugging tools",
@@ -265,12 +266,15 @@
         "label": "Detailed log"
       }
     },
-    "tabs": {
-      "game": "Gameplay",
+    "nav": {
+      "display": "Display",
+      "audio": "Audio",
+      "controls": "Controls",
+      "gameplay": "Gameplay",
+      "compat": "Compatibility",
       "graphics": "Graphics",
-      "startup": "Start Up",
-      "window": "Window",
-      "inGameOptions": "In-Game Options"
+      "advanced": "Advanced",
+      "startup": "Startup"
     },
     "window": {
       "alwaysHandleInput": {

@@ -111,3 +111,103 @@
 | 01:09 | Edited src/App.vue | added 2 condition(s) | ~237 |
 | 01:09 | Edited src/App.vue | added optional chaining | ~46 |
 | 01:10 | Edited src/App.vue | inline fix | ~7 |
+| 02:08 | Created vite.config.ts | — | ~280 |
+| 02:09 | Created components.json | — | ~120 |
+| 02:09 | Created src/lib/utils.ts | — | ~49 |
+| 02:09 | Created src/assets/styles.css | — | ~1373 |
+| 02:09 | Created src/main.ts | — | ~330 |
+| 02:13 | Created package.json | — | ~755 |
+| 02:15 | Created src/utils/ui/feedback.ts | — | ~508 |
+| 02:15 | Created src/utils/ui/dialog-store.ts | — | ~395 |
+| 02:15 | Created src/components/GlobalDialogHost.vue | — | ~629 |
+| 02:16 | Created src/routers/menu.ts | — | ~649 |
+| 02:17 | Edited src/components/GlobalDialogHost.vue | modified so() | ~638 |
+| 02:18 | Created src/components/AppSidebar.vue | — | ~1692 |
+| 02:19 | Edited src/components/AppSidebar.vue | added 1 import(s) | ~38 |
+| 02:19 | Edited src/components/AppSidebar.vue | CSS: v-else | ~284 |
+| 02:19 | Edited src/components/AppSidebar.vue | 15→13 lines | ~82 |
+| 02:19 | Edited src/components/AppSidebar.vue | 3→2 lines | ~31 |
+| 02:20 | Created src/App.vue | — | ~2589 |
+| 02:20 | Edited src/App.vue | 3→3 lines | ~32 |
+| 02:21 | Edited src/components/AppSidebar.vue | openUrl() → open() | ~46 |
+| 02:21 | Edited src/components/AppSidebar.vue | added 1 import(s) | ~35 |
+| 02:21 | Edited src/components/AppSidebar.vue | 8→7 lines | ~43 |
+| 02:21 | Edited src/components/AppSidebar.vue | 11→11 lines | ~95 |
+| 02:22 | Edited src/utils/ui/dialog-store.ts | added 2 condition(s) | ~136 |
+| 02:22 | Edited src/utils/ui/dialog-store.ts | modified confirm() | ~78 |
+| 02:22 | Edited src/utils/ui/feedback.ts | expanded (+9 lines) | ~257 |
+| 02:22 | Edited src/services/updater.ts | modified if() | ~119 |
+| 02:23 | Created src/views/Onboarding.vue | — | ~666 |
+| 02:23 | Created src/views/Settings.vue | — | ~1436 |
+| 02:23 | Created src/views/components/ListViewPage.vue | — | ~173 |
+| 02:24 | Edited src/views/components/ListViewPage.vue | 28→26 lines | ~157 |
+| 02:24 | Created src/views/components/VirtualKeyboard.vue | — | ~447 |
+| 02:24 | Created src/views/components/DirectoryTreeDialog.vue | — | ~1682 |
+| 02:25 | Created src/views/components/TreeItem.vue | — | ~574 |
+| 02:25 | Edited src/views/components/DirectoryTreeDialog.vue | 15→15 lines | ~116 |
+| 02:25 | Edited src/views/components/DirectoryTreeDialog.vue | reduced (-24 lines) | ~194 |
+| 02:25 | Edited src/views/components/DirectoryTreeDialog.vue | reduced (-8 lines) | ~17 |
+| 02:26 | Created src/views/components/NFormWrapper.vue | — | ~2174 |
+| 02:26 | Edited src/views/components/NFormWrapper.vue | modified Number() | ~286 |
+| 02:27 | Created src/views/Start.vue | — | ~1704 |
+| 02:27 | Created src/views/GameConfig.vue | — | ~3836 |
+| 02:28 | Created src/views/GameData.vue | — | ~1158 |
+| 02:28 | Created src/views/ResourcesPageBase.vue | — | ~1772 |
+| 02:29 | Created src/views/ResourcesMaps.vue | — | ~3389 |
+| 02:30 | Created src/views/ResourcesSkys.vue | — | ~3263 |
+| 02:30 | Edited src/utils/ui/dialog-store.ts | 9→9 lines | ~86 |
+| 02:31 | Created src/components/ui/slider/Slider.vue | — | ~414 |
+| 02:31 | Created src/components/ui/slider/index.ts | — | ~15 |
+| 02:32 | Edited src/views/components/NFormWrapper.vue | inline fix | ~19 |
+| 02:33 | Edited src/views/components/NFormWrapper.vue | "arr => setRef(x.valueRef," → "(arr: number[] | undefine" | ~26 |
+| 02:34 | Edited src/components/ui/slider/Slider.vue | 3→3 lines | ~27 |
+| 02:34 | Edited src/components/ui/slider/Slider.vue | 4→4 lines | ~34 |
+| 02:34 | Edited src/views/Settings.vue | 3→3 lines | ~34 |
+| 02:44 | Edited AGENTS.md | inline fix | ~115 |
+| 03:29 | Created C:/Users/ghomist/AppData/Local/pnpm/bin/pnpm.CMD | — | ~5 |
+| 03:33 | Edited src/assets/styles.css | 2→3 lines | ~24 |
+| 03:37 | Edited src/assets/styles.css | "vue-sonner/lib/index.css" → "vue-sonner/style.css" | ~9 |
+| 03:40 | Edited src/routers/index.ts | replace() → paths() | ~190 |
+| 03:40 | Edited src/routers/index.ts | modified if() | ~225 |
+| 03:40 | Edited src/views/Start.vue | 6→6 lines | ~75 |
+| 03:41 | Edited src/App.vue | 4→8 lines | ~70 |
+| 03:41 | Edited src/App.vue | hasRoute() → resolve() | ~68 |
+| 03:42 | Edited src/stores/index.ts | modified if() | ~66 |
+| 03:43 | Edited src/App.vue | modified if() | ~67 |
+| 03:49 | Edited src/i18n/languages/zh.json | 7→10 lines | ~59 |
+| 03:49 | Edited src/i18n/languages/en.json | 7→10 lines | ~72 |
+| 03:49 | Edited src/i18n/languages/zh.json | 3→4 lines | ~21 |
+| 03:50 | Edited src/i18n/languages/en.json | 3→4 lines | ~25 |
+| 03:50 | Created src/views/components/FormSection.vue | — | ~247 |
+| 03:51 | Created src/views/components/SettingsNav.vue | — | ~285 |
+| 03:51 | Edited src/views/components/NFormWrapper.vue | expanded (+6 lines) | ~135 |
+| 03:51 | Edited src/views/components/NFormWrapper.vue | CSS: hover | ~252 |
+| 03:53 | Created src/views/GameConfig.vue | — | ~5244 |
+| 03:54 | Edited src/views/GameConfig.vue | 7→7 lines | ~116 |
+| 03:54 | Edited src/views/GameConfig.vue | 6→6 lines | ~63 |
+| 03:55 | Edited src/views/GameConfig.vue | inline fix | ~24 |
+| 03:55 | Edited src/views/GameConfig.vue | expanded (+10 lines) | ~275 |
+| 03:55 | Edited src/views/GameConfig.vue | reduced (-7 lines) | ~182 |
+| 03:56 | Edited src/views/GameConfig.vue | inline fix | ~26 |
+| 03:56 | Edited src/views/GameConfig.vue | queueMicrotask() → nextTick() | ~218 |
+| 19:26 | Edited src-tauri/tauri.conf.json | 4→4 lines | ~32 |
+| 19:26 | Created src/components/TitleBarControls.vue | — | ~430 |
+| 19:27 | Edited src/App.vue | added 1 import(s) | ~153 |
+| 19:27 | Edited src/App.vue | info() → bar() | ~647 |
+| 19:28 | Edited src/App.vue | 13→9 lines | ~48 |
+| 19:28 | Edited src/App.vue | 7→6 lines | ~63 |
+| 19:29 | Edited src/App.vue | reduced (-13 lines) | ~30 |
+| 19:29 | Edited src/App.vue | 5→4 lines | ~26 |
+| 19:39 | Edited src-tauri/tauri.conf.json | 3→3 lines | ~24 |
+| 19:46 | Edited src/assets/styles.css | expanded (+15 lines) | ~88 |
+| 19:47 | Created src/components/ui/animated-grid-pattern/AnimatedGridPattern.vue | — | ~883 |
+| 19:47 | Created src/components/ui/animated-grid-pattern/index.ts | — | ~22 |
+| 19:48 | Edited src/App.vue | CSS: AnimatedGridPattern, mask-image | ~170 |
+| 19:48 | Edited src/App.vue | added 1 import(s) | ~70 |
+| 19:48 | Edited src/App.vue | 4→4 lines | ~42 |
+| 19:59 | Edited src/App.vue | 16→21 lines | ~214 |
+| 20:01 | Edited src/App.vue | 3→2 lines | ~25 |
+| 20:01 | Edited src/App.vue | 21→17 lines | ~178 |
+| 20:01 | Edited src/assets/styles.css | CSS: background-image, background-size | ~78 |
+| 20:02 | Edited src/App.vue | reduced (-10 lines) | ~75 |
+| 20:02 | Edited src/assets/styles.css | removed 12 lines | ~11 |

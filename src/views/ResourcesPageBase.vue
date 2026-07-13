@@ -7,11 +7,15 @@ import { dialog, message } from "@/utils/ui/feedback";
 import { join, sep } from "@tauri-apps/api/path";
 import { open as browseFile } from "@tauri-apps/plugin-dialog";
 import { computedAsync, until } from "@vueuse/core";
-import { NButton, NFlex, NListItem, NSwitch, NTag, NText } from "naive-ui";
+import { Trash2 } from "@lucide/vue";
 import { computed, onMounted, reactive, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import ListViewPage from "./components/ListViewPage.vue";
-import BasicIcon from "./components/MgcIcon.vue";
+import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
+
+type ResourceType = "map" | "mod";
 
 const { type: rscType } = defineProps<{
   type: ResourceType;
@@ -26,7 +30,6 @@ const app = useAppStore();
 const { t } = useI18n();
 const { importFromFile } = useBrpService();
 
-type ResourceType = "map" | "mod";
 type ResourceSchema = {
   filter: string[];
   targetPath: string[];
@@ -57,18 +60,9 @@ const rscPath = computedAsync(
 );
 const rscList = reactive<ManagedFile[]>([]);
 
-// 检查文件是否被禁用（以 .disable 结尾）
 const isFileDisabled = (fileName: string) => fileName.endsWith(".disable");
-
-// 获取显示的文件名（移除 .disable 后缀）
-const getDisplayName = (fileName: string) => {
-  if (isFileDisabled(fileName)) {
-    return fileName.replace(".disable", "");
-  }
-  return fileName;
-};
-
-// 获取文件扩展名
+const getDisplayName = (fileName: string) =>
+  isFileDisabled(fileName) ? fileName.replace(".disable", "") : fileName;
 const getFileExtension = (fileName: string) => {
   const name = getDisplayName(fileName);
   const parts = name.split(".");
@@ -100,7 +94,7 @@ const onImport = async () => {
     for (const source of files) {
       const target = await join(
         rscPath.value,
-        source.split(sep()).pop()! // pop filename
+        source.split(sep()).pop()!
       );
       await backend.copy(source, target);
       await onRefresh();
@@ -113,9 +107,7 @@ const onImportBrp = async () => {
   const files = await browseFile({
     title: t("brp.importButton"),
     multiple: true,
-    filters: [
-      { name: "BRP", extensions: ["brp", "zip"] }
-    ]
+    filters: [{ name: "BRP", extensions: ["brp", "zip"] }]
   });
   if (!files || !files.length) return;
   let any = false;
@@ -144,23 +136,18 @@ const onDelete = async (file: ManagedFile) => {
 };
 
 const onToggleDisable = async (file: ManagedFile, newValue?: boolean) => {
-  // 如果传入了 newValue，根据新值判断操作
-  // 如果没有传入 newValue，根据当前文件状态判断（保持向后兼容）
   const shouldEnable =
     newValue !== undefined ? newValue : isFileDisabled(file.name);
-
   try {
     if (shouldEnable) {
-      // 启用文件：调用 enable 命令，传入带 .disable 的文件名
       await backend.enable(rscPath.value, file.name);
       message.success(t("resources.enable.success"));
     } else {
-      // 禁用文件：调用 disable 命令，传入原始文件名
       await backend.disable(rscPath.value, file.name);
       message.success(t("resources.disable.success"));
     }
     await onRefresh();
-  } catch (error) {
+  } catch {
     message.error(t("resources.toggle.error"));
   }
 };
@@ -175,7 +162,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <list-view-page>
+  <ListViewPage>
     <template #title>
       {{
         t(
@@ -187,68 +174,56 @@ onMounted(async () => {
     </template>
 
     <template #actions>
-      <n-button @click="onRefresh(true)">
+      <Button variant="outline" size="sm" @click="onRefresh(true)">
         {{ t("common.action.refresh") }}
-      </n-button>
-      <n-button @click="onImport">
+      </Button>
+      <Button variant="outline" size="sm" @click="onImport">
         {{ t("resources.import.button") }}
-      </n-button>
-      <n-button type="primary" ghost @click="onImportBrp">
+      </Button>
+      <Button variant="secondary" size="sm" @click="onImportBrp">
         {{ t("brp.importButton") }}
-      </n-button>
-      <n-button @click="onOpenFolder">
+      </Button>
+      <Button variant="outline" size="sm" @click="onOpenFolder">
         {{ t("common.action.openFolder") }}
-      </n-button>
+      </Button>
     </template>
 
-    <n-list-item
+    <div
       v-for="file in rscList"
       :key="file.name"
+      class="flex items-center gap-3 px-4 py-2.5"
       @click="onToggleDisable(file, isFileDisabled(file.name))"
     >
-      <template #prefix>
-        <n-switch
-          :value="!isFileDisabled(file.name)"
-          @update:value="onToggleDisable(file, $event)"
-          @click.stop
-        />
-      </template>
+      <Switch
+        :model-value="!isFileDisabled(file.name)"
+        @update:model-value="v => onToggleDisable(file, v)"
+        @click.stop
+      />
 
-      <n-flex align="center" :size="12">
-        <n-flex vertical :size="4" style="flex: 1; min-width: 0">
-          <n-text
-            :style="{
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-              textDecoration: isFileDisabled(file.name)
-                ? 'line-through'
-                : 'none'
-            }"
-          >
-            {{ getDisplayName(file.name) }}
-          </n-text>
-          <n-text depth="3" style="font-size: 12px">
-            <n-tag size="tiny" :bordered="false" type="info">
-              {{ getFileExtension(file.name) }}
-            </n-tag>
-            <span style="margin-left: 8px">{{
-              formatFileSize(file.size)
-            }}</span>
-          </n-text>
-        </n-flex>
-      </n-flex>
+      <div class="flex min-w-0 flex-1 flex-col gap-0.5">
+        <span
+          class="truncate text-sm"
+          :class="isFileDisabled(file.name) ? 'line-through opacity-60' : ''"
+        >
+          {{ getDisplayName(file.name) }}
+        </span>
+        <div class="flex items-center gap-2 text-xs text-muted-foreground">
+          <Badge variant="secondary" class="px-1.5 py-0 text-[10px]">
+            {{ getFileExtension(file.name) }}
+          </Badge>
+          <span>{{ formatFileSize(file.size) }}</span>
+        </div>
+      </div>
 
-      <template #suffix>
-        <n-flex :wrap="false" align="center">
-          <n-button secondary type="error" @click.stop="onDelete(file)">
-            <template #icon>
-              <BasicIcon icon="delete-2-line" />
-            </template>
-            {{ t("resources.delete.button") }}
-          </n-button>
-        </n-flex>
-      </template>
-    </n-list-item>
-  </list-view-page>
+      <Button
+        variant="ghost"
+        size="sm"
+        class="text-destructive hover:text-destructive"
+        @click.stop="onDelete(file)"
+      >
+        <Trash2 class="size-4" />
+        {{ t("resources.delete.button") }}
+      </Button>
+    </div>
+  </ListViewPage>
 </template>

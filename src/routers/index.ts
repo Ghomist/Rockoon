@@ -5,14 +5,13 @@ import {
 } from "vue-router";
 import { getMenuItems, type MenuItem } from "./menu";
 
-const mapToRoute = (
-  item: MenuItem,
-  isRoot: boolean
-): RouteRecordRaw | undefined => {
+const mapToRoute = (item: MenuItem): RouteRecordRaw | undefined => {
   if (item === "-") return undefined;
 
-  let path = item.route;
-  if (!isRoot) path = path.replace(/^\//, "");
+  // Children keep absolute paths (e.g. "/maps"). Vue Router treats child
+  // paths starting with "/" as absolute, so they match sidebar links that
+  // navigate to `item.route` directly.
+  const path = item.route;
 
   if (item.view) {
     return {
@@ -22,7 +21,7 @@ const mapToRoute = (
     };
   }
   const children = item.children
-    .map(child => mapToRoute(child, false))
+    .map(child => mapToRoute(child))
     .filter(x => !!x);
   return {
     path,
@@ -35,6 +34,6 @@ const mapToRoute = (
 export const router = createRouter({
   history: createMemoryHistory(),
   routes: getMenuItems()
-    .map(x => mapToRoute(x, true))
+    .map(x => mapToRoute(x))
     .filter(x => !!x)
 });

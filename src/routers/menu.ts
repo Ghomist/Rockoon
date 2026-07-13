@@ -1,4 +1,3 @@
-import BasicIcon from "@/views/components/MgcIcon.vue";
 import { t } from "@/i18n";
 import GameConfig from "@/views/GameConfig.vue";
 import GameData from "@/views/GameData.vue";
@@ -7,18 +6,15 @@ import ResourcesMods from "@/views/ResourcesMods.vue";
 import ResourcesSkys from "@/views/ResourcesSkys.vue";
 import Settings from "@/views/Settings.vue";
 import Start from "@/views/Start.vue";
-import { type DefineComponent, h } from "vue";
-import type { MenuOption } from "naive-ui";
-import { RouterLink } from "vue-router";
+import type { Component } from "vue";
 
-type VueComponent = DefineComponent<object, object, any>;
 export type MenuItem =
   | ({
       label: string;
       route: string;
       icon: string;
     } & (
-      | { view: VueComponent; children?: undefined }
+      | { view: Component; children?: undefined }
       | { view?: undefined; children: MenuItem[] }
     ))
   | "-";
@@ -33,22 +29,22 @@ export const getExternalLinks = (): ExternalLinkItem[] => [
   {
     label: t("menu.wiki"),
     url: "https://ballance.jxpxxzj.cn/wiki/",
-    icon: "book-2-line"
+    icon: "book-2"
   },
   {
     label: t("menu.mappingManual"),
     url: "https://ghomist.github.io/ballance-mapping-manual/",
-    icon: "map-pin-line"
+    icon: "map-pin"
   },
   {
     label: t("menu.forum"),
     url: "https://forum.ballance.top/",
-    icon: "chat-3-line"
+    icon: "message-square"
   },
   {
     label: t("menu.downloadSite"),
     url: "https://dl.ballance.top/",
-    icon: "download-2-line"
+    icon: "download"
   }
 ];
 
@@ -56,43 +52,43 @@ export const getMenuItems = (): MenuItem[] => [
   {
     label: t("menu.game"),
     route: "/game",
-    icon: "game-2-line",
+    icon: "gamepad-2",
     view: Start
   },
   "-",
   {
     label: t("menu.options"),
     route: "/options",
-    icon: "settings-1-line",
+    icon: "sliders-horizontal",
     view: GameConfig
   },
   {
     label: t("menu.data"),
     route: "/data",
-    icon: "flag-4-line",
+    icon: "flag",
     view: GameData
   },
   {
     label: t("menu.resources"),
     route: "/resources",
-    icon: "folder-2-line",
+    icon: "folder",
     children: [
       {
         label: t("menu.maps"),
         route: "/maps",
-        icon: "map-line",
+        icon: "map",
         view: ResourcesMaps
       },
       {
         label: t("menu.mods"),
         route: "/mods",
-        icon: "auction-line",
+        icon: "puzzle",
         view: ResourcesMods
       },
       {
         label: t("menu.backgrounds"),
         route: "/backgrounds",
-        icon: "world-2-line",
+        icon: "image",
         view: ResourcesSkys
       }
     ]
@@ -100,31 +96,14 @@ export const getMenuItems = (): MenuItem[] => [
   "-",
   {
     label: t("menu.tools"),
-    icon: "tool-line",
+    icon: "wrench",
     route: "/tools",
     children: []
   },
   {
     label: t("menu.settings"),
     route: "/settings",
-    icon: "settings-2-line",
+    icon: "settings",
     view: Settings
   }
 ];
-
-const mapToMenuOption = (item: MenuItem, parentPath = ""): MenuOption => {
-  if (item === "-") return { type: "divider" };
-
-  const route = parentPath + item.route;
-  return {
-    label: item.view
-      ? () => h(RouterLink, { to: route }, { default: () => item.label })
-      : item.label,
-    key: route,
-    icon: () => h(BasicIcon, { icon: item.icon }),
-    children: item.children?.map(x => mapToMenuOption(x, route))
-  };
-};
-
-export const getMenuOptions = (): MenuOption[] =>
-  getMenuItems().map(item => mapToMenuOption(item));
