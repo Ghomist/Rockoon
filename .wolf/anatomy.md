@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-07-13T15:33:48.678Z
-> Files: 383 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-07-14T12:06:45.790Z
+> Files: 386 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ./
 
@@ -374,7 +374,7 @@
 
 ## src/
 
-- `App.tsx` — Compute dark-mode state from pref.theme + system preference. (~2837 tok)
+- `App.tsx` — Compute dark-mode state from pref.theme + system preference. (~3342 tok)
 - `App.vue` — Vue component (~2404 tok)
 - `main.ts` — Declares app (~330 tok)
 - `main.tsx` — Register console hooks → forward to Rust log stream. (~438 tok)
@@ -403,7 +403,10 @@
 
 ## src/components/ui/
 
+- `bento-grid.tsx` — Bento-style grid container. Stacks vertically on small screens, lays out as (~1039 tok)
 - `button.tsx` — buttonVariants (~708 tok)
+- `dialog.tsx` — Dialog — renders modal (~1327 tok)
+- `particles.tsx` — Adapted from magicui Particles (MIT, https://magicui.design/docs/components/particles). (~2544 tok)
 
 ## src/components/ui/animated-grid-pattern/
 
@@ -421,8 +424,8 @@
 
 ## src/i18n/languages/
 
-- `en.json` — Declares language (~3976 tok)
-- `zh.json` (~3004 tok)
+- `en.json` — Declares language (~4015 tok)
+- `zh.json` (~2981 tok)
 
 ## src/lib/
 
@@ -432,7 +435,7 @@
 
 - `index.ts` — Exports router (~267 tok)
 - `index.tsx` — Build the route tree from `getMenuItems()`. (~316 tok)
-- `menu.ts` — Exports MenuItem, ExternalLinkItem, getExternalLinks, getMenuItems (~582 tok)
+- `menu.ts` — Exports MenuItem, ExternalLinkItem, getExternalLinks, getMenuItems (~638 tok)
 
 ## src/services/
 
@@ -447,8 +450,8 @@
 - `hub.ts` — Exports useHubStore (~242 tok)
 - `index.ts` — Wire up store subscriptions and load initial state. (~503 tok)
 - `instances.ts` — Exports useInstancesStore (~499 tok)
-- `pref.ts` — Persist the entire store state to localStorage. (~393 tok)
-- `profiles.ts` — Resource dirs whose disable-state we capture per-profile. (~3221 tok)
+- `pref.ts` — Persist the entire store state to localStorage. (~400 tok)
+- `profiles.ts` — Resource dirs whose disable-state we capture per-profile. (~3288 tok)
 
 ## src/types/
 
@@ -457,7 +460,7 @@
 - `common.d.ts` — Declares HintType (~14 tok)
 - `file.d.ts` — 由启动器管理的文件类型/数据 (~192 tok)
 - `hub.d.ts` — Declares HubMapResponse (~258 tok)
-- `store.d.ts` — 当前选中的实例信息 (~428 tok)
+- `store.d.ts` — 当前选中的实例信息 (~445 tok)
 
 ## src/utils/
 
@@ -490,16 +493,16 @@
 - `ResourcesPageBase.vue` — Vue: BRP, setup (~1772 tok)
 - `ResourcesSkys.tsx` — LEVEL_LETTERS — renders modal (~3845 tok)
 - `ResourcesSkys.vue` — Vue: Archive, setup (~3263 tok)
-- `Settings.tsx` — usePrefFields (~1777 tok)
+- `Settings.tsx` — usePrefFields (~1877 tok)
 - `Settings.vue` — Vue: setup (~1436 tok)
-- `Start.tsx` — resolveIcon (~2036 tok)
+- `Start.tsx` — resolveIcon (~2107 tok)
 - `Start.vue` — Vue: setup (~1699 tok)
 
 ## src/views/components/
 
 - `DirectoryTreeDialog.tsx` — buildTree — renders modal (~1588 tok)
 - `DirectoryTreeDialog.vue` — Vue: setup (~1364 tok)
-- `FormSection.tsx` — FormSection (~311 tok)
+- `FormSection.tsx` — FormSection (~308 tok)
 - `FormSection.vue` — Vue: setup (~247 tok)
 - `key.ts` — Database 按键（布局）映射 (~1188 tok)
 - `ListViewPage.tsx` — ListViewPage (~211 tok)

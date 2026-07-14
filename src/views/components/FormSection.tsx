@@ -26,7 +26,10 @@ export default function FormSection({
   children
 }: Props) {
   return (
-    <Card id={id} className="scroll-mt-4">
+    <Card
+      id={id}
+      className="scroll-mt-4 bg-card/50 backdrop-blur-[2px]"
+    >
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
           {Icon && <Icon className="size-4 text-muted-foreground" />}

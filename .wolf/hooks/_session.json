@@ -7,8 +7,8 @@
       "first_read": "2026-07-12T07:29:49.075Z"
     },
     "D:/Codes/rockoon/package.json": {
-      "count": 6,
-      "tokens": 747,
+      "count": 7,
+      "tokens": 739,
       "first_read": "2026-07-12T07:29:49.219Z"
     },
     "D:/Codes/rockoon/AGENTS.md": {
@@ -92,7 +92,7 @@
       "first_read": "2026-07-12T07:30:56.984Z"
     },
     "D:/Codes/rockoon/src-tauri/tauri.conf.json": {
-      "count": 6,
+      "count": 7,
       "tokens": 502,
       "first_read": "2026-07-12T07:30:57.202Z"
     },
@@ -162,7 +162,7 @@
       "first_read": "2026-07-12T07:31:21.449Z"
     },
     "D:/Codes/rockoon/src/stores/index.ts": {
-      "count": 6,
+      "count": 7,
       "tokens": 503,
       "first_read": "2026-07-12T07:31:21.679Z"
     },
@@ -172,8 +172,8 @@
       "first_read": "2026-07-12T07:31:21.968Z"
     },
     "D:/Codes/rockoon/src/routers/menu.ts": {
-      "count": 9,
-      "tokens": 633,
+      "count": 11,
+      "tokens": 638,
       "first_read": "2026-07-12T07:38:03.863Z"
     },
     "D:/Codes/rockoon/src/routers/index.ts": {
@@ -212,8 +212,8 @@
       "first_read": "2026-07-12T07:38:18.983Z"
     },
     "D:/Codes/rockoon/src/stores/pref.ts": {
-      "count": 5,
-      "tokens": 385,
+      "count": 6,
+      "tokens": 393,
       "first_read": "2026-07-12T07:38:19.282Z"
     },
     "D:/Codes/rockoon/src/views/Settings.vue": {
@@ -222,8 +222,8 @@
       "first_read": "2026-07-12T07:38:29.284Z"
     },
     "D:/Codes/rockoon/src/types/store.d.ts": {
-      "count": 7,
-      "tokens": 411,
+      "count": 9,
+      "tokens": 428,
       "first_read": "2026-07-12T07:38:29.499Z"
     },
     "D:/Codes/rockoon/src/types/hub.d.ts": {
@@ -232,13 +232,13 @@
       "first_read": "2026-07-12T07:38:29.729Z"
     },
     "D:/Codes/rockoon/src/i18n/languages/zh.json": {
-      "count": 15,
-      "tokens": 2983,
+      "count": 18,
+      "tokens": 3088,
       "first_read": "2026-07-12T07:38:38.597Z"
     },
     "D:/Codes/rockoon/src/i18n/languages/en.json": {
-      "count": 17,
-      "tokens": 3951,
+      "count": 19,
+      "tokens": 4116,
       "first_read": "2026-07-12T07:38:38.954Z"
     },
     "D:/Codes/rockoon/src/App.vue": {
@@ -262,8 +262,8 @@
       "first_read": "2026-07-12T12:28:51.446Z"
     },
     "D:/Codes/rockoon/src/stores/app.ts": {
-      "count": 4,
-      "tokens": 368,
+      "count": 5,
+      "tokens": 455,
       "first_read": "2026-07-12T12:28:51.685Z"
     },
     "D:/Codes/rockoon/src/services/launcher.ts": {
@@ -362,8 +362,8 @@
       "first_read": "2026-07-12T16:48:55.728Z"
     },
     "D:/Codes/rockoon/src/stores/profiles.ts": {
-      "count": 2,
-      "tokens": 2881,
+      "count": 4,
+      "tokens": 3221,
       "first_read": "2026-07-12T16:49:27.700Z"
     },
     "D:/Codes/rockoon/src/utils/ui/feedback.ts": {
@@ -552,8 +552,8 @@
       "first_read": "2026-07-13T12:13:51.137Z"
     },
     "D:/Codes/rockoon/components.json": {
-      "count": 1,
-      "tokens": 120,
+      "count": 2,
+      "tokens": 124,
       "first_read": "2026-07-13T12:14:39.239Z"
     },
     "D:/Codes/rockoon/index.html": {
@@ -573,22 +573,22 @@
     },
     "D:/Codes/rockoon/src/views/components/NFormWrapper.tsx": {
       "count": 2,
-      "tokens": 3140,
+      "tokens": 3059,
       "first_read": "2026-07-13T12:50:13.154Z"
     },
     "D:/Codes/rockoon/src/views/Start.tsx": {
-      "count": 1,
-      "tokens": 134,
+      "count": 3,
+      "tokens": 1900,
       "first_read": "2026-07-13T12:52:06.099Z"
     },
     "D:/Codes/rockoon/src/views/Settings.tsx": {
-      "count": 1,
-      "tokens": 74,
+      "count": 3,
+      "tokens": 1777,
       "first_read": "2026-07-13T12:52:43.832Z"
     },
     "D:/Codes/rockoon/src/views/GameConfig.tsx": {
-      "count": 1,
-      "tokens": 74,
+      "count": 2,
+      "tokens": 5000,
       "first_read": "2026-07-13T12:53:16.460Z"
     },
     "D:/Codes/rockoon/src/views/GameData.tsx": {
@@ -617,8 +617,8 @@
       "first_read": "2026-07-13T13:02:09.452Z"
     },
     "D:/Codes/rockoon/src/App.tsx": {
-      "count": 3,
-      "tokens": 2846,
+      "count": 13,
+      "tokens": 3212,
       "first_read": "2026-07-13T14:41:31.899Z"
     },
     "D:/Codes/rockoon/src/components/ui/dropdown-menu.tsx": {
@@ -627,17 +627,82 @@
       "first_read": "2026-07-13T14:55:38.524Z"
     },
     "D:/Codes/rockoon/src/components/ui/button.tsx": {
-      "count": 1,
-      "tokens": 0,
+      "count": 3,
+      "tokens": 708,
       "first_read": "2026-07-13T14:59:12.479Z"
     },
     "D:/Codes/rockoon/src/views/ResourcesPageBase.tsx": {
       "count": 2,
       "tokens": 1977,
       "first_read": "2026-07-13T15:26:10.556Z"
+    },
+    "D:/Codes/rockoon/src/components/ui/animated-grid-pattern.tsx": {
+      "count": 1,
+      "tokens": 0,
+      "first_read": "2026-07-13T15:40:48.713Z"
+    },
+    "D:/Codes/rockoon/src/components/ui": {
+      "count": 1,
+      "tokens": 0,
+      "first_read": "2026-07-13T15:55:51.712Z"
+    },
+    "D:/Codes/rockoon/src/components/ui/card.tsx": {
+      "count": 2,
+      "tokens": 0,
+      "first_read": "2026-07-13T15:56:10.003Z"
+    },
+    "D:/Codes/rockoon/src/lib/utils.ts": {
+      "count": 1,
+      "tokens": 49,
+      "first_read": "2026-07-13T15:59:33.514Z"
+    },
+    "D:/Codes/rockoon/src/components/ui/bento-grid.tsx": {
+      "count": 1,
+      "tokens": 1262,
+      "first_read": "2026-07-13T16:03:54.088Z"
+    },
+    "D:/Codes/rockoon/src/components/ui/badge.tsx": {
+      "count": 1,
+      "tokens": 0,
+      "first_read": "2026-07-13T16:07:48.089Z"
+    },
+    "D:/Codes/rockoon/src/components/ui/dialog.tsx": {
+      "count": 2,
+      "tokens": 1327,
+      "first_read": "2026-07-13T17:00:28.915Z"
+    },
+    "D:/Codes/rockoon/src/views/components/DirectoryTreeDialog.tsx": {
+      "count": 1,
+      "tokens": 1588,
+      "first_read": "2026-07-13T17:01:02.690Z"
+    },
+    "D:/Codes/rockoon/node_modules/.pnpm/radix-ui@1.6.2_@types+react_af0cb6ff7f3214f0ae4ef1c15d9c7dac/node_modules/radix-ui/src/index.ts": {
+      "count": 1,
+      "tokens": 0,
+      "first_read": "2026-07-13T17:02:24.243Z"
+    },
+    "D:/Codes/rockoon/node_modules/.pnpm/@radix-ui+react-dialog@1.1._19e637a1eb439fb7ac9fbd37f3b253ea/node_modules/@radix-ui/react-dialog/dist/index.mjs": {
+      "count": 1,
+      "tokens": 0,
+      "first_read": "2026-07-13T17:02:50.893Z"
+    },
+    "D:/Codes/rockoon/node_modules/.pnpm/@radix-ui+react-slot@1.3.0_@types+react@18.3.31_react@18.3.1/node_modules/@radix-ui/react-slot/dist/index.mjs": {
+      "count": 1,
+      "tokens": 0,
+      "first_read": "2026-07-13T17:03:48.844Z"
+    },
+    "D:/Codes/rockoon/src/views/components/SettingsNav.tsx": {
+      "count": 1,
+      "tokens": 378,
+      "first_read": "2026-07-14T11:19:37.046Z"
+    },
+    "D:/Codes/rockoon/src/views/components/FormSection.tsx": {
+      "count": 1,
+      "tokens": 311,
+      "first_read": "2026-07-14T12:04:45.090Z"
     }
   },
-  "anatomy_hits": 95,
-  "anatomy_misses": 32,
-  "repeated_reads_warned": 185
+  "anatomy_hits": 100,
+  "anatomy_misses": 40,
+  "repeated_reads_warned": 221
 }

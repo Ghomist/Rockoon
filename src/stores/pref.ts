@@ -15,6 +15,7 @@ const defaultState: PreferenceStore = {
   backgroundBlur: 8,
   maskOpacity: 0.25,
   backgroundImage: undefined,
+  backgroundType: "grid",
   indexExpireTime: 120,
   language: detectSystemLanguage(),
   theme: "auto",

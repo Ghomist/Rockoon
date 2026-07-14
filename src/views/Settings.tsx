@@ -22,6 +22,7 @@ function usePrefFields() {
     instancePath: usePrefStore(s => s.instancePath),
     language: usePrefStore(s => s.language),
     theme: usePrefStore(s => s.theme),
+    backgroundType: usePrefStore(s => s.backgroundType),
     centerWindow: usePrefStore(s => s.centerWindow),
     hideWinWhenLaunch: usePrefStore(s => s.hideWinWhenLaunch),
     showWelcome: usePrefStore(s => s.showWelcome),
@@ -102,6 +103,15 @@ export default function Settings() {
         { value: "auto", label: t("settings.theme.auto") },
         { value: "light", label: t("settings.theme.light") },
         { value: "dark", label: t("settings.theme.dark") }
+      ]
+    },
+    {
+      type: "select",
+      label: t("settings.background.title"),
+      field: prefField(pref, "backgroundType"),
+      options: [
+        { value: "grid", label: t("settings.background.grid") },
+        { value: "particles", label: t("settings.background.particles") }
       ]
     },
     {

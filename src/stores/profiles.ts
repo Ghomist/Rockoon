@@ -143,6 +143,8 @@ export const useProfilesStore = create<ProfilesState>((set, get) => ({
     await get().applyState(target);
     set({ index: { ...get().index, currentId: id } });
     await get().save();
+    // ponytail: full webview reload, all stores re-init from disk via initStores()
+    location.reload();
   },
 
   /** Snapshot current disk state as a new profile, mark as current. */
@@ -170,12 +172,15 @@ export const useProfilesStore = create<ProfilesState>((set, get) => ({
     if (index.profiles.length <= 1) return; // keep at least one
     const next = index.profiles.filter(p => p.id !== id);
     let newCurrentId = index.currentId;
-    if (index.currentId === id) {
+    const switched = index.currentId === id;
+    if (switched) {
       newCurrentId = next[0].id;
       await get().applyState(next[0]);
     }
     set({ index: { profiles: next, currentId: newCurrentId } });
     await get().save();
+    // ponytail: full webview reload, all stores re-init from disk via initStores()
+    if (switched) location.reload();
   },
 
   async renameProfile(id, name) {

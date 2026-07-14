@@ -15,6 +15,8 @@ import { Input } from "@/components/ui/input";
 import AppSidebar from "@/components/AppSidebar";
 import GlobalDialogHost from "@/components/GlobalDialogHost";
 import TitleBarControls from "@/components/TitleBarControls";
+import { AnimatedGridPattern } from "@/components/ui/animated-grid-pattern";
+import { Particles } from "@/components/ui/particles";
 import Onboarding from "@/views/Onboarding";
 import { AppRoutes } from "@/routers";
 import { t } from "@/i18n";
@@ -30,6 +32,7 @@ import {
   onOpenUrl
 } from "@tauri-apps/plugin-deep-link";
 import { useNavigate, useLocation } from "react-router-dom";
+import { getVersion } from "@tauri-apps/api/app";
 
 /** Compute dark-mode state from pref.theme + system preference. */
 function useDarkMode(): boolean {
@@ -99,6 +102,13 @@ function MainLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(false);
+  const [appVersion, setAppVersion] = useState("");
+  const backgroundType = usePrefStore(s => s.backgroundType);
+  const isDark = useDarkMode();
+
+  useEffect(() => {
+    getVersion().then(setAppVersion);
+  }, []);
 
   // Profile store data
   const profiles = useProfilesStore(s => s.index.profiles);
@@ -232,9 +242,22 @@ function MainLayout() {
   return (
     <div className="flex h-screen flex-col bg-background text-foreground">
       <header className="flex h-13 shrink-0 items-center gap-4 border-b bg-background pl-4 pr-0">
-        <span className="select-none text-base font-semibold tracking-tight">
-          Rockoon
-        </span>
+        <div className="flex items-center gap-2">
+          <img
+            src="/logo.png"
+            alt="Rockoon"
+            className="size-5 rounded-sm"
+            draggable={false}
+          />
+          <span className="select-none text-base font-semibold tracking-tight">
+            Rockoon
+          </span>
+          {appVersion && (
+            <span className="select-none text-xs text-muted-foreground">
+              v{appVersion}
+            </span>
+          )}
+        </div>
         <div
           data-tauri-drag-region
           className="flex-1 self-stretch"
@@ -290,7 +313,32 @@ function MainLayout() {
         </div>
       </header>
 
-      <div className="flex flex-1 overflow-hidden">
+      <div className="relative flex flex-1 overflow-hidden">
+        {/* Global background — lives outside <main> and router so route
+            changes neither remount it nor let route content height push
+            the layout. Sidebar/main sit on top via their own bg-background. */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 overflow-hidden"
+        >
+          {backgroundType === "particles" ? (
+            <Particles
+              className="absolute inset-0"
+              quantity={120}
+              color={isDark ? "#ffffff" : "#000000"}
+              ease={80}
+              refresh={false}
+            />
+          ) : (
+            <AnimatedGridPattern
+              numSquares={40}
+              maxOpacity={0.08}
+              duration={3}
+              repeatDelay={1}
+              className="absolute inset-y-[-30%] h-[160%] w-full skew-y-12 [mask-image:radial-gradient(500px_circle_at_center,white,transparent)]"
+            />
+          )}
+        </div>
         <AppSidebar collapsed={collapsed} onCollapsedChange={setCollapsed} />
         <main className="relative flex-1 overflow-auto">
           <AppRoutes />

@@ -317,3 +317,38 @@
 | 23:26 | Edited src/views/GameData.tsx | "flex items-center gap-3 p" → "flex cursor-pointer items" | ~31 |
 | 23:29 | Edited src/views/ResourcesPageBase.tsx | CSS: dark | ~118 |
 | 23:33 | Edited src/routers/menu.ts | reduced (-7 lines) | ~139 |
+| 23:41 | Edited src/App.tsx | CSS: mask-image | ~218 |
+| 23:42 | Edited src/App.tsx | added 1 import(s) | ~53 |
+| 23:49 | Edited src/App.tsx | 20→21 lines | ~262 |
+| 00:00 | Created src/components/ui/bento-grid.tsx | — | ~1251 |
+| 00:00 | Created src/views/Start.tsx | — | ~1916 |
+| 00:01 | Edited src/components/ui/bento-grid.tsx | 10→6 lines | ~130 |
+| 00:01 | Edited src/views/Start.tsx | 14→13 lines | ~116 |
+| 00:01 | Edited src/components/ui/bento-grid.tsx | inline fix | ~16 |
+| 00:01 | Edited src/components/ui/bento-grid.tsx | 6→10 lines | ~162 |
+| 00:02 | Edited src/views/Start.tsx | inline fix | ~13 |
+| 00:08 | Created src/components/ui/bento-grid.tsx | — | ~978 |
+| 00:09 | Created src/views/Start.tsx | — | ~2014 |
+| 00:17 | Edited src/i18n/languages/zh.json | expanded (+8 lines) | ~104 |
+| 00:18 | Edited src/i18n/languages/en.json | expanded (+8 lines) | ~165 |
+| 00:18 | Edited src/routers/menu.ts | 28→33 lines | ~220 |
+| 00:18 | Edited src/components/ui/bento-grid.tsx | modified BentoCard() | ~667 |
+| 00:18 | Edited src/views/Start.tsx | expanded (+23 lines) | ~186 |
+| 00:19 | Edited src/views/Start.tsx | 35→37 lines | ~339 |
+| 00:54 | Edited src/stores/profiles.ts | 4→6 lines | ~65 |
+| 00:58 | Edited src/stores/profiles.ts | added 1 condition(s) | ~165 |
+| 01:04 | Edited src/App.tsx | added 1 import(s) | ~32 |
+| 01:04 | Edited src/App.tsx | modified MainLayout() | ~76 |
+| 01:04 | Edited src/App.tsx | expanded (+13 lines) | ~170 |
+| 01:06 | Edited src/components/ui/dialog.tsx | CSS: ponytail | ~217 |
+| 19:23 | Created src/components/ui/particles.tsx | — | ~2544 |
+| 19:33 | Edited src/types/store.d.ts | 2→5 lines | ~29 |
+| 19:34 | Edited src/stores/pref.ts | 1→2 lines | ~16 |
+| 19:34 | Edited src/App.tsx | added 1 import(s) | ~38 |
+| 19:35 | Edited src/App.tsx | modified MainLayout() | ~83 |
+| 19:36 | Edited src/App.tsx | expanded (+10 lines) | ~214 |
+| 19:37 | Edited src/views/Settings.tsx | CSS: backgroundType | ~162 |
+| 19:37 | Edited src/views/Settings.tsx | expanded (+9 lines) | ~175 |
+| 19:39 | Edited src/i18n/languages/en.json | 6→11 lines | ~71 |
+| 19:40 | Edited src/i18n/languages/zh.json | 6→11 lines | ~58 |
+| 20:06 | Edited src/views/components/FormSection.tsx | 1→4 lines | ~26 |

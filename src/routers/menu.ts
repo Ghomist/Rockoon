@@ -21,6 +21,7 @@ export type MenuItem =
 
 export type ExternalLinkItem = {
   label: string;
+  description: string;
   url: string;
   icon: string;
 };
@@ -28,21 +29,25 @@ export type ExternalLinkItem = {
 export const getExternalLinks = (): ExternalLinkItem[] => [
   {
     label: t("menu.wiki"),
+    description: t("home.wikiDesc"),
     url: "https://ballance.jxpxxzj.cn/wiki/",
     icon: "book-2"
   },
   {
     label: t("menu.mappingManual"),
+    description: t("home.mappingManualDesc"),
     url: "https://ghomist.github.io/ballance-mapping-manual/",
     icon: "map-pin"
   },
   {
     label: t("menu.forum"),
+    description: t("home.forumDesc"),
     url: "https://forum.ballance.top/",
     icon: "message-square"
   },
   {
     label: t("menu.downloadSite"),
+    description: t("home.downloadSiteDesc"),
     url: "https://dl.ballance.top/",
     icon: "download"
   }

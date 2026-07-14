@@ -45,6 +45,9 @@ type PreferenceStore = {
   /** 自定义背景图 */
   backgroundImage?: string;
 
+  /** 背景动效类型 */
+  backgroundType: "grid" | "particles";
+
   /** 下载站索引过期时间（分钟） */
   indexExpireTime: number;
 

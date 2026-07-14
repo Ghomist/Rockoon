@@ -60,6 +60,11 @@
       "light": "Light",
       "title": "Color theme"
     },
+    "background": {
+      "title": "Background effect",
+      "grid": "Grid",
+      "particles": "Particles"
+    },
     "clearStorage": {
       "button": "Clear all data",
       "title": "Are you sure you want to clear all data?"
@@ -87,7 +92,15 @@
     "totalPlaytime": "Total Playtime",
     "mapCount": "Total Maps",
     "modCount": "Total Mods",
-    "quickLinks": "Quick Links"
+    "quickLinks": "Quick Links",
+    "optionsDesc": "Adjust in-game graphics and control settings",
+    "mapsDesc": "Browse and manage installed custom maps",
+    "modsDesc": "Enable, disable, or configure game mods",
+    "settingsDesc": "Configure launcher appearance and behavior",
+    "wikiDesc": "Browse the Ballance wiki and tutorials",
+    "mappingManualDesc": "Learn how to create custom maps",
+    "forumDesc": "Discuss with community members",
+    "downloadSiteDesc": "Download community maps and mods"
   },
   "common": {
     "none": "None",

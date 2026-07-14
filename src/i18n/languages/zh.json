@@ -56,7 +56,15 @@
     "totalPlaytime": "游戏总时长",
     "mapCount": "地图总数",
     "modCount": "模组总数",
-    "quickLinks": "快捷跳转"
+    "quickLinks": "快捷跳转",
+    "optionsDesc": "调整画面、按键等游戏内设置",
+    "mapsDesc": "浏览和管理已安装的自制地图",
+    "modsDesc": "启用、禁用或配置游戏模组",
+    "settingsDesc": "配置启动器的外观与行为",
+    "wikiDesc": "查阅 Ballance 百科与游戏教程",
+    "mappingManualDesc": "学习自制地图的制作流程",
+    "forumDesc": "与社区成员交流与讨论",
+    "downloadSiteDesc": "下载社区地图与模组资源"
   },
   "profile": {
     "currentLabel": "当前配置",
@@ -190,6 +198,11 @@
       "auto": "跟随系统",
       "light": "浅色",
       "dark": "深色"
+    },
+    "background": {
+      "title": "背景动效",
+      "grid": "方格",
+      "particles": "粒子"
     },
     "update": "当前版本：",
     "checkUpdate": "检查更新",
