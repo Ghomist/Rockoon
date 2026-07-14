@@ -64,6 +64,38 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-07-14T11:37:43.742Z"
+    },
+    {
+      "id": "bug-005",
+      "timestamp": "2026-07-14T12:30:03.694Z",
+      "error_message": "Wrong return value",
+      "file": "src/routers/index.tsx",
+      "root_cause": "Was returning: <Routes>{buildRoutes(getMenuItems())}</Routes>;",
+      "fix": "Now returns: (",
+      "tags": [
+        "auto-detected",
+        "return-value",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-14T12:30:03.694Z"
+    },
+    {
+      "id": "bug-006",
+      "timestamp": "2026-07-14T12:40:11.678Z",
+      "error_message": "Incorrect value in code",
+      "file": "src/routers/index.tsx",
+      "root_cause": "Had \"route-enter\"",
+      "fix": "Changed to \"route-enter h-full\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-14T12:40:11.678Z"
     }
   ]
 }

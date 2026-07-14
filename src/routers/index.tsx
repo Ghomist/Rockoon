@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { getMenuItems, type MenuItem } from "./menu";
 
 /**
@@ -31,5 +31,11 @@ function buildRoutes(items: MenuItem[]): JSX.Element[] {
 }
 
 export function AppRoutes() {
-  return <Routes>{buildRoutes(getMenuItems())}</Routes>;
+  // key by pathname → remounts on navigation, triggering the CSS enter animation.
+  const location = useLocation();
+  return (
+    <div key={location.pathname} className="route-enter h-full">
+      <Routes>{buildRoutes(getMenuItems())}</Routes>
+    </div>
+  );
 }

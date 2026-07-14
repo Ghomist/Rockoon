@@ -121,6 +121,22 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
+/* Route change animation: triggered by remount via key={pathname}.
+   No transform — any translate inside main's overflow-auto triggers a
+   transient scrollbar flash. Pure opacity is enough. */
+@keyframes route-enter {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.route-enter {
+  animation: route-enter 0.18s ease-out;
+}
+
 @layer base {
   * {
     border-color: var(--border);
@@ -132,7 +148,6 @@
   #app {
     height: 100%;
   }
-
   body {
     user-select: none;
     background-color: var(--background);

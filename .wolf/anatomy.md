@@ -1,6 +1,6 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-07-14T12:06:45.790Z
+> Auto-maintained by OpenWolf. Last scanned: 2026-07-14T13:08:26.358Z
 > Files: 386 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ./
@@ -382,7 +382,7 @@
 
 ## src/assets/
 
-- `styles.css` — Styles: 7 rules, 105 vars (~1383 tok)
+- `styles.css` — Styles: 9 rules, 105 vars (~1480 tok)
 - `styles.scss` — Styles: 2 rules, 4 vars (~139 tok)
 - `ui-fix.scss` — Styles: 3 rules (~60 tok)
 
@@ -434,7 +434,7 @@
 ## src/routers/
 
 - `index.ts` — Exports router (~267 tok)
-- `index.tsx` — Build the route tree from `getMenuItems()`. (~316 tok)
+- `index.tsx` — Build the route tree from `getMenuItems()`. (~373 tok)
 - `menu.ts` — Exports MenuItem, ExternalLinkItem, getExternalLinks, getMenuItems (~638 tok)
 
 ## src/services/

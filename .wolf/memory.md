@@ -352,3 +352,9 @@
 | 19:39 | Edited src/i18n/languages/en.json | 6→11 lines | ~71 |
 | 19:40 | Edited src/i18n/languages/zh.json | 6→11 lines | ~58 |
 | 20:06 | Edited src/views/components/FormSection.tsx | 1→4 lines | ~26 |
+| 20:29 | Edited src/routers/index.tsx | 2→2 lines | ~36 |
+| 20:30 | Edited src/routers/index.tsx | modified AppRoutes() | ~82 |
+| 20:30 | Edited src/assets/styles.css | 12→11 lines | ~50 |
+| 20:31 | Edited src/assets/styles.css | expanded (+16 lines) | ~83 |
+| 20:40 | Edited src/routers/index.tsx | 3→3 lines | ~37 |
+| 21:08 | Edited src/assets/styles.css | 15→15 lines | ~97 |
