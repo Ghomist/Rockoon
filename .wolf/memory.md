@@ -358,3 +358,124 @@
 | 20:31 | Edited src/assets/styles.css | expanded (+16 lines) | ~83 |
 | 20:40 | Edited src/routers/index.tsx | 3→3 lines | ~37 |
 | 21:08 | Edited src/assets/styles.css | 15→15 lines | ~97 |
+| 23:14 | Edited src-tauri/tauri.conf.json | 3→3 lines | ~24 |
+| 23:14 | Edited src-tauri/capabilities/default.json | 1→2 lines | ~22 |
+| 23:14 | Edited src/types/store.d.ts | 2→2 lines | ~20 |
+| 23:14 | Edited src/i18n/languages/en.json | 5→6 lines | ~41 |
+| 23:14 | Edited src/i18n/languages/zh.json | 5→6 lines | ~34 |
+| 23:14 | Edited src/views/Settings.tsx | 4→5 lines | ~67 |
+| 23:15 | Edited src/App.tsx | added 2 import(s) | ~106 |
+| 23:15 | Edited src/App.tsx | CSS: effects, failed | ~198 |
+| 23:15 | Edited src/App.tsx | 2→7 lines | ~52 |
+| 23:16 | Edited src/App.tsx | 17→17 lines | ~183 |
+| 23:19 | Edited src/assets/styles.css | CSS: mode, background-color | ~44 |
+| 23:19 | Edited src/App.tsx | 9→11 lines | ~133 |
+| 23:25 | Edited src/types/store.d.ts | 2→2 lines | ~16 |
+| 23:25 | Edited src-tauri/capabilities/default.json | 2→1 lines | ~12 |
+| 23:25 | Edited src/i18n/languages/en.json | 6→6 lines | ~45 |
+| 23:25 | Edited src/i18n/languages/zh.json | 6→6 lines | ~36 |
+| 23:25 | Edited src/views/Settings.tsx | expanded (+8 lines) | ~112 |
+| 23:25 | Edited src/views/Settings.tsx | CSS: maskOpacity | ~31 |
+| 23:25 | Edited src/App.tsx | 9→7 lines | ~77 |
+| 23:25 | Edited src/App.tsx | modified App() | ~76 |
+| 23:25 | Edited src/App.tsx | 2→3 lines | ~43 |
+| 23:26 | Edited src/App.tsx | 8→3 lines | ~53 |
+| 23:26 | Edited src/App.tsx | CSS: overlay, backgroundColor | ~348 |
+| 23:26 | Edited src/assets/styles.css | removed 6 lines | ~4 |
+| 23:26 | Edited src/assets/styles.css | CSS: here | ~108 |
+| 23:32 | Edited src/types/store.d.ts | 2→2 lines | ~20 |
+| 23:32 | Edited src-tauri/capabilities/default.json | 1→2 lines | ~22 |
+| 23:32 | Edited src/i18n/languages/en.json | 6→8 lines | ~88 |
+| 23:32 | Edited src/i18n/languages/zh.json | 6→8 lines | ~66 |
+| 23:32 | Edited src/views/Settings.tsx | CSS: tip | ~148 |
+| 23:32 | Edited src/App.tsx | added 2 import(s) | ~106 |
+| 23:33 | Edited src/App.tsx | modified App() | ~330 |
+| 23:33 | Edited src/App.tsx | 3→2 lines | ~27 |
+| 23:33 | Edited src/App.tsx | 2→7 lines | ~52 |
+| 23:33 | Edited src/App.tsx | reduced (-11 lines) | ~224 |
+| 23:33 | Edited src/assets/styles.css | CSS: mode, background-color | ~44 |
+| 23:33 | Edited src/assets/styles.css | CSS: background-color | ~81 |
+| 00:01 | Edited src/types/store.d.ts | 2→2 lines | ~16 |
+| 00:01 | Edited src-tauri/capabilities/default.json | 2→1 lines | ~12 |
+| 00:01 | Edited src-tauri/tauri.conf.json | 3→3 lines | ~24 |
+| 00:01 | Edited src/i18n/languages/en.json | 8→5 lines | ~33 |
+| 00:01 | Edited src/i18n/languages/zh.json | 8→5 lines | ~27 |
+| 00:01 | Edited src/views/Settings.tsx | 3→2 lines | ~32 |
+| 00:01 | Edited src/views/Settings.tsx | reduced (-11 lines) | ~69 |
+| 00:01 | Edited src/App.tsx | 9→7 lines | ~77 |
+| 00:01 | Edited src/App.tsx | modified App() | ~76 |
+| 00:01 | Edited src/App.tsx | 7→2 lines | ~25 |
+| 00:01 | Edited src/App.tsx | 17→17 lines | ~173 |
+| 00:02 | Edited src/assets/styles.css | removed 6 lines | ~4 |
+| 00:09 | Created src/components/ui/meteors.tsx | — | ~482 |
+| 00:10 | Created src/components/ui/hexagon-pattern.tsx | — | ~2046 |
+| 00:10 | Edited src/assets/styles.css | expanded (+16 lines) | ~116 |
+| 00:11 | Edited src/App.tsx | added 2 import(s) | ~71 |
+| 00:11 | Edited src/App.tsx | CSS: default | ~365 |
+| 00:11 | Edited src/types/store.d.ts | inline fix | ~18 |
+| 00:11 | Edited src/i18n/languages/en.json | 5→7 lines | ~50 |
+| 00:12 | Edited src/i18n/languages/zh.json | 5→7 lines | ~40 |
+| 00:12 | Edited src/views/Settings.tsx | 5→7 lines | ~90 |
+| 00:14 | Edited src/components/ui/meteors.tsx | 6→6 lines | ~106 |
+| 00:14 | Edited src/App.tsx | 2→2 lines | ~29 |
+| 00:17 | Edited src/components/ui/meteors.tsx | 6→6 lines | ~107 |
+| 00:19 | Edited src/App.tsx | 2→2 lines | ~22 |
+| 00:21 | Edited src/components/ui/meteors.tsx | 6→6 lines | ~107 |
+| 00:21 | Edited src/App.tsx | 2→2 lines | ~22 |
+| 00:25 | Edited src/assets/styles.css | 14→14 lines | ~94 |
+| 00:25 | Edited src/components/ui/meteors.tsx | 13→14 lines | ~177 |
+| 00:25 | Edited src/App.tsx | 5→5 lines | ~74 |
+| 00:25 | Edited src/stores/pref.ts | "grid" → "hexagon" | ~8 |
+| 00:28 | Created src/components/ui/flickering-grid.tsx | — | ~1562 |
+| 00:28 | Edited src/types/store.d.ts | inline fix | ~22 |
+| 00:28 | Edited src/i18n/languages/en.json | 7→8 lines | ~60 |
+| 00:28 | Edited src/i18n/languages/zh.json | 7→8 lines | ~47 |
+| 00:28 | Edited src/views/Settings.tsx | 7→8 lines | ~110 |
+| 00:28 | Edited src/App.tsx | added 1 import(s) | ~90 |
+| 00:29 | Edited src/App.tsx | expanded (+11 lines) | ~203 |
+| 00:30 | Edited src/App.tsx | 11→11 lines | ~109 |
+| 00:33 | Edited src/App.tsx | 3→3 lines | ~39 |
+| 00:33 | Edited src/App.tsx | 2→2 lines | ~27 |
+| 00:33 | Edited src/App.tsx | 3→3 lines | ~39 |
+| 00:34 | Edited src/App.tsx | "absolute inset-0 blur-[2p" → "absolute inset-0 blur-[1p" | ~17 |
+| 00:41 | Edited src/App.tsx | 1→2 lines | ~19 |
+| 00:42 | Edited src/App.tsx | 6→4 lines | ~47 |
+| 00:42 | Edited src/App.tsx | removed 14 lines | ~18 |
+| 00:42 | Edited src/views/Settings.tsx | 6→5 lines | ~83 |
+| 00:42 | Edited src/i18n/languages/zh.json | 5→4 lines | ~26 |
+| 00:42 | Edited src/i18n/languages/en.json | 5→4 lines | ~35 |
+| 00:42 | Edited src/types/store.d.ts | inline fix | ~18 |
+| 00:44 | Edited src/components/ui/hexagon-pattern.tsx | expanded (+8 lines) | ~168 |
+| 00:44 | Edited src/components/ui/hexagon-pattern.tsx | added 1 condition(s) | ~268 |
+| 00:45 | Edited src/components/ui/hexagon-pattern.tsx | added 2 condition(s) | ~512 |
+| 00:45 | Edited src/components/ui/hexagon-pattern.tsx | added optional chaining | ~189 |
+| 00:45 | Edited src/components/ui/hexagon-pattern.tsx | CSS: flickerCells | ~87 |
+| 00:45 | Edited src/components/ui/hexagon-pattern.tsx | 15→15 lines | ~160 |
+| 00:46 | Edited src/App.tsx | 7→9 lines | ~111 |
+| 00:49 | Edited src/components/ui/hexagon-pattern.tsx | modified seedFlicker() | ~96 |
+| 00:49 | Edited src/components/ui/hexagon-pattern.tsx | modified seedFlicker() | ~382 |
+| 00:49 | Edited src/components/ui/hexagon-pattern.tsx | 6→5 lines | ~68 |
+| 00:49 | Edited src/components/ui/hexagon-pattern.tsx | expanded (+26 lines) | ~420 |
+| 00:51 | Edited src/components/ui/hexagon-pattern.tsx | 9→13 lines | ~105 |
+| 00:51 | Edited src/components/ui/hexagon-pattern.tsx | 3→5 lines | ~34 |
+| 00:51 | Edited src/components/ui/hexagon-pattern.tsx | 12→13 lines | ~142 |
+| 00:51 | Edited src/components/ui/hexagon-pattern.tsx | 8→9 lines | ~87 |
+| 00:51 | Edited src/App.tsx | 9→11 lines | ~136 |
+| 00:53 | Edited src/App.tsx | 11→11 lines | ~135 |
+| 00:55 | Edited src/App.tsx | 2→3 lines | ~36 |
+| 01:16 | Created src/views/ResourcesSkys.tsx | — | ~1889 |
+| 01:17 | Created src/views/ResourcesSkys.tsx | — | ~1978 |
+| 01:18 | Edited src/views/GameData.tsx | expanded (+9 lines) | ~109 |
+| 01:18 | Edited src/views/ResourcesPageBase.tsx | 3→5 lines | ~51 |
+| 01:19 | Edited src/i18n/languages/en.json | 3→5 lines | ~47 |
+| 01:19 | Edited src/i18n/languages/zh.json | 3→5 lines | ~40 |
+| 01:20 | Created src/components/ui/word-rotate.tsx | — | ~340 |
+| 01:21 | Edited src/i18n/languages/en.json | expanded (+12 lines) | ~158 |
+| 01:21 | Edited src/i18n/languages/zh.json | expanded (+12 lines) | ~108 |
+| 01:22 | Edited src/App.tsx | inline fix | ~16 |
+| 01:22 | Edited src/App.tsx | added 1 import(s) | ~36 |
+| 01:23 | Edited src/App.tsx | inline fix | ~10 |
+| 01:23 | Edited src/App.tsx | CSS: words, words | ~191 |
+| 01:23 | Edited src/App.tsx | expanded (+7 lines) | ~114 |
+| 01:25 | Edited src/App.tsx | modified App() | ~76 |
+| 01:25 | Edited src/App.tsx | CSS: words, words | ~198 |

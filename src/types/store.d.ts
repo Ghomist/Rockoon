@@ -46,7 +46,7 @@ type PreferenceStore = {
   backgroundImage?: string;
 
   /** 背景动效类型 */
-  backgroundType: "grid" | "particles";
+  backgroundType: "grid" | "particles" | "meteors" | "hexagon";
 
   /** 下载站索引过期时间（分钟） */
   indexExpireTime: number;

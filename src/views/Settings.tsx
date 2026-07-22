@@ -111,7 +111,9 @@ export default function Settings() {
       field: prefField(pref, "backgroundType"),
       options: [
         { value: "grid", label: t("settings.background.grid") },
-        { value: "particles", label: t("settings.background.particles") }
+        { value: "particles", label: t("settings.background.particles") },
+        { value: "meteors", label: t("settings.background.meteors") },
+        { value: "hexagon", label: t("settings.background.hexagon") }
       ]
     },
     {

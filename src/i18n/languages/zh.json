@@ -41,7 +41,19 @@
     }
   },
   "header": {
-    "pleaseLogin": "请登录"
+    "pleaseLogin": "请登录",
+    "rotateText": {
+      "1": "逛逛下载站吧 plz",
+      "2": "拖拽任意 brp 包到启动器内试试~",
+      "3": "速通、娱乐、制图——试试创建多配置！",
+      "4": "感谢使用 Rockoon ( •̀ ω •́ )✧",
+      "5": "遇到问题可以在设置内反馈哦",
+      "6": "加入 Ballance 论坛吧！",
+      "7": "好累... token 又烧完惹...",
+      "8": "Craft by Ghomist",
+      "9": "我怎么重开了！",
+      "10": "也可以试试 Celeste"
+    }
   },
   "message": {
     "welcome": "欢迎使用 Rockoon!",
@@ -201,8 +213,10 @@
     },
     "background": {
       "title": "背景动效",
-      "grid": "方格",
-      "particles": "粒子"
+      "grid": "闪烁方格",
+      "particles": "粒子",
+      "meteors": "流星",
+      "hexagon": "蜂巢"
     },
     "update": "当前版本：",
     "checkUpdate": "检查更新",
@@ -467,7 +481,9 @@
       "score": "分数"
     },
     "message": {
-      "unlockAllSuccess": "所有关卡已解锁"
+      "unlockAllSuccess": "所有关卡已解锁",
+      "levelLocked": "第 {level} 关已锁定",
+      "levelUnlocked": "第 {level} 关已解锁"
     }
   }
 }

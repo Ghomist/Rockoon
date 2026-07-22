@@ -41,7 +41,19 @@
     }
   },
   "header": {
-    "pleaseLogin": "Please log in"
+    "pleaseLogin": "Please log in",
+    "rotateText": {
+      "1": "Browse the download hub for new content",
+      "2": "Drop a .brp file onto the launcher to install",
+      "3": "Speedrun, casual, mapping — try multiple profiles",
+      "4": "Thanks for using Rockoon",
+      "5": "Issues? Send feedback from Settings",
+      "6": "Join the Ballance community forum",
+      "7": "Rockoon is open source",
+      "8": "Crafted by Ghomist",
+      "9": "Have you tried speedrunning today?",
+      "10": "Also check out Celeste"
+    }
   },
   "message": {
     "welcome": "Welcome to use Rockoon!",
@@ -62,8 +74,10 @@
     },
     "background": {
       "title": "Background effect",
-      "grid": "Grid",
-      "particles": "Particles"
+      "grid": "Flickering grid",
+      "particles": "Particles",
+      "meteors": "Meteors",
+      "hexagon": "Hexagons"
     },
     "clearStorage": {
       "button": "Clear all data",
@@ -374,7 +388,9 @@
       "score": "Highscore"
     },
     "message": {
-      "unlockAllSuccess": "All levels unlocked"
+      "unlockAllSuccess": "All levels unlocked",
+      "levelLocked": "Level {level} locked",
+      "levelUnlocked": "Level {level} unlocked"
     }
   },
   "resources": {

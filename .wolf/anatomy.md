@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-07-14T13:08:26.358Z
-> Files: 386 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-07-14T17:25:05.266Z
+> Files: 390 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ./
 
@@ -374,7 +374,7 @@
 
 ## src/
 
-- `App.tsx` — Compute dark-mode state from pref.theme + system preference. (~3342 tok)
+- `App.tsx` — Compute dark-mode state from pref.theme + system preference. (~3830 tok)
 - `App.vue` — Vue component (~2404 tok)
 - `main.ts` — Declares app (~330 tok)
 - `main.tsx` — Register console hooks → forward to Rust log stream. (~438 tok)
@@ -382,7 +382,7 @@
 
 ## src/assets/
 
-- `styles.css` — Styles: 9 rules, 105 vars (~1480 tok)
+- `styles.css` — Styles: 9 rules, 106 vars (~1580 tok)
 - `styles.scss` — Styles: 2 rules, 4 vars (~139 tok)
 - `ui-fix.scss` — Styles: 3 rules (~60 tok)
 
@@ -406,7 +406,11 @@
 - `bento-grid.tsx` — Bento-style grid container. Stacks vertically on small screens, lays out as (~1039 tok)
 - `button.tsx` — buttonVariants (~708 tok)
 - `dialog.tsx` — Dialog — renders modal (~1327 tok)
+- `flickering-grid.tsx` — FlickeringGrid (~1562 tok)
+- `hexagon-pattern.tsx` — 启用动态填充：随机蜂巢定时闪烁开关，类似 FlickeringGrid。 (~2959 tok)
+- `meteors.tsx` — Meteors (~504 tok)
 - `particles.tsx` — Adapted from magicui Particles (MIT, https://magicui.design/docs/components/particles). (~2544 tok)
+- `word-rotate.tsx` — WordRotate (~340 tok)
 
 ## src/components/ui/animated-grid-pattern/
 
@@ -424,8 +428,8 @@
 
 ## src/i18n/languages/
 
-- `en.json` — Declares language (~4015 tok)
-- `zh.json` (~2981 tok)
+- `en.json` — Declares language (~4204 tok)
+- `zh.json` (~3112 tok)
 
 ## src/lib/
 
@@ -450,7 +454,7 @@
 - `hub.ts` — Exports useHubStore (~242 tok)
 - `index.ts` — Wire up store subscriptions and load initial state. (~503 tok)
 - `instances.ts` — Exports useInstancesStore (~499 tok)
-- `pref.ts` — Persist the entire store state to localStorage. (~400 tok)
+- `pref.ts` — Persist the entire store state to localStorage. (~401 tok)
 - `profiles.ts` — Resource dirs whose disable-state we capture per-profile. (~3288 tok)
 
 ## src/types/
@@ -460,7 +464,7 @@
 - `common.d.ts` — Declares HintType (~14 tok)
 - `file.d.ts` — 由启动器管理的文件类型/数据 (~192 tok)
 - `hub.d.ts` — Declares HubMapResponse (~258 tok)
-- `store.d.ts` — 当前选中的实例信息 (~445 tok)
+- `store.d.ts` — 当前选中的实例信息 (~452 tok)
 
 ## src/utils/
 
@@ -480,7 +484,7 @@
 
 - `GameConfig.tsx` — mutateOptions (~5000 tok)
 - `GameConfig.vue` — Vue: setup (~5226 tok)
-- `GameData.tsx` — mutateOptions — renders table, modal (~1686 tok)
+- `GameData.tsx` — mutateOptions — renders table, modal (~1752 tok)
 - `GameData.vue` — Vue: setup (~1158 tok)
 - `Instances.vue` — Vue: setup, TS (~1343 tok)
 - `Onboarding.tsx` — Initial instance picker shown when no Ballance install is configured. (~809 tok)
@@ -489,11 +493,11 @@
 - `ResourcesMaps.vue` — Vue: setup (~3389 tok)
 - `ResourcesMods.tsx` — ResourcesMods (~41 tok)
 - `ResourcesMods.vue` — Vue: setup, TS (~43 tok)
-- `ResourcesPageBase.tsx` — resourcePageSchema (~1987 tok)
+- `ResourcesPageBase.tsx` — resourcePageSchema (~2001 tok)
 - `ResourcesPageBase.vue` — Vue: BRP, setup (~1772 tok)
-- `ResourcesSkys.tsx` — LEVEL_LETTERS — renders modal (~3845 tok)
+- `ResourcesSkys.tsx` — LEVEL_LETTERS — renders modal (~1978 tok)
 - `ResourcesSkys.vue` — Vue: Archive, setup (~3263 tok)
-- `Settings.tsx` — usePrefFields (~1877 tok)
+- `Settings.tsx` — usePrefFields (~1918 tok)
 - `Settings.vue` — Vue: setup (~1436 tok)
 - `Start.tsx` — resolveIcon (~2107 tok)
 - `Start.vue` — Vue: setup (~1699 tok)

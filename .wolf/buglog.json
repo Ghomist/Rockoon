@@ -96,6 +96,502 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-07-14T12:40:11.678Z"
+    },
+    {
+      "id": "bug-007",
+      "timestamp": "2026-07-14T15:14:38.575Z",
+      "error_message": "Wrong reference: false should be true",
+      "file": "src-tauri/tauri.conf.json",
+      "root_cause": "Used \"false\" instead of \"true\"",
+      "fix": "Changed false → true",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "json"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-14T15:14:38.575Z"
+    },
+    {
+      "id": "bug-008",
+      "timestamp": "2026-07-14T15:14:44.950Z",
+      "error_message": "CSS fix: value",
+      "file": "src/views/Settings.tsx",
+      "root_cause": "value: \"particles\", label: t(\"settings.background.particles\") → \"acrylic\", label: t(\"settings.background.acrylic\")",
+      "fix": "Changed value: \"particles\", label: t(\"settings.background.particles\") → \"acrylic\", label: t(\"settings.background.acrylic\")",
+      "tags": [
+        "auto-detected",
+        "style-fix",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-14T15:14:44.950Z"
+    },
+    {
+      "id": "bug-009",
+      "timestamp": "2026-07-14T15:15:38.883Z",
+      "error_message": "Missing error handling in App",
+      "file": "src/App.tsx",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
+      "fix": "Added try/catch block",
+      "tags": [
+        "auto-detected",
+        "error-handling",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-14T15:15:38.883Z"
+    },
+    {
+      "id": "bug-010",
+      "timestamp": "2026-07-14T15:15:50.147Z",
+      "error_message": "Type error",
+      "file": "src/App.tsx",
+      "root_cause": "Missing or incorrect type annotation",
+      "fix": "Added type assertion/annotation",
+      "tags": [
+        "auto-detected",
+        "type-fix",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-14T15:15:50.147Z"
+    },
+    {
+      "id": "bug-011",
+      "timestamp": "2026-07-14T15:19:39.394Z",
+      "error_message": "CSS fix: effects",
+      "file": "src/App.tsx",
+      "root_cause": "effects: backgroundType === \"acrylic\" ? [Effect.Acrylic] : [] → acrylic ? [Effect.Acrylic] : []",
+      "fix": "Changed effects: backgroundType === \"acrylic\" ? [Effect.Acrylic] : [] → acrylic ? [Effect.Acrylic] : []",
+      "tags": [
+        "auto-detected",
+        "style-fix",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-14T15:19:39.394Z"
+    },
+    {
+      "id": "bug-012",
+      "timestamp": "2026-07-14T15:25:23.564Z",
+      "error_message": "CSS fix: value",
+      "file": "src/views/Settings.tsx",
+      "root_cause": "value: \"acrylic\", label: t(\"settings.background.acrylic\") → \"particles\", label: t(\"settings.background.particles\")",
+      "fix": "Changed value: \"acrylic\", label: t(\"settings.background.acrylic\") → \"particles\", label: t(\"settings.background.particles\")",
+      "tags": [
+        "auto-detected",
+        "style-fix",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-14T15:25:23.564Z"
+    },
+    {
+      "id": "bug-013",
+      "timestamp": "2026-07-14T15:25:48.734Z",
+      "error_message": "Significant refactor of ",
+      "file": "src/App.tsx",
+      "root_cause": "11 lines replaced/restructured",
+      "fix": "Rewrote 22→9 lines (11 removed) | Also: <div; className={cn( | Also: ) : backgroundType === \"grid\" ? (; ) : null}",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 3,
+      "last_seen": "2026-07-14T15:26:18.267Z"
+    },
+    {
+      "id": "bug-014",
+      "timestamp": "2026-07-14T15:32:33.014Z",
+      "error_message": "CSS fix: value",
+      "file": "src/views/Settings.tsx",
+      "root_cause": "value: \"particles\", label: t(\"settings.background.particles\") → \"acrylic\", label: t(\"settings.background.acrylic\")",
+      "fix": "Changed value: \"particles\", label: t(\"settings.background.particles\") → \"acrylic\", label: t(\"settings.background.acrylic\")",
+      "tags": [
+        "auto-detected",
+        "style-fix",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-14T15:32:33.014Z"
+    },
+    {
+      "id": "bug-015",
+      "timestamp": "2026-07-14T15:33:01.952Z",
+      "error_message": "Missing error handling in App",
+      "file": "src/App.tsx",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
+      "fix": "Added try/catch block",
+      "tags": [
+        "auto-detected",
+        "error-handling",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-14T15:33:01.952Z"
+    },
+    {
+      "id": "bug-016",
+      "timestamp": "2026-07-14T15:33:25.610Z",
+      "error_message": "Type error",
+      "file": "src/App.tsx",
+      "root_cause": "Missing or incorrect type annotation",
+      "fix": "Added type assertion/annotation",
+      "tags": [
+        "auto-detected",
+        "type-fix",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-14T15:33:25.610Z"
+    },
+    {
+      "id": "bug-017",
+      "timestamp": "2026-07-14T15:33:37.234Z",
+      "error_message": "Significant refactor of ",
+      "file": "src/App.tsx",
+      "root_cause": "11 lines replaced/restructured",
+      "fix": "Rewrote 33→22 lines (11 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-14T15:33:37.234Z"
+    },
+    {
+      "id": "bug-018",
+      "timestamp": "2026-07-14T16:01:08.573Z",
+      "error_message": "Wrong reference: true should be false",
+      "file": "src-tauri/tauri.conf.json",
+      "root_cause": "Used \"true\" instead of \"false\"",
+      "fix": "Changed true → false",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "json"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-14T16:01:08.573Z"
+    },
+    {
+      "id": "bug-019",
+      "timestamp": "2026-07-14T16:01:10.136Z",
+      "error_message": "Significant refactor of ",
+      "file": "src/i18n/languages/en.json",
+      "root_cause": "4 lines replaced/restructured",
+      "fix": "Rewrote 8→5 lines (4 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "json"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-14T16:01:10.136Z"
+    },
+    {
+      "id": "bug-020",
+      "timestamp": "2026-07-14T16:01:11.993Z",
+      "error_message": "Significant refactor of ",
+      "file": "src/i18n/languages/zh.json",
+      "root_cause": "4 lines replaced/restructured",
+      "fix": "Rewrote 8→5 lines (4 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "json"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-14T16:01:11.993Z"
+    },
+    {
+      "id": "bug-021",
+      "timestamp": "2026-07-14T16:01:15.977Z",
+      "error_message": "CSS fix: value",
+      "file": "src/views/Settings.tsx",
+      "root_cause": "value: \"acrylic\", label: t(\"settings.background.acrylic\") → \"particles\", label: t(\"settings.background.particles\")",
+      "fix": "Changed value: \"acrylic\", label: t(\"settings.background.acrylic\") → \"particles\", label: t(\"settings.background.particles\")",
+      "tags": [
+        "auto-detected",
+        "style-fix",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-14T16:01:15.977Z"
+    },
+    {
+      "id": "bug-022",
+      "timestamp": "2026-07-14T16:01:29.296Z",
+      "error_message": "Significant refactor of ",
+      "file": "src/App.tsx",
+      "root_cause": "20 lines replaced/restructured",
+      "fix": "Rewrote 31→9 lines (20 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-14T16:01:29.296Z"
+    },
+    {
+      "id": "bug-023",
+      "timestamp": "2026-07-14T16:11:45.077Z",
+      "error_message": "Significant refactor of ",
+      "file": "src/App.tsx",
+      "root_cause": "3 lines replaced/restructured",
+      "fix": "Rewrote 17→34 lines (3 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-14T16:11:45.077Z"
+    },
+    {
+      "id": "bug-024",
+      "timestamp": "2026-07-14T16:12:02.989Z",
+      "error_message": "CSS fix: value",
+      "file": "src/views/Settings.tsx",
+      "root_cause": "value: \"particles\", label: t(\"settings.background.particles\") → \"hexagon\", label: t(\"settings.background.hexagon\")",
+      "fix": "Changed value: \"particles\", label: t(\"settings.background.particles\") → \"hexagon\", label: t(\"settings.background.hexagon\")",
+      "tags": [
+        "auto-detected",
+        "style-fix",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-14T16:12:02.989Z"
+    },
+    {
+      "id": "bug-025",
+      "timestamp": "2026-07-14T16:14:41.071Z",
+      "error_message": "Wrong return value",
+      "file": "src/App.tsx",
+      "root_cause": "Was returning: <Meteors number={18} className=\"h-full w-full\" />",
+      "fix": "Now returns: <Meteors number={8} className=\"h-full w-full\" />",
+      "tags": [
+        "auto-detected",
+        "return-value",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-14T16:14:41.071Z"
+    },
+    {
+      "id": "bug-026",
+      "timestamp": "2026-07-14T16:19:45.345Z",
+      "error_message": "Wrong return value",
+      "file": "src/App.tsx",
+      "root_cause": "Was returning: <Meteors number={8} className=\"h-full w-full\" />",
+      "fix": "Now returns: <Meteors number={8} />",
+      "tags": [
+        "auto-detected",
+        "return-value",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-07-14T16:21:49.130Z"
+    },
+    {
+      "id": "bug-027",
+      "timestamp": "2026-07-14T16:25:30.718Z",
+      "error_message": "CSS fix: mask-image",
+      "file": "src/App.tsx",
+      "root_cause": "mask-image: radial-gradient(560px_circle_at_center,white,transparent)]\" → radial-gradient(900px_circle_at_center,white,transparent)]\"",
+      "fix": "Changed mask-image: radial-gradient(560px_circle_at_center,white,transparent)]\" → radial-gradient(900px_circle_at_center,white,transparent)]\"",
+      "tags": [
+        "auto-detected",
+        "style-fix",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-14T16:25:30.718Z"
+    },
+    {
+      "id": "bug-028",
+      "timestamp": "2026-07-14T16:25:32.047Z",
+      "error_message": "Incorrect value in code",
+      "file": "src/stores/pref.ts",
+      "root_cause": "Had \"grid\"",
+      "fix": "Changed to \"hexagon\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-14T16:25:32.047Z"
+    },
+    {
+      "id": "bug-029",
+      "timestamp": "2026-07-14T16:28:45.080Z",
+      "error_message": "CSS fix: value",
+      "file": "src/views/Settings.tsx",
+      "root_cause": "value: \"hexagon\", label: t(\"settings.background.hexagon\") → \"flicker\", label: t(\"settings.background.flicker\")",
+      "fix": "Changed value: \"hexagon\", label: t(\"settings.background.hexagon\") → \"flicker\", label: t(\"settings.background.flicker\")",
+      "tags": [
+        "auto-detected",
+        "style-fix",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-14T16:28:45.080Z"
+    },
+    {
+      "id": "bug-030",
+      "timestamp": "2026-07-14T16:33:30.261Z",
+      "error_message": "Incorrect value in code",
+      "file": "src/App.tsx",
+      "root_cause": "Had \"absolute inset-0\"",
+      "fix": "Changed to \"absolute inset-0 blur-[2px]\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-07-14T16:34:04.895Z"
+    },
+    {
+      "id": "bug-031",
+      "timestamp": "2026-07-14T16:42:41.509Z",
+      "error_message": "Significant refactor of ",
+      "file": "src/App.tsx",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 6→4 lines (2 removed) | Also: case \"flicker\":; return (",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-07-14T16:42:42.996Z"
+    },
+    {
+      "id": "bug-032",
+      "timestamp": "2026-07-14T16:42:44.941Z",
+      "error_message": "CSS fix: value",
+      "file": "src/views/Settings.tsx",
+      "root_cause": "value: \"flicker\", label: t(\"settings.background.flicker\") → \"hexagon\", label: t(\"settings.background.hexagon\")",
+      "fix": "Changed value: \"flicker\", label: t(\"settings.background.flicker\") → \"hexagon\", label: t(\"settings.background.hexagon\")",
+      "tags": [
+        "auto-detected",
+        "style-fix",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-14T16:42:44.941Z"
+    },
+    {
+      "id": "bug-033",
+      "timestamp": "2026-07-14T16:44:24.142Z",
+      "error_message": "Type error",
+      "file": "src/components/ui/hexagon-pattern.tsx",
+      "root_cause": "Missing or incorrect type annotation",
+      "fix": "Added type assertion/annotation",
+      "tags": [
+        "auto-detected",
+        "type-fix",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-14T16:44:24.142Z"
+    },
+    {
+      "id": "bug-034",
+      "timestamp": "2026-07-14T16:45:23.333Z",
+      "error_message": "Null/undefined access in ",
+      "file": "src/components/ui/hexagon-pattern.tsx",
+      "root_cause": "Property access on potentially null/undefined value",
+      "fix": "Added null safety (optional chaining or null check) | Also: {(flickerOn ? flickerCells : hexagons)?.length! > 0 && (; {(flickerOn ? flickerCells : hexagons)!.map(([col, row]) => ",
+      "tags": [
+        "auto-detected",
+        "null-safety",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-07-14T16:45:35.979Z"
+    },
+    {
+      "id": "bug-035",
+      "timestamp": "2026-07-14T16:49:55.685Z",
+      "error_message": "Significant refactor of ",
+      "file": "src/components/ui/hexagon-pattern.tsx",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 15→41 lines (2 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-14T16:49:55.685Z"
+    },
+    {
+      "id": "bug-036",
+      "timestamp": "2026-07-14T17:23:51.198Z",
+      "error_message": "Missing guard clause",
+      "file": "src/App.tsx",
+      "root_cause": "No early return/throw for edge case: w === key",
+      "fix": "Added guard clause: if (w === key)",
+      "tags": [
+        "auto-detected",
+        "guard-clause",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-07-14T17:25:05.280Z"
+    },
+    {
+      "id": "bug-037",
+      "timestamp": "2026-07-14T17:23:53.556Z",
+      "error_message": "Significant refactor of ",
+      "file": "src/App.tsx",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 5→12 lines (2 removed) | Also: const translate = useT();; // Header rotate text — reads i18n header.rotateTe",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-07-14T17:25:00.255Z"
     }
   ]
 }

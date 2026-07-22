@@ -50,9 +50,18 @@ export default function GameData() {
   };
 
   const onToggleLevelLock = (level: number) => {
+    const wasLocked = !!selectedInstanceData.options.levelLock[level - 1];
     mutateOptions(opts => {
-      opts.levelLock[level - 1] = !opts.levelLock[level - 1];
+      opts.levelLock[level - 1] = !wasLocked;
     });
+    message.success(
+      t(
+        wasLocked
+          ? "gameData.message.levelUnlocked"
+          : "gameData.message.levelLocked",
+        { level }
+      )
+    );
   };
 
   const onEditHighscores = (level: number) => {

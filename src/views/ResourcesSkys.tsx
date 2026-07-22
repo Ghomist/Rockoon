@@ -1,8 +1,7 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { join } from "@tauri-apps/api/path";
-import { open as browseFile } from "@tauri-apps/plugin-dialog";
 import backend from "@/backend";
 import { useAppStore } from "@/stores/app";
 import { useT } from "@/i18n";
@@ -11,14 +10,7 @@ import ListViewPage from "./components/ListViewPage";
 import SkyboxPreview, { type SkyboxLevel } from "./components/SkyboxPreview";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle
-} from "@/components/ui/dialog";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 const LEVEL_LETTERS = [
   "L",
@@ -39,7 +31,6 @@ type SkyDir = (typeof DIRECTIONS)[number];
 
 type SkyboxFiles = { [K in SkyDir]?: string };
 
-type SkyFile = { path: string; direction: string };
 type BackendFile = { name: string; size: number };
 
 function parseSkyboxFilename(
@@ -70,16 +61,7 @@ export default function ResourcesSkys() {
   const [selectedLevel, setSelectedLevel] = useState<SkyboxLevel | null>(null);
   const [refreshKey, setRefreshKey] = useState(Date.now());
 
-  const [importing, setImporting] = useState(false);
-  const [importLoading, setImportLoading] = useState(false);
-  const [showLevelPicker, setShowLevelPicker] = useState(false);
-  const [selectedImportFiles, setSelectedImportFiles] = useState<SkyFile[]>([]);
-  const [selectedImportLevel, setSelectedImportLevel] = useState<number | null>(
-    null
-  );
-  const importTempDirRef = useRef<string | null>(null);
-
-  const loadSkyboxes = async () => {
+  const loadSkyboxes = async (showMessage = false) => {
     if (!selectedInstanceData) return;
     const path = await join(selectedInstanceData.path, "Textures", "Sky");
     setSkysPath(path);
@@ -107,124 +89,12 @@ export default function ResourcesSkys() {
       }
       setSkyboxLevels(levels);
       setRefreshKey(Date.now());
+      if (showMessage) message.success(t("common.action.refreshSuccess"));
     } catch (error) {
       console.error("Failed to load skyboxes:", error);
       setSkyboxLevels([]);
     } finally {
       setLoading(false);
-    }
-    message.success(t("common.action.refreshSuccess"));
-  };
-
-  const cleanupTempDir = async (dirPath: string) => {
-    try {
-      await backend.remove_dir(dirPath);
-    } catch (error) {
-      console.error("Cleanup error:", error);
-    }
-  };
-
-  const onImportSkybox = async () => {
-    const zipFile = await browseFile({
-      title: t("skys.import.selectZip"),
-      multiple: false,
-      filters: [{ name: "Archive", extensions: ["zip"] }]
-    });
-    if (!zipFile || (zipFile as unknown as string[]).length === 0) return;
-
-    setImporting(true);
-    setImportLoading(true);
-
-    const systemTempDir = await backend.getTempDir();
-    const tempDir = await join(systemTempDir, "rockoon_skybox_" + Date.now());
-
-    try {
-      await backend.mkdir(tempDir);
-      await backend.unzip(zipFile as string, tempDir);
-      const analysis = await backend.analyzeSkyboxFiles(tempDir);
-
-      if (analysis.files.length === 0) {
-        message.error(t("skys.import.detectionError"));
-        await cleanupTempDir(tempDir);
-        return;
-      }
-
-      const missing = (DIRECTIONS as readonly string[]).filter(
-        dir => !analysis.directions.includes(dir)
-      );
-      if (missing.length > 0) {
-        message.warning(
-          t("skys.import.incomplete", { missing: missing.join(", ") })
-        );
-      }
-
-      setSelectedImportFiles(analysis.files);
-      importTempDirRef.current = tempDir;
-      message.success(
-        t("skys.import.detectionSuccess", {
-          cnt: analysis.files.length,
-          dirs: analysis.directions.join(", ")
-        })
-      );
-      setSelectedImportLevel(null);
-      setShowLevelPicker(true);
-      setImportLoading(false);
-    } catch (error) {
-      console.error("Import error:", error);
-      message.error(t("skys.import.detectionError"));
-      setImportLoading(false);
-      await cleanupTempDir(tempDir);
-    }
-  };
-
-  const onCancelImport = async () => {
-    if (importTempDirRef.current) {
-      await cleanupTempDir(importTempDirRef.current);
-      importTempDirRef.current = null;
-    }
-    setImporting(false);
-    setImportLoading(false);
-    setShowLevelPicker(false);
-    setSelectedImportFiles([]);
-    setSelectedImportLevel(null);
-  };
-
-  const onSelectLevel = async () => {
-    if (selectedImportLevel === null) {
-      message.warning(t("skys.import.selectLevel"));
-      return;
-    }
-    if (!importTempDirRef.current) {
-      message.error("Import temp directory not found");
-      return;
-    }
-    if (!selectedInstanceData) return;
-    const levelNum = selectedImportLevel;
-    const levelLetter = LEVEL_LETTERS[levelNum - 1];
-    const targetDir = await join(selectedInstanceData.path, "Textures", "Sky");
-    try {
-      for (const file of selectedImportFiles) {
-        const targetFile = await join(
-          targetDir,
-          `Sky_${levelLetter}_${file.direction}.bmp`
-        );
-        await backend.copy(file.path, targetFile);
-      }
-      message.success(t("skys.import.replaceSuccess", { level: levelNum }));
-      await loadSkyboxes();
-      setRefreshKey(Date.now());
-      setShowLevelPicker(false);
-      setImporting(false);
-      setSelectedImportFiles([]);
-      setSelectedImportLevel(null);
-    } catch (error) {
-      console.error("Replace error:", error);
-      message.error(t("skys.import.replaceError"));
-    } finally {
-      if (importTempDirRef.current) {
-        await cleanupTempDir(importTempDirRef.current);
-        importTempDirRef.current = null;
-      }
     }
   };
 
@@ -248,12 +118,6 @@ export default function ResourcesSkys() {
 
   useEffect(() => {
     void loadSkyboxes();
-    return () => {
-      if (importTempDirRef.current) {
-        void cleanupTempDir(importTempDirRef.current);
-        importTempDirRef.current = null;
-      }
-    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -269,21 +133,12 @@ export default function ResourcesSkys() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => void loadSkyboxes()}
+            onClick={() => void loadSkyboxes(true)}
           >
             {t("common.action.refresh")}
           </Button>
           <Button variant="outline" size="sm" onClick={onOpenFolder}>
             {t("common.action.openFolder")}
-          </Button>
-          <Button
-            variant="secondary"
-            size="sm"
-            disabled={importLoading}
-            onClick={() => (importing ? onCancelImport() : onImportSkybox())}
-          >
-            {importLoading && <Loader2 className="size-4 animate-spin" />}
-            {importing ? t("skys.import.cancel") : t("skys.import.button")}
           </Button>
         </>
       }
@@ -344,48 +199,6 @@ export default function ResourcesSkys() {
               skysPath={skysPath}
               getImageUrl={getImageUrl}
             />
-          )}
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={showLevelPicker} onOpenChange={setShowLevelPicker}>
-        <DialogContent className="max-w-[400px]">
-          <DialogHeader>
-            <DialogTitle>{t("skys.import.selectLevel")}</DialogTitle>
-          </DialogHeader>
-
-          {importLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="size-6 animate-spin text-muted-foreground" />
-            </div>
-          ) : (
-            <div className="flex flex-col gap-4">
-              <p className="text-sm text-muted-foreground">
-                {t("skys.import.selectLevel")}
-              </p>
-              <RadioGroup
-                value={selectedImportLevel?.toString() ?? ""}
-                onValueChange={v => setSelectedImportLevel(Number(v))}
-                className="flex flex-col gap-2"
-              >
-                {Array.from({ length: 12 }, (_, i) => i + 1).map(i => (
-                  <div key={i} className="flex items-center gap-2">
-                    <RadioGroupItem id={`lvl-${i}`} value={i.toString()} />
-                    <Label htmlFor={`lvl-${i}`} className="text-sm">
-                      {t("skys.levelName", { level: i })}
-                    </Label>
-                  </div>
-                ))}
-              </RadioGroup>
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={onCancelImport}>
-                  {t("common.dialog.cancel")}
-                </Button>
-                <Button onClick={onSelectLevel}>
-                  {t("common.dialog.confirm")}
-                </Button>
-              </div>
-            </div>
           )}
         </DialogContent>
       </Dialog>

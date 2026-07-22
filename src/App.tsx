@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ChevronDown, Check, Plus, Pencil, Trash2 } from "lucide-react";
 import { Toaster } from "@/components/ui/sonner";
 import { Button } from "@/components/ui/button";
@@ -17,9 +17,13 @@ import GlobalDialogHost from "@/components/GlobalDialogHost";
 import TitleBarControls from "@/components/TitleBarControls";
 import { AnimatedGridPattern } from "@/components/ui/animated-grid-pattern";
 import { Particles } from "@/components/ui/particles";
+import { Meteors } from "@/components/ui/meteors";
+import { HexagonPattern } from "@/components/ui/hexagon-pattern";
+import { WordRotate } from "@/components/ui/word-rotate";
+
 import Onboarding from "@/views/Onboarding";
 import { AppRoutes } from "@/routers";
-import { t } from "@/i18n";
+import { t, useT } from "@/i18n";
 import { useAppStore } from "@/stores/app";
 import { usePrefStore } from "@/stores/pref";
 import { useProfilesStore } from "@/stores/profiles";
@@ -105,6 +109,19 @@ function MainLayout() {
   const [appVersion, setAppVersion] = useState("");
   const backgroundType = usePrefStore(s => s.backgroundType);
   const isDark = useDarkMode();
+  const translate = useT();
+
+  // Header rotate text — reads i18n header.rotateText.1..N dynamically.
+  const rotateWords = useMemo(() => {
+    const words: string[] = [];
+    for (let i = 1; ; i++) {
+      const key = `header.rotateText.${i}`;
+      const w = translate(key);
+      if (w === key) break;
+      words.push(w);
+    }
+    return words.length > 0 ? words : ["Rockoon"];
+  }, [translate]);
 
   useEffect(() => {
     getVersion().then(setAppVersion);
@@ -260,9 +277,16 @@ function MainLayout() {
         </div>
         <div
           data-tauri-drag-region
-          className="flex-1 self-stretch"
-          aria-hidden="true"
-        />
+          className="relative flex flex-1 items-center justify-center self-stretch"
+        >
+          {rotateWords.length > 0 && (
+            <WordRotate
+              className="pointer-events-none select-none text-sm text-muted-foreground"
+              duration={4000}
+              words={rotateWords}
+            />
+          )}
+        </div>
         <div className="flex items-center gap-2">
           <span className="hidden text-sm text-muted-foreground sm:inline">
             {t("profile.currentLabel")}
@@ -321,23 +345,45 @@ function MainLayout() {
           aria-hidden="true"
           className="pointer-events-none absolute inset-0 overflow-hidden"
         >
-          {backgroundType === "particles" ? (
-            <Particles
-              className="absolute inset-0"
-              quantity={120}
-              color={isDark ? "#ffffff" : "#000000"}
-              ease={80}
-              refresh={false}
-            />
-          ) : (
-            <AnimatedGridPattern
-              numSquares={40}
-              maxOpacity={0.08}
-              duration={3}
-              repeatDelay={1}
-              className="absolute inset-y-[-30%] h-[160%] w-full skew-y-12 [mask-image:radial-gradient(500px_circle_at_center,white,transparent)]"
-            />
-          )}
+          {(() => {
+            switch (backgroundType) {
+              case "particles":
+                return (
+                  <Particles
+                    className="absolute inset-0"
+                    quantity={120}
+                    color={isDark ? "#ffffff" : "#000000"}
+                    ease={80}
+                    refresh={false}
+                  />
+                )
+              case "meteors":
+                return <Meteors number={16} />
+              case "hexagon":
+                return (
+                  <HexagonPattern
+                    radius={36}
+                    gap={6}
+                    flickerCols={24}
+                    flickerRows={16}
+                    flickerDensity={0.08}
+                    flickerInterval={1200}
+                    fillOpacity={0.06}
+                    className="inset-y-[-10%] h-[120%] w-full skew-y-6 [mask-image:radial-gradient(900px_circle_at_center,white,transparent)]"
+                  />
+                )
+              default:
+                return (
+                  <AnimatedGridPattern
+                    numSquares={40}
+                    maxOpacity={0.08}
+                    duration={3}
+                    repeatDelay={1}
+                    className="absolute inset-y-[-30%] h-[160%] w-full skew-y-12 [mask-image:radial-gradient(500px_circle_at_center,white,transparent)]"
+                  />
+                )
+            }
+          })()}
         </div>
         <AppSidebar collapsed={collapsed} onCollapsedChange={setCollapsed} />
         <main className="relative flex-1 overflow-auto">

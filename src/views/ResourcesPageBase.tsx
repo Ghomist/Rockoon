@@ -149,9 +149,11 @@ export default function ResourcesPageBase({ type, onBrpImported }: Props) {
           <Button variant="outline" size="sm" onClick={() => onRefresh(true)}>
             {t("common.action.refresh")}
           </Button>
-          <Button variant="outline" size="sm" onClick={onImport}>
-            {t("resources.import.button")}
-          </Button>
+          {type === "map" && (
+            <Button variant="outline" size="sm" onClick={onImport}>
+              {t("resources.import.button")}
+            </Button>
+          )}
           <Button variant="secondary" size="sm" onClick={onImportBrp}>
             {t("brp.importButton")}
           </Button>
