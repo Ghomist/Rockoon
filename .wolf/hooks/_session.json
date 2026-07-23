@@ -532,8 +532,8 @@
       "first_read": "2026-07-13T12:11:06.545Z"
     },
     "D:/Codes/rockoon/src/services/brp.ts": {
-      "count": 10,
-      "tokens": 864,
+      "count": 11,
+      "tokens": 928,
       "first_read": "2026-07-13T12:13:29.389Z"
     },
     "D:/Codes/rockoon/src/utils/logger.ts": {
@@ -617,8 +617,8 @@
       "first_read": "2026-07-13T13:02:09.452Z"
     },
     "D:/Codes/rockoon/src/App.tsx": {
-      "count": 42,
-      "tokens": 3960,
+      "count": 47,
+      "tokens": 4018,
       "first_read": "2026-07-13T14:41:31.899Z"
     },
     "D:/Codes/rockoon/src/components/ui/dropdown-menu.tsx": {
@@ -829,5 +829,5 @@
   },
   "anatomy_hits": 114,
   "anatomy_misses": 51,
-  "repeated_reads_warned": 476
+  "repeated_reads_warned": 482
 }

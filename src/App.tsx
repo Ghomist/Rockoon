@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown, Check, Plus, Pencil, Trash2 } from "lucide-react";
 import { Toaster } from "@/components/ui/sonner";
 import { Button } from "@/components/ui/button";
@@ -14,7 +14,9 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Input } from "@/components/ui/input";
 import AppSidebar from "@/components/AppSidebar";
 import GlobalDialogHost from "@/components/GlobalDialogHost";
-import ImportProgressDialog from "@/components/ImportProgressDialog";
+import ImportProgressDialog, {
+  type ImportPhase
+} from "@/components/ImportProgressDialog";
 import TitleBarControls from "@/components/TitleBarControls";
 import { AnimatedGridPattern } from "@/components/ui/animated-grid-pattern";
 import { Particles } from "@/components/ui/particles";
@@ -30,9 +32,11 @@ import { usePrefStore } from "@/stores/pref";
 import { useProfilesStore } from "@/stores/profiles";
 import { dialog, message } from "@/utils/ui/feedback";
 import { checkRunningInstance } from "@/services/launcher";
-import { importFromFile } from "@/services/brp";
+import { importFromFile, describeBrp } from "@/services/brp";
+import backend from "@/backend";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import { listen } from "@tauri-apps/api/event";
 import {
   getCurrent as getCurrentDeepLink,
   onOpenUrl
@@ -109,7 +113,115 @@ function MainLayout() {
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(false);
   const [appVersion, setAppVersion] = useState("");
-  const [importingUrl, setImportingUrl] = useState<string | null>(null);
+
+  // BRP import progress dialog state.
+  const [importUrl, setImportUrl] = useState<string | null>(null);
+  const [importPhase, setImportPhase] = useState<ImportPhase>("connecting");
+  const [importProgress, setImportProgress] = useState(0);
+  const [importError, setImportError] = useState("");
+  const [importResult, setImportResult] = useState("");
+  const importCancelledRef = useRef(false);
+
+  // Run import when a URL is set.
+  useEffect(() => {
+    if (!importUrl) return;
+
+    let disposed = false;
+    importCancelledRef.current = false;
+    setImportPhase("connecting");
+    setImportProgress(0);
+    setImportError("");
+    setImportResult("");
+
+    // Throttled progress listener — at most one update per rAF.
+    let latestPercent = 0;
+    let rafId = 0;
+    const unlistenP = listen<{ percent: number }>(
+      "download-progress",
+      event => {
+        latestPercent = Math.min(event.payload.percent, 99);
+        if (!rafId) {
+          rafId = requestAnimationFrame(() => {
+            rafId = 0;
+            if (disposed) return;
+            setImportPhase("downloading");
+            setImportProgress(latestPercent);
+          });
+        }
+      }
+    );
+
+    (async () => {
+      let unlisten: (() => void) | undefined;
+      try {
+        unlisten = await unlistenP;
+        if (disposed) {
+          unlisten();
+          return;
+        }
+
+        const tempDir = await backend.getTempDir();
+        const fileName =
+          importUrl.split("/").pop()?.split("?")[0] || "import.brp";
+        const savePath = `${tempDir}\\${fileName}`;
+
+        const instance = useAppStore.getState().selectedInstanceData;
+        if (!instance) {
+          setImportError(t("brp.error.noInstance"));
+          return;
+        }
+
+        await backend.downloadFile(importUrl, savePath);
+        if (disposed || importCancelledRef.current) return;
+
+        // Flush "importing" to DOM before the potentially-slow import.
+        setImportPhase("importing");
+        setImportProgress(100);
+        await new Promise<void>(r => requestAnimationFrame(() => r()));
+
+        const result = await backend.importBrp(savePath, instance.path);
+        if (disposed || importCancelledRef.current) return;
+
+        setImportResult(
+          t("brp.import.success", {
+            what: describeBrp(result.manifest),
+            count: result.installedPaths.length,
+            target: result.targetDescription
+          })
+        );
+        setImportPhase("done");
+        useAppStore.getState().triggerRefresh();
+      } catch (e: unknown) {
+        if (disposed || importCancelledRef.current) return;
+        const msg = String(e);
+        if (
+          msg.includes("Download cancelled") ||
+          msg.includes("cancelled")
+        ) {
+          setImportUrl(null);
+          return;
+        }
+        setImportError(t("brp.import.failed", { reason: msg }));
+      } finally {
+        unlisten?.();
+      }
+    })();
+
+    return () => {
+      disposed = true;
+      if (rafId) cancelAnimationFrame(rafId);
+    };
+  }, [importUrl]);
+
+  const handleImportCancel = () => {
+    importCancelledRef.current = true;
+    backend.cancelDownload().catch(() => {});
+    setImportUrl(null);
+  };
+
+  const handleImportClose = () => {
+    setImportUrl(null);
+  };
   const backgroundType = usePrefStore(s => s.backgroundType);
   const isDark = useDarkMode();
   const translate = useT();
@@ -177,7 +289,7 @@ function MainLayout() {
             await win.setFocus();
           } catch { /* window API not ready yet — continue */ }
           const brpUrl = parsed.searchParams.get("url");
-          if (brpUrl) setImportingUrl(brpUrl);
+          if (brpUrl) setImportUrl(brpUrl);
           else message.warning(t("brp.error.invalidFile"));
         }
       } catch {
@@ -398,11 +510,15 @@ function MainLayout() {
         <main className="relative flex-1 overflow-auto">
           <AppRoutes />
         </main>
-        {importingUrl && (
+        {importUrl && (
           <ImportProgressDialog
             open={true}
-            url={importingUrl}
-            onClose={() => setImportingUrl(null)}
+            phase={importPhase}
+            progress={importProgress}
+            error={importError}
+            resultText={importResult}
+            onCancel={handleImportCancel}
+            onClose={handleImportClose}
           />
         )}
       </div>

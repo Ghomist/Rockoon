@@ -560,3 +560,12 @@
 | 22:50 | Edited src/components/ImportProgressDialog.tsx | modified ImportProgressDialog() | ~134 |
 | 22:50 | Edited src/components/ImportProgressDialog.tsx | 1→2 lines | ~23 |
 | 22:56 | Created src/components/ImportProgressDialog.tsx | — | ~1630 |
+| 23:02 | Created src/components/ImportProgressDialog.tsx | — | ~633 |
+| 23:03 | Edited src/App.tsx | inline fix | ~18 |
+| 23:03 | Edited src/App.tsx | 1→3 lines | ~27 |
+| 23:03 | Edited src/App.tsx | added 1 import(s) | ~27 |
+| 23:03 | Edited src/App.tsx | added 1 import(s) | ~31 |
+| 23:04 | Edited src/App.tsx | added error handling | ~962 |
+| 23:04 | Edited src/App.tsx | setImportingUrl() → setImportUrl() | ~46 |
+| 23:04 | Edited src/App.tsx | 7→11 lines | ~93 |
+| 23:04 | Edited src/App.tsx | 2→1 lines | ~13 |
