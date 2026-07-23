@@ -137,7 +137,7 @@ export default function Start() {
     }
   ];
 
-  const communityLinks = getExternalLinks();
+  const communityLinks = getExternalLinks().filter(l => l.icon !== "github");
 
   return (
     <div className="flex h-full flex-col gap-4 p-6">
@@ -170,15 +170,9 @@ export default function Start() {
                 {t("home.stop")}
               </Button>
             )}
-            {selectedInstanceData ? (
-              <p className="max-w-full truncate px-6 text-center text-sm text-muted-foreground">
-                {selectedInstanceData.path}
-              </p>
-            ) : (
-              <p className="text-sm text-amber-500">
-                {t("gameConfig.selectInstance")}
-              </p>
-            )}
+            <p className="max-w-full truncate px-6 text-center text-sm text-muted-foreground">
+              {selectedInstanceData?.path ?? ""}
+            </p>
           </div>
         </Card>
 

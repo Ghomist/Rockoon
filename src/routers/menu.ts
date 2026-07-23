@@ -104,12 +104,6 @@ export const getMenuItems = (): MenuItem[] => [
   },
   "-",
   {
-    label: t("menu.tools"),
-    icon: "wrench",
-    route: "/tools",
-    children: []
-  },
-  {
     label: t("menu.settings"),
     route: "/settings",
     icon: "settings",
