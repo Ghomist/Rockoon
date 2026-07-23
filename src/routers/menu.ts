@@ -6,6 +6,8 @@ import GameData from "@/views/GameData";
 import ResourcesMaps from "@/views/ResourcesMaps";
 import ResourcesMods from "@/views/ResourcesMods";
 import ResourcesSkys from "@/views/ResourcesSkys";
+import ResourcesTextures from "@/views/ResourcesTextures";
+import ResourcesSounds from "@/views/ResourcesSounds";
 import Settings from "@/views/Settings";
 
 export type MenuItem =
@@ -81,6 +83,18 @@ export const getMenuItems = (): MenuItem[] => [
     route: "/backgrounds",
     icon: "image",
     view: ResourcesSkys
+  },
+  {
+    label: t("menu.textures"),
+    route: "/textures",
+    icon: "palette",
+    view: ResourcesTextures
+  },
+  {
+    label: t("menu.musics"),
+    route: "/sounds",
+    icon: "music",
+    view: ResourcesSounds
   },
   "-",
   {

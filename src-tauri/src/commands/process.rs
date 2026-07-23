@@ -10,7 +10,7 @@ pub fn execute(cwd: String, bin: String, env: Option<HashMap<String, String>>) -
     if let Some(env_vars) = env {
         cmd.envs(env_vars);
     }
-    let child = cmd.spawn()?;
+    let child = cmd.creation_flags(0x08000000).spawn()?;
 
     log::info!(
         "Started {} (pid: {})",
@@ -27,6 +27,7 @@ pub fn execute(cwd: String, bin: String, env: Option<HashMap<String, String>>) -
 pub fn kill(pid: u32) -> RcResult {
     std::process::Command::new("taskkill")
         .args(["/pid", &pid.to_string(), "/f"])
+        .creation_flags(0x08000000)
         .spawn()?;
 
     log::info!("Killed process {}", pid);

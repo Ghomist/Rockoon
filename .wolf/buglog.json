@@ -592,6 +592,198 @@
       "related_bugs": [],
       "occurrences": 2,
       "last_seen": "2026-07-14T17:25:00.255Z"
+    },
+    {
+      "id": "bug-038",
+      "timestamp": "2026-07-23T11:31:10.954Z",
+      "error_message": "CSS fix: useKeyWithClickEvents",
+      "file": "src/views/ResourcesTextures.tsx",
+      "root_cause": "useKeyWithClickEvents: stopPropagation only, no interaction → stopPropagation only, no interaction needed */",
+      "fix": "Changed useKeyWithClickEvents: stopPropagation only, no interaction → stopPropagation only, no interaction needed */",
+      "tags": [
+        "auto-detected",
+        "style-fix",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-23T11:31:10.954Z"
+    },
+    {
+      "id": "bug-039",
+      "timestamp": "2026-07-23T11:32:23.581Z",
+      "error_message": "Significant refactor of ",
+      "file": "src/views/ResourcesTextures.tsx",
+      "root_cause": "6 lines replaced/restructured",
+      "fix": "Rewrote 15→7 lines (6 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-23T11:32:23.581Z"
+    },
+    {
+      "id": "bug-040",
+      "timestamp": "2026-07-23T11:32:30.903Z",
+      "error_message": "Null/undefined access in ",
+      "file": "src/views/ResourcesTextures.tsx",
+      "root_cause": "Property access on potentially null/undefined value",
+      "fix": "Added null safety (optional chaining or null check)",
+      "tags": [
+        "auto-detected",
+        "null-safety",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-23T11:32:30.903Z"
+    },
+    {
+      "id": "bug-041",
+      "timestamp": "2026-07-23T11:48:20.066Z",
+      "error_message": "Significant refactor of ",
+      "file": "vite.config.ts",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 4→12 lines (2 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-23T11:48:20.066Z"
+    },
+    {
+      "id": "bug-042",
+      "timestamp": "2026-07-23T11:50:58.850Z",
+      "error_message": "Significant refactor of ",
+      "file": "src/stores/profiles.ts",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 6→8 lines (2 removed) | Also: // ponytail: full webview reload, all stores re-in; if (switched) location.reload();",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-07-23T11:51:04.757Z"
+    },
+    {
+      "id": "bug-043",
+      "timestamp": "2026-07-23T11:51:45.641Z",
+      "error_message": "Wrong reference: refreshKey should be appRefreshKey",
+      "file": "src/views/ResourcesSkys.tsx",
+      "root_cause": "Used \"refreshKey\" instead of \"appRefreshKey\"",
+      "fix": "Changed refreshKey → appRefreshKey",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-23T11:51:45.641Z"
+    },
+    {
+      "id": "bug-044",
+      "timestamp": "2026-07-23T11:51:47.753Z",
+      "error_message": "Wrong reference: refreshKey should be appRefreshKey",
+      "file": "src/views/ResourcesTextures.tsx",
+      "root_cause": "Used \"refreshKey\" instead of \"appRefreshKey\"",
+      "fix": "Changed refreshKey → appRefreshKey",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-23T11:51:47.753Z"
+    },
+    {
+      "id": "bug-045",
+      "timestamp": "2026-07-23T12:01:22.235Z",
+      "error_message": "Significant refactor of ",
+      "file": "src/assets/styles.css",
+      "root_cause": "6 lines replaced/restructured",
+      "fix": "Rewrote 13→4 lines (6 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "css"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-23T12:01:22.235Z"
+    },
+    {
+      "id": "bug-046",
+      "timestamp": "2026-07-23T13:54:20.675Z",
+      "error_message": "Wrong reference: spawn should be creation_flags",
+      "file": "src-tauri/src/commands/process.rs",
+      "root_cause": "Used \"spawn\" instead of \"creation_flags\"",
+      "fix": "Changed spawn → creation_flags",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "rs"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-23T13:54:20.675Z"
+    },
+    {
+      "id": "bug-047",
+      "timestamp": "2026-07-23T13:54:54.594Z",
+      "error_message": "Missing import: ) {\n          const win = getCurrentWindow();\n          await win.show();\n          await win.setFocus();\n          const brpUrl = parsed.searchParams.get(",
+      "file": "src/App.tsx",
+      "root_cause": "Module(s) not imported: ) {\n          const win = getCurrentWindow();\n          await win.show();\n          await win.setFocus();\n          const brpUrl = parsed.searchParams.get(",
+      "fix": "Added import(s) for ) {\n          const win = getCurrentWindow();\n          await win.show();\n          await win.setFocus();\n          const brpUrl = parsed.searchParams.get(",
+      "tags": [
+        "auto-detected",
+        "missing-import",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-23T13:54:54.594Z"
+    },
+    {
+      "id": "bug-048",
+      "timestamp": "2026-07-23T14:02:38.405Z",
+      "error_message": "Missing import: ) {\n          // bring window to front, but don",
+      "file": "src/App.tsx",
+      "root_cause": "Module(s) not imported: ) {\n          // bring window to front, but don",
+      "fix": "Added import(s) for ) {\n          // bring window to front, but don",
+      "tags": [
+        "auto-detected",
+        "missing-import",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-23T14:02:38.405Z"
+    },
+    {
+      "id": "bug-049",
+      "timestamp": "2026-07-23T14:07:58.244Z",
+      "error_message": "Incorrect value in code",
+      "file": "src-tauri/tauri.conf.json",
+      "root_cause": "Had \"2.0.0-alpha8\"",
+      "fix": "Changed to \"2.1.0\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "json"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-23T14:07:58.244Z"
     }
   ]
 }

@@ -479,3 +479,54 @@
 | 01:23 | Edited src/App.tsx | expanded (+7 lines) | ~114 |
 | 01:25 | Edited src/App.tsx | modified App() | ~76 |
 | 01:25 | Edited src/App.tsx | CSS: words, words | ~198 |
+| 19:30 | Created src/views/ResourcesTextures.tsx | — | ~1694 |
+| 19:30 | Edited src/views/ResourcesTextures.tsx | CSS: useKeyWithClickEvents, noStaticElementInteractions | ~124 |
+| 19:31 | Edited src/views/ResourcesTextures.tsx | CSS: useKeyWithClickEvents | ~101 |
+| 19:31 | Edited src/views/ResourcesTextures.tsx | 9→7 lines | ~95 |
+| 19:32 | Edited src/views/ResourcesTextures.tsx | added 1 import(s) | ~173 |
+| 19:32 | Edited src/views/ResourcesTextures.tsx | inline fix | ~12 |
+| 19:32 | Edited src/views/ResourcesTextures.tsx | reduced (-8 lines) | ~57 |
+| 19:32 | Edited src/views/ResourcesTextures.tsx | added optional chaining | ~198 |
+| 19:48 | Edited vite.config.ts | expanded (+8 lines) | ~83 |
+| 19:50 | Edited src/stores/app.ts | 8→10 lines | ~97 |
+| 19:50 | Edited src/stores/app.ts | modified loadInstance() | ~341 |
+| 19:50 | Edited src/services/brp.ts | modified importFromFile() | ~522 |
+| 19:50 | Edited src/stores/profiles.ts | added 1 condition(s) | ~110 |
+| 19:51 | Edited src/stores/profiles.ts | added 1 condition(s) | ~90 |
+| 19:51 | Edited src/views/ResourcesMaps.tsx | 1→2 lines | ~36 |
+| 19:51 | Edited src/views/ResourcesMaps.tsx | 4→9 lines | ~68 |
+| 19:51 | Edited src/views/ResourcesSkys.tsx | 1→2 lines | ~36 |
+| 19:51 | Edited src/views/ResourcesSkys.tsx | 4→9 lines | ~69 |
+| 19:51 | Edited src/views/ResourcesTextures.tsx | 1→2 lines | ~36 |
+| 19:51 | Edited src/views/ResourcesTextures.tsx | 5→10 lines | ~90 |
+| 19:51 | Edited src/views/ResourcesSounds.tsx | 1→2 lines | ~36 |
+| 19:51 | Edited src/views/ResourcesSounds.tsx | 5→10 lines | ~89 |
+| 19:51 | Edited src/views/ResourcesPageBase.tsx | 1→2 lines | ~36 |
+| 19:51 | Edited src/views/ResourcesPageBase.tsx | 4→9 lines | ~67 |
+| 19:51 | Edited src/views/ResourcesSkys.tsx | 2→2 lines | ~37 |
+| 19:51 | Edited src/views/ResourcesSkys.tsx | 4→4 lines | ~37 |
+| 19:51 | Edited src/views/ResourcesTextures.tsx | 2→2 lines | ~37 |
+| 19:51 | Edited src/views/ResourcesTextures.tsx | 4→4 lines | ~37 |
+| 19:55 | Edited src/components/ui/sonner.tsx | CSS: style, pointerEvents | ~245 |
+| 19:55 | Edited src/components/ui/sonner.tsx | CSS: pointerEvents | ~82 |
+| 19:57 | Edited src/components/ui/sonner.tsx | 13→9 lines | ~78 |
+| 19:57 | Edited src/assets/styles.css | expanded (+9 lines) | ~70 |
+| 20:01 | Edited src/assets/styles.css | removed 13 lines | ~11 |
+| 20:01 | Edited src/utils/ui/feedback.ts | 18→21 lines | ~201 |
+| 20:01 | Edited src/assets/styles.css | CSS: cursor, opacity | ~28 |
+| 20:03 | Edited src/utils/ui/feedback.ts | 21→26 lines | ~250 |
+| 20:03 | Edited src/utils/ui/feedback.ts | 40→37 lines | ~332 |
+| 21:54 | Edited src-tauri/src/main.rs | 2→2 lines | ~25 |
+| 21:54 | Edited src-tauri/src/commands/process.rs | inline fix | ~15 |
+| 21:54 | Edited src-tauri/src/commands/process.rs | 3→4 lines | ~39 |
+| 21:54 | Edited src-tauri/src/commands/fs.rs | modified open() | ~81 |
+| 21:54 | Edited src/i18n/languages/zh.json | 4→6 lines | ~49 |
+| 21:54 | Edited src/i18n/languages/en.json | 4→6 lines | ~61 |
+| 21:54 | Edited src/App.tsx | added 1 import(s) | ~34 |
+| 21:54 | Edited src/App.tsx | modified if() | ~150 |
+| 21:55 | Edited src/services/brp.ts | 4→4 lines | ~46 |
+| 21:55 | Edited src/services/brp.ts | modified importFromUrl() | ~507 |
+| 22:02 | Edited src/App.tsx | modified if() | ~199 |
+| 22:03 | Edited src/services/brp.ts | modified if() | ~118 |
+| 22:03 | Edited src/services/brp.ts | modified if() | ~119 |
+| 22:07 | Edited src-tauri/tauri.conf.json | inline fix | ~6 |

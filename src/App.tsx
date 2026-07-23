@@ -31,6 +31,7 @@ import { dialog, message } from "@/utils/ui/feedback";
 import { checkRunningInstance } from "@/services/launcher";
 import { importFromFile, importFromUrl } from "@/services/brp";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 import {
   getCurrent as getCurrentDeepLink,
   onOpenUrl
@@ -162,13 +163,19 @@ function MainLayout() {
     let unlistenDragDrop: (() => void) | undefined;
     let unlistenDeepLink: (() => void) | undefined;
 
-    const handleUrl = (raw: string) => {
+    const handleUrl = async (raw: string) => {
       try {
         const parsed = new URL(raw);
         if (parsed.protocol !== "rockoon:") return;
         if (parsed.host === "import") {
+          // bring window to front, but don't let a failure block the import
+          try {
+            const win = getCurrentWindow();
+            await win.show();
+            await win.setFocus();
+          } catch { /* window API not ready yet — continue */ }
           const brpUrl = parsed.searchParams.get("url");
-          if (brpUrl) importFromUrl(brpUrl);
+          if (brpUrl) await importFromUrl(brpUrl);
           else message.warning(t("brp.error.invalidFile"));
         }
       } catch {

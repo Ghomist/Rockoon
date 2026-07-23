@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-07-14T17:25:05.266Z
-> Files: 390 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-07-23T14:07:58.233Z
+> Files: 393 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ./
 
@@ -25,7 +25,7 @@
 - `TODO.md` — TODO (~254 tok)
 - `tsconfig.json` — TypeScript configuration (~204 tok)
 - `tsconfig.node.json` (~64 tok)
-- `vite.config.ts` — Declares host (~282 tok)
+- `vite.config.ts` — Declares host (~334 tok)
 
 ## .claude/
 
@@ -319,7 +319,7 @@
 - `.gitignore` — Git ignore rules (~72 tok)
 - `build.rs` (~12 tok)
 - `Cargo.toml` — Rust package manifest (~389 tok)
-- `tauri.conf.json` (~502 tok)
+- `tauri.conf.json` (~500 tok)
 
 ## src-tauri/capabilities/
 
@@ -340,7 +340,7 @@
 ## src-tauri/src/
 
 - `lib.rs` — run (~790 tok)
-- `main.rs` — Prevents additional console window on Windows in release, DO NOT REMOVE!! (~121 tok)
+- `main.rs` — Suppress console window on Windows in all build modes. (~99 tok)
 
 ## src-tauri/src/ballance/
 
@@ -363,9 +363,9 @@
 - `app.rs` — [command] (~381 tok)
 - `ballance.rs` — read_options, save_options, read_launch_config, save_launch_config + 2 more (~1324 tok)
 - `brp.rs` — Tauri commands wrapping the BRP validate/install logic. (~670 tok)
-- `fs.rs` — [derive(serde::Serialize, serde::Deserialize)] (~3593 tok)
+- `fs.rs` — [derive(serde::Serialize, serde::Deserialize)] (~3595 tok)
 - `mod.rs` (~21 tok)
-- `process.rs` — [command] (~648 tok)
+- `process.rs` — [command] (~622 tok)
 
 ## src-tauri/src/common/
 
@@ -374,7 +374,7 @@
 
 ## src/
 
-- `App.tsx` — Compute dark-mode state from pref.theme + system preference. (~3830 tok)
+- `App.tsx` — Compute dark-mode state from pref.theme + system preference. (~3926 tok)
 - `App.vue` — Vue component (~2404 tok)
 - `main.ts` — Declares app (~330 tok)
 - `main.tsx` — Register console hooks → forward to Rust log stream. (~438 tok)
@@ -382,7 +382,7 @@
 
 ## src/assets/
 
-- `styles.css` — Styles: 9 rules, 106 vars (~1580 tok)
+- `styles.css` — Styles: 9 rules, 106 vars (~1598 tok)
 - `styles.scss` — Styles: 2 rules, 4 vars (~139 tok)
 - `ui-fix.scss` — Styles: 3 rules (~60 tok)
 
@@ -410,6 +410,7 @@
 - `hexagon-pattern.tsx` — 启用动态填充：随机蜂巢定时闪烁开关，类似 FlickeringGrid。 (~2959 tok)
 - `meteors.tsx` — Meteors (~504 tok)
 - `particles.tsx` — Adapted from magicui Particles (MIT, https://magicui.design/docs/components/particles). (~2544 tok)
+- `sonner.tsx` — Toaster (~293 tok)
 - `word-rotate.tsx` — WordRotate (~340 tok)
 
 ## src/components/ui/animated-grid-pattern/
@@ -428,8 +429,8 @@
 
 ## src/i18n/languages/
 
-- `en.json` — Declares language (~4204 tok)
-- `zh.json` (~3112 tok)
+- `en.json` — Declares language (~4371 tok)
+- `zh.json` (~3221 tok)
 
 ## src/lib/
 
@@ -443,19 +444,19 @@
 
 ## src/services/
 
-- `brp.ts` — Render a short description of what the manifest contains, for notifications. (~746 tok)
+- `brp.ts` — Render a short description of what the manifest contains, for notifications. (~928 tok)
 - `hub.ts` — Exports fetchMaps, fetchMap, fetchTags, getDownloadUrl + 14 more (~1324 tok)
 - `launcher.ts` — Launch the Ballance Player.exe for the selected instance. (~692 tok)
 - `updater.ts` — Exports checkForUpdate (~647 tok)
 
 ## src/stores/
 
-- `app.ts` — Load the single instance's InstanceData and install RockoonIO mod. (~455 tok)
+- `app.ts` — Load the single instance's InstanceData and install RockoonIO mod. (~520 tok)
 - `hub.ts` — Exports useHubStore (~242 tok)
 - `index.ts` — Wire up store subscriptions and load initial state. (~503 tok)
 - `instances.ts` — Exports useInstancesStore (~499 tok)
 - `pref.ts` — Persist the entire store state to localStorage. (~401 tok)
-- `profiles.ts` — Resource dirs whose disable-state we capture per-profile. (~3288 tok)
+- `profiles.ts` — Resource dirs whose disable-state we capture per-profile. (~3361 tok)
 
 ## src/types/
 
@@ -476,7 +477,7 @@
 ## src/utils/ui/
 
 - `dialog-store.ts` — Exports DialogVariant, DialogOptions, DialogInstance, useDialogStore (~622 tok)
-- `feedback.ts` — Drop-in replacement for Naive UI's discrete `message` API. (~573 tok)
+- `feedback.ts` — Drop-in replacement for Naive UI's discrete `message` API. (~645 tok)
 - `router.ts` — Exports waitForSelectedInstance (~238 tok)
 - `waitForInstance.ts` — Subscribes to selectedInstanceData. When available, calls `initFn` once. (~318 tok)
 
@@ -489,14 +490,16 @@
 - `Instances.vue` — Vue: setup, TS (~1343 tok)
 - `Onboarding.tsx` — Initial instance picker shown when no Ballance install is configured. (~809 tok)
 - `Onboarding.vue` — Vue: setup (~666 tok)
-- `ResourcesMaps.tsx` — Launch a map file, optionally with a confirm dialog (skippable via pref). (~4368 tok)
+- `ResourcesMaps.tsx` — Launch a map file, optionally with a confirm dialog (skippable via pref). (~4418 tok)
 - `ResourcesMaps.vue` — Vue: setup (~3389 tok)
 - `ResourcesMods.tsx` — ResourcesMods (~41 tok)
 - `ResourcesMods.vue` — Vue: setup, TS (~43 tok)
-- `ResourcesPageBase.tsx` — resourcePageSchema (~2001 tok)
+- `ResourcesPageBase.tsx` — resourcePageSchema (~2051 tok)
 - `ResourcesPageBase.vue` — Vue: BRP, setup (~1772 tok)
-- `ResourcesSkys.tsx` — LEVEL_LETTERS — renders modal (~1978 tok)
+- `ResourcesSkys.tsx` — LEVEL_LETTERS — renders modal (~2031 tok)
 - `ResourcesSkys.vue` — Vue: Archive, setup (~3263 tok)
+- `ResourcesSounds.tsx` — ResourcesSounds (~1812 tok)
+- `ResourcesTextures.tsx` — ResourcesTextures — renders modal (~1634 tok)
 - `Settings.tsx` — usePrefFields (~1918 tok)
 - `Settings.vue` — Vue: setup (~1436 tok)
 - `Start.tsx` — resolveIcon (~2107 tok)

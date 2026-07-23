@@ -8,8 +8,10 @@ interface AppState {
   runningInstancePid: number | undefined;
   runningInstancePath: string | undefined;
   runningInstanceTimestamp: number;
+  refreshKey: number;
   loadInstance: (path: string) => Promise<boolean>;
   updateInstanceRunningTime: () => void;
+  triggerRefresh: () => void;
 }
 
 export const useAppStore = create<AppState>()(
@@ -18,6 +20,7 @@ export const useAppStore = create<AppState>()(
     runningInstancePid: undefined,
     runningInstancePath: undefined,
     runningInstanceTimestamp: 0,
+    refreshKey: 0,
 
     /** Load the single instance's InstanceData and install RockoonIO mod. */
     async loadInstance(path) {
@@ -42,6 +45,11 @@ export const useAppStore = create<AppState>()(
         }));
         set({ runningInstanceTimestamp: Date.now() });
       }
+    },
+
+    /** Increment refresh counter to signal all pages to re-fetch data. */
+    triggerRefresh() {
+      set(s => ({ refreshKey: s.refreshKey + 1 }));
     }
   }))
 );

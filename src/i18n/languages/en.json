@@ -24,7 +24,9 @@
     "downloading": "Downloading and importing package...",
     "import": {
       "success": "Imported: {what} ({count} file(s) → {target})",
-      "failed": "Import failed: {reason}"
+      "failed": "Import failed: {reason}",
+      "successTitle": "Import Successful",
+      "failedTitle": "Import Failed"
     },
     "error": {
       "noInstance": "Please select a game instance first",
@@ -463,6 +465,17 @@
       "map": "No map found | 1 custom map in total | {cnt} custom maps in total",
       "mod": "No modules found | 1 mod in total | {cnt} mods in total"
     }
+  },
+  "textures": {
+    "statistics": "No texture found | 1 texture in total | {cnt} textures in total",
+    "empty": "No textures installed. Drop a .brp file or click 'Import Package' to get started.",
+    "previewTitle": "Preview — {name}"
+  },
+  "sounds": {
+    "statistics": "No sound found | 1 sound in total | {cnt} sounds in total",
+    "empty": "No sounds installed. Drop a .brp file or click 'Import Package' to get started.",
+    "playing": "Playing…",
+    "playError": "Failed to play audio"
   },
   "skys": {
     "statistics": "No skybox found | Total 1 skybox | Total {cnt} skyboxes",

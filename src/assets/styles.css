@@ -179,3 +179,8 @@
     overflow: hidden;
   }
 }
+
+[data-sonner-toast] {
+  cursor: pointer;
+  opacity: 0.85;
+}

@@ -1,6 +1,6 @@
 import backend from "@/backend";
 import { useAppStore } from "@/stores/app";
-import { message } from "@/utils/ui/feedback";
+import { dialog, message } from "@/utils/ui/feedback";
 import { t } from "@/i18n";
 
 const CATEGORY_LABEL_KEY: Record<BrpManifest["category"], string> = {
@@ -30,26 +30,34 @@ export async function importFromFile(
 ): Promise<BrpImportResult | null> {
   const instance = useAppStore.getState().selectedInstanceData;
   if (!instance) {
-    message.error(t("brp.error.noInstance"));
+    dialog.error({
+      title: t("brp.import.failedTitle"),
+      content: t("brp.error.noInstance"),
+      positiveText: t("common.dialog.confirm")
+    });
     return null;
   }
   const loading = message.loading(t("brp.importing"), { duration: 0 });
   try {
     const result = await backend.importBrp(filePath, instance.path);
     loading.destroy();
-    message.success(
-      t("brp.import.success", {
+    dialog.success({
+      title: t("brp.import.successTitle"),
+      content: t("brp.import.success", {
         what: describeBrp(result.manifest),
         count: result.installedPaths.length,
         target: result.targetDescription
       }),
-      { duration: 6000 }
-    );
+      positiveText: t("common.dialog.confirm")
+    });
+    useAppStore.getState().triggerRefresh();
     return result;
   } catch (e) {
     loading.destroy();
-    message.error(t("brp.import.failed", { reason: String(e) }), {
-      duration: 8000
+    dialog.error({
+      title: t("brp.import.failedTitle"),
+      content: t("brp.import.failed", { reason: String(e) }),
+      positiveText: t("common.dialog.confirm")
     });
     return null;
   }
@@ -61,26 +69,34 @@ export async function importFromUrl(
 ): Promise<BrpImportResult | null> {
   const instance = useAppStore.getState().selectedInstanceData;
   if (!instance) {
-    message.error(t("brp.error.noInstance"));
+    dialog.error({
+      title: t("brp.import.failedTitle"),
+      content: t("brp.error.noInstance"),
+      positiveText: t("common.dialog.confirm")
+    });
     return null;
   }
   const loading = message.loading(t("brp.downloading"), { duration: 0 });
   try {
     const result = await backend.importBrpFromUrl(url, instance.path);
     loading.destroy();
-    message.success(
-      t("brp.import.success", {
+    dialog.success({
+      title: t("brp.import.successTitle"),
+      content: t("brp.import.success", {
         what: describeBrp(result.manifest),
         count: result.installedPaths.length,
         target: result.targetDescription
       }),
-      { duration: 6000 }
-    );
+      positiveText: t("common.dialog.confirm")
+    });
+    useAppStore.getState().triggerRefresh();
     return result;
   } catch (e) {
     loading.destroy();
-    message.error(t("brp.import.failed", { reason: String(e) }), {
-      duration: 8000
+    dialog.error({
+      title: t("brp.import.failedTitle"),
+      content: t("brp.import.failed", { reason: String(e) }),
+      positiveText: t("common.dialog.confirm")
     });
     return null;
   }

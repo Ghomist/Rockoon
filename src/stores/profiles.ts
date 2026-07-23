@@ -143,8 +143,10 @@ export const useProfilesStore = create<ProfilesState>((set, get) => ({
     await get().applyState(target);
     set({ index: { ...get().index, currentId: id } });
     await get().save();
-    // ponytail: full webview reload, all stores re-init from disk via initStores()
-    location.reload();
+    // Refresh app store (game options etc.) and signal all pages to re-fetch
+    const instancePath = usePrefStore.getState().instancePath;
+    if (instancePath) await useAppStore.getState().loadInstance(instancePath);
+    useAppStore.getState().triggerRefresh();
   },
 
   /** Snapshot current disk state as a new profile, mark as current. */
@@ -179,8 +181,11 @@ export const useProfilesStore = create<ProfilesState>((set, get) => ({
     }
     set({ index: { profiles: next, currentId: newCurrentId } });
     await get().save();
-    // ponytail: full webview reload, all stores re-init from disk via initStores()
-    if (switched) location.reload();
+    if (switched) {
+      const instancePath = usePrefStore.getState().instancePath;
+      if (instancePath) await useAppStore.getState().loadInstance(instancePath);
+      useAppStore.getState().triggerRefresh();
+    }
   },
 
   async renameProfile(id, name) {

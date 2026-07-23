@@ -24,7 +24,9 @@
     "downloading": "正在下载并导入资源包...",
     "import": {
       "success": "导入成功：{what}（{count} 个文件 → {target}）",
-      "failed": "导入失败：{reason}"
+      "failed": "导入失败：{reason}",
+      "successTitle": "导入成功",
+      "failedTitle": "导入失败"
     },
     "error": {
       "noInstance": "请先选择一个游戏实例",
@@ -175,6 +177,17 @@
       "success": "文件移动成功",
       "error": "文件移动失败"
     }
+  },
+  "textures": {
+    "statistics": "未找到材质 | 共 1 个材质 | 共 {cnt} 个材质",
+    "empty": "暂无材质文件。拖入 .brp 文件或点击「导入资源包」以开始。",
+    "previewTitle": "预览 — {name}"
+  },
+  "sounds": {
+    "statistics": "未找到音效 | 共 1 个音效 | 共 {cnt} 个音效",
+    "empty": "暂无音效文件。拖入 .brp 文件或点击「导入资源包」以开始。",
+    "playing": "播放中…",
+    "playError": "音频播放失败"
   },
   "skys": {
     "statistics": "未找到天空盒 | 共 1 个天空盒 | 共 {cnt} 个天空盒",

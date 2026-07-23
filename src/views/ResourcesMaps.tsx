@@ -45,6 +45,7 @@ interface DirItem {
 export default function ResourcesMaps() {
   const t = useT();
   const selectedInstanceData = useAppStore(s => s.selectedInstanceData);
+  const refreshKey = useAppStore(s => s.refreshKey);
   const [rootPath, setRootPath] = useState("");
   const [currentPath, setCurrentPath] = useState("");
   const [directoryList, setDirectoryList] = useState<DirItem[]>([]);
@@ -253,6 +254,11 @@ export default function ResourcesMaps() {
     void loadDirectory();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    void onRefresh();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [refreshKey]);
 
   return (
     <ListViewPage

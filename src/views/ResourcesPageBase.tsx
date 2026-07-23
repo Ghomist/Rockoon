@@ -35,6 +35,7 @@ interface Props {
 export default function ResourcesPageBase({ type, onBrpImported }: Props) {
   const t = useT();
   const selectedInstanceData = useAppStore(s => s.selectedInstanceData);
+  const refreshKey = useAppStore(s => s.refreshKey);
   const [rscPath, setRscPath] = useState("");
   const [rscList, setRscList] = useState<ManagedFile[]>([]);
 
@@ -136,6 +137,11 @@ export default function ResourcesPageBase({ type, onBrpImported }: Props) {
     void onRefresh();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    void onRefresh();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [refreshKey]);
 
   return (
     <ListViewPage

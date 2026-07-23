@@ -1,3 +1,4 @@
+import React from "react";
 import { toast } from "sonner";
 import {
   useDialogStore,
@@ -15,17 +16,21 @@ interface LoadingHandle {
 const wrap =
   (variant: "success" | "error" | "info" | "warning" | "loading") =>
   (text: string, opts: ToastOptions = {}): LoadingHandle => {
-    const id =
+    let id: string | number;
+    const dismiss = () => toast.dismiss(id);
+    const base = { description: opts.description };
+    id =
       opts.duration === 0
-        ? toast[variant === "loading" ? "loading" : variant](text, {
-            description: opts.description,
-            duration: Infinity
-          })
-        : toast[variant === "loading" ? "loading" : variant](text, {
-            description: opts.description
-          });
+        ? toast[variant === "loading" ? "loading" : variant](
+            React.createElement("span", { style: { cursor: "pointer" }, onClick: dismiss }, text),
+            { ...base, duration: Infinity }
+          )
+        : toast[variant === "loading" ? "loading" : variant](
+            React.createElement("span", { style: { cursor: "pointer" }, onClick: dismiss }, text),
+            base
+          );
     return {
-      destroy: () => toast.dismiss(id),
+      destroy: dismiss,
       update: (newText: string) =>
         toast.loading(newText, { id, duration: Infinity })
     };

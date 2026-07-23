@@ -54,6 +54,7 @@ function capitalizeFirst(s: string): string {
 export default function ResourcesSkys() {
   const t = useT();
   const selectedInstanceData = useAppStore(s => s.selectedInstanceData);
+  const appRefreshKey = useAppStore(s => s.refreshKey);
   const [loading, setLoading] = useState(true);
   const [skyboxLevels, setSkyboxLevels] = useState<SkyboxLevel[]>([]);
   const [skysPath, setSkysPath] = useState("");
@@ -120,6 +121,11 @@ export default function ResourcesSkys() {
     void loadSkyboxes();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    void loadSkyboxes();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [appRefreshKey]);
 
   return (
     <ListViewPage

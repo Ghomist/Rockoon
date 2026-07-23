@@ -26,8 +26,16 @@ export default defineConfig(async () => ({
         }
       : undefined,
     watch: {
-      // 3. tell vite to ignore watching `src-tauri`
-      ignored: ["**/src-tauri/**"]
+      // 3. tell vite to ignore watching `src-tauri` and agent/config dirs
+      ignored: [
+        "**/src-tauri/**",
+        "**/.agents/**",
+        "**/.claude/**",
+        "**/.codegraph/**",
+        "**/.omo/**",
+        "**/.wolf/**",
+        "**/.idea/**"
+      ]
     }
   },
   build: {

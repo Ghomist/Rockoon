@@ -36,12 +36,12 @@ pub fn open_in_explorer(path: String) -> RcResult {
 #[command]
 #[cfg(target_os = "windows")]
 pub fn open(path: String) -> RcResult {
-    let is_dir = path::Path::new(&path).is_dir();
-    if is_dir {
+    let path_ref: &std::path::Path = path.as_ref();
+    if path_ref.is_dir() {
         return open_in_explorer(path);
     }
-    process::Command::new("cmd")
-        .args(["/C", "start", &path])
+    process::Command::new("explorer.exe")
+        .arg(path_ref)
         .spawn()?;
     Ok(())
 }
