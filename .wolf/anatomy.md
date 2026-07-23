@@ -1,6 +1,6 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-07-23T18:07:05.410Z
+> Auto-maintained by OpenWolf. Last scanned: 2026-07-23T18:09:28.374Z
 > Files: 394 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ./
@@ -374,7 +374,7 @@
 
 ## src/
 
-- `App.tsx` — Compute dark-mode state from pref.theme + system preference. (~4770 tok)
+- `App.tsx` — Compute dark-mode state from pref.theme + system preference. (~4782 tok)
 - `App.vue` — Vue component (~2404 tok)
 - `main.ts` — Declares app (~330 tok)
 - `main.tsx` — Register console hooks → forward to Rust log stream. (~438 tok)

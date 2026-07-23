@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { startTransition, useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown, Check, Plus, Pencil, Trash2 } from "lucide-react";
 import { Toaster } from "@/components/ui/sonner";
 import { Button } from "@/components/ui/button";
@@ -186,8 +186,8 @@ function MainLayout() {
 
   const handleImportCancel = () => {
     importCancelledRef.current = true;
-    setImportUrl(null);
     message.info(t("brp.import.cancelled"));
+    startTransition(() => setImportUrl(null));
   };
 
   const handleImportClose = () => {
