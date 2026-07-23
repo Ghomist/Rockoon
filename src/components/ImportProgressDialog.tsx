@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
 import {
   Dialog,
@@ -23,6 +23,10 @@ export interface ImportProgressDialogProps {
 
 type Phase = "connecting" | "downloading" | "importing" | "done";
 
+/** Flush pending React state to the DOM. */
+const yieldToDom = () =>
+  new Promise<void>(r => requestAnimationFrame(() => r()));
+
 export default function ImportProgressDialog({
   open,
   url,
@@ -32,27 +36,37 @@ export default function ImportProgressDialog({
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState("");
   const [resultText, setResultText] = useState("");
-  const unlistenRef = useRef<UnlistenFn | null>(null);
+  const disposedRef = useRef(false);
   const cancelledRef = useRef(false);
+  const downloadPromiseRef = useRef<Promise<unknown> | null>(null);
+
+  // Stable close callback so unmount races don't double-call.
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
+
+  const close = useCallback(() => onCloseRef.current(), []);
 
   useEffect(() => {
     if (!open) return;
 
-    let disposed = false;
+    disposedRef.current = false;
     cancelledRef.current = false;
     setPhase("connecting");
     setProgress(0);
     setError("");
     setResultText("");
 
+    let disposeEvent: UnlistenFn | undefined;
     listen<{ percent: number }>("download-progress", event => {
-      if (disposed) return;
+      if (disposedRef.current) return;
       setPhase("downloading");
       setProgress(Math.min(event.payload.percent, 99));
     }).then(fn => {
-      unlistenRef.current = fn;
+      if (disposedRef.current) {
+        fn();
+        return;
+      }
+      disposeEvent = fn;
     });
 
     (async () => {
@@ -68,14 +82,21 @@ export default function ImportProgressDialog({
           return;
         }
 
-        await backend.downloadFile(url, savePath);
-        if (disposed || cancelledRef.current) return;
+        // Download — Rust emits download-progress events.
+        const dlPromise = backend.downloadFile(url, savePath);
+        downloadPromiseRef.current = dlPromise;
+        await dlPromise;
+        downloadPromiseRef.current = null;
+        if (disposedRef.current || cancelledRef.current) return;
 
+        // Flush "importing" state to DOM before blocking work.
         setPhase("importing");
         setProgress(100);
+        await yieldToDom();
 
+        // Validate + install (Rust does blocking I/O on a worker thread).
         const result = await backend.importBrp(savePath, instance.path);
-        if (disposed || cancelledRef.current) return;
+        if (disposedRef.current || cancelledRef.current) return;
 
         setResultText(
           t("brp.import.success", {
@@ -88,10 +109,13 @@ export default function ImportProgressDialog({
 
         useAppStore.getState().triggerRefresh();
       } catch (e: unknown) {
-        if (disposed || cancelledRef.current) return;
+        if (disposedRef.current || cancelledRef.current) return;
         const msg = String(e);
-        if (msg.includes("Download cancelled") || msg.includes("cancelled")) {
-          onClose();
+        if (
+          msg.includes("Download cancelled") ||
+          msg.includes("cancelled")
+        ) {
+          close();
           return;
         }
         setError(t("brp.import.failed", { reason: msg }));
@@ -99,18 +123,18 @@ export default function ImportProgressDialog({
     })();
 
     return () => {
-      disposed = true;
-      unlistenRef.current?.();
-      unlistenRef.current = null;
+      disposedRef.current = true;
+      disposeEvent?.();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, url]);
 
-  const handleCancel = async () => {
+  const handleCancel = useCallback(() => {
     cancelledRef.current = true;
-    await backend.cancelDownload();
-    onClose();
-  };
+    // Fire-and-forget: the Rust loop checks the atomic flag on its own.
+    backend.cancelDownload().catch(() => {});
+    close();
+  }, [close]);
 
   const phaseLabels: Record<Phase, string> = {
     connecting: t("brp.connecting"),
@@ -120,7 +144,7 @@ export default function ImportProgressDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={v => !v && onClose()}>
+    <Dialog open={open} onOpenChange={v => !v && close()}>
       <DialogContent
         className="sm:max-w-md"
         onPointerDownOutside={e => e.preventDefault()}
@@ -146,7 +170,7 @@ export default function ImportProgressDialog({
           )}
 
           {error || phase === "done" ? (
-            <Button onClick={onClose} className="self-end">
+            <Button onClick={close} className="self-end">
               {t("common.dialog.confirm")}
             </Button>
           ) : (
@@ -156,7 +180,7 @@ export default function ImportProgressDialog({
               className="self-end"
             >
               <X className="mr-1 size-4" />
-              {t("common.cancel")}
+              {t("common.dialog.cancel")}
             </Button>
           )}
         </div>

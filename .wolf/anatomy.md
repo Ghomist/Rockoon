@@ -1,6 +1,6 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-07-23T14:50:17.962Z
+> Auto-maintained by OpenWolf. Last scanned: 2026-07-23T14:56:12.676Z
 > Files: 394 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ./
@@ -398,7 +398,7 @@
 - `AppSidebar.vue` — Vue: setup (~1694 tok)
 - `GlobalDialogHost.tsx` — Renders all open dialogs from the store. Mount once at the app root. (~810 tok)
 - `GlobalDialogHost.vue` — Vue: setup (~638 tok)
-- `ImportProgressDialog.tsx` — ImportProgressDialog — renders modal (~1364 tok)
+- `ImportProgressDialog.tsx` — Flush pending React state to the DOM. (~1630 tok)
 - `TitleBarControls.tsx` — Minimize / Maximize-Restore / Close window controls. (~528 tok)
 - `TitleBarControls.vue` — Vue: setup (~430 tok)
 
