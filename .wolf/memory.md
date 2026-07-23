@@ -569,3 +569,6 @@
 | 23:04 | Edited src/App.tsx | setImportingUrl() → setImportUrl() | ~46 |
 | 23:04 | Edited src/App.tsx | 7→11 lines | ~93 |
 | 23:04 | Edited src/App.tsx | 2→1 lines | ~13 |
+| 23:07 | Edited src/i18n/languages/zh.json | 4→5 lines | ~47 |
+| 23:07 | Edited src/i18n/languages/en.json | 4→5 lines | ~59 |
+| 23:07 | Edited src/App.tsx | cancelDownload() → info() | ~43 |

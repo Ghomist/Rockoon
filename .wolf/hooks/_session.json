@@ -232,12 +232,12 @@
       "first_read": "2026-07-12T07:38:29.729Z"
     },
     "D:/Codes/rockoon/src/i18n/languages/zh.json": {
-      "count": 29,
+      "count": 30,
       "tokens": 3255,
       "first_read": "2026-07-12T07:38:38.597Z"
     },
     "D:/Codes/rockoon/src/i18n/languages/en.json": {
-      "count": 32,
+      "count": 33,
       "tokens": 4412,
       "first_read": "2026-07-12T07:38:38.954Z"
     },
@@ -617,8 +617,8 @@
       "first_read": "2026-07-13T13:02:09.452Z"
     },
     "D:/Codes/rockoon/src/App.tsx": {
-      "count": 47,
-      "tokens": 4018,
+      "count": 49,
+      "tokens": 4995,
       "first_read": "2026-07-13T14:41:31.899Z"
     },
     "D:/Codes/rockoon/src/components/ui/dropdown-menu.tsx": {
@@ -829,5 +829,5 @@
   },
   "anatomy_hits": 114,
   "anatomy_misses": 51,
-  "repeated_reads_warned": 482
+  "repeated_reads_warned": 486
 }

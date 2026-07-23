@@ -1,6 +1,6 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-07-23T15:04:21.619Z
+> Auto-maintained by OpenWolf. Last scanned: 2026-07-23T15:07:36.790Z
 > Files: 394 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ./
@@ -430,8 +430,8 @@
 
 ## src/i18n/languages/
 
-- `en.json` — Declares language (~4412 tok)
-- `zh.json` (~3255 tok)
+- `en.json` — Declares language (~4424 tok)
+- `zh.json` (~3263 tok)
 
 ## src/lib/
 

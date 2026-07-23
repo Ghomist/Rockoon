@@ -215,8 +215,8 @@ function MainLayout() {
 
   const handleImportCancel = () => {
     importCancelledRef.current = true;
-    backend.cancelDownload().catch(() => {});
     setImportUrl(null);
+    message.info(t("brp.import.cancelled"));
   };
 
   const handleImportClose = () => {

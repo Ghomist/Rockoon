@@ -28,6 +28,7 @@
     "import": {
       "success": "导入成功：{what}（{count} 个文件 → {target}）",
       "failed": "导入失败：{reason}",
+      "cancelled": "已取消导入",
       "successTitle": "导入成功",
       "failedTitle": "导入失败"
     },

@@ -28,6 +28,7 @@
     "import": {
       "success": "Imported: {what} ({count} file(s) → {target})",
       "failed": "Import failed: {reason}",
+      "cancelled": "Import cancelled",
       "successTitle": "Import Successful",
       "failedTitle": "Import Failed"
     },
