@@ -1,6 +1,6 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-07-23T14:18:24.075Z
+> Auto-maintained by OpenWolf. Last scanned: 2026-07-23T14:26:21.518Z
 > Files: 393 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ./
@@ -374,7 +374,7 @@
 
 ## src/
 
-- `App.tsx` — Compute dark-mode state from pref.theme + system preference. (~3926 tok)
+- `App.tsx` — Compute dark-mode state from pref.theme + system preference. (~3920 tok)
 - `App.vue` — Vue component (~2404 tok)
 - `main.ts` — Declares app (~330 tok)
 - `main.tsx` — Register console hooks → forward to Rust log stream. (~438 tok)
@@ -440,7 +440,7 @@
 
 - `index.ts` — Exports router (~267 tok)
 - `index.tsx` — Build the route tree from `getMenuItems()`. (~373 tok)
-- `menu.ts` — Exports MenuItem, ExternalLinkItem, getExternalLinks, getMenuItems (~774 tok)
+- `menu.ts` — Exports MenuItem, ExternalLinkItem, getExternalLinks, getMenuItems (~747 tok)
 
 ## src/services/
 
@@ -456,7 +456,7 @@
 - `index.ts` — Wire up store subscriptions and load initial state. (~503 tok)
 - `instances.ts` — Exports useInstancesStore (~499 tok)
 - `pref.ts` — Persist the entire store state to localStorage. (~401 tok)
-- `profiles.ts` — Resource dirs whose disable-state we capture per-profile. (~3361 tok)
+- `profiles.ts` — Resource dirs whose disable-state we capture per-profile. (~3375 tok)
 
 ## src/types/
 
@@ -502,7 +502,7 @@
 - `ResourcesTextures.tsx` — ResourcesTextures — renders modal (~1634 tok)
 - `Settings.tsx` — usePrefFields (~1918 tok)
 - `Settings.vue` — Vue: setup (~1436 tok)
-- `Start.tsx` — resolveIcon (~2107 tok)
+- `Start.tsx` — resolveIcon (~2062 tok)
 - `Start.vue` — Vue: setup (~1699 tok)
 
 ## src/views/components/

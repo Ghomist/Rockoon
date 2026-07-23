@@ -536,3 +536,9 @@
 | 22:18 | Edited src/i18n/languages/zh.json | 1→2 lines | ~21 |
 | 22:18 | Edited src/i18n/languages/en.json | 1→2 lines | ~16 |
 | 22:18 | Edited src/i18n/languages/en.json | 1→2 lines | ~30 |
+| 22:22 | Edited src/views/Start.tsx | inline fix | ~22 |
+| 22:22 | Edited src/views/Start.tsx | added optional chaining | ~46 |
+| 22:22 | Edited src/routers/menu.ts | reduced (-6 lines) | ~12 |
+| 22:25 | Edited src/App.tsx | "pointer-events-none selec" → "select-none text-sm text-" | ~20 |
+| 22:26 | Edited src/stores/profiles.ts | 7→8 lines | ~116 |
+| 22:26 | Edited src/stores/profiles.ts | modified if() | ~96 |

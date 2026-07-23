@@ -143,6 +143,7 @@ export const useProfilesStore = create<ProfilesState>((set, get) => ({
     await get().applyState(target);
     set({ index: { ...get().index, currentId: id } });
     await get().save();
+    await get().load();
     // Refresh app store (game options etc.) and signal all pages to re-fetch
     const instancePath = usePrefStore.getState().instancePath;
     if (instancePath) await useAppStore.getState().loadInstance(instancePath);
@@ -182,6 +183,7 @@ export const useProfilesStore = create<ProfilesState>((set, get) => ({
     set({ index: { profiles: next, currentId: newCurrentId } });
     await get().save();
     if (switched) {
+      await get().load();
       const instancePath = usePrefStore.getState().instancePath;
       if (instancePath) await useAppStore.getState().loadInstance(instancePath);
       useAppStore.getState().triggerRefresh();

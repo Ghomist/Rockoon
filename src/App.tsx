@@ -288,7 +288,7 @@ function MainLayout() {
         >
           {rotateWords.length > 0 && (
             <WordRotate
-              className="pointer-events-none select-none text-sm text-muted-foreground"
+              className="select-none text-sm text-muted-foreground"
               duration={4000}
               words={rotateWords}
             />

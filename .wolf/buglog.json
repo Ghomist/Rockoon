@@ -784,6 +784,54 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-07-23T14:07:58.244Z"
+    },
+    {
+      "id": "bug-050",
+      "timestamp": "2026-07-23T14:22:48.325Z",
+      "error_message": "Null/undefined access in ",
+      "file": "src/views/Start.tsx",
+      "root_cause": "Property access on potentially null/undefined value",
+      "fix": "Added null safety (optional chaining or null check)",
+      "tags": [
+        "auto-detected",
+        "null-safety",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-23T14:22:48.325Z"
+    },
+    {
+      "id": "bug-051",
+      "timestamp": "2026-07-23T14:22:49.318Z",
+      "error_message": "Significant refactor of ",
+      "file": "src/routers/menu.ts",
+      "root_cause": "5 lines replaced/restructured",
+      "fix": "Rewrote 9→3 lines (5 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-23T14:22:49.318Z"
+    },
+    {
+      "id": "bug-052",
+      "timestamp": "2026-07-23T14:25:20.760Z",
+      "error_message": "Incorrect value in code",
+      "file": "src/App.tsx",
+      "root_cause": "Had \"pointer-events-none select-none text-sm text-mute",
+      "fix": "Changed to \"select-none text-sm text-muted-foreground\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-23T14:25:20.760Z"
     }
   ]
 }

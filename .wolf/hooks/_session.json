@@ -362,8 +362,8 @@
       "first_read": "2026-07-12T16:48:55.728Z"
     },
     "D:/Codes/rockoon/src/stores/profiles.ts": {
-      "count": 7,
-      "tokens": 3288,
+      "count": 11,
+      "tokens": 3368,
       "first_read": "2026-07-12T16:49:27.700Z"
     },
     "D:/Codes/rockoon/src/utils/ui/feedback.ts": {
@@ -562,7 +562,7 @@
       "first_read": "2026-07-13T12:20:16.695Z"
     },
     "D:/Codes/rockoon/src/main.tsx": {
-      "count": 6,
+      "count": 7,
       "tokens": 438,
       "first_read": "2026-07-13T12:32:48.265Z"
     },
@@ -577,8 +577,8 @@
       "first_read": "2026-07-13T12:50:13.154Z"
     },
     "D:/Codes/rockoon/src/views/Start.tsx": {
-      "count": 8,
-      "tokens": 2107,
+      "count": 11,
+      "tokens": 2062,
       "first_read": "2026-07-13T12:52:06.099Z"
     },
     "D:/Codes/rockoon/src/views/Settings.tsx": {
@@ -617,8 +617,8 @@
       "first_read": "2026-07-13T13:02:09.452Z"
     },
     "D:/Codes/rockoon/src/App.tsx": {
-      "count": 33,
-      "tokens": 3878,
+      "count": 35,
+      "tokens": 3926,
       "first_read": "2026-07-13T14:41:31.899Z"
     },
     "D:/Codes/rockoon/src/components/ui/dropdown-menu.tsx": {
@@ -810,9 +810,14 @@
       "count": 1,
       "tokens": 810,
       "first_read": "2026-07-23T13:52:25.161Z"
+    },
+    "D:/Codes/rockoon/src/components/ui/word-rotate.tsx": {
+      "count": 1,
+      "tokens": 340,
+      "first_read": "2026-07-23T14:25:02.976Z"
     }
   },
-  "anatomy_hits": 112,
+  "anatomy_hits": 113,
   "anatomy_misses": 50,
-  "repeated_reads_warned": 446
+  "repeated_reads_warned": 456
 }
