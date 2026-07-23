@@ -22,7 +22,9 @@
   "brp": {
     "importButton": "Import Package",
     "importing": "Importing package...",
+    "connecting": "Connecting...",
     "downloading": "Downloading and importing package...",
+    "downloadingTitle": "Downloading",
     "import": {
       "success": "Imported: {what} ({count} file(s) → {target})",
       "failed": "Import failed: {reason}",

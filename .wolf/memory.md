@@ -542,3 +542,20 @@
 | 22:25 | Edited src/App.tsx | "pointer-events-none selec" → "select-none text-sm text-" | ~20 |
 | 22:26 | Edited src/stores/profiles.ts | 7→8 lines | ~116 |
 | 22:26 | Edited src/stores/profiles.ts | modified if() | ~96 |
+| 22:44 | Edited src-tauri/src/commands/fs.rs | 6→9 lines | ~89 |
+| 22:44 | Edited src-tauri/src/commands/fs.rs | modified load() | ~222 |
+| 22:44 | Edited src-tauri/src/commands/fs.rs | modified cancel_download() | ~56 |
+| 22:45 | Edited src-tauri/src/lib.rs | 1→2 lines | ~18 |
+| 22:45 | Edited src-tauri/src/commands/fs.rs | inline fix | ~18 |
+| 22:45 | Edited src/backend/index.ts | 2→3 lines | ~49 |
+| 22:46 | Created src/components/ImportProgressDialog.tsx | — | ~1496 |
+| 22:47 | Created src/components/ImportProgressDialog.tsx | — | ~1327 |
+| 22:47 | Edited src/i18n/languages/zh.json | 3→5 lines | ~45 |
+| 22:47 | Edited src/i18n/languages/en.json | 3→5 lines | ~61 |
+| 22:48 | Edited src/App.tsx | added 1 import(s) | ~38 |
+| 22:48 | Edited src/App.tsx | 2→3 lines | ~51 |
+| 22:48 | Edited src/App.tsx | importFromUrl() → setImportingUrl() | ~47 |
+| 22:49 | Edited src/App.tsx | expanded (+7 lines) | ~108 |
+| 22:49 | Edited src/App.tsx | inline fix | ~14 |
+| 22:50 | Edited src/components/ImportProgressDialog.tsx | modified ImportProgressDialog() | ~134 |
+| 22:50 | Edited src/components/ImportProgressDialog.tsx | 1→2 lines | ~23 |

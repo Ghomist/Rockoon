@@ -72,6 +72,7 @@ const fs = {
     invoke<undefined>("install_rockoon_mod", { path }),
   downloadFile: (url: string, savePath: string) =>
     invoke<undefined>("download_file", { url, savePath }),
+  cancelDownload: () => invoke<undefined>("cancel_download"),
   writeFile: (path: string, data: number[]) =>
     invoke<undefined>("write_file", { path, data }),
   readTextFile: (path: string) => invoke<string>("read_text_file", { path }),

@@ -22,7 +22,9 @@
   "brp": {
     "importButton": "导入资源包",
     "importing": "正在导入资源包...",
+    "connecting": "正在连接...",
     "downloading": "正在下载并导入资源包...",
+    "downloadingTitle": "正在下载",
     "import": {
       "success": "导入成功：{what}（{count} 个文件 → {target}）",
       "failed": "导入失败：{reason}",

@@ -14,6 +14,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Input } from "@/components/ui/input";
 import AppSidebar from "@/components/AppSidebar";
 import GlobalDialogHost from "@/components/GlobalDialogHost";
+import ImportProgressDialog from "@/components/ImportProgressDialog";
 import TitleBarControls from "@/components/TitleBarControls";
 import { AnimatedGridPattern } from "@/components/ui/animated-grid-pattern";
 import { Particles } from "@/components/ui/particles";
@@ -29,7 +30,7 @@ import { usePrefStore } from "@/stores/pref";
 import { useProfilesStore } from "@/stores/profiles";
 import { dialog, message } from "@/utils/ui/feedback";
 import { checkRunningInstance } from "@/services/launcher";
-import { importFromFile, importFromUrl } from "@/services/brp";
+import { importFromFile } from "@/services/brp";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import {
@@ -108,6 +109,7 @@ function MainLayout() {
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(false);
   const [appVersion, setAppVersion] = useState("");
+  const [importingUrl, setImportingUrl] = useState<string | null>(null);
   const backgroundType = usePrefStore(s => s.backgroundType);
   const isDark = useDarkMode();
   const translate = useT();
@@ -175,7 +177,7 @@ function MainLayout() {
             await win.setFocus();
           } catch { /* window API not ready yet — continue */ }
           const brpUrl = parsed.searchParams.get("url");
-          if (brpUrl) await importFromUrl(brpUrl);
+          if (brpUrl) setImportingUrl(brpUrl);
           else message.warning(t("brp.error.invalidFile"));
         }
       } catch {
@@ -396,6 +398,13 @@ function MainLayout() {
         <main className="relative flex-1 overflow-auto">
           <AppRoutes />
         </main>
+        {importingUrl && (
+          <ImportProgressDialog
+            open={true}
+            url={importingUrl}
+            onClose={() => setImportingUrl(null)}
+          />
+        )}
       </div>
     </div>
   );

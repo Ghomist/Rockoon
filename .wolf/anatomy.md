@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-07-23T14:26:21.518Z
-> Files: 393 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-07-23T14:50:17.962Z
+> Files: 394 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ./
 
@@ -339,7 +339,7 @@
 
 ## src-tauri/src/
 
-- `lib.rs` — run (~790 tok)
+- `lib.rs` — run (~799 tok)
 - `main.rs` — Suppress console window on Windows in all build modes. (~99 tok)
 
 ## src-tauri/src/ballance/
@@ -363,7 +363,7 @@
 - `app.rs` — [command] (~381 tok)
 - `ballance.rs` — read_options, save_options, read_launch_config, save_launch_config + 2 more (~1324 tok)
 - `brp.rs` — Tauri commands wrapping the BRP validate/install logic. (~670 tok)
-- `fs.rs` — [derive(serde::Serialize, serde::Deserialize)] (~3595 tok)
+- `fs.rs` — File: open_in_explorer, open, exists, size (~3756 tok)
 - `mod.rs` (~21 tok)
 - `process.rs` — [command] (~622 tok)
 
@@ -374,7 +374,7 @@
 
 ## src/
 
-- `App.tsx` — Compute dark-mode state from pref.theme + system preference. (~3920 tok)
+- `App.tsx` — Compute dark-mode state from pref.theme + system preference. (~4009 tok)
 - `App.vue` — Vue component (~2404 tok)
 - `main.ts` — Declares app (~330 tok)
 - `main.tsx` — Register console hooks → forward to Rust log stream. (~438 tok)
@@ -388,7 +388,7 @@
 
 ## src/backend/
 
-- `index.ts` — Exports LogLevel, SkyboxAnalysisResult (~1219 tok)
+- `index.ts` — Exports LogLevel, SkyboxAnalysisResult (~1236 tok)
 - `instance.ts` — Exports instanceBackend (~1110 tok)
 - `utils.ts` — Exports parseBallanceLaunchConfig, dumpBallanceLaunchConfig (~989 tok)
 
@@ -398,6 +398,7 @@
 - `AppSidebar.vue` — Vue: setup (~1694 tok)
 - `GlobalDialogHost.tsx` — Renders all open dialogs from the store. Mount once at the app root. (~810 tok)
 - `GlobalDialogHost.vue` — Vue: setup (~638 tok)
+- `ImportProgressDialog.tsx` — ImportProgressDialog — renders modal (~1364 tok)
 - `TitleBarControls.tsx` — Minimize / Maximize-Restore / Close window controls. (~528 tok)
 - `TitleBarControls.vue` — Vue: setup (~430 tok)
 
@@ -429,8 +430,8 @@
 
 ## src/i18n/languages/
 
-- `en.json` — Declares language (~4391 tok)
-- `zh.json` (~3238 tok)
+- `en.json` — Declares language (~4412 tok)
+- `zh.json` (~3255 tok)
 
 ## src/lib/
 

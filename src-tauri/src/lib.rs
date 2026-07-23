@@ -50,6 +50,7 @@ pub fn run() {
             commands::fs::get_temp_dir,
             commands::fs::install_rockoon_mod,
             commands::fs::download_file,
+    commands::fs::cancel_download,
             commands::fs::write_file,
             commands::fs::read_text_file,
             commands::fs::write_text_file,

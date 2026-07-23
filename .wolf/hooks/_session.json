@@ -107,7 +107,7 @@
       "first_read": "2026-07-12T07:30:57.603Z"
     },
     "D:/Codes/rockoon/src/backend/index.ts": {
-      "count": 12,
+      "count": 13,
       "tokens": 1219,
       "first_read": "2026-07-12T07:30:57.764Z"
     },
@@ -232,13 +232,13 @@
       "first_read": "2026-07-12T07:38:29.729Z"
     },
     "D:/Codes/rockoon/src/i18n/languages/zh.json": {
-      "count": 26,
-      "tokens": 3221,
+      "count": 27,
+      "tokens": 3238,
       "first_read": "2026-07-12T07:38:38.597Z"
     },
     "D:/Codes/rockoon/src/i18n/languages/en.json": {
-      "count": 30,
-      "tokens": 4371,
+      "count": 31,
+      "tokens": 4391,
       "first_read": "2026-07-12T07:38:38.954Z"
     },
     "D:/Codes/rockoon/src/App.vue": {
@@ -312,8 +312,8 @@
       "first_read": "2026-07-12T12:48:25.504Z"
     },
     "D:/Codes/rockoon/src-tauri/src/commands/fs.rs": {
-      "count": 8,
-      "tokens": 3593,
+      "count": 13,
+      "tokens": 3625,
       "first_read": "2026-07-12T12:54:11.011Z"
     },
     "D:/Codes/rockoon/src/types/file.d.ts": {
@@ -617,8 +617,8 @@
       "first_read": "2026-07-13T13:02:09.452Z"
     },
     "D:/Codes/rockoon/src/App.tsx": {
-      "count": 35,
-      "tokens": 3926,
+      "count": 42,
+      "tokens": 3960,
       "first_read": "2026-07-13T14:41:31.899Z"
     },
     "D:/Codes/rockoon/src/components/ui/dropdown-menu.tsx": {
@@ -815,9 +815,19 @@
       "count": 1,
       "tokens": 340,
       "first_read": "2026-07-23T14:25:02.976Z"
+    },
+    "D:/Codes/rockoon/src/components/ui/progress.tsx": {
+      "count": 1,
+      "tokens": 0,
+      "first_read": "2026-07-23T14:46:06.535Z"
+    },
+    "D:/Codes/rockoon/src/components/ImportProgressDialog.tsx": {
+      "count": 1,
+      "tokens": 1327,
+      "first_read": "2026-07-23T14:50:03.328Z"
     }
   },
-  "anatomy_hits": 113,
-  "anatomy_misses": 50,
-  "repeated_reads_warned": 456
+  "anatomy_hits": 114,
+  "anatomy_misses": 51,
+  "repeated_reads_warned": 471
 }

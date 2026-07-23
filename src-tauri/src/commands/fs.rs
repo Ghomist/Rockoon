@@ -1,9 +1,12 @@
-use crate::common::exception::{RcResult, RcResultWith};
+use crate::common::exception::{RcError, RcResult, RcResultWith};
 use log::info;
 use regex::Regex;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::{fs, io::Read, io::Write, path, process};
 use tauri::path::BaseDirectory;
 use tauri::{command, AppHandle, Emitter, Manager};
+
+static CANCEL_DOWNLOAD: AtomicBool = AtomicBool::new(false);
 
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct File {
@@ -342,6 +345,15 @@ pub fn download_file(app: AppHandle, url: String, save_path: String) -> RcResult
             )?;
             last_emit_time = std::time::Instant::now();
         }
+
+        // 检查取消标志
+        if CANCEL_DOWNLOAD.load(Ordering::Relaxed) {
+            CANCEL_DOWNLOAD.store(false, Ordering::Relaxed);
+            info!("Download cancelled by user");
+            drop(file);
+            let _ = fs::remove_file(&save_path);
+            return Err(RcError::Other("Download cancelled".into()));
+        }
     }
 
     // 发送完成事件（100%）
@@ -359,6 +371,12 @@ pub fn download_file(app: AppHandle, url: String, save_path: String) -> RcResult
     info!("Downloaded {} bytes to {}", downloaded, save_path);
 
     Ok(())
+}
+
+#[command]
+pub fn cancel_download() {
+    CANCEL_DOWNLOAD.store(true, Ordering::Relaxed);
+    info!("Cancel download requested");
 }
 
 #[command]
