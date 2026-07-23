@@ -130,52 +130,57 @@ function MainLayout() {
     setImportError("");
     setImportResult("");
 
-    (async () => {
-      try {
-        const tempDir = await backend.getTempDir();
-        const fileName =
-          importUrl.split("/").pop()?.split("?")[0] || "import.brp";
-        const savePath = `${tempDir}\\${fileName}`;
+    // Defer the download to the next macrotask so the dialog renders
+    // and the browser event loop is clear before any invoke/IPC work.
+    const tid = setTimeout(() => {
+      (async () => {
+        try {
+          const tempDir = await backend.getTempDir();
+          const fileName =
+            importUrl.split("/").pop()?.split("?")[0] || "import.brp";
+          const savePath = `${tempDir}\\${fileName}`;
 
-        const instance = useAppStore.getState().selectedInstanceData;
-        if (!instance) {
-          setImportError(t("brp.error.noInstance"));
-          return;
+          const instance = useAppStore.getState().selectedInstanceData;
+          if (!instance) {
+            setImportError(t("brp.error.noInstance"));
+            return;
+          }
+
+          setImportPhase("downloading");
+          await backend.downloadFile(importUrl, savePath);
+          if (disposed || importCancelledRef.current) return;
+
+          setImportPhase("importing");
+          const result = await backend.importBrp(savePath, instance.path);
+          if (disposed || importCancelledRef.current) return;
+
+          setImportResult(
+            t("brp.import.success", {
+              what: describeBrp(result.manifest),
+              count: result.installedPaths.length,
+              target: result.targetDescription
+            })
+          );
+          setImportPhase("done");
+          useAppStore.getState().triggerRefresh();
+        } catch (e: unknown) {
+          if (disposed || importCancelledRef.current) return;
+          const msg = String(e);
+          if (
+            msg.includes("Download cancelled") ||
+            msg.includes("cancelled")
+          ) {
+            setImportUrl(null);
+            return;
+          }
+          setImportError(t("brp.import.failed", { reason: msg }));
         }
-
-        setImportPhase("downloading");
-        await backend.downloadFile(importUrl, savePath);
-        if (disposed || importCancelledRef.current) return;
-
-        setImportPhase("importing");
-        const result = await backend.importBrp(savePath, instance.path);
-        if (disposed || importCancelledRef.current) return;
-
-        setImportResult(
-          t("brp.import.success", {
-            what: describeBrp(result.manifest),
-            count: result.installedPaths.length,
-            target: result.targetDescription
-          })
-        );
-        setImportPhase("done");
-        useAppStore.getState().triggerRefresh();
-      } catch (e: unknown) {
-        if (disposed || importCancelledRef.current) return;
-        const msg = String(e);
-        if (
-          msg.includes("Download cancelled") ||
-          msg.includes("cancelled")
-        ) {
-          setImportUrl(null);
-          return;
-        }
-        setImportError(t("brp.import.failed", { reason: msg }));
-      }
-    })();
+      })();
+    }, 0);
 
     return () => {
       disposed = true;
+      clearTimeout(tid);
     };
   }, [importUrl]);
 
