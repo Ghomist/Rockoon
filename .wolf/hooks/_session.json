@@ -7,7 +7,7 @@
       "first_read": "2026-07-12T07:29:49.075Z"
     },
     "D:/Codes/rockoon/package.json": {
-      "count": 8,
+      "count": 9,
       "tokens": 739,
       "first_read": "2026-07-12T07:29:49.219Z"
     },
@@ -137,7 +137,7 @@
       "first_read": "2026-07-12T07:31:10.103Z"
     },
     "D:/Codes/rockoon/.github/workflows/release.yml": {
-      "count": 1,
+      "count": 3,
       "tokens": 792,
       "first_read": "2026-07-12T07:31:10.281Z"
     },
@@ -172,7 +172,7 @@
       "first_read": "2026-07-12T07:31:21.968Z"
     },
     "D:/Codes/rockoon/src/routers/menu.ts": {
-      "count": 15,
+      "count": 16,
       "tokens": 638,
       "first_read": "2026-07-12T07:38:03.863Z"
     },
@@ -232,13 +232,13 @@
       "first_read": "2026-07-12T07:38:29.729Z"
     },
     "D:/Codes/rockoon/src/i18n/languages/zh.json": {
-      "count": 23,
-      "tokens": 3112,
+      "count": 26,
+      "tokens": 3221,
       "first_read": "2026-07-12T07:38:38.597Z"
     },
     "D:/Codes/rockoon/src/i18n/languages/en.json": {
-      "count": 24,
-      "tokens": 4204,
+      "count": 30,
+      "tokens": 4371,
       "first_read": "2026-07-12T07:38:38.954Z"
     },
     "D:/Codes/rockoon/src/App.vue": {
@@ -577,7 +577,7 @@
       "first_read": "2026-07-13T12:50:13.154Z"
     },
     "D:/Codes/rockoon/src/views/Start.tsx": {
-      "count": 6,
+      "count": 8,
       "tokens": 2107,
       "first_read": "2026-07-13T12:52:06.099Z"
     },
@@ -737,7 +737,7 @@
       "first_read": "2026-07-23T11:37:49.002Z"
     },
     "D:/Codes/rockoon/src/components/AppSidebar.tsx": {
-      "count": 3,
+      "count": 7,
       "tokens": 2089,
       "first_read": "2026-07-23T11:37:53.415Z"
     },
@@ -814,5 +814,5 @@
   },
   "anatomy_hits": 112,
   "anatomy_misses": 50,
-  "repeated_reads_warned": 427
+  "repeated_reads_warned": 446
 }

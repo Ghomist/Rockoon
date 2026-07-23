@@ -530,3 +530,9 @@
 | 22:03 | Edited src/services/brp.ts | modified if() | ~118 |
 | 22:03 | Edited src/services/brp.ts | modified if() | ~119 |
 | 22:07 | Edited src-tauri/tauri.conf.json | inline fix | ~6 |
+| 22:16 | Edited .github/workflows/release.yml | 4→2 lines | ~17 |
+| 22:17 | Edited src/routers/menu.ts | expanded (+6 lines) | ~83 |
+| 22:18 | Edited src/i18n/languages/zh.json | 1→2 lines | ~15 |
+| 22:18 | Edited src/i18n/languages/zh.json | 1→2 lines | ~21 |
+| 22:18 | Edited src/i18n/languages/en.json | 1→2 lines | ~16 |
+| 22:18 | Edited src/i18n/languages/en.json | 1→2 lines | ~30 |

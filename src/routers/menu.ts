@@ -52,6 +52,12 @@ export const getExternalLinks = (): ExternalLinkItem[] => [
     description: t("home.downloadSiteDesc"),
     url: "https://dl.ballance.top/",
     icon: "download"
+  },
+  {
+    label: t("menu.github"),
+    description: t("home.githubDesc"),
+    url: "https://github.com/Ghomist/Rockoon",
+    icon: "github"
   }
 ];
 

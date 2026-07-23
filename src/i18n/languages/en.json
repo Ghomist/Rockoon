@@ -16,7 +16,8 @@
     "wiki": "Wiki",
     "mappingManual": "Mapping",
     "forum": "Forum",
-    "downloadSite": "Downloads"
+    "downloadSite": "Downloads",
+    "github": "GitHub"
   },
   "brp": {
     "importButton": "Import Package",
@@ -116,7 +117,8 @@
     "wikiDesc": "Browse the Ballance wiki and tutorials",
     "mappingManualDesc": "Learn how to create custom maps",
     "forumDesc": "Discuss with community members",
-    "downloadSiteDesc": "Download community maps and mods"
+    "downloadSiteDesc": "Download community maps and mods",
+    "githubDesc": "Rockoon source repository"
   },
   "common": {
     "none": "None",

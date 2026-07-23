@@ -1,6 +1,6 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-07-23T14:07:58.233Z
+> Auto-maintained by OpenWolf. Last scanned: 2026-07-23T14:18:24.075Z
 > Files: 393 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ./
@@ -37,7 +37,7 @@
 
 ## .github/workflows/
 
-- `release.yml` — CI: "Publish (Windows only)" (~792 tok)
+- `release.yml` — CI: "Publish (Windows only)" (~780 tok)
 
 ## C:/Users/ghomist/AppData/Local/pnpm/bin/
 
@@ -429,8 +429,8 @@
 
 ## src/i18n/languages/
 
-- `en.json` — Declares language (~4371 tok)
-- `zh.json` (~3221 tok)
+- `en.json` — Declares language (~4391 tok)
+- `zh.json` (~3238 tok)
 
 ## src/lib/
 
@@ -440,7 +440,7 @@
 
 - `index.ts` — Exports router (~267 tok)
 - `index.tsx` — Build the route tree from `getMenuItems()`. (~373 tok)
-- `menu.ts` — Exports MenuItem, ExternalLinkItem, getExternalLinks, getMenuItems (~638 tok)
+- `menu.ts` — Exports MenuItem, ExternalLinkItem, getExternalLinks, getMenuItems (~774 tok)
 
 ## src/services/
 

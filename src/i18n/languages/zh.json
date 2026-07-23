@@ -16,7 +16,8 @@
     "wiki": "官方 Wiki",
     "mappingManual": "制图手册",
     "forum": "社区论坛",
-    "downloadSite": "资源下载站"
+    "downloadSite": "资源下载站",
+    "github": "GitHub"
   },
   "brp": {
     "importButton": "导入资源包",
@@ -78,7 +79,8 @@
     "wikiDesc": "查阅 Ballance 百科与游戏教程",
     "mappingManualDesc": "学习自制地图的制作流程",
     "forumDesc": "与社区成员交流与讨论",
-    "downloadSiteDesc": "下载社区地图与模组资源"
+    "downloadSiteDesc": "下载社区地图与模组资源",
+    "githubDesc": "Rockoon 源代码仓库"
   },
   "profile": {
     "currentLabel": "当前配置",
