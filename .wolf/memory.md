@@ -572,3 +572,8 @@
 | 23:07 | Edited src/i18n/languages/zh.json | 4→5 lines | ~47 |
 | 23:07 | Edited src/i18n/languages/en.json | 4→5 lines | ~59 |
 | 23:07 | Edited src/App.tsx | cancelDownload() → info() | ~43 |
+| 23:32 | Created src/components/ImportProgressDialog.tsx | — | ~584 |
+| 23:33 | Edited src/App.tsx | modified if() | ~587 |
+| 23:33 | Edited src/App.tsx | 6→3 lines | ~16 |
+| 23:33 | Edited src/App.tsx | 3→2 lines | ~18 |
+| 23:33 | Edited src/App.tsx | 2→1 lines | ~17 |

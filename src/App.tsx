@@ -36,7 +36,6 @@ import { importFromFile, describeBrp } from "@/services/brp";
 import backend from "@/backend";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { listen } from "@tauri-apps/api/event";
 import {
   getCurrent as getCurrentDeepLink,
   onOpenUrl
@@ -117,7 +116,6 @@ function MainLayout() {
   // BRP import progress dialog state.
   const [importUrl, setImportUrl] = useState<string | null>(null);
   const [importPhase, setImportPhase] = useState<ImportPhase>("connecting");
-  const [importProgress, setImportProgress] = useState(0);
   const [importError, setImportError] = useState("");
   const [importResult, setImportResult] = useState("");
   const importCancelledRef = useRef(false);
@@ -129,37 +127,11 @@ function MainLayout() {
     let disposed = false;
     importCancelledRef.current = false;
     setImportPhase("connecting");
-    setImportProgress(0);
     setImportError("");
     setImportResult("");
 
-    // Throttled progress listener — at most one update per rAF.
-    let latestPercent = 0;
-    let rafId = 0;
-    const unlistenP = listen<{ percent: number }>(
-      "download-progress",
-      event => {
-        latestPercent = Math.min(event.payload.percent, 99);
-        if (!rafId) {
-          rafId = requestAnimationFrame(() => {
-            rafId = 0;
-            if (disposed) return;
-            setImportPhase("downloading");
-            setImportProgress(latestPercent);
-          });
-        }
-      }
-    );
-
     (async () => {
-      let unlisten: (() => void) | undefined;
       try {
-        unlisten = await unlistenP;
-        if (disposed) {
-          unlisten();
-          return;
-        }
-
         const tempDir = await backend.getTempDir();
         const fileName =
           importUrl.split("/").pop()?.split("?")[0] || "import.brp";
@@ -171,14 +143,11 @@ function MainLayout() {
           return;
         }
 
+        setImportPhase("downloading");
         await backend.downloadFile(importUrl, savePath);
         if (disposed || importCancelledRef.current) return;
 
-        // Flush "importing" to DOM before the potentially-slow import.
         setImportPhase("importing");
-        setImportProgress(100);
-        await new Promise<void>(r => requestAnimationFrame(() => r()));
-
         const result = await backend.importBrp(savePath, instance.path);
         if (disposed || importCancelledRef.current) return;
 
@@ -202,14 +171,11 @@ function MainLayout() {
           return;
         }
         setImportError(t("brp.import.failed", { reason: msg }));
-      } finally {
-        unlisten?.();
       }
     })();
 
     return () => {
       disposed = true;
-      if (rafId) cancelAnimationFrame(rafId);
     };
   }, [importUrl]);
 
@@ -514,7 +480,6 @@ function MainLayout() {
           <ImportProgressDialog
             open={true}
             phase={importPhase}
-            progress={importProgress}
             error={importError}
             resultText={importResult}
             onCancel={handleImportCancel}

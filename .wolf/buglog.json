@@ -880,6 +880,22 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-07-23T15:04:16.011Z"
+    },
+    {
+      "id": "bug-056",
+      "timestamp": "2026-07-23T15:33:03.158Z",
+      "error_message": "Significant refactor of ",
+      "file": "src/App.tsx",
+      "root_cause": "24 lines replaced/restructured",
+      "fix": "Rewrote 95→65 lines (24 removed) | Also: if (rafId) cancelAnimationFrame(rafId);; };",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-07-23T15:33:25.717Z"
     }
   ]
 }

@@ -1,6 +1,6 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-07-23T15:07:36.790Z
+> Auto-maintained by OpenWolf. Last scanned: 2026-07-23T15:33:32.619Z
 > Files: 394 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ./
@@ -374,7 +374,7 @@
 
 ## src/
 
-- `App.tsx` — Compute dark-mode state from pref.theme + system preference. (~4995 tok)
+- `App.tsx` — Compute dark-mode state from pref.theme + system preference. (~4688 tok)
 - `App.vue` — Vue component (~2404 tok)
 - `main.ts` — Declares app (~330 tok)
 - `main.tsx` — Register console hooks → forward to Rust log stream. (~438 tok)
@@ -398,7 +398,7 @@
 - `AppSidebar.vue` — Vue: setup (~1694 tok)
 - `GlobalDialogHost.tsx` — Renders all open dialogs from the store. Mount once at the app root. (~810 tok)
 - `GlobalDialogHost.vue` — Vue: setup (~638 tok)
-- `ImportProgressDialog.tsx` — phaseLabels — renders modal (~633 tok)
+- `ImportProgressDialog.tsx` — phaseLabels — renders modal (~584 tok)
 - `TitleBarControls.tsx` — Minimize / Maximize-Restore / Close window controls. (~528 tok)
 - `TitleBarControls.vue` — Vue: setup (~430 tok)
 

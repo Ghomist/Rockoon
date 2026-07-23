@@ -1,20 +1,22 @@
-import { X } from "lucide-react";
+import { X, Loader2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle
 } from "@/components/ui/dialog";
-import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { t } from "@/i18n";
 
-export type ImportPhase = "connecting" | "downloading" | "importing" | "done";
+export type ImportPhase =
+  | "connecting"
+  | "downloading"
+  | "importing"
+  | "done";
 
 export interface ImportProgressDialogProps {
   open: boolean;
   phase: ImportPhase;
-  progress: number;
   error: string;
   resultText: string;
   onCancel: () => void;
@@ -31,7 +33,6 @@ const phaseLabels: Record<ImportPhase, string> = {
 export default function ImportProgressDialog({
   open,
   phase,
-  progress,
   error,
   resultText,
   onCancel,
@@ -49,18 +50,13 @@ export default function ImportProgressDialog({
           </DialogTitle>
         </DialogHeader>
 
-        <div className="flex flex-col gap-4 py-2">
+        <div className="flex flex-col items-center gap-4 py-4">
           {error ? (
             <p className="text-sm text-destructive">{error}</p>
           ) : phase === "done" ? (
             <p className="text-sm text-muted-foreground">{resultText}</p>
           ) : (
-            <>
-              <Progress value={progress} />
-              <p className="text-center text-xs text-muted-foreground">
-                {progress}%
-              </p>
-            </>
+            <Loader2 className="size-8 animate-spin text-muted-foreground" />
           )}
 
           {error || phase === "done" ? (
