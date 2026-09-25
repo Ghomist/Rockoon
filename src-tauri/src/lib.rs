@@ -49,8 +49,6 @@ pub fn run() {
             commands::fs::get_common_dirs,
             commands::fs::get_temp_dir,
             commands::fs::install_rockoon_mod,
-            commands::fs::download_file,
-    commands::fs::cancel_download,
             commands::fs::write_file,
             commands::fs::read_text_file,
             commands::fs::write_text_file,
@@ -66,7 +64,8 @@ pub fn run() {
             commands::ballance::save_mod_config,
             commands::brp::validate_brp,
             commands::brp::import_brp,
-            commands::brp::import_brp_from_url
+            commands::brp::start_brp_import,
+            commands::brp::cancel_brp_import
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

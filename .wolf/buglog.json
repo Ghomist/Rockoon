@@ -896,6 +896,198 @@
       "related_bugs": [],
       "occurrences": 2,
       "last_seen": "2026-07-23T15:33:25.717Z"
+    },
+    {
+      "id": "bug-057",
+      "timestamp": "2026-07-23T18:28:15.583Z",
+      "error_message": "Significant refactor of ",
+      "file": "src-tauri/src/commands/brp.rs",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 7→11 lines (2 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "rs"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-23T18:28:15.583Z"
+    },
+    {
+      "id": "bug-058",
+      "timestamp": "2026-07-23T18:28:40.253Z",
+      "error_message": "Function not marked async",
+      "file": "src-tauri/src/commands/brp.rs",
+      "root_cause": "Function uses await but wasn't declared async",
+      "fix": "Added async modifier",
+      "tags": [
+        "auto-detected",
+        "async-fix",
+        "rs"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-23T18:28:40.253Z"
+    },
+    {
+      "id": "bug-059",
+      "timestamp": "2026-07-23T18:28:47.590Z",
+      "error_message": "Significant refactor of ",
+      "file": "src-tauri/src/lib.rs",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 5→3 lines (2 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "rs"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-23T18:28:47.590Z"
+    },
+    {
+      "id": "bug-060",
+      "timestamp": "2026-07-23T18:28:52.895Z",
+      "error_message": "Wrong reference: import_brp_from_url should be start_brp_import",
+      "file": "src-tauri/src/lib.rs",
+      "root_cause": "Used \"import_brp_from_url\" instead of \"start_brp_import\"",
+      "fix": "Changed import_brp_from_url → start_brp_import",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "rs"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-23T18:28:52.895Z"
+    },
+    {
+      "id": "bug-061",
+      "timestamp": "2026-07-23T18:29:06.251Z",
+      "error_message": "Significant refactor of ",
+      "file": "src-tauri/src/commands/fs.rs",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 6→3 lines (2 removed) | Also: #[derive(serde::Serialize, Clone)]; pub struct DownloadProgressEvent {",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "rs"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-07-23T18:29:17.227Z"
+    },
+    {
+      "id": "bug-062",
+      "timestamp": "2026-07-23T18:29:35.602Z",
+      "error_message": "Wrong reference: AppHandle should be Manager",
+      "file": "src-tauri/src/commands/fs.rs",
+      "root_cause": "Used \"AppHandle\" instead of \"Manager\"",
+      "fix": "Changed AppHandle → Manager",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "rs"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-07-23T18:29:47.061Z"
+    },
+    {
+      "id": "bug-063",
+      "timestamp": "2026-07-23T18:30:52.482Z",
+      "error_message": "Function not marked async",
+      "file": "src/types/brp.d.ts",
+      "root_cause": "Function uses await but wasn't declared async",
+      "fix": "Added async modifier",
+      "tags": [
+        "auto-detected",
+        "async-fix",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-23T18:30:52.482Z"
+    },
+    {
+      "id": "bug-064",
+      "timestamp": "2026-07-23T18:30:57.593Z",
+      "error_message": "Function not marked async",
+      "file": "src/backend/index.ts",
+      "root_cause": "Function uses await but wasn't declared async",
+      "fix": "Added async modifier",
+      "tags": [
+        "auto-detected",
+        "async-fix",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-23T18:30:57.593Z"
+    },
+    {
+      "id": "bug-065",
+      "timestamp": "2026-07-23T18:31:42.833Z",
+      "error_message": "Null/undefined access in ",
+      "file": "src/App.tsx",
+      "root_cause": "Property access on potentially null/undefined value",
+      "fix": "Added null safety (optional chaining or null check)",
+      "tags": [
+        "auto-detected",
+        "null-safety",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-23T18:31:42.833Z"
+    },
+    {
+      "id": "bug-066",
+      "timestamp": "2026-07-23T18:32:16.093Z",
+      "error_message": "Null/undefined access in ",
+      "file": "src/services/brp.ts",
+      "root_cause": "Property access on potentially null/undefined value",
+      "fix": "Added null safety (optional chaining or null check)",
+      "tags": [
+        "auto-detected",
+        "null-safety",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-23T18:32:16.093Z"
+    },
+    {
+      "id": "bug-067",
+      "timestamp": "2026-07-23T18:32:29.511Z",
+      "error_message": "Significant refactor of ",
+      "file": "src/backend/index.ts",
+      "root_cause": "3 lines replaced/restructured",
+      "fix": "Rewrote 6→3 lines (3 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-23T18:32:29.511Z"
+    },
+    {
+      "id": "bug-068",
+      "timestamp": "2026-07-23T18:33:50.522Z",
+      "error_message": "CSS fix: what, count, target",
+      "file": "src/App.tsx",
+      "root_cause": "what: describeBrp(p.manifest!.manifest), → describeBrp(m.manifest),; count: p.manifest!.installedPaths.length, → m.installedPaths.length,; target: p.manifest!.targetDescription → m.targetDescription",
+      "fix": "Changed what: describeBrp(p.manifest!.manifest), → describeBrp(m.manifest),; count: p.manifest!.installedPaths.length, → m.installedPaths.length,; target: p.manifest!.targetDescription → m.targetDescription",
+      "tags": [
+        "auto-detected",
+        "style-fix",
+        "tsx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-07-23T18:33:50.522Z"
     }
   ]
 }

@@ -424,7 +424,10 @@
     },
     "name": {
       "map": "Ballance map file",
-      "mod": "Ballance module files"
+      "mod": "Ballance module files",
+      "texture": "Texture file",
+      "sound": "Sound file",
+      "sky": "Skybox file"
     },
     "refresh": {
       "success": "Refresh successful!"
@@ -473,12 +476,12 @@
   },
   "textures": {
     "statistics": "No texture found | 1 texture in total | {cnt} textures in total",
-    "empty": "No textures installed. Drop a .brp file or click 'Import Package' to get started.",
+    "empty": "No textures installed. Drop a .brp file or click 'Import' to get started.",
     "previewTitle": "Preview — {name}"
   },
   "sounds": {
     "statistics": "No sound found | 1 sound in total | {cnt} sounds in total",
-    "empty": "No sounds installed. Drop a .brp file or click 'Import Package' to get started.",
+    "empty": "No sounds installed. Drop a .brp file or click 'Import' to get started.",
     "playing": "Playing…",
     "playError": "Failed to play audio"
   },

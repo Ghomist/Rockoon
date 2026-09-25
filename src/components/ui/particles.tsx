@@ -226,7 +226,12 @@ export const Particles: React.FC<ParticlesProps> = ({
 
   const clearContext = () => {
     if (context.current) {
-      context.current.clearRect(0, 0, canvasSize.current.w, canvasSize.current.h);
+      context.current.clearRect(
+        0,
+        0,
+        canvasSize.current.w,
+        canvasSize.current.h
+      );
     }
   };
 
@@ -246,7 +251,8 @@ export const Particles: React.FC<ParticlesProps> = ({
     start2: number,
     end2: number
   ): number => {
-    const remapped = ((value - start1) * (end2 - start2)) / (end1 - start1) + start2;
+    const remapped =
+      ((value - start1) * (end2 - start2)) / (end1 - start1) + start2;
     return remapped > 0 ? remapped : 0;
   };
 

@@ -8,7 +8,6 @@ import {
   Trash2
 } from "lucide-react";
 import { join, sep } from "@tauri-apps/api/path";
-import { open as browseFile } from "@tauri-apps/plugin-dialog";
 import backend from "@/backend";
 import { useAppStore } from "@/stores/app";
 import { usePrefStore } from "@/stores/pref";
@@ -16,7 +15,9 @@ import { useT } from "@/i18n";
 import { formatFileSize } from "@/utils/format";
 import { dialog, message } from "@/utils/ui/feedback";
 import { launchMap } from "@/services/launcher";
+import { importResources } from "@/services/resourceImport";
 import ListViewPage from "./components/ListViewPage";
+import ResourceToolbar from "./components/ResourceToolbar";
 import DirectoryTreeDialog from "./components/DirectoryTreeDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -132,17 +133,13 @@ export default function ResourcesMaps() {
   };
 
   const onImport = async () => {
-    const files = await browseFile({
-      title: t("resources.import.tip") + " " + t("resources.name.map"),
-      multiple: true,
-      filters: [{ name: t("resources.name.map"), extensions: ["cmo", "nmo"] }]
+    const { copied } = await importResources({
+      title: t("resources.name.map"),
+      native: ["cmo", "nmo"],
+      targetDir: currentPath || rootPath
     });
-    if (files && files.length) {
-      const targetDir = currentPath || rootPath;
-      for (const source of files as string[]) {
-        const target = await join(targetDir, source.split(sep()).pop()!);
-        await backend.copy(source, target);
-      }
+    // BRP packages refresh the list themselves through the app store.
+    if (copied) {
       await onRefresh();
       message.success(t("resources.import.success"));
     }
@@ -292,27 +289,23 @@ export default function ResourcesMaps() {
         </div>
       }
       actions={
-        <>
-          <Button variant="outline" size="sm" onClick={() => onRefresh(true)}>
-            {t("common.action.refresh")}
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              setNewFolderName("");
-              setShowCreateFolderDialog(true);
-            }}
-          >
-            {t("resources.createFolder.button")}
-          </Button>
-          <Button variant="outline" size="sm" onClick={onImport}>
-            {t("resources.import.button")}
-          </Button>
-          <Button variant="outline" size="sm" onClick={onOpenFolder}>
-            {t("common.action.openFolder")}
-          </Button>
-        </>
+        <ResourceToolbar
+          onImport={onImport}
+          onRefresh={() => onRefresh(true)}
+          onOpenFolder={onOpenFolder}
+          extra={
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setNewFolderName("");
+                setShowCreateFolderDialog(true);
+              }}
+            >
+              {t("resources.createFolder.button")}
+            </Button>
+          }
+        />
       }
     >
       {currentPath && currentPath !== rootPath && (
@@ -334,9 +327,7 @@ export default function ResourcesMaps() {
             key={item.name}
             className="flex cursor-pointer items-center gap-3 px-4 py-2.5 transition-colors hover:bg-accent"
             onClick={() =>
-              item.isDir
-                ? loadDirectory(item.path)
-                : confirmAndLaunch(item)
+              item.isDir ? loadDirectory(item.path) : confirmAndLaunch(item)
             }
           >
             {item.isDir ? (
@@ -344,7 +335,8 @@ export default function ResourcesMaps() {
             ) : (
               <MapIcon
                 className={
-                  "size-4 " + (disabled ? "text-muted-foreground/40" : "text-primary")
+                  "size-4 " +
+                  (disabled ? "text-muted-foreground/40" : "text-primary")
                 }
               />
             )}

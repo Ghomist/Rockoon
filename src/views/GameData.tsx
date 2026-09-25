@@ -135,8 +135,9 @@ export default function GameData() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {(selectedInstanceData.options.highscores[editingLevel - 1] ??
-                []).map((row, idx) => (
+              {(
+                selectedInstanceData.options.highscores[editingLevel - 1] ?? []
+              ).map((row, idx) => (
                 <TableRow key={idx}>
                   <TableCell className="text-center tabular-nums">
                     {idx + 1}
@@ -168,15 +169,15 @@ export default function GameData() {
                             player: "",
                             score: 0
                           };
-                          opts.highscores[editingLevel - 1][idx].score =
-                            Number(e.target.value);
+                          opts.highscores[editingLevel - 1][idx].score = Number(
+                            e.target.value
+                          );
                         })
                       }
                     />
-                    </TableCell>
-                  </TableRow>
-                )
-              )}
+                  </TableCell>
+                </TableRow>
+              ))}
             </TableBody>
           </Table>
         </DialogContent>

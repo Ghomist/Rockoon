@@ -22,11 +22,19 @@ const wrap =
     id =
       opts.duration === 0
         ? toast[variant === "loading" ? "loading" : variant](
-            React.createElement("span", { style: { cursor: "pointer" }, onClick: dismiss }, text),
+            React.createElement(
+              "span",
+              { style: { cursor: "pointer" }, onClick: dismiss },
+              text
+            ),
             { ...base, duration: Infinity }
           )
         : toast[variant === "loading" ? "loading" : variant](
-            React.createElement("span", { style: { cursor: "pointer" }, onClick: dismiss }, text),
+            React.createElement(
+              "span",
+              { style: { cursor: "pointer" }, onClick: dismiss },
+              text
+            ),
             base
           );
     return {

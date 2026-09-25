@@ -6,11 +6,17 @@ import backend from "@/backend";
 import { useAppStore } from "@/stores/app";
 import { useT } from "@/i18n";
 import { message } from "@/utils/ui/feedback";
+import { importResources } from "@/services/resourceImport";
 import ListViewPage from "./components/ListViewPage";
+import ResourceToolbar from "./components/ResourceToolbar";
 import SkyboxPreview, { type SkyboxLevel } from "./components/SkyboxPreview";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle
+} from "@/components/ui/dialog";
 
 const LEVEL_LETTERS = [
   "L",
@@ -113,6 +119,13 @@ export default function ResourcesSkys() {
     return "";
   };
 
+  const onImport = () =>
+    importResources({
+      title: t("resources.name.sky"),
+      native: [],
+      targetDir: skysPath
+    });
+
   const onOpenFolder = async () => {
     if (skysPath) await backend.openInExplorer(skysPath);
   };
@@ -135,18 +148,11 @@ export default function ResourcesSkys() {
         skyboxLevels.length
       )}
       actions={
-        <>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => void loadSkyboxes(true)}
-          >
-            {t("common.action.refresh")}
-          </Button>
-          <Button variant="outline" size="sm" onClick={onOpenFolder}>
-            {t("common.action.openFolder")}
-          </Button>
-        </>
+        <ResourceToolbar
+          onImport={onImport}
+          onRefresh={() => void loadSkyboxes(true)}
+          onOpenFolder={onOpenFolder}
+        />
       }
     >
       <div className="relative">

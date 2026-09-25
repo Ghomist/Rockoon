@@ -1,4 +1,4 @@
-import { startTransition, useEffect, useMemo, useRef, useState } from "react";
+import { startTransition, useEffect, useMemo, useState } from "react";
 import { ChevronDown, Check, Plus, Pencil, Trash2 } from "lucide-react";
 import { Toaster } from "@/components/ui/sonner";
 import { Button } from "@/components/ui/button";
@@ -40,6 +40,7 @@ import {
   getCurrent as getCurrentDeepLink,
   onOpenUrl
 } from "@tauri-apps/plugin-deep-link";
+import { listen } from "@tauri-apps/api/event";
 import { useNavigate, useLocation } from "react-router-dom";
 import { getVersion } from "@tauri-apps/api/app";
 
@@ -115,78 +116,86 @@ function MainLayout() {
 
   // BRP import progress dialog state.
   const [importUrl, setImportUrl] = useState<string | null>(null);
+  const [importId, setImportId] = useState<string | null>(null);
   const [importPhase, setImportPhase] = useState<ImportPhase>("connecting");
+  const [importPercent, setImportPercent] = useState(0);
   const [importError, setImportError] = useState("");
   const [importResult, setImportResult] = useState("");
-  const importCancelledRef = useRef(false);
 
-  // Run import when a URL is set.
+  // Run import when a URL is set (async, non-blocking via Tauri events).
   useEffect(() => {
     if (!importUrl) return;
 
     let disposed = false;
-    importCancelledRef.current = false;
+    const unlisteners: (() => void)[] = [];
+
     setImportPhase("connecting");
     setImportError("");
     setImportResult("");
+    setImportPercent(0);
 
-    // Defer the download to the next macrotask so the dialog renders
-    // and the browser event loop is clear before any invoke/IPC work.
-    const tid = setTimeout(() => {
-      (async () => {
-        try {
-          const tempDir = await backend.getTempDir();
-          const fileName =
-            importUrl.split("/").pop()?.split("?")[0] || "import.brp";
-          const savePath = `${tempDir}\\${fileName}`;
+    const instance = useAppStore.getState().selectedInstanceData;
+    if (!instance) {
+      setImportError(t("brp.error.noInstance"));
+      return;
+    }
 
-          const instance = useAppStore.getState().selectedInstanceData;
-          if (!instance) {
-            setImportError(t("brp.error.noInstance"));
-            return;
-          }
+    // Start download on backend (returns immediately with an ID).
+    backend.startBrpImport(importUrl, instance.path).then(id => {
+      if (disposed) return;
+      setImportId(id);
+    });
 
-          setImportPhase("downloading");
-          await backend.downloadFile(importUrl, savePath);
-          if (disposed || importCancelledRef.current) return;
+    // Listen for progress events.
+    listen<BrpImportProgressEvent>("brp-import:progress", event => {
+      if (disposed) return;
+      const p = event.payload;
+      if (p.phase === "downloading") setImportPhase("downloading");
+      else if (p.phase === "importing") setImportPhase("importing");
+      setImportPercent(p.percent);
+    }).then(fn => unlisteners.push(fn));
 
-          setImportPhase("importing");
-          const result = await backend.importBrp(savePath, instance.path);
-          if (disposed || importCancelledRef.current) return;
-
-          setImportResult(
-            t("brp.import.success", {
-              what: describeBrp(result.manifest),
-              count: result.installedPaths.length,
-              target: result.targetDescription
-            })
-          );
-          setImportPhase("done");
-          useAppStore.getState().triggerRefresh();
-        } catch (e: unknown) {
-          if (disposed || importCancelledRef.current) return;
-          const msg = String(e);
-          if (
-            msg.includes("Download cancelled") ||
-            msg.includes("cancelled")
-          ) {
-            setImportUrl(null);
-            return;
-          }
-          setImportError(t("brp.import.failed", { reason: msg }));
+    // Listen for completion event.
+    listen<BrpImportCompleteEvent>("brp-import:complete", event => {
+      if (disposed) return;
+      const p = event.payload;
+      if (!p.success) {
+        if (p.error?.includes("cancelled")) {
+          setImportUrl(null);
+          return;
         }
-      })();
-    }, 0);
+        setImportError(p.error ?? t("brp.import.failedTitle"));
+        return;
+      }
+      const m = p.manifest;
+      if (!m) {
+        setImportError(t("brp.import.failedTitle"));
+        return;
+      }
+      setImportResult(
+        t("brp.import.success", {
+          what: describeBrp(m.manifest),
+          count: m.installedPaths.length,
+          target: m.targetDescription
+        })
+      );
+      setImportPhase("done");
+      useAppStore.getState().triggerRefresh();
+    }).then(fn => unlisteners.push(fn));
 
     return () => {
       disposed = true;
-      clearTimeout(tid);
+      unlisteners.forEach(fn => fn());
     };
   }, [importUrl]);
 
   const handleImportCancel = () => {
-    importCancelledRef.current = true;
-    message.info(t("brp.import.cancelled"));
+    if (importId) {
+      // Fire-and-forget: don't await so UI closes immediately
+      backend.cancelBrpImport(importId).then(() => {
+        message.info(t("brp.import.cancelled"));
+      });
+    }
     startTransition(() => setImportUrl(null));
   };
 
@@ -258,7 +267,9 @@ function MainLayout() {
             const win = getCurrentWindow();
             await win.show();
             await win.setFocus();
-          } catch { /* window API not ready yet — continue */ }
+          } catch {
+            /* window API not ready yet — continue */
+          }
           const brpUrl = parsed.searchParams.get("url");
           if (brpUrl) setImportUrl(brpUrl);
           else message.warning(t("brp.error.invalidFile"));
@@ -390,7 +401,7 @@ function MainLayout() {
                 <ChevronDown className="ml-1 size-4 opacity-70" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="min-w-[180px]">
+            <DropdownMenuContent align="end" className="min-w-45">
               <DropdownMenuLabel>{t("profile.currentLabel")}</DropdownMenuLabel>
               <DropdownMenuSeparator />
               {profiles.map(p => (
@@ -448,9 +459,9 @@ function MainLayout() {
                     ease={80}
                     refresh={false}
                   />
-                )
+                );
               case "meteors":
-                return <Meteors number={16} />
+                return <Meteors number={16} />;
               case "hexagon":
                 return (
                   <HexagonPattern
@@ -463,7 +474,7 @@ function MainLayout() {
                     fillOpacity={0.06}
                     className="inset-y-[-10%] h-[120%] w-full skew-y-6 [mask-image:radial-gradient(900px_circle_at_center,white,transparent)]"
                   />
-                )
+                );
               default:
                 return (
                   <AnimatedGridPattern
@@ -473,7 +484,7 @@ function MainLayout() {
                     repeatDelay={1}
                     className="absolute inset-y-[-30%] h-[160%] w-full skew-y-12 [mask-image:radial-gradient(500px_circle_at_center,white,transparent)]"
                   />
-                )
+                );
             }
           })()}
         </div>
@@ -485,6 +496,7 @@ function MainLayout() {
           <ImportProgressDialog
             open={true}
             phase={importPhase}
+            percent={importPercent}
             error={importError}
             resultText={importResult}
             onCancel={handleImportCancel}

@@ -130,7 +130,10 @@
     },
     "name": {
       "map": "Ballance 地图文件",
-      "mod": "Ballance 模组文件"
+      "mod": "Ballance 模组文件",
+      "texture": "材质文件",
+      "sound": "音效文件",
+      "sky": "天空盒文件"
     },
     "import": {
       "tip": "请选择",
@@ -185,12 +188,12 @@
   },
   "textures": {
     "statistics": "未找到材质 | 共 1 个材质 | 共 {cnt} 个材质",
-    "empty": "暂无材质文件。拖入 .brp 文件或点击「导入资源包」以开始。",
+    "empty": "暂无材质文件。拖入 .brp 文件或点击「导入」以开始。",
     "previewTitle": "预览 — {name}"
   },
   "sounds": {
     "statistics": "未找到音效 | 共 1 个音效 | 共 {cnt} 个音效",
-    "empty": "暂无音效文件。拖入 .brp 文件或点击「导入资源包」以开始。",
+    "empty": "暂无音效文件。拖入 .brp 文件或点击「导入」以开始。",
     "playing": "播放中…",
     "playError": "音频播放失败"
   },

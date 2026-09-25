@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-07-23T18:09:28.374Z
-> Files: 394 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-07-23T18:33:50.507Z
+> Files: 395 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ./
 
@@ -38,6 +38,10 @@
 ## .github/workflows/
 
 - `release.yml` — CI: "Publish (Windows only)" (~780 tok)
+
+## C:/Users/ghomist/AppData/Local/Temp/
+
+- `ulw-20260724-021658.md` — Ultrawork Notepad — Refactor download flow: frontend calls, backend downloads, async cancel (~133 tok)
 
 ## C:/Users/ghomist/AppData/Local/pnpm/bin/
 
@@ -339,7 +343,7 @@
 
 ## src-tauri/src/
 
-- `lib.rs` — run (~799 tok)
+- `lib.rs` — run (~790 tok)
 - `main.rs` — Suppress console window on Windows in all build modes. (~99 tok)
 
 ## src-tauri/src/ballance/
@@ -362,8 +366,8 @@
 
 - `app.rs` — [command] (~381 tok)
 - `ballance.rs` — read_options, save_options, read_launch_config, save_launch_config + 2 more (~1324 tok)
-- `brp.rs` — Tauri commands wrapping the BRP validate/install logic. (~670 tok)
-- `fs.rs` — File: open_in_explorer, open, exists, size (~3756 tok)
+- `brp.rs` — Tauri commands wrapping the BRP validate/install logic. (~2072 tok)
+- `fs.rs` — [derive(serde::Serialize, serde::Deserialize)] (~3017 tok)
 - `mod.rs` (~21 tok)
 - `process.rs` — [command] (~622 tok)
 
@@ -374,7 +378,7 @@
 
 ## src/
 
-- `App.tsx` — Compute dark-mode state from pref.theme + system preference. (~4782 tok)
+- `App.tsx` — Compute dark-mode state from pref.theme + system preference. (~4851 tok)
 - `App.vue` — Vue component (~2404 tok)
 - `main.ts` — Declares app (~330 tok)
 - `main.tsx` — Register console hooks → forward to Rust log stream. (~438 tok)
@@ -388,7 +392,7 @@
 
 ## src/backend/
 
-- `index.ts` — Exports LogLevel, SkyboxAnalysisResult (~1236 tok)
+- `index.ts` — Start async BRP download + install. Returns a download ID immediately. (~1244 tok)
 - `instance.ts` — Exports instanceBackend (~1110 tok)
 - `utils.ts` — Exports parseBallanceLaunchConfig, dumpBallanceLaunchConfig (~989 tok)
 
@@ -398,7 +402,7 @@
 - `AppSidebar.vue` — Vue: setup (~1694 tok)
 - `GlobalDialogHost.tsx` — Renders all open dialogs from the store. Mount once at the app root. (~810 tok)
 - `GlobalDialogHost.vue` — Vue: setup (~638 tok)
-- `ImportProgressDialog.tsx` — phaseLabels — renders modal (~584 tok)
+- `ImportProgressDialog.tsx` — phaseLabels — renders modal (~707 tok)
 - `TitleBarControls.tsx` — Minimize / Maximize-Restore / Close window controls. (~528 tok)
 - `TitleBarControls.vue` — Vue: setup (~430 tok)
 
@@ -445,7 +449,7 @@
 
 ## src/services/
 
-- `brp.ts` — Render a short description of what the manifest contains, for notifications. (~928 tok)
+- `brp.ts` — Render a short description of what the manifest contains, for notifications. (~1171 tok)
 - `hub.ts` — Exports fetchMaps, fetchMap, fetchTags, getDownloadUrl + 14 more (~1324 tok)
 - `launcher.ts` — Launch the Ballance Player.exe for the selected instance. (~692 tok)
 - `updater.ts` — Exports checkForUpdate (~647 tok)
@@ -462,7 +466,7 @@
 ## src/types/
 
 - `ballance.d.ts` — Profile 中捕获的游戏选项子集（不含成绩/进度，那些全局共享） (~917 tok)
-- `brp.d.ts` — BRP manifest — mirrors the snake_case field names defined in the BRP spec. (~258 tok)
+- `brp.d.ts` — BRP manifest — mirrors the snake_case field names defined in the BRP spec. (~364 tok)
 - `common.d.ts` — Declares HintType (~14 tok)
 - `file.d.ts` — 由启动器管理的文件类型/数据 (~192 tok)
 - `hub.d.ts` — Declares HubMapResponse (~258 tok)

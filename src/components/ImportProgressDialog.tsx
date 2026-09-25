@@ -6,17 +6,15 @@ import {
   DialogTitle
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 import { t } from "@/i18n";
 
-export type ImportPhase =
-  | "connecting"
-  | "downloading"
-  | "importing"
-  | "done";
+export type ImportPhase = "connecting" | "downloading" | "importing" | "done";
 
 export interface ImportProgressDialogProps {
   open: boolean;
   phase: ImportPhase;
+  percent: number;
   error: string;
   resultText: string;
   onCancel: () => void;
@@ -33,6 +31,7 @@ const phaseLabels: Record<ImportPhase, string> = {
 export default function ImportProgressDialog({
   open,
   phase,
+  percent,
   error,
   resultText,
   onCancel,
@@ -56,7 +55,16 @@ export default function ImportProgressDialog({
           ) : phase === "done" ? (
             <p className="text-sm text-muted-foreground">{resultText}</p>
           ) : (
-            <Loader2 className="size-8 animate-spin text-muted-foreground" />
+            <div className="flex w-full flex-col items-center gap-3">
+              <span className="text-xs text-muted-foreground">
+                {phaseLabels[phase]}
+              </span>
+              {percent > 0 ? (
+                <Progress value={percent} className="w-full" />
+              ) : (
+                <Loader2 className="size-8 animate-spin text-muted-foreground" />
+              )}
+            </div>
           )}
 
           {error || phase === "done" ? (
@@ -64,11 +72,7 @@ export default function ImportProgressDialog({
               {t("common.dialog.confirm")}
             </Button>
           ) : (
-            <Button
-              variant="outline"
-              onClick={onCancel}
-              className="self-end"
-            >
+            <Button variant="outline" onClick={onCancel} className="self-end">
               <X className="mr-1 size-4" />
               {t("common.dialog.cancel")}
             </Button>

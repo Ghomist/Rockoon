@@ -70,9 +70,6 @@ const fs = {
   getTempDir: () => invoke<string>("get_temp_dir"),
   installRockoonMod: (path: string) =>
     invoke<undefined>("install_rockoon_mod", { path }),
-  downloadFile: (url: string, savePath: string) =>
-    invoke<undefined>("download_file", { url, savePath }),
-  cancelDownload: () => invoke<undefined>("cancel_download"),
   writeFile: (path: string, data: number[]) =>
     invoke<undefined>("write_file", { path, data }),
   readTextFile: (path: string) => invoke<string>("read_text_file", { path }),
@@ -83,8 +80,12 @@ const fs = {
     invoke<BrpInfo>("validate_brp", { archivePath, instancePath }),
   importBrp: (archivePath: string, instancePath: string) =>
     invoke<BrpImportResult>("import_brp", { archivePath, instancePath }),
-  importBrpFromUrl: (url: string, instancePath: string) =>
-    invoke<BrpImportResult>("import_brp_from_url", { url, instancePath })
+  /** Start async BRP download + install. Returns a download ID immediately. */
+  startBrpImport: (url: string, instancePath: string) =>
+    invoke<string>("start_brp_import", { url, instancePath }),
+  /** Cancel an in-progress BRP import by ID. */
+  cancelBrpImport: (id: string) =>
+    invoke<undefined>("cancel_brp_import", { id })
 };
 
 const process = {

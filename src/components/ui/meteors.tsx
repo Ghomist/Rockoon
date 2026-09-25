@@ -1,15 +1,15 @@
-import { useEffect, useState, type CSSProperties } from "react"
+import { useEffect, useState, type CSSProperties } from "react";
 
-import { cn } from "@/lib/utils"
+import { cn } from "@/lib/utils";
 
 interface MeteorsProps {
-  number?: number
-  minDelay?: number
-  maxDelay?: number
-  minDuration?: number
-  maxDuration?: number
-  angle?: number
-  className?: string
+  number?: number;
+  minDelay?: number;
+  maxDelay?: number;
+  minDuration?: number;
+  maxDuration?: number;
+  angle?: number;
+  className?: string;
 }
 
 // Adapted from magicui Meteors (https://magicui.design/docs/components/meteors)
@@ -22,7 +22,7 @@ export function Meteors({
   angle = 215,
   className
 }: MeteorsProps) {
-  const [meteorStyles, setMeteorStyles] = useState<CSSProperties[]>([])
+  const [meteorStyles, setMeteorStyles] = useState<CSSProperties[]>([]);
 
   useEffect(() => {
     const styles = [...new Array(number)].map(
@@ -35,9 +35,9 @@ export function Meteors({
           animationDelay: `${Math.random() * (maxDelay - minDelay) + minDelay}s`,
           animationDuration: `${Math.floor(Math.random() * (maxDuration - minDuration) + minDuration)}s`
         }) as CSSProperties
-    )
-    setMeteorStyles(styles)
-  }, [number, minDelay, maxDelay, minDuration, maxDuration, angle])
+    );
+    setMeteorStyles(styles);
+  }, [number, minDelay, maxDelay, minDuration, maxDuration, angle]);
 
   return (
     <>
@@ -55,5 +55,5 @@ export function Meteors({
         </span>
       ))}
     </>
-  )
+  );
 }

@@ -2,14 +2,14 @@ import { useEffect, useRef, useState } from "react";
 import { Loader2, Pause, Play } from "lucide-react";
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { join } from "@tauri-apps/api/path";
-import { open as browseFile } from "@tauri-apps/plugin-dialog";
 import backend from "@/backend";
 import { useAppStore } from "@/stores/app";
 import { useT } from "@/i18n";
 import { message } from "@/utils/ui/feedback";
-import { importFromFile } from "@/services/brp";
+import { importResources } from "@/services/resourceImport";
 import { formatFileSize } from "@/utils/format";
 import ListViewPage from "./components/ListViewPage";
+import ResourceToolbar from "./components/ResourceToolbar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
@@ -72,20 +72,12 @@ export default function ResourcesSounds() {
     void loadSounds(true);
   };
 
-  const onImportBrp = async () => {
-    const selected = await browseFile({
-      title: t("brp.importButton"),
-      multiple: true,
-      filters: [{ name: "BRP", extensions: ["brp", "zip"] }]
+  const onImport = () =>
+    importResources({
+      title: t("resources.name.sound"),
+      native: [],
+      targetDir: soundsPath
     });
-    if (!selected || !selected.length) return;
-    let any = false;
-    for (const f of selected as string[]) {
-      const result = await importFromFile(f);
-      if (result) any = true;
-    }
-    if (any) onRefresh();
-  };
 
   const onOpenFolder = async () => {
     if (soundsPath) await backend.openInExplorer(soundsPath);
@@ -111,23 +103,13 @@ export default function ResourcesSounds() {
 
   return (
     <ListViewPage
-      title={t(
-        "sounds.statistics",
-        { cnt: files.length },
-        files.length
-      )}
+      title={t("sounds.statistics", { cnt: files.length }, files.length)}
       actions={
-        <>
-          <Button variant="outline" size="sm" onClick={onRefresh}>
-            {t("common.action.refresh")}
-          </Button>
-          <Button variant="secondary" size="sm" onClick={onImportBrp}>
-            {t("brp.importButton")}
-          </Button>
-          <Button variant="outline" size="sm" onClick={onOpenFolder}>
-            {t("common.action.openFolder")}
-          </Button>
-        </>
+        <ResourceToolbar
+          onImport={onImport}
+          onRefresh={onRefresh}
+          onOpenFolder={onOpenFolder}
+        />
       }
     >
       <div className="relative">
@@ -167,8 +149,7 @@ export default function ResourcesSounds() {
                 <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                   <span
                     className={
-                      "truncate text-sm " +
-                      (isPlaying ? "text-primary" : "")
+                      "truncate text-sm " + (isPlaying ? "text-primary" : "")
                     }
                   >
                     {file.name}

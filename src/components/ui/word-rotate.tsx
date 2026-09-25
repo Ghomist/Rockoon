@@ -1,13 +1,13 @@
-import { useEffect, useState } from "react"
-import { AnimatePresence, motion } from "motion/react"
+import { useEffect, useState } from "react";
+import { AnimatePresence, motion } from "motion/react";
 
-import { cn } from "@/lib/utils"
+import { cn } from "@/lib/utils";
 
 interface WordRotateProps {
-  words: string[]
-  duration?: number
-  motionProps?: React.ComponentProps<typeof motion.h1>
-  className?: string
+  words: string[];
+  duration?: number;
+  motionProps?: React.ComponentProps<typeof motion.h1>;
+  className?: string;
 }
 
 // Adapted from magicui WordRotate (https://magicui.design/docs/components/word-rotate)
@@ -22,14 +22,14 @@ export function WordRotate({
   },
   className
 }: WordRotateProps) {
-  const [index, setIndex] = useState(0)
+  const [index, setIndex] = useState(0);
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setIndex(prev => (prev + 1) % words.length)
-    }, duration)
-    return () => clearInterval(interval)
-  }, [words, duration])
+      setIndex(prev => (prev + 1) % words.length);
+    }, duration);
+    return () => clearInterval(interval);
+  }, [words, duration]);
 
   return (
     <div className="overflow-hidden py-2">
@@ -43,5 +43,5 @@ export function WordRotate({
         </motion.h1>
       </AnimatePresence>
     </div>
-  )
+  );
 }

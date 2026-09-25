@@ -1,14 +1,14 @@
 import { useEffect, useState } from "react";
 import { Trash2 } from "lucide-react";
-import { join, sep } from "@tauri-apps/api/path";
-import { open as browseFile } from "@tauri-apps/plugin-dialog";
+import { join } from "@tauri-apps/api/path";
 import backend from "@/backend";
 import { useAppStore } from "@/stores/app";
 import { useT } from "@/i18n";
 import { formatFileSize } from "@/utils/format";
 import { dialog, message } from "@/utils/ui/feedback";
-import { importFromFile } from "@/services/brp";
+import { importResources } from "@/services/resourceImport";
 import ListViewPage from "./components/ListViewPage";
+import ResourceToolbar from "./components/ResourceToolbar";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
@@ -16,9 +16,9 @@ import { Badge } from "@/components/ui/badge";
 type ResourceType = "map" | "mod";
 
 type ResourceSchema = {
+  /** Formats this page imports as-is; brp/zip packages are always accepted. */
   filter: string[];
   targetPath: string[];
-  listFiles?: (self: ResourceSchema) => Promise<ManagedFile[]>;
 };
 
 const resourcePageSchema: Record<ResourceType, ResourceSchema> = {
@@ -28,11 +28,9 @@ const resourcePageSchema: Record<ResourceType, ResourceSchema> = {
 
 interface Props {
   type: ResourceType;
-  onOpen?: (file: ManagedFile) => void;
-  onBrpImported?: () => void;
 }
 
-export default function ResourcesPageBase({ type, onBrpImported }: Props) {
+export default function ResourcesPageBase({ type }: Props) {
   const t = useT();
   const selectedInstanceData = useAppStore(s => s.selectedInstanceData);
   const refreshKey = useAppStore(s => s.refreshKey);
@@ -55,44 +53,21 @@ export default function ResourcesPageBase({ type, onBrpImported }: Props) {
     if (!selectedInstanceData) return;
     const path = await join(selectedInstanceData.path, ...schema.targetPath);
     setRscPath(path);
-    const list = schema.listFiles
-      ? await schema.listFiles(schema)
-      : await backend.list(path, schema.filter);
+    const list = await backend.list(path, schema.filter);
     setRscList(list);
     if (showMessage) message.success(t("resources.refresh.success"));
   };
 
   const onImport = async () => {
-    const files = await browseFile({
-      title: t("resources.import.tip") + " " + rscName,
-      multiple: true,
-      filters: [{ name: rscName, extensions: schema.filter }]
+    const { copied } = await importResources({
+      title: rscName,
+      native: schema.filter,
+      targetDir: rscPath
     });
-    if (files && files.length) {
-      for (const source of files as string[]) {
-        const target = await join(rscPath, source.split(sep()).pop()!);
-        await backend.copy(source, target);
-      }
+    // BRP packages refresh the list themselves through the app store.
+    if (copied) {
       await onRefresh();
       message.success(t("resources.import.success"));
-    }
-  };
-
-  const onImportBrp = async () => {
-    const files = await browseFile({
-      title: t("brp.importButton"),
-      multiple: true,
-      filters: [{ name: "BRP", extensions: ["brp", "zip"] }]
-    });
-    if (!files || !files.length) return;
-    let any = false;
-    for (const f of files as string[]) {
-      const result = await importFromFile(f);
-      if (result) any = true;
-    }
-    if (any) {
-      await onRefresh();
-      onBrpImported?.();
     }
   };
 
@@ -151,22 +126,11 @@ export default function ResourcesPageBase({ type, onBrpImported }: Props) {
         rscList.length
       )}
       actions={
-        <>
-          <Button variant="outline" size="sm" onClick={() => onRefresh(true)}>
-            {t("common.action.refresh")}
-          </Button>
-          {type === "map" && (
-            <Button variant="outline" size="sm" onClick={onImport}>
-              {t("resources.import.button")}
-            </Button>
-          )}
-          <Button variant="secondary" size="sm" onClick={onImportBrp}>
-            {t("brp.importButton")}
-          </Button>
-          <Button variant="outline" size="sm" onClick={onOpenFolder}>
-            {t("common.action.openFolder")}
-          </Button>
-        </>
+        <ResourceToolbar
+          onImport={onImport}
+          onRefresh={() => onRefresh(true)}
+          onOpenFolder={onOpenFolder}
+        />
       }
     >
       {rscList.map(file => {

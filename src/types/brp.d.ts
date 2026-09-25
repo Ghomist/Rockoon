@@ -26,3 +26,20 @@ type BrpImportResult = {
   /** Human-readable target (e.g. `ModLoader/Maps/`). */
   targetDescription: string;
 };
+
+/** Progress event payload from async BRP import. */
+type BrpImportProgressEvent = {
+  id: string;
+  phase: "downloading" | "importing";
+  percent: number;
+  downloaded: number;
+  total: number;
+};
+
+/** Completion event payload from async BRP import. */
+type BrpImportCompleteEvent = {
+  id: string;
+  success: boolean;
+  error?: string;
+  manifest?: BrpImportResult;
+};

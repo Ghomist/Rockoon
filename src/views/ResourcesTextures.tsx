@@ -2,15 +2,19 @@ import { useCallback, useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { join } from "@tauri-apps/api/path";
-import { open as browseFile } from "@tauri-apps/plugin-dialog";
 import backend from "@/backend";
 import { useAppStore } from "@/stores/app";
 import { useT } from "@/i18n";
 import { message } from "@/utils/ui/feedback";
-import { importFromFile } from "@/services/brp";
+import { importResources } from "@/services/resourceImport";
 import ListViewPage from "./components/ListViewPage";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import ResourceToolbar from "./components/ResourceToolbar";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle
+} from "@/components/ui/dialog";
 
 type BackendFile = { name: string; size: number };
 
@@ -24,23 +28,26 @@ export default function ResourcesTextures() {
   const [refreshKey, setRefreshKey] = useState(Date.now());
   const [previewFile, setPreviewFile] = useState<BackendFile | null>(null);
 
-  const loadTextures = useCallback(async (showMessage = false) => {
-    if (!selectedInstanceData) return;
-    const path = await join(selectedInstanceData.path, "Textures");
-    setTexturesPath(path);
-    try {
-      // ponytail: only BMP — TGA/AVI not renderable by browsers, converting needs backend work
-      const list = (await backend.list(path, ["bmp"])) as BackendFile[];
-      setFiles(list);
-      setRefreshKey(Date.now());
-      if (showMessage) message.success(t("common.action.refreshSuccess"));
-    } catch (error) {
-      console.error("Failed to load textures:", error);
-      setFiles([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [selectedInstanceData, t]);
+  const loadTextures = useCallback(
+    async (showMessage = false) => {
+      if (!selectedInstanceData) return;
+      const path = await join(selectedInstanceData.path, "Textures");
+      setTexturesPath(path);
+      try {
+        // ponytail: only BMP — TGA/AVI not renderable by browsers, converting needs backend work
+        const list = (await backend.list(path, ["bmp"])) as BackendFile[];
+        setFiles(list);
+        setRefreshKey(Date.now());
+        if (showMessage) message.success(t("common.action.refreshSuccess"));
+      } catch (error) {
+        console.error("Failed to load textures:", error);
+        setFiles([]);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [selectedInstanceData, t]
+  );
 
   const getAssetUrl = useCallback(
     (filename: string) =>
@@ -55,19 +62,12 @@ export default function ResourcesTextures() {
     void loadTextures(true);
   };
 
-  const onImportBrp = async () => {
-    const selected = await browseFile({
-      title: t("brp.importButton"),
-      multiple: true,
-      filters: [{ name: "BRP", extensions: ["brp", "zip"] }]
+  const onImport = () =>
+    importResources({
+      title: t("resources.name.texture"),
+      native: [],
+      targetDir: texturesPath
     });
-    if (!selected?.length) return;
-    let any = false;
-    for (const f of selected as string[]) {
-      if (await importFromFile(f)) any = true;
-    }
-    if (any) onRefresh();
-  };
 
   const onOpenFolder = async () => {
     if (texturesPath) await backend.openInExplorer(texturesPath);
@@ -88,17 +88,11 @@ export default function ResourcesTextures() {
     <ListViewPage
       title={t("textures.statistics", { cnt: files.length }, files.length)}
       actions={
-        <>
-          <Button variant="outline" size="sm" onClick={onRefresh}>
-            {t("common.action.refresh")}
-          </Button>
-          <Button variant="secondary" size="sm" onClick={onImportBrp}>
-            {t("brp.importButton")}
-          </Button>
-          <Button variant="outline" size="sm" onClick={onOpenFolder}>
-            {t("common.action.openFolder")}
-          </Button>
-        </>
+        <ResourceToolbar
+          onImport={onImport}
+          onRefresh={onRefresh}
+          onOpenFolder={onOpenFolder}
+        />
       }
     >
       {loading ? (
