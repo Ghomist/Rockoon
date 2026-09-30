@@ -65,6 +65,7 @@ jobs:
         run: pnpm install
 
       - uses: tauri-apps/tauri-action@v0
+        id: tauri
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }} # ref to private key
@@ -76,3 +77,13 @@ jobs:
           releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}
+
+      # 发布完成后通知下载站去 GitHub 拉一次最新 release。
+      # 下载站（dl.ballance.top）既是主下载入口，也是 rockoon 的更新源镜像；
+      # 接口公开且幂等，force=true 跳过服务端 TTL 立即同步；同步失败不影响发布结果。
+      - name: Sync download site
+        continue-on-error: true
+        run: |
+          curl -fsS -X POST "https://dl.ballance.top/rockoon/sync?force=true" \
+            -H "User-Agent: rockoon-release-hook" \
+            --retry 3 --retry-delay 10 --max-time 60
