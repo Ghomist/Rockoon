@@ -103,6 +103,20 @@ jobs:
       - name: Sync download site
         continue-on-error: true
         run: |
-          curl -fsS -X POST "https://dl.ballance.top/rockoon/sync?force=true" \
-            -H "User-Agent: rockoon-release-hook" \
-            --retry 3 --retry-delay 10 --max-time 60
+          # tauri-action 是先创建 release、再上传 asset；这期间 release 还是 draft，
+          # 公开 API 看不到，钩子这时同步到的会是上一个版本 —— 但它照样返回 200。
+          # 所以要按「下载站报出来的版本」轮询确认，而不是看这一次 POST 是否成功。
+          VERSION=$(node -p "require('./src-tauri/tauri.conf.json').version")
+          for i in $(seq 1 10); do
+            BODY=$(curl -fsS -X POST "https://dl.ballance.top/rockoon/sync?force=true" \
+              -H "User-Agent: rockoon-release-hook" \
+              --retry 3 --retry-delay 10 --max-time 60 || echo "")
+            echo "第 $i 次同步响应：$BODY"
+            if echo "$BODY" | grep -q "\"version\":\"$VERSION\""; then
+              echo "下载站已同步到 $VERSION"
+              exit 0
+            fi
+            sleep 30
+          done
+          echo "重试 10 次仍未同步到 $VERSION（GitHub release 可能还没公开）" >&2
+          exit 1
