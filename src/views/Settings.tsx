@@ -27,6 +27,7 @@ function usePrefFields() {
     hideWinWhenLaunch: usePrefStore(s => s.hideWinWhenLaunch),
     showWelcome: usePrefStore(s => s.showWelcome),
     mapOnlyMode: usePrefStore(s => s.mapOnlyMode),
+    levelSlot: usePrefStore(s => s.levelSlot),
     ingameMotd: usePrefStore(s => s.ingameMotd),
     ingameMotdContent: usePrefStore(s => s.ingameMotdContent)
   };
@@ -139,6 +140,19 @@ export default function Settings() {
       label: t("settings.mapOnlyMode"),
       tip: t("settings.mapOnlyModeTip"),
       field: prefField(pref, "mapOnlyMode")
+    },
+    {
+      type: "select",
+      label: t("settings.levelSlot"),
+      tip: t("settings.levelSlotTip"),
+      field: prefField(pref, "levelSlot"),
+      options: [
+        { value: 0, label: t("settings.levelSlotRandom") },
+        ...Array.from({ length: 13 }, (_, i) => ({
+          value: i + 1,
+          label: t("settings.levelSlotN", { n: i + 1 })
+        }))
+      ]
     },
     {
       type: "switch",

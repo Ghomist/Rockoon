@@ -26,7 +26,9 @@ export async function launchMap(mapAbsolutePath: string): Promise<void> {
   const bin = await join(cwd, "Player.exe");
   const pid = await backend.execute(cwd, bin, {
     ROCKOON_STARTUP: mapAbsolutePath,
-    ROCKOON_MAP_ONLY: usePrefStore.getState().mapOnlyMode ? "1" : "0"
+    ROCKOON_MAP_ONLY: usePrefStore.getState().mapOnlyMode ? "1" : "0",
+    // 0 = 随机 1~13；由 mod 侧读取并传给 MapLoader
+    ROCKOON_LEVEL_SLOT: String(usePrefStore.getState().levelSlot ?? 0)
   });
   if (usePrefStore.getState().hideWinWhenLaunch) await backend.hideWindow();
   useAppStore.setState({

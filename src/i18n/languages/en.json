@@ -101,6 +101,10 @@
     "mapOnlyMode": "Map-only mode",
     "mapOnlyModeTip": "When launching a custom map directly, exiting the map will automatically quit the game",
     "ingameMotd": "Enable in-game welcome message",
+    "levelSlot": "Placeholder level",
+    "levelSlotTip": "Which level slot to enter when loading a custom map or BMod directly. \"Random\" picks a slot from 1-13 on every launch; the slot only lets the game load a level, it does not affect the custom content itself.",
+    "levelSlotRandom": "Random (level 1-13)",
+    "levelSlotN": "Level {n}",
     "ingameMotdContent": "In-game welcome message"
   },
   "home": {

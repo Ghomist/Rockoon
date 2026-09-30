@@ -23,6 +23,7 @@ const defaultState: PreferenceStore = {
   centerWindow: false,
   showWelcome: true,
   mapOnlyMode: true,
+  levelSlot: 0,
   ingameMotd: true,
   ingameMotdContent: "Launched from Rockoon!",
   confirmLaunchMap: true

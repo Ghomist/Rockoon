@@ -1,4 +1,5 @@
 #include <windows.h>
+#include <string>
 
 #include "RockoonIO.h"
 
@@ -28,11 +29,20 @@ void RockoonIO::OnPostStartMenu()
 	auto startup_map = this->GetRockoonEnv(this->E_STARTUP);
 	if (!startup_map.empty())
 	{
+		// 占位关卡：0 或非法值交给 MapLoader 自行随机 1~13 关
+		auto slot_env = this->GetRockoonEnv(this->E_LEVEL_SLOT);
+		int level_slot = 0;
+		if (!slot_env.empty())
+		{
+			try { level_slot = std::stoi(slot_env); }
+			catch (...) { level_slot = 0; }
+		}
+
 		m_BML->SendIngameMessage(FormatRockoonMessage("Starting: " + WString2String(startup_map)));
-		m_BML->AddTimer(50.0f, [this, startup_map]()
+		m_BML->AddTimer(50.0f, [this, startup_map, level_slot]()
 			{
 				m_MapLoader.Init(m_BML->GetCKContext());
-				auto result = m_MapLoader.Load(startup_map);
+				auto result = m_MapLoader.Load(startup_map, level_slot);
 				if (result.success)
 					m_BML->SendIngameMessage(FormatRockoonMessage(result.message));
 				else

@@ -69,6 +69,9 @@ type PreferenceStore = {
   /** 仅地图模式：直接启动地图时退出地图自动退出游戏 */
   mapOnlyMode: boolean;
 
+  /** 直接进入关卡时的占位关卡号：0 = 随机（1~13），1~13 = 指定关卡 */
+  levelSlot: number;
+
   /** 是否在游戏内显示 MOTD */
   ingameMotd: boolean;
 
