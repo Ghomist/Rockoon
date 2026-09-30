@@ -43,7 +43,7 @@ public:
     /**
      * Load a custom map file.
      * @param mapPath      Full path to the .nmo or .cmo file.
-     * @param levelNumber  Level slot (1-13). 0 = default (level 2).
+     * @param levelNumber  Level slot (1-13). 0/越界 = 随机挑一关（避免总是覆盖同一关的成绩表）。
      */
     Result Load(const std::wstring &mapPath, int levelNumber = 0);
 

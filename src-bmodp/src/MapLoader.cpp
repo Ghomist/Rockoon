@@ -4,6 +4,8 @@
 #include <algorithm>
 #include <cstdlib>
 #include <cstring>
+#include <random>
+#include <string>
 
 // BinarySwitch prototype GUID (VT_LOGICS_BINARYSWITCH)
 static const CKGUID kBinarySwitchGuid(0xeb506901, 0x984afccc);
@@ -92,8 +94,12 @@ MapLoader::Result MapLoader::Load(const std::wstring &mapPath, int levelNumber) 
         return result;
     }
 
-    if (levelNumber < 1 || levelNumber > 13)
-        levelNumber = 2;
+    if (levelNumber < 1 || levelNumber > 13) {
+        // 没指定槽位时随机挑一关：自定义地图进哪一关玩都是同一张图，
+        // 随机可以避免长期重复覆盖同一关（尤其第一/二关）的成绩表
+        static std::mt19937 rng(std::random_device{}());
+        levelNumber = std::uniform_int_distribution<int>(1, 13)(rng);
+    }
 
     WriteParam(mapFile, tempFile.c_str());
     WriteParam(loadCustom, TRUE);
@@ -139,7 +145,7 @@ MapLoader::Result MapLoader::Load(const std::wstring &mapPath, int levelNumber) 
     }
 
     result.success = true;
-    result.message = "loading " + WideToUtf8(mapPath);
+    result.message = "loading " + WideToUtf8(mapPath) + " -> level " + std::to_string(levelNumber);
     return result;
 }
 
