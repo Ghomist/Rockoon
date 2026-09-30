@@ -50,15 +50,25 @@ jobs:
           # Those targets are only used on macos runners so it's in an `if` to slightly speed up windows and linux builds.
           targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
 
-      - name: install CMake
-        uses: jwlawson/actions-setup-cmake@v2
+      # GitHub 的 windows/ubuntu/macos runner 都预装了 cmake（原本用 actions-setup-cmake 要花 26 秒下载）
+
+      - name: Cache BMLPlus SDK and bmodp build
+        uses: actions/cache@v4
         with:
-          cmake-version: "latest"
+          path: |
+            src-bmodp/3rd-party/BMLPlus
+            src-bmodp/build
+          # SDK 版本写在 config.ps1，源码变了用 restore-keys 回退到上次的构建做增量编译
+          key: bmodp-${{ runner.os }}-${{ hashFiles('src-bmodp/config.ps1', 'src-bmodp/CMakeLists.txt', 'src-bmodp/src/**') }}
+          restore-keys: |
+            bmodp-${{ runner.os }}-
 
       - name: Rust cache
         uses: swatinem/rust-cache@v2
         with:
           workspaces: "./src-tauri -> target"
+          # 构建失败也保存缓存：重跑时已编译的依赖能直接复用
+          cache-on-failure: true
 
       - name: install frontend dependencies
         # If you don't have `beforeBuildCommand` configured you may want to build your frontend here too.
