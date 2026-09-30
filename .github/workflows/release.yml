@@ -63,6 +63,11 @@ jobs:
           restore-keys: |
             bmodp-${{ runner.os }}-
 
+      # 逐 crate 缓存编译产物：rust-cache 缓存的是（被裁剪过的）target 目录，
+      # 依赖产物复用不完整；sccache 是内容寻址的编译缓存，两者互补
+      - name: Setup sccache
+        uses: mozilla-actions/sccache-action@v0.0.11
+
       - name: Rust cache
         uses: swatinem/rust-cache@v2
         with:
@@ -80,6 +85,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }} # ref to private key
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }} # ref to key password
+          # sccache 走 GitHub Actions 缓存后端；incremental 与 sccache 冲突，关掉
+          SCCACHE_GHA_ENABLED: "true"
+          RUSTC_WRAPPER: sccache
+          CARGO_INCREMENTAL: "0"
         with:
           tagName: rockoon-v__VERSION__ # the action automatically replaces \_\_VERSION\_\_ with the app version.
           releaseName: "Rockoon v__VERSION__"
