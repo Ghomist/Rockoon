@@ -85,7 +85,11 @@
       "failed": "Import failed: {reason}",
       "cancelled": "Import cancelled",
       "successTitle": "Import Successful",
-      "failedTitle": "Import Failed"
+      "failedTitle": "Import Failed",
+      "depDownloading": "Downloading dependency: {name}…",
+      "depImporting": "Installing dependency: {name}…",
+      "depFailed": "Dependency \"{name}\" failed to install and was skipped; import it manually later",
+      "withDeps": " ({count} dependencies installed too)"
     },
     "error": {
       "noInstance": "Please select a game instance first",

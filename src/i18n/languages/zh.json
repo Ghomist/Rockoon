@@ -85,7 +85,11 @@
       "failed": "导入失败：{reason}",
       "cancelled": "已取消导入",
       "successTitle": "导入成功",
-      "failedTitle": "导入失败"
+      "failedTitle": "导入失败",
+      "depDownloading": "正在下载依赖：{name}…",
+      "depImporting": "正在安装依赖：{name}…",
+      "depFailed": "依赖「{name}」安装失败，已跳过；可稍后手动导入",
+      "withDeps": "（另安装了 {count} 个依赖）"
     },
     "error": {
       "noInstance": "请先选择一个游戏实例",

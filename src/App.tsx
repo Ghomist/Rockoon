@@ -1,4 +1,4 @@
-import { startTransition, useEffect, useMemo, useState } from "react";
+import { startTransition, useCallback, useEffect, useMemo, useState } from "react";
 import { ChevronDown, Check, Plus, Pencil, Trash2 } from "lucide-react";
 import { Toaster } from "@/components/ui/sonner";
 import { Button } from "@/components/ui/button";
@@ -26,6 +26,7 @@ import { HexagonPattern } from "@/components/ui/hexagon-pattern";
 import { WordRotate } from "@/components/ui/word-rotate";
 
 import Onboarding from "@/views/Onboarding";
+import { buildImportQueue, type ImportTask } from "@/services/deepLinkImport";
 import { AppRoutes } from "@/routers";
 import { t, useT } from "@/i18n";
 import { useAppStore } from "@/stores/app";
@@ -116,24 +117,42 @@ function MainLayout() {
   const [appVersion, setAppVersion] = useState("");
 
   // BRP import progress dialog state.
-  const [importUrl, setImportUrl] = useState<string | null>(null);
+  // 队列：深链一键安装时，依赖在前、主资源在后（见 services/deepLinkImport）。
+  const [importQueue, setImportQueue] = useState<ImportTask[]>([]);
+  const [importPending, setImportPending] = useState(false);
+  const [importDepCount, setImportDepCount] = useState(0);
   const [importId, setImportId] = useState<string | null>(null);
   const [importPhase, setImportPhase] = useState<ImportPhase>("connecting");
   const [importPercent, setImportPercent] = useState(0);
   const [importError, setImportError] = useState("");
   const [importResult, setImportResult] = useState("");
 
-  // Run import when a URL is set (async, non-blocking via Tauri events).
+  const importCurrent = importQueue[0] ?? null;
+
+  /** 深链点进来看：先把依赖展开成安装队列，再按顺序逐个导入 */
+  const startDeepLinkImport = useCallback(async (url: string) => {
+    setImportPending(true);
+    setImportPhase("connecting");
+    setImportPercent(0);
+    setImportError("");
+    setImportResult("");
+    const queue = await buildImportQueue(url);
+    setImportDepCount(queue.filter(task => task.isDependency).length);
+    setImportPending(false);
+    setImportQueue(queue);
+  }, []);
+
+  // Run import when the current task is set (async, non-blocking via Tauri events).
   useEffect(() => {
-    if (!importUrl) return;
+    if (!importCurrent) return;
 
     let disposed = false;
     const unlisteners: (() => void)[] = [];
 
     setImportPhase("connecting");
-    setImportError("");
-    setImportResult("");
     setImportPercent(0);
+    setImportResult("");
+    if (!importCurrent.isDependency) setImportError("");
 
     const instance = useAppStore.getState().selectedInstanceData;
     if (!instance) {
@@ -142,7 +161,7 @@ function MainLayout() {
     }
 
     // Start download on backend (returns immediately with an ID).
-    backend.startBrpImport(importUrl, instance.path).then(id => {
+    backend.startBrpImport(importCurrent.url, instance.path).then(id => {
       if (disposed) return;
       setImportId(id);
     });
@@ -162,7 +181,13 @@ function MainLayout() {
       const p = event.payload;
       if (!p.success) {
         if (p.error?.includes("cancelled")) {
-          setImportUrl(null);
+          setImportQueue([]);
+          return;
+        }
+        // 依赖装失败：跳过它继续装主资源，别把整个安装卡住
+        if (importCurrent.isDependency) {
+          message.error(t("brp.import.depFailed", { name: importCurrent.name }));
+          setImportQueue(q => q.slice(1));
           return;
         }
         setImportError(p.error ?? t("brp.import.failedTitle"));
@@ -173,12 +198,20 @@ function MainLayout() {
         setImportError(t("brp.import.failedTitle"));
         return;
       }
+      // 队列里还有（依赖装在前面）：接着装下一个，全部装完再报结果
+      if (importQueue.length > 1) {
+        setImportQueue(q => q.slice(1));
+        return;
+      }
+      const success = t("brp.import.success", {
+        what: describeBrp(m.manifest),
+        count: m.installedPaths.length,
+        target: m.targetDescription
+      });
       setImportResult(
-        t("brp.import.success", {
-          what: describeBrp(m.manifest),
-          count: m.installedPaths.length,
-          target: m.targetDescription
-        })
+        importDepCount > 0
+          ? `${success}${t("brp.import.withDeps", { count: importDepCount })}`
+          : success
       );
       setImportPhase("done");
       useAppStore.getState().triggerRefresh();
@@ -188,7 +221,7 @@ function MainLayout() {
       disposed = true;
       unlisteners.forEach(fn => fn());
     };
-  }, [importUrl]);
+  }, [importCurrent?.url]);
 
   const handleImportCancel = () => {
     if (importId) {
@@ -197,11 +230,11 @@ function MainLayout() {
         message.info(t("brp.import.cancelled"));
       });
     }
-    startTransition(() => setImportUrl(null));
+    startTransition(() => setImportQueue([]));
   };
 
   const handleImportClose = () => {
-    setImportUrl(null);
+    setImportQueue([]);
   };
   const backgroundType = usePrefStore(s => s.backgroundType);
   const isDark = useDarkMode();
@@ -272,7 +305,7 @@ function MainLayout() {
             /* window API not ready yet — continue */
           }
           const brpUrl = parsed.searchParams.get("url");
-          if (brpUrl) setImportUrl(brpUrl);
+          if (brpUrl) void startDeepLinkImport(brpUrl);
           else message.warning(t("brp.error.invalidFile"));
         }
       } catch {
@@ -301,7 +334,7 @@ function MainLayout() {
       unlistenDragDrop?.();
       unlistenDeepLink?.();
     };
-  }, []);
+  }, [startDeepLinkImport]);
 
   const onSwitchProfile = async (id: string) => {
     if (id === currentProfile?.id) return;
@@ -494,13 +527,25 @@ function MainLayout() {
           <AppRoutes />
         </main>
         <PatchUpdateWatcher />
-        {importUrl && (
+        {(importCurrent || importPending) && (
           <ImportProgressDialog
             open={true}
             phase={importPhase}
             percent={importPercent}
             error={importError}
             resultText={importResult}
+            labels={
+              importCurrent?.isDependency
+                ? {
+                    downloading: t("brp.import.depDownloading", {
+                      name: importCurrent.name
+                    }),
+                    importing: t("brp.import.depImporting", {
+                      name: importCurrent.name
+                    })
+                  }
+                : undefined
+            }
             onCancel={handleImportCancel}
             onClose={handleImportClose}
           />

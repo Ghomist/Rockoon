@@ -37,3 +37,6 @@ src-bmodp/3rd-party/*
 # Note: BMLPlus SDK is downloaded automatically via build script and should not be committed
 # omo 运行态文件（会话续跑标记），不入库
 .omo/
+
+# 本地调试脚本/日志（不入库）
+.local-logs/
