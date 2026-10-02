@@ -6,6 +6,8 @@ import { useAppStore } from "@/stores/app";
 import { usePrefStore } from "@/stores/pref";
 import { useProfilesStore } from "@/stores/profiles";
 import { checkForUpdate } from "@/services/updater";
+import ImportProgressDialog from "@/components/ImportProgressDialog";
+import { useVanillaInstall } from "@/services/game";
 import { useT } from "@/i18n";
 import { dialog, message } from "@/utils/ui/feedback";
 import storage from "@/utils/storage";
@@ -62,6 +64,9 @@ export default function Settings() {
 
   const onReload = () => location.reload();
 
+  // 换目录时不只支持「选已有目录」，也支持直接装一份干净的原版游戏
+  const { start: installGame, dialog: gameDialog } = useVanillaInstall();
+
   const onChangeInstancePath = async () => {
     const folder = await browseDir({
       directory: true,
@@ -83,6 +88,12 @@ export default function Settings() {
       type: "button",
       label: t("settings.instance.change"),
       onClick: onChangeInstancePath
+    },
+    {
+      type: "button",
+      label: t("settings.instance.installGame"),
+      tip: t("settings.instance.installGameTip"),
+      onClick: () => void installGame()
     }
   ];
 
@@ -208,6 +219,16 @@ export default function Settings() {
         </p>
         <NFormWrapper schema={instanceSchema} />
       </section>
+
+      <ImportProgressDialog
+        {...gameDialog}
+        labels={{
+          connecting: t("game.connecting"),
+          downloading: t("game.downloading"),
+          importing: t("game.extracting"),
+          done: t("game.done")
+        }}
+      />
 
       <section className="flex flex-col gap-2.5">
         <h2 className="flex items-center gap-2 text-lg font-semibold">

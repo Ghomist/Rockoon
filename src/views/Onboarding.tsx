@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Rocket, FolderOpen, Loader2 } from "lucide-react";
+import { Rocket, FolderOpen, Download, Loader2 } from "lucide-react";
 import { useT } from "@/i18n";
+import ImportProgressDialog from "@/components/ImportProgressDialog";
+import { useVanillaInstall } from "@/services/game";
 import { useAppStore } from "@/stores/app";
 import { usePrefStore } from "@/stores/pref";
 import { useProfilesStore } from "@/stores/profiles";
@@ -17,6 +19,8 @@ export default function Onboarding() {
   const profilesLoad = useProfilesStore(s => s.load);
 
   const [picking, setPicking] = useState(false);
+  // 原版游戏安装：没有游戏时也能一键下好（否则新用户得先自己去搞一份游戏才能用）
+  const { start: installGame, busy: installing, dialog } = useVanillaInstall();
 
   const onPickFolder = async () => {
     setPicking(true);
@@ -61,7 +65,7 @@ export default function Onboarding() {
 
           <button
             type="button"
-            disabled={picking}
+            disabled={picking || installing}
             onClick={onPickFolder}
             className="inline-flex h-10 items-center gap-2 rounded-md bg-primary px-6 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
           >
@@ -73,11 +77,35 @@ export default function Onboarding() {
             {t("onboarding.pick")}
           </button>
 
+          <button
+            type="button"
+            disabled={picking || installing}
+            onClick={() => void installGame()}
+            className="inline-flex h-9 items-center gap-2 rounded-md border border-border bg-transparent px-4 text-sm text-muted-foreground transition-colors hover:bg-muted disabled:opacity-50"
+          >
+            {installing ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <Download className="size-4" />
+            )}
+            {t("game.install")}
+          </button>
+
           <p className="text-center text-xs text-muted-foreground/80">
             {t("onboarding.hint")}
           </p>
         </div>
       </div>
+
+      <ImportProgressDialog
+        {...dialog}
+        labels={{
+          connecting: t("game.connecting"),
+          downloading: t("game.downloading"),
+          importing: t("game.extracting"),
+          done: t("game.done")
+        }}
+      />
     </div>
   );
 }

@@ -56,6 +56,8 @@ pub fn run() {
             commands::process::execute,
             commands::process::kill,
             commands::process::check,
+            commands::game::start_game_install,
+            commands::game::cancel_game_install,
             commands::ballance::read_options,
             commands::ballance::save_options,
             commands::ballance::read_launch_config,

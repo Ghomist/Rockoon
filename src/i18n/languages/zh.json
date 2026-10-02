@@ -1,4 +1,14 @@
 {
+  "game": {
+    "install": "下载并安装原版游戏",
+    "pickTarget": "选择安装位置（建议新建一个空文件夹）",
+    "connecting": "正在连接下载站…",
+    "downloading": "正在下载原版游戏…",
+    "extracting": "正在解压…",
+    "done": "原版游戏安装完成",
+    "installed": "已安装到 {path}，并设为当前游戏",
+    "failed": "安装失败"
+  },
   "menu": {
     "game": "启动游戏",
     "options": "游戏选项",
@@ -223,7 +233,9 @@
     "instance": {
       "title": "游戏目录",
       "change": "更改游戏目录",
-      "changed": "游戏目录已更改"
+      "changed": "游戏目录已更改",
+      "installGame": "安装新游戏",
+      "installGameTip": "从下载站获取一份干净的原版游戏（约 65MB），装好会自动设为当前游戏"
     },
     "basic": "基础设置",
     "theme": {

@@ -95,9 +95,18 @@ const process = {
   check: (pid: number) => invoke<boolean>("check", { pid })
 };
 
+const game = {
+  /** 从下载站下载原版游戏并解压到目标文件夹；进度与结果走 game-install:* 事件 */
+  startInstall: (url: string, targetDir: string) =>
+    invoke<string>("start_game_install", { url, targetDir }),
+  cancelInstall: (id: string) =>
+    invoke<undefined>("cancel_game_install", { id })
+};
+
 export default {
   ...common,
   ...ballance,
   ...fs,
-  ...process
+  ...process,
+  ...game
 };

@@ -1,4 +1,14 @@
 {
+  "game": {
+    "install": "Download and install the original game",
+    "pickTarget": "Choose where to install (an empty folder works best)",
+    "connecting": "Connecting to the download site…",
+    "downloading": "Downloading the original game…",
+    "extracting": "Extracting…",
+    "done": "Original game installed",
+    "installed": "Installed to {path} and set as the current game",
+    "failed": "Install failed"
+  },
   "menu": {
     "game": "Start Game",
     "options": "Options",
@@ -69,7 +79,9 @@
     "instance": {
       "title": "Game Directory",
       "change": "Change Game Directory",
-      "changed": "Game directory changed"
+      "changed": "Game directory changed",
+      "installGame": "Install a new game",
+      "installGameTip": "Fetch a clean copy of the original game from the download site (~65MB); it becomes the current game when done"
     },
     "basic": "Basic Settings",
     "theme": {

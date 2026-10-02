@@ -19,6 +19,8 @@ export interface ImportProgressDialogProps {
   resultText: string;
   onCancel: () => void;
   onClose: () => void;
+  /** 覆盖默认（BRP）文案：原版游戏安装复用这个弹窗 */
+  labels?: Partial<Record<ImportPhase, string>>;
 }
 
 const phaseLabels: Record<ImportPhase, string> = {
@@ -35,8 +37,10 @@ export default function ImportProgressDialog({
   error,
   resultText,
   onCancel,
-  onClose
+  onClose,
+  labels: labelOverride
 }: ImportProgressDialogProps) {
+  const labels = { ...phaseLabels, ...labelOverride };
   return (
     <Dialog open={open} onOpenChange={v => !v && onClose()}>
       <DialogContent
@@ -45,7 +49,7 @@ export default function ImportProgressDialog({
       >
         <DialogHeader>
           <DialogTitle>
-            {error ? t("brp.import.failedTitle") : phaseLabels[phase]}
+            {error ? t("brp.import.failedTitle") : labels[phase]}
           </DialogTitle>
         </DialogHeader>
 
@@ -57,7 +61,7 @@ export default function ImportProgressDialog({
           ) : (
             <div className="flex w-full flex-col items-center gap-3">
               <span className="text-xs text-muted-foreground">
-                {phaseLabels[phase]}
+                {labels[phase]}
               </span>
               {percent > 0 ? (
                 <Progress value={percent} className="w-full" />
