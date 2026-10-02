@@ -69,15 +69,22 @@ export const useProfilesStore = create<ProfilesState>((set, get) => ({
     if (!instancePath) return;
 
     const file = await profilesFilePath(instancePath);
+    let parsed: ProfileIndex | undefined;
     if (await backend.exists(file)) {
       try {
         const text = await backend.readTextFile(file);
-        const parsed = JSON.parse(text) as ProfileIndex;
-        if (parsed?.profiles?.length) set({ index: parsed });
+        parsed = JSON.parse(text) as ProfileIndex;
       } catch {
-        // corrupt: fall through to default creation
+        parsed = undefined; // corrupt: treat as missing
       }
     }
+
+    // 整体替换而不是「读到了才更新」：换游戏目录后文件缺失/损坏意味着「这个游戏
+    // 还没有任何配置」。把上一个游戏的列表留在内存里，既会显示错配置，也会在
+    // 下一次 save() 时把旧列表写进新游戏目录（配置串味）。
+    set({
+      index: parsed?.profiles?.length ? parsed : { ...emptyIndex, profiles: [] }
+    });
 
     const { index } = get();
     if (!index.profiles.length) {
