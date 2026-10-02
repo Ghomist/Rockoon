@@ -102,6 +102,10 @@ jobs:
       # 接口公开且幂等，force=true 跳过服务端 TTL 立即同步；同步失败不影响发布结果。
       - name: Sync download site
         continue-on-error: true
+        # 必须显式指定 bash：这个 job 跑在 Windows runner 上，run 的默认外壳是
+        # PowerShell，bash 语法（$(seq ...) / grep -q / 反引号续行）会直接语法错、
+        # 0 秒退出，而 continue-on-error 会把它伪装成 success —— 于是同步从来没发生过。
+        shell: bash
         run: |
           # tauri-action 是先创建 release、再上传 asset；这期间 release 还是 draft，
           # 公开 API 看不到，钩子这时同步到的会是上一个版本 —— 但它照样返回 200。
