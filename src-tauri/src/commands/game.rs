@@ -244,3 +244,86 @@ fn extract_zip(archive_path: &Path, target: &Path) -> Result<(), RcError> {
     }
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::io::Write;
+
+    fn make_zip(path: &Path, entries: &[(&str, &[u8])]) {
+        let file = std::fs::File::create(path).unwrap();
+        let mut zw = zip::ZipWriter::new(file);
+        let opts = zip::write::SimpleFileOptions::default();
+        for (name, data) in entries {
+            zw.start_file(*name, opts).unwrap();
+            zw.write_all(data).unwrap();
+        }
+        zw.finish().unwrap();
+    }
+
+    fn temp_dir(tag: &str) -> PathBuf {
+        let mut d = std::env::temp_dir();
+        d.push(format!("rockoon-game-test-{tag}"));
+        let _ = std::fs::remove_dir_all(&d);
+        std::fs::create_dir_all(&d).unwrap();
+        d
+    }
+
+    /// 正常包：带空格/子目录的条目都要落到对应位置。
+    #[test]
+    fn extracts_game_layout() {
+        let dir = temp_dir("layout");
+        let zip_path = dir.join("game.zip");
+        make_zip(
+            &zip_path,
+            &[
+                ("Bin/Player.exe", b"MZ"),
+                ("3D Entities/Level/Level_01.NMO", b"level"),
+                ("Textures/Sky/Sky_A_Back.bmp", b"sky"),
+            ],
+        );
+
+        let out = dir.join("out");
+        std::fs::create_dir_all(&out).unwrap();
+        extract_zip(&zip_path, &out).unwrap();
+
+        assert_eq!(std::fs::read(out.join("Bin/Player.exe")).unwrap(), b"MZ");
+        assert_eq!(
+            std::fs::read(out.join("3D Entities/Level/Level_01.NMO")).unwrap(),
+            b"level"
+        );
+        assert_eq!(
+            std::fs::read(out.join("Textures/Sky/Sky_A_Back.bmp")).unwrap(),
+            b"sky"
+        );
+    }
+
+    /// 7-Zip 在 Windows 下可能写成反斜杠，得归一化到同一位置。
+    #[test]
+    fn normalizes_backslashes() {
+        let dir = temp_dir("backslash");
+        let zip_path = dir.join("game.zip");
+        make_zip(&zip_path, &[("Bin\\Player.exe", b"MZ")]);
+
+        let out = dir.join("out");
+        std::fs::create_dir_all(&out).unwrap();
+        extract_zip(&zip_path, &out).unwrap();
+
+        assert!(out.join("Bin/Player.exe").exists());
+    }
+
+    /// zip-slip：带 .. 的条目必须被拒绝，且不能写到目标目录外。
+    #[test]
+    fn rejects_zip_slip() {
+        let dir = temp_dir("slip");
+        let zip_path = dir.join("game.zip");
+        make_zip(&zip_path, &[("../evil.txt", b"boom")]);
+
+        let out = dir.join("out");
+        std::fs::create_dir_all(&out).unwrap();
+        let result = extract_zip(&zip_path, &out);
+
+        assert!(result.is_err(), "带 .. 的条目应该直接报错");
+        assert!(!dir.join("evil.txt").exists(), "不应该写到目标目录之外");
+    }
+}
