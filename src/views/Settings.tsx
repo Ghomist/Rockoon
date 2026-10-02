@@ -36,6 +36,13 @@ function usePrefFields() {
   };
 }
 
+/** 直选单关时的注意事项：这几关有特殊表现，拿它们当占位会跟着带进自制地图 */
+const LEVEL_SLOT_NOTES: Record<number, string> = {
+  1: "settings.levelNote1",
+  12: "settings.levelNote12",
+  13: "settings.levelNote13"
+};
+
 type PrefFields = ReturnType<typeof usePrefFields>;
 
 const prefField = <K extends keyof PrefFields>(
@@ -160,10 +167,16 @@ export default function Settings() {
       field: prefField(pref, "levelSlot"),
       options: [
         { value: 0, label: t("settings.levelSlotRandom") },
-        ...Array.from({ length: 13 }, (_, i) => ({
-          value: i + 1,
-          label: t("settings.levelSlotN", { n: i + 1 })
-        }))
+        ...Array.from({ length: 13 }, (_, i) => {
+          const n = i + 1;
+          const noteKey = LEVEL_SLOT_NOTES[n];
+          return {
+            value: n,
+            label: noteKey
+              ? t("settings.levelSlotNWithNote", { n, note: t(noteKey) })
+              : t("settings.levelSlotN", { n })
+          };
+        })
       ]
     },
     {

@@ -96,9 +96,11 @@ MapLoader::Result MapLoader::Load(const std::wstring &mapPath, int levelNumber) 
 
     if (levelNumber < 1 || levelNumber > 13) {
         // 没指定槽位时随机挑一关：自定义地图进哪一关玩都是同一张图，
-        // 随机可以避免长期重复覆盖同一关（尤其第一/二关）的成绩表
+        // 随机可以避免长期重复覆盖同一关的成绩表。
+        // 范围是 2~11：第 1 关开局会弹教程文本，第 12 关场景偏暗且有闪电特效，
+        // 第 13 关是石球开局（不是正常的木球），这三种都会影响自制地图的体验。
         static std::mt19937 rng(std::random_device{}());
-        levelNumber = std::uniform_int_distribution<int>(1, 13)(rng);
+        levelNumber = std::uniform_int_distribution<int>(2, 11)(rng);
     }
 
     WriteParam(mapFile, tempFile.c_str());

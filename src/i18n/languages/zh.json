@@ -317,9 +317,13 @@
     "mapOnlyModeTip": "当直接启动某张自制地图时，退出地图将自动退出游戏",
     "ingameMotd": "启用欢迎语",
     "levelSlot": "占位关卡",
-    "levelSlotTip": "直接进入关卡（自制地图、BMod 等）时用第几关做占位。选「随机」则每次启动在 1~13 关里随机；占位关卡只是让游戏能进关卡，不影响自制地图本身的内容。",
-    "levelSlotRandom": "随机（1~13 关）",
+    "levelSlotTip": "直接进入关卡（自制地图、BMod 等）时用第几关做占位。选「随机」则每次启动在 2~11 关里随机 —— 避开第 1 关的教程文本、第 12 关的偏暗闪电场景、第 13 关的石球开局；占位关卡只是让游戏能进关卡，不影响自制地图本身的内容。",
+    "levelSlotRandom": "随机（2~11 关）",
     "levelSlotN": "第 {n} 关",
+    "levelSlotNWithNote": "第 {n} 关 · {note}",
+    "levelNote1": "开局有教程文本",
+    "levelNote12": "场景偏暗、有闪电",
+    "levelNote13": "石球开局",
     "ingameMotdContent": "欢迎语"
   },
   "common": {
