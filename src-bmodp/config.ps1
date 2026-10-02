@@ -1,7 +1,7 @@
 # BMLPlus SDK Configuration
 # Update this file when you need to upgrade the SDK version
 
-$Env:BMLP_VERSION = "v0.3.10"
+$Env:BMLP_VERSION = "v0.3.13"
 $Env:BMLP_REPO = "doyaGu/BallanceModLoaderPlus"
 $Env:BMLP_SDK_ARCHIVE = "BMLPlus-SDK-$($Env:BMLP_VERSION)-Release.zip"
 $Env:BMLP_SDK_URL = "https://github.com/$($Env:BMLP_REPO)/releases/download/$($Env:BMLP_VERSION)/$($Env:BMLP_SDK_ARCHIVE)"
