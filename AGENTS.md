@@ -91,6 +91,11 @@ BMLPlus plugin (`RockoonIO.bmodp`) built via CMake + `build.ps1`. Sources in `sr
 
 ## Operational gotchas
 
+- **前端直连下载站要改 CSP**：`tauri.conf.json` 的 `app.security.csp` 必须写上
+  `connect-src ... https://dl.ballance.top`，否则 webview 里的 `fetch` 会被
+  `default-src 'self'` 静默拦截（只在 webview 控制台报错，业务代码只会看到网络失败）。
+  历史上所有网络请求都走 Rust（ureq，不受 CSP 管），所以这是加「补丁页 / 深链读依赖」
+  时第一次踩到的坑。同理，以后要显示远程图片得加 `img-src`。
 - **Windows-only**: macOS/Linux are commented out in `.github/workflows/release.yml`.
 - **Hot reload**: Vite ignores `src-tauri/**` (`vite.config.ts`). Rust changes require restarting `pnpm tauri dev`.
 - **Vite port 1420 is strict** (`strictPort: true`) — if taken, dev fails rather than incrementing.

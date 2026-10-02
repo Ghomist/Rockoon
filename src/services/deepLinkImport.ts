@@ -39,8 +39,10 @@ async function fetchPackageInfo(id: number): Promise<PackageInfo | null> {
       ? data.dependencies.map(String).filter(d => /^\d+$/.test(d))
       : [];
     return { name: String(data.name ?? ""), dependencies };
-  } catch {
-    // 站点打不开或资源已下架：当作没有依赖，不要挡住安装
+  } catch (err) {
+    // 站点打不开、被 CSP 挡、资源已下架等：当作没有依赖，不要挡住安装。
+    // （注意：CSP 拦 fetch 只在 webview 控制台报错，这里必须自己出声）
+    console.warn(`[import] 读取资源 ${id} 的依赖失败，只装主资源：`, err);
     return null;
   }
 }
