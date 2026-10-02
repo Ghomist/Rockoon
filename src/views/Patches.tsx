@@ -1,0 +1,342 @@
+import { useCallback, useRef, useState } from "react";
+import { Download, Loader2, RefreshCw, RotateCcw } from "lucide-react";
+
+import backend from "@/backend";
+import { useT } from "@/i18n";
+import { RESOURCE_HUB } from "@/services/game";
+import {
+  detectInstalled,
+  fetchPatches,
+  fetchPatchVersions,
+  installPatch
+} from "@/services/patches";
+import { useWaitForSelectedInstance } from "@/utils/ui/waitForInstance";
+import { message } from "@/utils/ui/feedback";
+import { formatFileSize } from "@/utils/format";
+import type { ImportPhase } from "@/components/ImportProgressDialog";
+import ImportProgressDialog from "@/components/ImportProgressDialog";
+import ListViewPage from "@/views/components/ListViewPage";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle
+} from "@/components/ui/dialog";
+
+/**
+ * 补丁页：BML / BML+ / 新 Player 的安装、更新与版本回退。
+ *
+ * 补丁清单与安装提示都来自下载站（GET /patches），这里只负责把文件装到
+ * 正确的位置（游戏根或 Bin）并记下版本号。没选游戏时提示去选一个。
+ */
+export default function Patches() {
+  const t = useT();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [components, setComponents] = useState<PatchComponent[]>([]);
+  const [installed, setInstalled] = useState<Record<string, string | null>>({});
+  const [busyKey, setBusyKey] = useState("");
+  const [picker, setPicker] = useState<PatchComponent | null>(null);
+  const [versions, setVersions] = useState<PatchVersion[]>([]);
+  const [versionsLoading, setVersionsLoading] = useState(false);
+  const [progress, setProgress] = useState<{
+    open: boolean;
+    phase: ImportPhase;
+    percent: number;
+    error: string;
+    resultText: string;
+  }>({ open: false, phase: "connecting", percent: 0, error: "", resultText: "" });
+  const taskId = useRef("");
+
+  const refresh = useCallback(
+    async (instancePath: string) => {
+      try {
+        const list = await fetchPatches();
+        setComponents(list);
+        const state: Record<string, string | null> = {};
+        for (const component of list) {
+          state[component.key] = await detectInstalled(component, instancePath);
+        }
+        setInstalled(state);
+        setError("");
+      } catch (e) {
+        setError(e instanceof Error ? e.message : String(e));
+      } finally {
+        setLoading(false);
+      }
+    },
+    []
+  );
+
+  const instance = useWaitForSelectedInstance(data => refresh(data.path));
+
+  const openPicker = async (component: PatchComponent) => {
+    if (!component.package_id) return;
+    setPicker(component);
+    setVersions([]);
+    setVersionsLoading(true);
+    try {
+      setVersions(await fetchPatchVersions(component.package_id));
+    } catch (e) {
+      message.error(e instanceof Error ? e.message : String(e));
+    } finally {
+      setVersionsLoading(false);
+    }
+  };
+
+  const runInstall = async (
+    component: PatchComponent,
+    target: { version: number; tag: string } | null
+  ) => {
+    if (!instance) return;
+    setPicker(null);
+    setBusyKey(component.key);
+    setProgress({
+      open: true,
+      phase: "connecting",
+      percent: 0,
+      error: "",
+      resultText: ""
+    });
+    try {
+      await installPatch(component, instance.path, target, {
+        onPhase: phase => setProgress(s => ({ ...s, phase })),
+        onPercent: percent => setProgress(s => ({ ...s, percent })),
+        onTaskId: id => {
+          taskId.current = id;
+        }
+      });
+      const done = target?.tag ?? component.latest;
+      setProgress(s => ({
+        ...s,
+        phase: "done",
+        percent: 100,
+        resultText: t("patches.installDone", { name: component.name, version: done })
+      }));
+      await refresh(instance.path);
+    } catch (e) {
+      setProgress(s => ({
+        ...s,
+        error: e instanceof Error ? e.message : String(e)
+      }));
+    } finally {
+      setBusyKey("");
+    }
+  };
+
+  const statusOf = (component: PatchComponent) => {
+    const version = installed[component.key];
+    if (version === null) return { label: t("patches.notInstalled"), tone: "muted" as const };
+    if (version === "") return { label: t("patches.installedUnknown"), tone: "muted" as const };
+    if (component.latest && version === component.latest) {
+      return { label: t("patches.installed", { version }), tone: "ok" as const };
+    }
+    return { label: t("patches.installedOld", { version }), tone: "warn" as const };
+  };
+
+  return (
+    <ListViewPage
+      title={t("menu.patches")}
+      actions={
+        <Button
+          variant="ghost"
+          size="sm"
+          disabled={!instance || loading}
+          onClick={() => instance && void refresh(instance.path)}
+        >
+          <RefreshCw className="mr-1 h-4 w-4" />
+          {t("patches.refresh")}
+        </Button>
+      }
+    >
+      {loading && (
+        <div className="flex items-center gap-2 px-4 py-6 text-sm text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          {t("patches.loading")}
+        </div>
+      )}
+
+      {!loading && error && (
+        <div className="px-4 py-6 text-sm text-destructive">
+          {t("patches.loadFailed", { error })}
+        </div>
+      )}
+
+      {!loading &&
+        !error &&
+        components.map(component => {
+          const status = statusOf(component);
+          const busy = busyKey === component.key;
+          const outdated = component.latest && status.tone !== "ok" && installed[component.key] !== null;
+          return (
+            <div key={component.key} className="flex flex-col gap-2 px-4 py-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-sm font-medium">{component.name}</span>
+                {component.latest && (
+                  <Badge variant="outline" className="font-mono text-[11px]">
+                    {component.latest}
+                  </Badge>
+                )}
+                <Badge
+                  variant={status.tone === "ok" ? "secondary" : "outline"}
+                  className={
+                    status.tone === "warn"
+                      ? "border-amber-500/50 text-amber-600 dark:text-amber-400"
+                      : status.tone === "muted"
+                        ? "text-muted-foreground"
+                        : ""
+                  }
+                >
+                  {status.label}
+                </Badge>
+              </div>
+
+              <p className="text-xs text-muted-foreground">
+                {component.install_target === "bin"
+                  ? t("patches.targetBin")
+                  : t("patches.targetGame")}
+                {" · "}
+                <button
+                  type="button"
+                  className="underline decoration-dotted hover:text-foreground"
+                  onClick={() =>
+                    void backend.open(`${RESOURCE_HUB}/resource/${component.package_id}`)
+                  }
+                >
+                  {t("patches.openSite")}
+                </button>
+                {" · "}
+                <button
+                  type="button"
+                  className="underline decoration-dotted hover:text-foreground"
+                  onClick={() => void backend.open(component.homepage)}
+                >
+                  {t("patches.openUpstream")}
+                </button>
+              </p>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  size="sm"
+                  disabled={!instance || busy || !component.package_id}
+                  onClick={() => void runInstall(component, null)}
+                >
+                  {busy ? (
+                    <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Download className="mr-1 h-4 w-4" />
+                  )}
+                  {outdated && component.latest
+                    ? t("patches.updateTo", { version: component.latest })
+                    : t("patches.installLatest")}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={!instance || busy || !component.package_id || !component.versions}
+                  onClick={() => void openPicker(component)}
+                >
+                  <RotateCcw className="mr-1 h-4 w-4" />
+                  {t("patches.chooseVersion")}
+                </Button>
+                <span className="text-xs text-muted-foreground">
+                  {t("patches.versionCount", { count: component.versions })}
+                </span>
+              </div>
+            </div>
+          );
+        })}
+
+      {/* 版本选择 / 回退 */}
+      <Dialog open={!!picker} onOpenChange={v => !v && setPicker(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>
+              {t("patches.versionsTitle", { name: picker?.name ?? "" })}
+            </DialogTitle>
+          </DialogHeader>
+          {versionsLoading ? (
+            <div className="flex items-center gap-2 py-4 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              {t("patches.loading")}
+            </div>
+          ) : (
+            <div className="max-h-[60vh] overflow-auto">
+              <div className="divide-y">
+                {versions.map(item => {
+                  // 展示用上游版本号（note），下载/删除用文件序号（version）
+                  const tag = item.note || `v${item.version}`;
+                  const isInstalled = picker ? installed[picker.key] === tag : false;
+                  return (
+                    <div
+                      key={item.version}
+                      className="flex items-center justify-between gap-3 py-2"
+                    >
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-sm">{tag}</span>
+                          <span className="font-mono text-[11px] text-muted-foreground">
+                            #{item.version}
+                          </span>
+                          {item.is_current && (
+                            <Badge variant="outline" className="text-[11px]">
+                              {t("patches.latestTag")}
+                            </Badge>
+                          )}
+                          {isInstalled && (
+                            <Badge variant="secondary" className="text-[11px]">
+                              {t("patches.installedTag")}
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="truncate text-xs text-muted-foreground">
+                          {formatFileSize(item.file_size)}
+                          {" · "}
+                          {new Date(item.created_at).toLocaleDateString()}
+                          {" · "}
+                          <span className="font-mono">{item.file_name}</span>
+                        </p>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        disabled={busyKey === picker?.key}
+                        onClick={() =>
+                          picker &&
+                          void runInstall(picker, { version: item.version, tag })
+                        }
+                      >
+                        {t("patches.installThis")}
+                      </Button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+          <p className="text-xs text-muted-foreground">{t("patches.rollbackHint")}</p>
+        </DialogContent>
+      </Dialog>
+
+      <ImportProgressDialog
+        open={progress.open}
+        phase={progress.phase}
+        percent={progress.percent}
+        error={progress.error}
+        resultText={progress.resultText}
+        labels={{
+          connecting: t("patches.connecting"),
+          downloading: t("patches.downloading"),
+          importing: t("patches.extracting"),
+          done: t("patches.done")
+        }}
+        onCancel={() => {
+          if (taskId.current) void backend.cancelInstall(taskId.current);
+        }}
+        onClose={() => setProgress(s => ({ ...s, open: false, error: "", resultText: "" }))}
+      />
+    </ListViewPage>
+  );
+}

@@ -14,6 +14,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Input } from "@/components/ui/input";
 import AppSidebar from "@/components/AppSidebar";
 import GlobalDialogHost from "@/components/GlobalDialogHost";
+import PatchUpdateWatcher from "@/components/PatchUpdateWatcher";
 import ImportProgressDialog, {
   type ImportPhase
 } from "@/components/ImportProgressDialog";
@@ -492,6 +493,7 @@ function MainLayout() {
         <main className="relative flex-1 overflow-auto">
           <AppRoutes />
         </main>
+        <PatchUpdateWatcher />
         {importUrl && (
           <ImportProgressDialog
             open={true}

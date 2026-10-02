@@ -68,6 +68,27 @@ BMLPlus plugin (`RockoonIO.bmodp`) built via CMake + `build.ps1`. Sources in `sr
 - UI is **shadcn (React, "new-york" style)** on Tailwind v4 (`components.json`, CSS variables in `src/assets/styles.css`, `cn()` in `@/lib/utils`) — add primitives via the shadcn CLI, do not hand-roll them. Icons are `lucide-react`. Toasts via `sonner`. Dialogs/messages via `@/utils/ui/feedback` + `@/utils/ui/dialog-store` and `GlobalDialogHost.tsx`. **Do not add another UI library** — extend the existing shadcn set.
 - Rust: `?` propagation, `thiserror` for errors, `log` crate macros (`info!`, etc.).
 
+## Patches (download-site patches)
+
+补丁页（`/patches`）不是本地文件管理页：它对接下载站的补丁资源（BML / BML+ / 新 Player）。
+
+- **清单来源**：`GET https://dl.ballance.top/patches`。每一项自带安装提示：
+  `install_target`（`game` = 游戏根 / `bin` = 游戏根下的 Bin）、`strip_top_level`
+  （上游包外层是否多套一层目录，新 Player 包是）、`marker`（装完用来校验的文件）。
+  启动器不写死组件清单 —— 新增补丁只改下载站配置。
+- **版本号有两套，别弄混**：`GET /packages/{id}/versions` 里 `version` 是文件序号
+  （1、2、3…，用于下载与删除），`note` 才是与上游 GitHub 对齐的版本号（如 `v0.3.13`）。
+  下载地址用序号：`/packages/{id}/versions/{序号}/download`；传 tag 会 422。
+  对用户展示、与 `latest` 对比、记录已装版本，都用 `note`。
+- **安装**：`backend.patches.install(url, targetDir, stripTopLevel)` → Rust
+  `start_patch_install`，与原版游戏安装共用 `game-install:*` 事件与 `cancelInstall`。
+  装完校验 `marker` 是否存在，然后把版本记进 pref store 的 `patchVersions`。
+- **更新提醒**：`PatchUpdateWatcher` 启动时只检查**装过的**补丁（没装过的不打扰，
+  安装入口在补丁页）；用户点「稍后」会把版本写进 `seenPatchVersions`，同一版本不再提示。
+- **装原版游戏时**会先弹 `PatchOptionsDialog`，默认勾选新 Player + BML+（BML+ 依赖
+  新 Player，按这个顺序装），失败不推翻已装好的游戏，只提示去补丁页重试。
+- 手动装的补丁没有版本记录：界面显示「已安装（版本未知）」，更新按钮仍可用。
+
 ## Operational gotchas
 
 - **Windows-only**: macOS/Linux are commented out in `.github/workflows/release.yml`.

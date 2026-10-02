@@ -8,6 +8,7 @@ import ResourcesMods from "@/views/ResourcesMods";
 import ResourcesSkys from "@/views/ResourcesSkys";
 import ResourcesTextures from "@/views/ResourcesTextures";
 import ResourcesSounds from "@/views/ResourcesSounds";
+import Patches from "@/views/Patches";
 import Settings from "@/views/Settings";
 
 export type MenuItem =
@@ -83,6 +84,12 @@ export const getMenuItems = (): MenuItem[] => [
     route: "/mods",
     icon: "puzzle",
     view: ResourcesMods
+  },
+  {
+    label: t("menu.patches"),
+    route: "/patches",
+    icon: "wrench",
+    view: Patches
   },
   {
     label: t("menu.backgrounds"),

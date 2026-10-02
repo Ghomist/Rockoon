@@ -80,6 +80,10 @@ type PreferenceStore = {
 
   /** 点击地图行时是否弹出确认启动对话框 */
   confirmLaunchMap: boolean;
+  /** 已安装补丁的版本记录：{ [组件键]: 版本号 }（只记 Rockoon 自己装的） */
+  patchVersions: Record<string, string>;
+  /** 用户已经忽略过更新提示的补丁：{ [组件键]: 提示过的版本号 } */
+  seenPatchVersions: Record<string, string>;
 };
 
 type ProfileStore = {

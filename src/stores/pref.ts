@@ -26,7 +26,9 @@ const defaultState: PreferenceStore = {
   levelSlot: 0,
   ingameMotd: true,
   ingameMotdContent: "Launched from Rockoon!",
-  confirmLaunchMap: true
+  confirmLaunchMap: true,
+  patchVersions: {},
+  seenPatchVersions: {}
 };
 
 interface PrefActions {

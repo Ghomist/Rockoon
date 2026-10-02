@@ -103,10 +103,20 @@ const game = {
     invoke<undefined>("cancel_game_install", { id })
 };
 
+const patches = {
+  /**
+   * 从下载站下载补丁包（BML / BML+ / 新 Player）并解压到目标文件夹。
+   * 与原版安装共用 game-install:* 事件，取消也走 cancelInstall。
+   */
+  install: (url: string, targetDir: string, stripTopLevel: boolean) =>
+    invoke<string>("start_patch_install", { url, targetDir, stripTopLevel })
+};
+
 export default {
   ...common,
   ...ballance,
   ...fs,
   ...process,
-  ...game
+  ...game,
+  patches
 };
