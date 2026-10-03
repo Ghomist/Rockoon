@@ -83,7 +83,9 @@ export default function GlobalDialogHost() {
               </DialogHeader>
 
               {ContentFn && (
-                <div className="text-sm text-muted-foreground">
+                // min-w-0：让内部的横向滚动容器（选键键盘）能真的缩到弹窗宽度，
+                // 否则 flex 子项默认 min-width:auto，会把弹窗顶宽。
+                <div className="w-full min-w-0 text-sm text-muted-foreground">
                   <ContentFn />
                 </div>
               )}

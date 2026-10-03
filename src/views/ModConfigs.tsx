@@ -135,8 +135,9 @@ export default function ModConfigs() {
     const parsed = Number(current);
     dialog.create({
       title: label,
-      // 虚拟键盘一行比默认弹窗宽，这里放宽
-      className: "max-w-3xl",
+      // 虚拟键盘一行比默认弹窗宽；DialogContent 自带 sm:max-w-lg，
+      // 必须用同带 sm: 的类才能盖住它（无前缀的 max-w-* 只在窄屏生效）
+      className: "sm:max-w-2xl",
       content: () => (
         <VirtualKeyboard
           t={k => k}
