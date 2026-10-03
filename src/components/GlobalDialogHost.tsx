@@ -54,6 +54,8 @@ export default function GlobalDialogHost() {
   const confirm = useDialogStore(s => s.confirm);
   const cancel = useDialogStore(s => s.cancel);
 
+  // 页脚只在真的有按钮时出现：选键这类纯内容弹窗不应该看到一个空的确认按钮
+
   return (
     <>
       {dialogs.map(d => {
@@ -90,14 +92,20 @@ export default function GlobalDialogHost() {
                 </div>
               )}
 
-              <DialogFooter>
-                {d.negativeText && (
-                  <Button variant="outline" onClick={() => cancel(d.id)}>
-                    {d.negativeText}
-                  </Button>
-                )}
-                <Button onClick={() => confirm(d.id)}>{d.positiveText}</Button>
-              </DialogFooter>
+              {(d.negativeText || d.positiveText) && (
+                <DialogFooter>
+                  {d.negativeText && (
+                    <Button variant="outline" onClick={() => cancel(d.id)}>
+                      {d.negativeText}
+                    </Button>
+                  )}
+                  {d.positiveText && (
+                    <Button onClick={() => confirm(d.id)}>
+                      {d.positiveText}
+                    </Button>
+                  )}
+                </DialogFooter>
+              )}
             </DialogContent>
           </Dialog>
         );

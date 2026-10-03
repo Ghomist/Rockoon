@@ -133,7 +133,9 @@
       "7": "Rockoon is open source",
       "8": "Crafted by Ghomist",
       "9": "Have you tried speedrunning today?",
-      "10": "Also check out Celeste"
+      "10": "Also check out Celeste",
+      "11": "Regret looks sincere",
+      "12": "Whatever you do, don't DeformedWoodenBall!"
     }
   },
   "message": {
@@ -508,8 +510,8 @@
       "empty": "Nothing matches \"{query}\""
     },
     "empty": {
-      "map": "No custom maps in this folder yet",
-      "mod": "No mods installed yet"
+      "map": "No maps found",
+      "mod": "No mods found"
     },
     "config": {
       "button": "Config"
@@ -520,10 +522,6 @@
     "action": {
       "enable": "Enable",
       "disable": "Disable"
-    },
-    "empty": {
-      "map": "No maps found",
-      "mod": "No mods found"
     },
     "delete": {
       "button": "Delete",

@@ -32,8 +32,9 @@ export default function VirtualKeyboard({ t, value, onChange }: Props) {
       <p className="text-sm text-muted-foreground">
         {t("common.key.changeKeyTip")}
       </p>
-      {/* 一行约 540px：窗口/弹窗再窄也不能把内容顶出去，横向滚动兜底 */}
-      <div className="flex w-full flex-col items-start overflow-x-auto pb-1">
+      {/* 一行约 540px：窗口再窄也不能把内容顶出去。横向滚动作为兜底，
+          但把滚动条藏起来（用户要求弹窗里不出现横向滚动条）。 */}
+      <div className="flex w-full flex-col items-start overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {keySchema.map((line, i) => (
           <div key={i} className="flex items-center">
             {line.map(k => (

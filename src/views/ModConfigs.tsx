@@ -137,7 +137,7 @@ export default function ModConfigs() {
       title: label,
       // 虚拟键盘一行比默认弹窗宽；DialogContent 自带 sm:max-w-lg，
       // 必须用同带 sm: 的类才能盖住它（无前缀的 max-w-* 只在窄屏生效）
-      className: "sm:max-w-2xl",
+      className: "sm:max-w-3xl",
       content: () => (
         <VirtualKeyboard
           t={k => k}
