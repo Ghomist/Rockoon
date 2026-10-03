@@ -88,6 +88,21 @@ export async function installPatch(
   const targetDir = await patchTargetDir(component, instancePath);
   const url = downloadUrl(component, target?.version ?? null);
 
+  // 自己之前被互斥关系禁用过（BML.dll.disable）就先恢复回来，
+  // 否则重装完会同时留着 BML.dll 和 BML.dll.disable 两份文件。
+  const own = PATCH_MUTEX[component.key]?.disable;
+  if (own) {
+    try {
+      const dir = await join(instancePath, own.dir);
+      const disabled = `${own.file}.disable`;
+      if (await backend.exists(await join(dir, disabled))) {
+        await backend.enable(dir, disabled);
+      }
+    } catch (e) {
+      console.warn("Restore own disabled file failed:", e);
+    }
+  }
+
   return new Promise<void>((resolve, reject) => {
     let unlisten: (() => void)[] = [];
 
