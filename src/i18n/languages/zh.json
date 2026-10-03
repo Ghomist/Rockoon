@@ -93,6 +93,15 @@
   "brp": {
     "importButton": "导入资源包",
     "importing": "正在导入资源包...",
+    "skyTarget": {
+      "title": "这个天空盒装到哪一关？",
+      "hint": "包内文件用的是天空盒占位槽位（Sky_X_*），安装时会把 X 换成你选的关卡编号，因此只改这一关的天空。",
+      "keepX": "保留 X（自制地图用，不改原版关卡）",
+      "level": "第 {level} 关（{letter}）",
+      "sharedWith4": "（与第 4 关共用）",
+      "confirm": "安装",
+      "note": "原版各关天空编号：1→L 2→E 3→A 4→F 5→C 6→H 7→D 8→G 9→K 10→B 11→J 12→I。"
+    },
     "connecting": "正在连接...",
     "downloading": "正在下载并导入资源包...",
     "downloadingTitle": "正在下载",

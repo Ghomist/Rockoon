@@ -14,12 +14,14 @@ export type ImportTask = {
   name: string;
   /** true = 这是被依赖的资源，不是用户点的那一个 */
   isDependency: boolean;
+  /** 资源类别（取自下载站）；sky 包的文件名里有占位符，装前要先问装到哪一关 */
+  category?: string;
 };
 
 /** 依赖链最多跟这么深，防止脏数据成环 */
 const MAX_DEPTH = 5;
 
-type PackageInfo = { name: string; dependencies: string[] };
+type PackageInfo = { name: string; dependencies: string[]; category?: string };
 
 /** 从下载站地址里取资源 id：/packages/137/download */
 function packageIdFromUrl(url: string): number | null {
@@ -34,11 +36,16 @@ async function fetchPackageInfo(id: number): Promise<PackageInfo | null> {
     const data = (await res.json()) as {
       name?: unknown;
       dependencies?: unknown;
+      category?: unknown;
     };
     const dependencies = Array.isArray(data.dependencies)
       ? data.dependencies.map(String).filter(d => /^\d+$/.test(d))
       : [];
-    return { name: String(data.name ?? ""), dependencies };
+    return {
+      name: String(data.name ?? ""),
+      dependencies,
+      category: typeof data.category === "string" ? data.category : undefined
+    };
   } catch (err) {
     // 站点打不开、被 CSP 挡、资源已下架等：当作没有依赖，不要挡住安装。
     // （注意：CSP 拦 fetch 只在 webview 控制台报错，这里必须自己出声）
@@ -58,7 +65,11 @@ export async function buildImportQueue(mainUrl: string): Promise<ImportTask[]> {
   const tasks: ImportTask[] = [];
   const seen = new Set<number>();
 
-  const visit = async (id: number, depth: number, isDependency: boolean): Promise<void> => {
+  const visit = async (
+    id: number,
+    depth: number,
+    isDependency: boolean
+  ): Promise<void> => {
     if (seen.has(id) || depth > MAX_DEPTH) return;
     seen.add(id);
     const info = await fetchPackageInfo(id);
@@ -69,10 +80,13 @@ export async function buildImportQueue(mainUrl: string): Promise<ImportTask[]> {
     tasks.push({
       url: `${RESOURCE_HUB}/packages/${id}/download`,
       name: info.name,
-      isDependency
+      isDependency,
+      category: info.category
     });
   };
 
   await visit(mainId, 0, false);
-  return tasks.length ? tasks : [{ url: mainUrl, name: "", isDependency: false }];
+  return tasks.length
+    ? tasks
+    : [{ url: mainUrl, name: "", isDependency: false }];
 }

@@ -93,6 +93,15 @@
   "brp": {
     "importButton": "Import Package",
     "importing": "Importing package...",
+    "skyTarget": {
+      "title": "Which level should this skybox replace?",
+      "hint": "The package uses the sky placeholder slot (Sky_X_*). On install the X is replaced with your chosen level's letter, so only that level's sky changes.",
+      "keepX": "Keep X (custom-map slot, vanilla levels untouched)",
+      "level": "Level {level} ({letter})",
+      "sharedWith4": " (shared with level 4)",
+      "confirm": "Install",
+      "note": "Vanilla sky letters: 1→L 2→E 3→A 4→F 5→C 6→H 7→D 8→G 9→K 10→B 11→J 12→I."
+    },
     "connecting": "Connecting...",
     "downloading": "Downloading and importing package...",
     "downloadingTitle": "Downloading",

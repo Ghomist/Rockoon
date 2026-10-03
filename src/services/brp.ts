@@ -1,4 +1,5 @@
 import backend from "@/backend";
+import { askSkyTarget } from "@/services/sky";
 import { useAppStore } from "@/stores/app";
 import { dialog, message } from "@/utils/ui/feedback";
 import { t } from "@/i18n";
@@ -38,9 +39,27 @@ export async function importFromFile(
     });
     return null;
   }
+  // 天空盒包的文件名里 X 是占位符：先校验拿到类别，是 sky 就先问装到哪一关
+  let skyLetter: SkyLetter | undefined;
+  try {
+    const info = await backend.validateBrp(filePath, instance.path);
+    if (info.manifest.category === "sky") {
+      const chosen = await askSkyTarget();
+      if (chosen === null) return null; // 用户取消了安装
+      skyLetter = chosen;
+    }
+  } catch (e) {
+    dialog.error({
+      title: t("brp.import.failedTitle"),
+      content: t("brp.import.failed", { reason: String(e) }),
+      positiveText: t("common.dialog.confirm")
+    });
+    return null;
+  }
+
   const loading = message.loading(t("brp.importing"), { duration: 0 });
   try {
-    const result = await backend.importBrp(filePath, instance.path);
+    const result = await backend.importBrp(filePath, instance.path, skyLetter);
     loading.destroy();
     dialog.success({
       title: t("brp.import.successTitle"),
@@ -66,8 +85,12 @@ export async function importFromFile(
 
 /** Download a BRP from `url`, then validate + install.
  *  Non-blocking: fires `startBrpImport` on backend, listens for completion
- *  via Tauri events, shows loading/success/error toast. */
-export async function importFromUrl(url: string): Promise<string | null> {
+ *  via Tauri events, shows loading/success/error toast.
+ *  `skyLetter` 只对 sky 包有意义（把 Sky_X_* 的占位符换成目标关卡字母）。 */
+export async function importFromUrl(
+  url: string,
+  skyLetter?: SkyLetter
+): Promise<string | null> {
   const instance = useAppStore.getState().selectedInstanceData;
   if (!instance) {
     dialog.error({
@@ -79,7 +102,7 @@ export async function importFromUrl(url: string): Promise<string | null> {
   }
   const loading = message.loading(t("brp.downloading"), { duration: 0 });
   try {
-    const id = await backend.startBrpImport(url, instance.path);
+    const id = await backend.startBrpImport(url, instance.path, skyLetter);
 
     // Listen for completion — fire-and-forget, toast will update on result
     const unlisten = await listen<BrpImportCompleteEvent>(

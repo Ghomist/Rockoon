@@ -78,11 +78,19 @@ const fs = {
   // BRP (Ballance Resource Package)
   validateBrp: (archivePath: string, instancePath: string) =>
     invoke<BrpInfo>("validate_brp", { archivePath, instancePath }),
-  importBrp: (archivePath: string, instancePath: string) =>
-    invoke<BrpImportResult>("import_brp", { archivePath, instancePath }),
+  importBrp: (
+    archivePath: string,
+    instancePath: string,
+    skyLetter?: SkyLetter
+  ) =>
+    invoke<BrpImportResult>("import_brp", {
+      archivePath,
+      instancePath,
+      skyLetter
+    }),
   /** Start async BRP download + install. Returns a download ID immediately. */
-  startBrpImport: (url: string, instancePath: string) =>
-    invoke<string>("start_brp_import", { url, instancePath }),
+  startBrpImport: (url: string, instancePath: string, skyLetter?: SkyLetter) =>
+    invoke<string>("start_brp_import", { url, instancePath, skyLetter }),
   /** Cancel an in-progress BRP import by ID. */
   cancelBrpImport: (id: string) =>
     invoke<undefined>("cancel_brp_import", { id })

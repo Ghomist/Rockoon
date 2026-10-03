@@ -1,3 +1,22 @@
+/** 天空盒包里 `Sky_X_<方位>.bmp` 中的 X 是**占位符**：安装时会被替换成目标关卡的
+ *  字母（原版 1→L 2→E 3→A 4/13→F 5→C 6→H 7→D 8→G 9→K 10→B 11→J 12→I；M 是社区
+ *  "分离第 13 关" 补丁用的）。保持 "X" 则不替换，只给自制地图读的那个槽位。 */
+type SkyLetter =
+  | "X"
+  | "A"
+  | "B"
+  | "C"
+  | "D"
+  | "E"
+  | "F"
+  | "G"
+  | "H"
+  | "I"
+  | "J"
+  | "K"
+  | "L"
+  | "M";
+
 /** BRP manifest — mirrors the snake_case field names defined in the BRP spec. */
 type BrpManifest = {
   manifest_version: number;

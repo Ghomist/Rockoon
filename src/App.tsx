@@ -1,4 +1,10 @@
-import { startTransition, useCallback, useEffect, useMemo, useState } from "react";
+import {
+  startTransition,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState
+} from "react";
 import { ChevronDown, Check, Plus, Pencil, Trash2 } from "lucide-react";
 import { Toaster } from "@/components/ui/sonner";
 import { Button } from "@/components/ui/button";
@@ -35,6 +41,7 @@ import { useProfilesStore } from "@/stores/profiles";
 import { dialog, message } from "@/utils/ui/feedback";
 import { checkRunningInstance } from "@/services/launcher";
 import { importFromFile, describeBrp } from "@/services/brp";
+import { askSkyTarget } from "@/services/sky";
 import backend from "@/backend";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { getCurrentWindow } from "@tauri-apps/api/window";
@@ -126,6 +133,8 @@ function MainLayout() {
   const [importPercent, setImportPercent] = useState(0);
   const [importError, setImportError] = useState("");
   const [importResult, setImportResult] = useState("");
+  /** 天空盒包要装到哪一关（X 是占位符，安装时由后端替换成对应字母） */
+  const [skyLetter, setSkyLetter] = useState<SkyLetter | undefined>(undefined);
 
   const importCurrent = importQueue[0] ?? null;
 
@@ -138,6 +147,18 @@ function MainLayout() {
     setImportResult("");
     const queue = await buildImportQueue(url);
     setImportDepCount(queue.filter(task => task.isDependency).length);
+
+    // 天空盒包内的文件名是 Sky_X_<方位>.bmp（X 是占位符）：装之前问用户装到哪一关
+    setSkyLetter(undefined);
+    if (queue.some(task => task.category === "sky")) {
+      const letter = await askSkyTarget();
+      if (letter === null) {
+        setImportPending(false);
+        return; // 用户取消了安装
+      }
+      setSkyLetter(letter);
+    }
+
     setImportPending(false);
     setImportQueue(queue);
   }, []);
@@ -161,10 +182,12 @@ function MainLayout() {
     }
 
     // Start download on backend (returns immediately with an ID).
-    backend.startBrpImport(importCurrent.url, instance.path).then(id => {
-      if (disposed) return;
-      setImportId(id);
-    });
+    backend
+      .startBrpImport(importCurrent.url, instance.path, skyLetter)
+      .then(id => {
+        if (disposed) return;
+        setImportId(id);
+      });
 
     // Listen for progress events.
     listen<BrpImportProgressEvent>("brp-import:progress", event => {
@@ -186,7 +209,9 @@ function MainLayout() {
         }
         // 依赖装失败：跳过它继续装主资源，别把整个安装卡住
         if (importCurrent.isDependency) {
-          message.error(t("brp.import.depFailed", { name: importCurrent.name }));
+          message.error(
+            t("brp.import.depFailed", { name: importCurrent.name })
+          );
           setImportQueue(q => q.slice(1));
           return;
         }
@@ -221,7 +246,7 @@ function MainLayout() {
       disposed = true;
       unlisteners.forEach(fn => fn());
     };
-  }, [importCurrent?.url]);
+  }, [importCurrent?.url, skyLetter]);
 
   const handleImportCancel = () => {
     if (importId) {

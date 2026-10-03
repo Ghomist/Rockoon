@@ -19,12 +19,20 @@ pub fn validate_brp(archive_path: String, instance_path: String) -> RcResultWith
 
 /// Validate then install a BRP archive into the given instance. Refuses to
 /// install anything that fails validation.
+///
+/// `sky_letter`：sky 包里的 `Sky_X_*` 是占位符，这里指定要装到哪一关（A–L/M）；
+/// 不传或传 "X" 就保留 X（自制地图槽位）。
 #[command]
 pub fn import_brp(
     archive_path: String,
     instance_path: String,
+    sky_letter: Option<String>,
 ) -> RcResultWith<BrpInstallResult> {
-    brp::install_brp(Path::new(&archive_path), Path::new(&instance_path))
+    brp::install_brp(
+        Path::new(&archive_path),
+        Path::new(&instance_path),
+        sky_letter.as_deref(),
+    )
 }
 
 // ── Cancel Map ──────────────────────────────────────────────
@@ -79,6 +87,7 @@ pub fn start_brp_import(
     app: AppHandle,
     url: String,
     instance_path: String,
+    sky_letter: Option<String>,
 ) -> RcResultWith<String> {
     let id = unique_id();
     let cancel = register_cancel(&id);
@@ -87,7 +96,7 @@ pub fn start_brp_import(
     let id2 = id.clone();
 
     std::thread::spawn(move || {
-        run_brp_import(app2, id2, url, instance_path, cancel);
+        run_brp_import(app2, id2, url, instance_path, sky_letter, cancel);
     });
 
     Ok(id)
@@ -110,9 +119,10 @@ fn run_brp_import(
     id: String,
     url: String,
     instance_path: String,
+    sky_letter: Option<String>,
     cancel: Arc<AtomicBool>,
 ) {
-    let result = download_and_install(&app, &id, &url, &instance_path, &cancel);
+    let result = download_and_install(&app, &id, &url, &instance_path, sky_letter, &cancel);
     unregister_cancel(&id);
     let _ = app.emit("brp-import:complete", result);
 }
@@ -122,6 +132,7 @@ fn download_and_install(
     id: &str,
     url: &str,
     instance_path: &str,
+    sky_letter: Option<String>,
     cancel: &Arc<AtomicBool>,
 ) -> BrpImportCompletePayload {
     let fail = |msg: &str| BrpImportCompletePayload {
@@ -221,7 +232,7 @@ fn download_and_install(
         return fail("Download cancelled");
     }
 
-    match brp::install_brp(&tmp, Path::new(instance_path)) {
+    match brp::install_brp(&tmp, Path::new(instance_path), sky_letter.as_deref()) {
         Ok(result) => {
             let _ = std::fs::remove_file(&tmp);
             BrpImportCompletePayload {

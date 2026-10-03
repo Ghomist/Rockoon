@@ -11,8 +11,18 @@ use std::io::Read;
 use std::path::{Path, PathBuf};
 use zip::ZipArchive;
 
-/// vanilla sky direction suffixes — Sky_X_{?}.bmp, X is literal
+/// 原版天空盒的五个方位后缀
 const SKY_DIRECTIONS: &[&str] = &["Back", "Down", "Front", "Left", "Right"];
+
+/// sky 包里 `Sky_X_<方位>.bmp` 的 `X` 是**占位符**（不是字面文件名）：安装到某一关时
+/// 会被替换成那一关的字母（原版：1→L 2→E 3→A 4/13→F 5→C 6→H 7→D 8→G 9→K 10→B 11→J 12→I）。
+/// 保持 `X` 不替换 = 只给自制地图用的那个槽位（旧站命名惯例）。
+const SKY_PLACEHOLDER: &str = "X";
+
+/// 可接受的替换字母：原版的 A–L（M 是社区“分离第 13 关”补丁用的）+ 占位符本身
+const SKY_LETTERS: &[&str] = &[
+    "X", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M",
+];
 
 /// All categories defined by BRP spec §4
 const SUPPORTED_CATEGORIES: &[&str] = &[
@@ -317,7 +327,7 @@ fn validate_sky(content_files: &[String]) -> Result<(), RcError> {
         let stem = &f[..f.len() - ".bmp".len()];
         let Some(suffix) = stem.strip_prefix("Sky_X_") else {
             return Err(v_err(format!(
-                "V14: sky 文件名必须形如 Sky_X_{{方向}}.bmp（字面 X）：{}",
+                "V14: sky 文件名必须形如 Sky_X_{{方向}}.bmp（X 为占位符，安装时替换成目标关卡字母）：{}",
                 f
             )));
         };
@@ -359,11 +369,35 @@ fn validate_texture(content_files: &[String], instance_path: &Path) -> Result<()
 
 /// Install a validated BRP archive into the given instance. Re-validates first
 /// to refuse installing anything non-conformant.
+/// 安装 BRP 到实例目录。
+///
+/// `sky_letter`：sky 类别专用于替换 `Sky_X_*` 里那个占位符 X 的关卡字母
+/// （`None` 或 `"X"` = 不替换，保留给自制地图槽位）。非 sky 类别忽略此参数。
 pub fn install_brp(
     archive_path: &Path,
     instance_path: &Path,
+    sky_letter: Option<&str>,
 ) -> RcResultWith<BrpInstallResult> {
     let info = validate_brp(archive_path, instance_path)?;
+
+    // 先定下要替换成的字母：非法值直接拒绝，避免装出一堆没人会读的文件
+    let sky_letter = match sky_letter {
+        Some(letter) if info.manifest.category == "sky" => {
+            let letter = letter.trim().to_uppercase();
+            if !SKY_LETTERS.contains(&letter.as_str()) {
+                return Err(v_err(format!(
+                    "天空盒目标关卡字母非法：{}（应为 A–L 或 M）",
+                    letter
+                )));
+            }
+            if letter == SKY_PLACEHOLDER {
+                None
+            } else {
+                Some(letter)
+            }
+        }
+        _ => None,
+    };
 
     let file = File::open(archive_path)?;
     let mut archive = ZipArchive::new(file)?;
@@ -386,7 +420,14 @@ pub fn install_brp(
         if rel.is_empty() {
             continue;
         }
-        let dest = target_dir.join(rel);
+        // sky：把占位符 X 换成目标关卡的字母（只动文件名首缀，路径其它部分不动）
+        let rel = match &sky_letter {
+            Some(letter) if rel.starts_with("Sky_X_") => {
+                format!("Sky_{}_{}", letter, &rel["Sky_X_".len()..])
+            }
+            _ => rel.to_string(),
+        };
+        let dest = target_dir.join(&rel);
         // path-traversal guard (V7 enforced at validate, but re-check on disk)
         if !dest.starts_with(&target_dir) {
             return Err(v_err(format!("安装路径越界：{}", dest.display())));
@@ -473,4 +514,101 @@ fn list_vanilla_filenames(dir: &Path) -> HashSet<String> {
         }
     }
     out
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::io::Write;
+    use zip::write::SimpleFileOptions;
+
+    const DIRS: [&str; 5] = ["Back", "Down", "Front", "Left", "Right"];
+
+    /// 写一个最小合法 sky brp：content/ 下 5 个 Sky_X_<方位>.bmp
+    fn write_sky_brp(path: &Path) {
+        let file = File::create(path).unwrap();
+        let mut zw = zip::ZipWriter::new(file);
+        let opts = SimpleFileOptions::default();
+        zw.start_file("manifest.json", opts).unwrap();
+        zw.write_all(r#"{"manifest_version":1,"category":"sky","name":"sky test"}"#.as_bytes())
+            .unwrap();
+        for d in DIRS {
+            zw.start_file(format!("content/Sky_X_{}.bmp", d), opts)
+                .unwrap();
+            zw.write_all(b"BMfake").unwrap();
+        }
+        zw.finish().unwrap();
+    }
+
+    fn fresh(name: &str) -> PathBuf {
+        let dir = std::env::temp_dir().join(format!("rockoon-brp-test-{}", name));
+        let _ = fs::remove_dir_all(&dir);
+        fs::create_dir_all(&dir).unwrap();
+        dir
+    }
+
+    fn names_of(result: &BrpInstallResult) -> Vec<String> {
+        let mut v: Vec<String> = result
+            .installed_paths
+            .iter()
+            .map(|p| {
+                Path::new(p)
+                    .file_name()
+                    .unwrap()
+                    .to_string_lossy()
+                    .to_string()
+            })
+            .collect();
+        v.sort();
+        v
+    }
+
+    #[test]
+    fn sky_placeholder_is_replaced_with_target_letter() {
+        let dir = fresh("replace");
+        let brp = dir.join("sky.brp");
+        let inst = dir.join("inst");
+        write_sky_brp(&brp);
+
+        // 第 1 关的字母是 L；小写输入也要认
+        let res = install_brp(&brp, &inst, Some("l")).unwrap();
+        let names = names_of(&res);
+        assert_eq!(names.len(), 5, "应装 5 个方向");
+        assert!(
+            names.iter().all(|n| n.starts_with("Sky_L_")),
+            "占位符应被替换为 Sky_L_*：{:?}",
+            names
+        );
+        assert!(inst.join("Textures").join("Sky").join("Sky_L_Back.bmp").exists());
+        assert!(!inst.join("Textures").join("Sky").join("Sky_X_Back.bmp").exists());
+    }
+
+    #[test]
+    fn sky_keeps_placeholder_without_or_with_x_letter() {
+        for letter in [None, Some("X")] {
+            let dir = fresh("keep");
+            let brp = dir.join("sky.brp");
+            let inst = dir.join("inst");
+            write_sky_brp(&brp);
+
+            let res = install_brp(&brp, &inst, letter).unwrap();
+            let names = names_of(&res);
+            assert!(
+                names.iter().all(|n| n.starts_with("Sky_X_")),
+                "不指定关卡时应保留 X：{:?}",
+                names
+            );
+        }
+    }
+
+    #[test]
+    fn sky_rejects_unknown_letter() {
+        let dir = fresh("bad-letter");
+        let brp = dir.join("sky.brp");
+        let inst = dir.join("inst");
+        write_sky_brp(&brp);
+
+        let err = install_brp(&brp, &inst, Some("Z")).unwrap_err();
+        assert!(format!("{}", err).contains("非法"), "错误信息应说明字母非法：{}", err);
+    }
 }
