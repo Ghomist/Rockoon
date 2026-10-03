@@ -5,11 +5,15 @@ import backend from "@/backend";
 import { useT } from "@/i18n";
 import { RESOURCE_HUB } from "@/services/game";
 import {
+  DEFAULT_PLAYER_KEY,
   detectInstalled,
   fetchPatches,
   fetchPatchVersions,
   findConflicts,
   installPatch,
+  installedPlayerBuild,
+  isPlayerPatch,
+  isSecondaryPlayer,
   mutexGroupOf,
   resolveConflicts,
   type PatchInstallTarget
@@ -44,7 +48,13 @@ import {
  *
  * 补丁清单与安装提示都来自下载站（GET /patches），这里只负责把文件装到
  * 正确的位置（游戏根或 Bin）并记下版本号。没选游戏时提示去选一个。
+ *
+ * 「新 Player」的两种构建（vc6 / msvc2022）产出的文件完全一样，所以合并成一项：
+ * 列表里只出现一次，默认装主构建（vc6），想装另一种去「选择版本」里挑。
  */
+
+/** 版本列表里的一项：带上它属于哪个构建（只有 Player 需要） */
+type PickerItem = PatchVersion & { build?: PatchComponent };
 export default function Patches() {
   const t = useT();
   const [loading, setLoading] = useState(true);
@@ -53,7 +63,7 @@ export default function Patches() {
   const [installed, setInstalled] = useState<Record<string, string | null>>({});
   const [busyKey, setBusyKey] = useState("");
   const [picker, setPicker] = useState<PatchComponent | null>(null);
-  const [versions, setVersions] = useState<PatchVersion[]>([]);
+  const [versions, setVersions] = useState<PickerItem[]>([]);
   const [versionsLoading, setVersionsLoading] = useState(false);
   const [progress, setProgress] = useState<{
     open: boolean;
@@ -95,13 +105,27 @@ export default function Patches() {
 
   const instance = useWaitForSelectedInstance(data => refresh(data.path));
 
-  const openPicker = async (component: PatchComponent) => {
-    if (!component.package_id) return;
+  /** 打开版本列表；Player 会把两种构建的版本合在一起展示 */
+  const openPicker = async (
+    component: PatchComponent,
+    extras: PatchComponent[] = []
+  ) => {
     setPicker(component);
     setVersions([]);
     setVersionsLoading(true);
     try {
-      setVersions(await fetchPatchVersions(component.package_id));
+      const groups = [component, ...extras];
+      const lists = await Promise.all(
+        groups.map(async c => {
+          if (!c.package_id) return [] as PickerItem[];
+          const items = await fetchPatchVersions(c.package_id);
+          return items.map(item => ({ ...item, build: c }));
+        })
+      );
+      // 两种构建的版本号是各自的文件序号，没法比大小 —— 按发布时间排
+      setVersions(
+        lists.flat().sort((a, b) => (a.created_at < b.created_at ? 1 : -1))
+      );
     } catch (e) {
       message.error(e instanceof Error ? e.message : String(e));
     } finally {
@@ -202,6 +226,10 @@ export default function Patches() {
     await doInstall(pending.component, pending.target);
   };
 
+  /** 新 Player 两种构建的名字（合并展示时用，下载站的组件名带版本细节） */
+  const buildLabel = (key: string) =>
+    key === DEFAULT_PLAYER_KEY ? t("patches.buildVc6") : t("patches.buildMsvc");
+
   const statusOf = (component: PatchComponent) => {
     const version = installed[component.key];
     if (version === null)
@@ -250,121 +278,147 @@ export default function Patches() {
 
       {!loading &&
         !error &&
-        components.map(component => {
-          const status = statusOf(component);
-          const busy = busyKey === component.key;
-          const outdated =
-            component.latest &&
-            status.tone !== "ok" &&
-            installed[component.key] !== null;
-          // 同组里装着的其它补丁（安装会被禁用/覆盖，提前说一声）
-          const group = mutexGroupOf(component.key);
-          const conflicting =
-            group === undefined
-              ? []
-              : components.filter(
-                  c =>
-                    c.key !== component.key &&
-                    mutexGroupOf(c.key) === group &&
-                    typeof installed[c.key] === "string"
-                );
-          return (
-            <div key={component.key} className="flex flex-col gap-2 px-4 py-3">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="text-sm font-medium">{component.name}</span>
-                {component.latest && (
-                  <Badge variant="outline" className="font-mono text-[11px]">
-                    {component.latest}
-                  </Badge>
-                )}
-                <Badge
-                  variant={status.tone === "ok" ? "secondary" : "outline"}
-                  className={
-                    status.tone === "warn"
-                      ? "border-amber-500/50 text-amber-600 dark:text-amber-400"
-                      : status.tone === "muted"
-                        ? "text-muted-foreground"
-                        : ""
-                  }
-                >
-                  {status.label}
-                </Badge>
-              </div>
-
-              <p className="text-xs text-muted-foreground">
-                {component.install_target === "bin"
-                  ? t("patches.targetBin")
-                  : t("patches.targetGame")}
-                {" · "}
-                <button
-                  type="button"
-                  className="underline decoration-dotted hover:text-foreground"
-                  onClick={() =>
-                    void backend.open(
-                      `${RESOURCE_HUB}/resource/${component.package_id}`
-                    )
-                  }
-                >
-                  {t("patches.openSite")}
-                </button>
-                {" · "}
-                <button
-                  type="button"
-                  className="underline decoration-dotted hover:text-foreground"
-                  onClick={() => void backend.open(component.homepage)}
-                >
-                  {t("patches.openUpstream")}
-                </button>
-              </p>
-
-              <div className="flex flex-wrap items-center gap-2">
-                <Button
-                  size="sm"
-                  disabled={!instance || busy || !component.package_id}
-                  onClick={() => void requestInstall(component, null)}
-                >
-                  {busy ? (
-                    <Loader2 className="mr-1 h-4 w-4 animate-spin" />
-                  ) : (
-                    <Download className="mr-1 h-4 w-4" />
+        components
+          .filter(c => !isSecondaryPlayer(c.key))
+          .map(component => {
+            const status = statusOf(component);
+            const busy = busyKey === component.key;
+            // 新 Player：两种构建合并展示，装过的话把构建也标出来（分不清就不标）
+            const playerBuild =
+              isPlayerPatch(component.key) && installed[component.key] !== null
+                ? installedPlayerBuild()
+                : undefined;
+            const statusLabel = playerBuild
+              ? `${status.label} · ${buildLabel(playerBuild)}`
+              : status.label;
+            const outdated =
+              component.latest &&
+              status.tone !== "ok" &&
+              installed[component.key] !== null;
+            // 同组里装着的其它补丁（安装会被禁用/覆盖，提前说一声）
+            const group = mutexGroupOf(component.key);
+            const conflicting =
+              group === undefined
+                ? []
+                : components.filter(
+                    c =>
+                      c.key !== component.key &&
+                      mutexGroupOf(c.key) === group &&
+                      typeof installed[c.key] === "string"
+                  );
+            return (
+              <div
+                key={component.key}
+                className="flex flex-col gap-2 px-4 py-3"
+              >
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-sm font-medium">
+                    {isPlayerPatch(component.key)
+                      ? t("patches.newPlayer")
+                      : component.name}
+                  </span>
+                  {component.latest && (
+                    <Badge variant="outline" className="font-mono text-[11px]">
+                      {component.latest}
+                    </Badge>
                   )}
-                  {outdated && component.latest
-                    ? t("patches.updateTo", { version: component.latest })
-                    : t("patches.installLatest")}
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled={
-                    !instance ||
-                    busy ||
-                    !component.package_id ||
-                    !component.versions
-                  }
-                  onClick={() => void openPicker(component)}
-                >
-                  <RotateCcw className="mr-1 h-4 w-4" />
-                  {t("patches.chooseVersion")}
-                </Button>
-                <span className="text-xs text-muted-foreground">
-                  {t("patches.versionCount", { count: component.versions })}
-                </span>
-              </div>
+                  <Badge
+                    variant={status.tone === "ok" ? "secondary" : "outline"}
+                    className={
+                      status.tone === "warn"
+                        ? "border-amber-500/50 text-amber-600 dark:text-amber-400"
+                        : status.tone === "muted"
+                          ? "text-muted-foreground"
+                          : ""
+                    }
+                  >
+                    {statusLabel}
+                  </Badge>
+                </div>
 
-              {conflicting.length > 0 && (
-                <p className="text-xs text-amber-600 dark:text-amber-400">
-                  {group === "player"
-                    ? t("patches.conflictHintOverwrite", {
-                        names: conflicting.map(c => c.name).join(" / ")
-                      })
-                    : t("patches.conflictHintDisable", {
-                        names: conflicting.map(c => c.name).join(" / ")
-                      })}
+                <p className="text-xs text-muted-foreground">
+                  {component.install_target === "bin"
+                    ? t("patches.targetBin")
+                    : t("patches.targetGame")}
+                  {" · "}
+                  <button
+                    type="button"
+                    className="underline decoration-dotted hover:text-foreground"
+                    onClick={() =>
+                      void backend.open(
+                        `${RESOURCE_HUB}/resource/${component.package_id}`
+                      )
+                    }
+                  >
+                    {t("patches.openSite")}
+                  </button>
+                  {" · "}
+                  <button
+                    type="button"
+                    className="underline decoration-dotted hover:text-foreground"
+                    onClick={() => void backend.open(component.homepage)}
+                  >
+                    {t("patches.openUpstream")}
+                  </button>
                 </p>
-              )}
-            </div>
-          );
-        })}
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button
+                    size="sm"
+                    disabled={!instance || busy || !component.package_id}
+                    onClick={() => void requestInstall(component, null)}
+                  >
+                    {busy ? (
+                      <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Download className="mr-1 h-4 w-4" />
+                    )}
+                    {outdated && component.latest
+                      ? t("patches.updateTo", { version: component.latest })
+                      : t("patches.installLatest")}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={
+                      !instance ||
+                      busy ||
+                      !component.package_id ||
+                      !component.versions
+                    }
+                    onClick={() =>
+                      void openPicker(
+                        component,
+                        isPlayerPatch(component.key)
+                          ? components.filter(c => isSecondaryPlayer(c.key))
+                          : []
+                      )
+                    }
+                  >
+                    <RotateCcw className="mr-1 h-4 w-4" />
+                    {t("patches.chooseVersion")}
+                  </Button>
+                  <span className="text-xs text-muted-foreground">
+                    {t("patches.versionCount", { count: component.versions })}
+                  </span>
+                </div>
+
+                {isPlayerPatch(component.key) && (
+                  <p className="text-xs text-muted-foreground">
+                    {t("patches.defaultBuildHint")}
+                  </p>
+                )}
+
+                {conflicting.length > 0 && (
+                  <p className="text-xs text-amber-600 dark:text-amber-400">
+                    {t("patches.conflictHintDisable", {
+                      names: conflicting.map(c => c.name).join(" / ")
+                    })}
+                  </p>
+                )}
+              </div>
+            );
+          })}
 
       {/* 版本选择 / 回退 */}
       <Dialog open={!!picker} onOpenChange={v => !v && setPicker(null)}>
@@ -399,6 +453,11 @@ export default function Patches() {
                           <span className="font-mono text-[11px] text-muted-foreground">
                             #{item.version}
                           </span>
+                          {item.build && (
+                            <Badge variant="outline" className="text-[11px]">
+                              {buildLabel(item.build.key)}
+                            </Badge>
+                          )}
                           {item.is_current && (
                             <Badge variant="outline" className="text-[11px]">
                               {t("patches.latestTag")}
@@ -424,7 +483,7 @@ export default function Patches() {
                         disabled={busyKey === picker?.key}
                         onClick={() =>
                           picker &&
-                          void requestInstall(picker, {
+                          void requestInstall(item.build ?? picker, {
                             version: item.version,
                             tag
                           })
@@ -460,13 +519,9 @@ export default function Patches() {
           {pendingConflict && (
             <div className="space-y-2 text-sm">
               <p className="font-medium">
-                {mutexGroupOf(pendingConflict.component.key) === "player"
-                  ? t("patches.conflictWillOverwrite", {
-                      names: pendingConflict.items.map(c => c.name).join(" / ")
-                    })
-                  : t("patches.conflictWillDisable", {
-                      names: pendingConflict.items.map(c => c.name).join(" / ")
-                    })}
+                {t("patches.conflictWillDisable", {
+                  names: pendingConflict.items.map(c => c.name).join(" / ")
+                })}
               </p>
               <p className="text-muted-foreground">
                 {t("patches.conflictAfter", {

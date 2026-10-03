@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import { Trash2 } from "lucide-react";
+import { SlidersHorizontal, Trash2 } from "lucide-react";
 import { join } from "@tauri-apps/api/path";
+import { useNavigate } from "react-router-dom";
 import backend from "@/backend";
 import { useAppStore } from "@/stores/app";
 import { useT } from "@/i18n";
@@ -31,13 +32,20 @@ interface Props {
   type: ResourceType;
 }
 
+/** 配置文件名 → 比较用的基名（去掉扩展名，小写） */
+const modConfigBase = (fileName: string) =>
+  fileName.replace(/\.(cfg|ini)$/i, "").toLowerCase();
+
 export default function ResourcesPageBase({ type }: Props) {
   const t = useT();
+  const navigate = useNavigate();
   const selectedInstanceData = useAppStore(s => s.selectedInstanceData);
   const refreshKey = useAppStore(s => s.refreshKey);
   const [rscPath, setRscPath] = useState("");
   const [rscList, setRscList] = useState<ManagedFile[]>([]);
   const [query, setQuery] = useState("");
+  /** mod 页专用：ModLoader/Configs 里的配置文件名（给「配置」按钮找目标） */
+  const [configNames, setConfigNames] = useState<string[]>([]);
 
   const schema = resourcePageSchema[type];
   const rscName = t("resources.name." + type);
@@ -45,6 +53,17 @@ export default function ResourcesPageBase({ type }: Props) {
   const isFileDisabled = (fileName: string) => fileName.endsWith(".disable");
   const getDisplayName = (fileName: string) =>
     isFileDisabled(fileName) ? fileName.replace(".disable", "") : fileName;
+
+  /**
+   * 这个 mod 有没有配置文件？按「去掉扩展名后的名字」匹配（CameraUtilities.bmodp
+   * ↔ CameraUtilities.cfg，GoldenMode/ ↔ GoldenMode.cfg），没配置的就不给入口。
+   */
+  const configFor = (fileName: string) => {
+    const base = getDisplayName(fileName)
+      .replace(/\.[^.]+$/, "")
+      .toLowerCase();
+    return configNames.find(name => modConfigBase(name) === base);
+  };
   const getFileExtension = (fileName: string) => {
     const name = getDisplayName(fileName);
     const parts = name.split(".");
@@ -57,6 +76,20 @@ export default function ResourcesPageBase({ type }: Props) {
     setRscPath(path);
     const list = await backend.list(path, schema.filter);
     setRscList(list);
+    if (type === "mod") {
+      // 顺手读一下配置文件列表：有配置的 mod 才能在行尾给个「配置」入口
+      try {
+        const cfgDir = await join(
+          selectedInstanceData.path,
+          "ModLoader",
+          "Configs"
+        );
+        const files = await backend.list(cfgDir, ["cfg", "ini"]);
+        setConfigNames(files.map(f => f.name));
+      } catch {
+        setConfigNames([]);
+      }
+    }
     if (showMessage) message.success(t("resources.refresh.success"));
   };
 
@@ -186,6 +219,22 @@ export default function ResourcesPageBase({ type }: Props) {
                 <span>{formatFileSize(file.size)}</span>
               </div>
             </div>
+
+            {type === "mod" && configFor(file.name) && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={e => {
+                  e.stopPropagation();
+                  navigate(
+                    `/mod-configs?mod=${encodeURIComponent(configFor(file.name)!)}`
+                  );
+                }}
+              >
+                <SlidersHorizontal className="size-4" />
+                {t("resources.config.button")}
+              </Button>
+            )}
 
             <Button
               variant="ghost"

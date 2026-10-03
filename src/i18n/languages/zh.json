@@ -48,6 +48,10 @@
     "conflictConfirm": "继续安装",
     "conflictCancel": "取消",
     "conflictResolved": "已禁用 {names}",
+    "newPlayer": "新 Player",
+    "buildVc6": "vc6 构建",
+    "buildMsvc": "msvc2022 构建",
+    "defaultBuildHint": "默认安装 vc6 构建（不依赖 VC++ 运行库）；想换成 msvc2022 版，在「选择版本」里挑带 msvc2022 标记的版本。",
     "installOptionsMutexNote": "BML 与 BML+ 互斥，只能装一个（不确定就保持默认的 BML+）。",
     "updateTitle": "补丁有更新",
     "updateBody": "检测到以下补丁有新版本：",
@@ -191,6 +195,9 @@
     "empty": {
       "map": "这个目录里还没有自制地图",
       "mod": "还没有安装 mod"
+    },
+    "config": {
+      "button": "配置"
     },
     "status": {
       "disabled": "已禁用"
@@ -382,7 +389,8 @@
     "saved": "已保存 {count} 个配置文件",
     "dirty": "已修改",
     "saveFailed": "保存失败：{error}",
-    "loadFailed": "读取配置失败：{error}"
+    "loadFailed": "读取配置失败：{error}",
+    "pickOne": "在左侧选一个 mod 来编辑它的配置。"
   },
   "gameConfig": {
     "selectInstance": "请先选择一个游戏实例",

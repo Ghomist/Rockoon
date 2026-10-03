@@ -70,6 +70,11 @@ export async function detectInstalled(
   component: PatchComponent,
   instancePath: string
 ): Promise<string | null> {
+  // 新 Player：两种构建产出的文件一样，磁盘上只有「装了 / 没装」两种状态
+  if (isPlayerPatch(component.key)) {
+    if (!(await detectPlayer(instancePath))) return null;
+    return installedPlayerVersion() ?? "";
+  }
   const dir = await patchTargetDir(component, instancePath);
   if (!(await backend.exists(await join(dir, component.marker)))) return null;
   return installedVersion(component.key) ?? "";
@@ -139,12 +144,21 @@ export async function installPatch(
               }
               // 记录装的是哪个版本，供更新检测与「已安装」展示使用
               const installed = target?.tag ?? component.latest;
-              usePrefStore.setState(s => ({
-                patchVersions: {
+              usePrefStore.setState(s => {
+                const merged = {
                   ...(s.patchVersions ?? {}),
                   [component.key]: installed
-                }
-              }));
+                };
+                // 两种 Player 构建产出的文件一样，只保留刚装的那个记录
+                const next = isPlayerPatch(component.key)
+                  ? Object.fromEntries(
+                      Object.entries(merged).filter(
+                        ([key]) => !isPlayerPatch(key) || key === component.key
+                      )
+                    )
+                  : merged;
+                return { patchVersions: next };
+              });
               hooks.onPhase("done");
               hooks.onPercent(100);
               resolve();
@@ -172,14 +186,13 @@ export async function installPatch(
  * - `modloader`（BML / BML+）：两个加载器各往 BuildingBlocks/ 放自己的 DLL，
  *   同时存在会互相抢注入 —— 用哪个是玩家的自由，所以装一个就把另一个**禁用**
  *   （改名成 .disable，文件还在，随时能装回来）。
- * - `player`（vc6 / msvc2022）：两种构建产出的是同一批文件（Bin/Player.exe、
- *   ConfigTool.exe…），装第二个会直接覆盖第一个，没有「同时存在」这回事，
- *   所以只需要提示 + 清掉旧的版本记录。
+ * - Player 的两种构建（vc6 / msvc2022）**不在表里**：它们产出的文件完全一样，
+ *   磁盘上分不出装的是哪个，所以启动器把它们当成同一个「新 Player」处理（只能二选一）。
  */
 export const PATCH_MUTEX: Record<
   string,
   {
-    group: "modloader" | "player";
+    group: "modloader";
     conflicts: string[];
     disable?: { dir: string; file: string };
   }
@@ -193,22 +206,67 @@ export const PATCH_MUTEX: Record<
     group: "modloader",
     conflicts: ["bml"],
     disable: { dir: "BuildingBlocks", file: "BMLPlus.dll" }
-  },
-  "player-vc6": { group: "player", conflicts: ["player-msvc2022"] },
-  "player-msvc2022": { group: "player", conflicts: ["player-vc6"] }
+  }
 };
 
 /** 这个补丁属于哪一组互斥（不在表里的就不是互斥补丁） */
-export function mutexGroupOf(key: string): "modloader" | "player" | undefined {
+export function mutexGroupOf(key: string): "modloader" | undefined {
   return PATCH_MUTEX[key]?.group;
 }
 
+/** 「新 Player」的两种构建：同一个补丁，同时只可能有一个 */
+export const PLAYER_KEYS = ["player-vc6", "player-msvc2022"] as const;
+/** 默认装哪个构建（用户可在版本列表里选另一种） */
+export const DEFAULT_PLAYER_KEY = "player-vc6";
+
+/** 下载站上的这两个组件其实是同一个东西（新 Player） */
+export function isPlayerPatch(key: string): boolean {
+  return (PLAYER_KEYS as readonly string[]).includes(key);
+}
+
+/** 玩家看到的列表里，两种构建只展示主构建那一项 */
+export function isSecondaryPlayer(key: string): boolean {
+  return isPlayerPatch(key) && key !== DEFAULT_PLAYER_KEY;
+}
+
+/** 原版 Ballance 的 Player.exe 大小；存在且不等于它 = 装了新 Player */
+const VANILLA_PLAYER_SIZE = 155648;
+
 /**
- * 找出与它互斥、且当前确实装着的补丁（装之前要先处理掉这些）。
+ * 新 Player 装了没装。
  *
- * 提醒：两种 Player 构建在磁盘上分辨不出来（同一个文件名），只能靠启动器记的
- * 安装版本判断，手动装的检测不到 —— 已知限制，UI 上写清楚。
+ * 不看安装标记（两种构建的 marker 都是 Bin/Player.exe，没区分度），而是直接看
+ * 文件在不在、大小是不是原版那份 —— 和启动器选实例时的判定一致。
+ * 注意：手动丢进去的 Player.exe 也会被认成装了（故意如此，对玩家更直观）。
  */
+export async function detectPlayer(instancePath: string): Promise<boolean> {
+  try {
+    const exe = await join(instancePath, "Bin", "Player.exe");
+    if (!(await backend.exists(exe))) return false;
+    return (await backend.size(exe)) !== VANILLA_PLAYER_SIZE;
+  } catch {
+    return false;
+  }
+}
+
+/** 已装的新 Player 是哪种构建（两边都有记录 = 分不清，下次装一次就自愈） */
+export function installedPlayerBuild():
+  | (typeof PLAYER_KEYS)[number]
+  | undefined {
+  const versions = usePrefStore.getState().patchVersions ?? {};
+  const hits = PLAYER_KEYS.filter(key => versions[key]);
+  return hits.length === 1 ? hits[0] : undefined;
+}
+
+/** 新 Player 记录里的版本号（不管当时装的是哪种构建） */
+export function installedPlayerVersion(): string | undefined {
+  const versions = usePrefStore.getState().patchVersions ?? {};
+  return (
+    versions[DEFAULT_PLAYER_KEY] ?? versions["player-msvc2022"] ?? undefined
+  );
+}
+
+/** 找出与它互斥、且当前确实装着的补丁（装之前要先处理掉这些） */
 export async function findConflicts(
   component: PatchComponent,
   instancePath: string,
@@ -272,6 +330,8 @@ export async function checkPatchUpdates(
 
   for (const component of components) {
     if (!component.package_id || !component.latest) continue;
+    // 两种 Player 构建是同一个补丁，只按主构建提示一次
+    if (isSecondaryPlayer(component.key)) continue;
     const installed = await detectInstalled(component, instancePath);
     if (installed === null) continue; // 没装过 → 不提示
     if (installed === component.latest) continue; // 已是最新

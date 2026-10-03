@@ -48,6 +48,10 @@
     "conflictConfirm": "Install anyway",
     "conflictCancel": "Cancel",
     "conflictResolved": "Disabled {names}",
+    "newPlayer": "New Player",
+    "buildVc6": "vc6 build",
+    "buildMsvc": "msvc2022 build",
+    "defaultBuildHint": "Installs the vc6 build by default (no VC++ runtime needed); to switch, pick a version tagged msvc2022 under \"Choose version\".",
     "installOptionsMutexNote": "BML and BML+ are mutually exclusive — pick one (keep the default BML+ if unsure).",
     "updateTitle": "Patch updates available",
     "updateBody": "These patches have newer versions:",
@@ -267,7 +271,8 @@
     "saved": "Saved {count} config files",
     "dirty": "edited",
     "saveFailed": "Save failed: {error}",
-    "loadFailed": "Failed to read configs: {error}"
+    "loadFailed": "Failed to read configs: {error}",
+    "pickOne": "Pick a mod on the left to edit its config."
   },
   "gameConfig": {
     "newPlayerRequired": "These options are written to Bin/Player.ini, which only the \"new Player\" patch reads — the original game reads the registry (Rockoon does not write it), so they are hidden. To change the original's display/graphics settings, use the in-game options.",
@@ -505,6 +510,9 @@
     "empty": {
       "map": "No custom maps in this folder yet",
       "mod": "No mods installed yet"
+    },
+    "config": {
+      "button": "Config"
     },
     "status": {
       "disabled": "Disabled"

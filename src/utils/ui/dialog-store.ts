@@ -13,6 +13,8 @@ export interface DialogOptions {
   content?: string | (() => ReactNode);
   positiveText?: string;
   negativeText?: string;
+  /** 追加到 DialogContent 的 class（默认 max-w-md；选键弹窗需要更宽） */
+  className?: string;
   onPositiveClick?: () => void | boolean | Promise<void | boolean>;
   onNegativeClick?: () => void | boolean | Promise<void | boolean>;
   onClose?: () => void;

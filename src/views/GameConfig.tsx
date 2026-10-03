@@ -146,6 +146,8 @@ export default function GameConfig() {
   const openKeyChanger = (label: string, f: Field<number>) => {
     dialog.create({
       title: label,
+      // 虚拟键盘一行比默认弹窗宽，这里放宽
+      className: "max-w-3xl",
       content: () => (
         <VirtualKeyboard
           t={k => k}

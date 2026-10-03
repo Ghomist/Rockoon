@@ -67,7 +67,7 @@ export default function GlobalDialogHost() {
               if (!v) dismiss(d.id);
             }}
           >
-            <DialogContent className="max-w-md">
+            <DialogContent className={cn("max-w-md", d.className)}>
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2">
                   {Icon && (
