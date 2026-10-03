@@ -8,7 +8,11 @@ import {
   detectInstalled,
   fetchPatches,
   fetchPatchVersions,
-  installPatch
+  findConflicts,
+  installPatch,
+  mutexGroupOf,
+  resolveConflicts,
+  type PatchInstallTarget
 } from "@/services/patches";
 import { useWaitForSelectedInstance } from "@/utils/ui/waitForInstance";
 import { message } from "@/utils/ui/feedback";
@@ -16,6 +20,16 @@ import { formatFileSize } from "@/utils/format";
 import type { ImportPhase } from "@/components/ImportProgressDialog";
 import ImportProgressDialog from "@/components/ImportProgressDialog";
 import ListViewPage from "@/views/components/ListViewPage";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -47,28 +61,37 @@ export default function Patches() {
     percent: number;
     error: string;
     resultText: string;
-  }>({ open: false, phase: "connecting", percent: 0, error: "", resultText: "" });
+  }>({
+    open: false,
+    phase: "connecting",
+    percent: 0,
+    error: "",
+    resultText: ""
+  });
+  /** 待确认的互斥安装：同组的另一个补丁还装着 */
+  const [pendingConflict, setPendingConflict] = useState<{
+    component: PatchComponent;
+    items: PatchComponent[];
+    target: PatchInstallTarget;
+  } | null>(null);
   const taskId = useRef("");
 
-  const refresh = useCallback(
-    async (instancePath: string) => {
-      try {
-        const list = await fetchPatches();
-        setComponents(list);
-        const state: Record<string, string | null> = {};
-        for (const component of list) {
-          state[component.key] = await detectInstalled(component, instancePath);
-        }
-        setInstalled(state);
-        setError("");
-      } catch (e) {
-        setError(e instanceof Error ? e.message : String(e));
-      } finally {
-        setLoading(false);
+  const refresh = useCallback(async (instancePath: string) => {
+    try {
+      const list = await fetchPatches();
+      setComponents(list);
+      const state: Record<string, string | null> = {};
+      for (const component of list) {
+        state[component.key] = await detectInstalled(component, instancePath);
       }
-    },
-    []
-  );
+      setInstalled(state);
+      setError("");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   const instance = useWaitForSelectedInstance(data => refresh(data.path));
 
@@ -86,7 +109,7 @@ export default function Patches() {
     }
   };
 
-  const runInstall = async (
+  const doInstall = async (
     component: PatchComponent,
     target: { version: number; tag: string } | null
   ) => {
@@ -113,7 +136,10 @@ export default function Patches() {
         ...s,
         phase: "done",
         percent: 100,
-        resultText: t("patches.installDone", { name: component.name, version: done })
+        resultText: t("patches.installDone", {
+          name: component.name,
+          version: done
+        })
       }));
       await refresh(instance.path);
     } catch (e) {
@@ -126,14 +152,72 @@ export default function Patches() {
     }
   };
 
+  /**
+   * 安装入口：同组（BML / BML+，或两种 Player 构建）里已经有别的补丁装着时，
+   * 先弹确认，确认后禁用旧的再装新的 —— 两个加载器同时存在会互相抢注入，
+   * 两种 Player 构建装的是同一批文件。
+   */
+  const requestInstall = async (
+    component: PatchComponent,
+    target: PatchInstallTarget
+  ) => {
+    if (!instance) return;
+
+    let items: PatchComponent[] = [];
+    try {
+      items = await findConflicts(component, instance.path, components);
+    } catch (e) {
+      // 检测失败不拦着安装，只是少了那层提醒
+      console.warn("Conflict detection failed:", e);
+    }
+
+    if (items.length === 0) {
+      await doInstall(component, target);
+      return;
+    }
+
+    setPicker(null);
+    setPendingConflict({ component, items, target });
+  };
+
+  /** 确认互斥处理：禁用冲突补丁（可逆）后继续安装 */
+  const confirmConflict = async () => {
+    const pending = pendingConflict;
+    if (!pending || !instance) return;
+    setPendingConflict(null);
+
+    try {
+      const handled = await resolveConflicts(instance.path, pending.items);
+      if (handled.length > 0) {
+        message.success(
+          t("patches.conflictResolved", {
+            names: handled.map(c => c.name).join(" / ")
+          })
+        );
+      }
+    } catch (e) {
+      message.error(e instanceof Error ? e.message : String(e));
+    }
+
+    await doInstall(pending.component, pending.target);
+  };
+
   const statusOf = (component: PatchComponent) => {
     const version = installed[component.key];
-    if (version === null) return { label: t("patches.notInstalled"), tone: "muted" as const };
-    if (version === "") return { label: t("patches.installedUnknown"), tone: "muted" as const };
+    if (version === null)
+      return { label: t("patches.notInstalled"), tone: "muted" as const };
+    if (version === "")
+      return { label: t("patches.installedUnknown"), tone: "muted" as const };
     if (component.latest && version === component.latest) {
-      return { label: t("patches.installed", { version }), tone: "ok" as const };
+      return {
+        label: t("patches.installed", { version }),
+        tone: "ok" as const
+      };
     }
-    return { label: t("patches.installedOld", { version }), tone: "warn" as const };
+    return {
+      label: t("patches.installedOld", { version }),
+      tone: "warn" as const
+    };
   };
 
   return (
@@ -169,7 +253,21 @@ export default function Patches() {
         components.map(component => {
           const status = statusOf(component);
           const busy = busyKey === component.key;
-          const outdated = component.latest && status.tone !== "ok" && installed[component.key] !== null;
+          const outdated =
+            component.latest &&
+            status.tone !== "ok" &&
+            installed[component.key] !== null;
+          // 同组里装着的其它补丁（安装会被禁用/覆盖，提前说一声）
+          const group = mutexGroupOf(component.key);
+          const conflicting =
+            group === undefined
+              ? []
+              : components.filter(
+                  c =>
+                    c.key !== component.key &&
+                    mutexGroupOf(c.key) === group &&
+                    typeof installed[c.key] === "string"
+                );
           return (
             <div key={component.key} className="flex flex-col gap-2 px-4 py-3">
               <div className="flex flex-wrap items-center gap-2">
@@ -202,7 +300,9 @@ export default function Patches() {
                   type="button"
                   className="underline decoration-dotted hover:text-foreground"
                   onClick={() =>
-                    void backend.open(`${RESOURCE_HUB}/resource/${component.package_id}`)
+                    void backend.open(
+                      `${RESOURCE_HUB}/resource/${component.package_id}`
+                    )
                   }
                 >
                   {t("patches.openSite")}
@@ -221,7 +321,7 @@ export default function Patches() {
                 <Button
                   size="sm"
                   disabled={!instance || busy || !component.package_id}
-                  onClick={() => void runInstall(component, null)}
+                  onClick={() => void requestInstall(component, null)}
                 >
                   {busy ? (
                     <Loader2 className="mr-1 h-4 w-4 animate-spin" />
@@ -235,7 +335,12 @@ export default function Patches() {
                 <Button
                   size="sm"
                   variant="outline"
-                  disabled={!instance || busy || !component.package_id || !component.versions}
+                  disabled={
+                    !instance ||
+                    busy ||
+                    !component.package_id ||
+                    !component.versions
+                  }
                   onClick={() => void openPicker(component)}
                 >
                   <RotateCcw className="mr-1 h-4 w-4" />
@@ -245,6 +350,18 @@ export default function Patches() {
                   {t("patches.versionCount", { count: component.versions })}
                 </span>
               </div>
+
+              {conflicting.length > 0 && (
+                <p className="text-xs text-amber-600 dark:text-amber-400">
+                  {group === "player"
+                    ? t("patches.conflictHintOverwrite", {
+                        names: conflicting.map(c => c.name).join(" / ")
+                      })
+                    : t("patches.conflictHintDisable", {
+                        names: conflicting.map(c => c.name).join(" / ")
+                      })}
+                </p>
+              )}
             </div>
           );
         })}
@@ -268,7 +385,9 @@ export default function Patches() {
                 {versions.map(item => {
                   // 展示用上游版本号（note），下载/删除用文件序号（version）
                   const tag = item.note || `v${item.version}`;
-                  const isInstalled = picker ? installed[picker.key] === tag : false;
+                  const isInstalled = picker
+                    ? installed[picker.key] === tag
+                    : false;
                   return (
                     <div
                       key={item.version}
@@ -305,7 +424,10 @@ export default function Patches() {
                         disabled={busyKey === picker?.key}
                         onClick={() =>
                           picker &&
-                          void runInstall(picker, { version: item.version, tag })
+                          void requestInstall(picker, {
+                            version: item.version,
+                            tag
+                          })
                         }
                       >
                         {t("patches.installThis")}
@@ -316,9 +438,52 @@ export default function Patches() {
               </div>
             </div>
           )}
-          <p className="text-xs text-muted-foreground">{t("patches.rollbackHint")}</p>
+          <p className="text-xs text-muted-foreground">
+            {t("patches.rollbackHint")}
+          </p>
         </DialogContent>
       </Dialog>
+
+      {/* 互斥确认：同组的另一个补丁要先禁用（或会被覆盖） */}
+      <AlertDialog
+        open={!!pendingConflict}
+        onOpenChange={v => !v && setPendingConflict(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("patches.conflictTitle")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("patches.conflictBody")}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          {pendingConflict && (
+            <div className="space-y-2 text-sm">
+              <p className="font-medium">
+                {mutexGroupOf(pendingConflict.component.key) === "player"
+                  ? t("patches.conflictWillOverwrite", {
+                      names: pendingConflict.items.map(c => c.name).join(" / ")
+                    })
+                  : t("patches.conflictWillDisable", {
+                      names: pendingConflict.items.map(c => c.name).join(" / ")
+                    })}
+              </p>
+              <p className="text-muted-foreground">
+                {t("patches.conflictAfter", {
+                  name: pendingConflict.component.name
+                })}
+              </p>
+            </div>
+          )}
+
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("patches.conflictCancel")}</AlertDialogCancel>
+            <AlertDialogAction onClick={() => void confirmConflict()}>
+              {t("patches.conflictConfirm")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <ImportProgressDialog
         open={progress.open}
@@ -335,7 +500,9 @@ export default function Patches() {
         onCancel={() => {
           if (taskId.current) void backend.cancelInstall(taskId.current);
         }}
-        onClose={() => setProgress(s => ({ ...s, open: false, error: "", resultText: "" }))}
+        onClose={() =>
+          setProgress(s => ({ ...s, open: false, error: "", resultText: "" }))
+        }
       />
     </ListViewPage>
   );

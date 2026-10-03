@@ -58,9 +58,22 @@ export default function PatchOptionsDialog({
               <span>{row.label}</span>
               <Switch
                 checked={value[row.flag]}
-                onCheckedChange={checked =>
-                  onChange({ ...value, [row.flag]: checked })
-                }
+                onCheckedChange={checked => {
+                  // BML 与 BML+ 互斥：勾一个就把另一个取消（选哪个都行）
+                  if (row.flag === "bml" || row.flag === "bmlplus") {
+                    onChange(
+                      checked
+                        ? {
+                            ...value,
+                            bml: row.flag === "bml",
+                            bmlplus: row.flag === "bmlplus"
+                          }
+                        : { ...value, [row.flag]: false }
+                    );
+                    return;
+                  }
+                  onChange({ ...value, [row.flag]: checked });
+                }}
               />
             </label>
           ))}
@@ -68,6 +81,10 @@ export default function PatchOptionsDialog({
 
         <p className="text-xs text-muted-foreground">
           {t("patches.installOptionsNote")}
+        </p>
+
+        <p className="text-xs text-amber-600 dark:text-amber-400">
+          {t("patches.installOptionsMutexNote")}
         </p>
 
         <div className="flex justify-end gap-2">

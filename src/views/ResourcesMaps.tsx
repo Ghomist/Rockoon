@@ -18,6 +18,7 @@ import { launchMap } from "@/services/launcher";
 import { importResources } from "@/services/resourceImport";
 import ListViewPage from "./components/ListViewPage";
 import ResourceToolbar from "./components/ResourceToolbar";
+import { matchesQuery } from "@/utils/search";
 import DirectoryTreeDialog from "./components/DirectoryTreeDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -54,6 +55,8 @@ export default function ResourcesMaps() {
   const [newFolderName, setNewFolderName] = useState("");
   const [showMoveDialog, setShowMoveDialog] = useState(false);
   const [itemToMove, setItemToMove] = useState<DirItem | null>(null);
+  /** 搜索关键词：只在当前目录内过滤（不跳目录），切目录时清空 */
+  const [query, setQuery] = useState("");
 
   const isFileDisabled = (fileName: string) => fileName.endsWith(".disable");
   const getDisplayName = (fileName: string) =>
@@ -80,7 +83,12 @@ export default function ResourcesMaps() {
     return items;
   }, [currentPath, rootPath, t]);
 
-  const mapCount = directoryList.filter(i => !i.isDir).length;
+  /** 过滤后的列表；没输入关键词时就是整个目录 */
+  const visibleList = useMemo(
+    () => directoryList.filter(item => matchesQuery(item.name, query)),
+    [directoryList, query]
+  );
+  const mapCount = visibleList.filter(i => !i.isDir).length;
 
   const parentPath = useMemo(() => {
     const relativePath = currentPath.replace(rootPath, "").trim();
@@ -98,6 +106,8 @@ export default function ResourcesMaps() {
       ? await join(root, relativePath.replace(/\//g, sep()))
       : root;
     setCurrentPath(fullPath);
+    // 换了目录就把上一个目录的搜索词清掉（刷新同一目录时保留）
+    if (fullPath !== currentPath) setQuery("");
 
     const dirs = await backend.listDirs(fullPath);
     const dirItems: DirItem[] = dirs.map(d => {
@@ -293,6 +303,11 @@ export default function ResourcesMaps() {
           onImport={onImport}
           onRefresh={() => onRefresh(true)}
           onOpenFolder={onOpenFolder}
+          search={{
+            value: query,
+            onChange: setQuery,
+            placeholder: t("resources.search.placeholder")
+          }}
           extra={
             <Button
               variant="outline"
@@ -320,7 +335,15 @@ export default function ResourcesMaps() {
         </div>
       )}
 
-      {directoryList.map(item => {
+      {visibleList.length === 0 && (
+        <div className="px-4 py-6 text-sm text-muted-foreground">
+          {query.trim()
+            ? t("resources.search.empty", { query: query.trim() })
+            : t("resources.empty.map")}
+        </div>
+      )}
+
+      {visibleList.map(item => {
         const disabled = !item.isDir && isFileDisabled(item.name);
         return (
           <div

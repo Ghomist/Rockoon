@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Trash2 } from "lucide-react";
 import { join } from "@tauri-apps/api/path";
 import backend from "@/backend";
 import { useAppStore } from "@/stores/app";
 import { useT } from "@/i18n";
 import { formatFileSize } from "@/utils/format";
+import { matchesQuery } from "@/utils/search";
 import { dialog, message } from "@/utils/ui/feedback";
 import { importResources } from "@/services/resourceImport";
 import ListViewPage from "./components/ListViewPage";
@@ -36,6 +37,7 @@ export default function ResourcesPageBase({ type }: Props) {
   const refreshKey = useAppStore(s => s.refreshKey);
   const [rscPath, setRscPath] = useState("");
   const [rscList, setRscList] = useState<ManagedFile[]>([]);
+  const [query, setQuery] = useState("");
 
   const schema = resourcePageSchema[type];
   const rscName = t("resources.name." + type);
@@ -118,22 +120,43 @@ export default function ResourcesPageBase({ type }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [refreshKey]);
 
+  /** 搜索只过滤当前列表，不碰磁盘 */
+  const visibleList = useMemo(
+    () =>
+      rscList.filter(file => matchesQuery(getDisplayName(file.name), query)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [rscList, query]
+  );
+
   return (
     <ListViewPage
       title={t(
         "resources.statistics." + type,
-        { cnt: rscList.length },
-        rscList.length
+        { cnt: visibleList.length },
+        visibleList.length
       )}
       actions={
         <ResourceToolbar
           onImport={onImport}
           onRefresh={() => onRefresh(true)}
           onOpenFolder={onOpenFolder}
+          search={{
+            value: query,
+            onChange: setQuery,
+            placeholder: t("resources.search.placeholder")
+          }}
         />
       }
     >
-      {rscList.map(file => {
+      {visibleList.length === 0 && (
+        <div className="px-4 py-6 text-sm text-muted-foreground">
+          {query.trim()
+            ? t("resources.search.empty", { query: query.trim() })
+            : t("resources.empty." + type)}
+        </div>
+      )}
+
+      {visibleList.map(file => {
         const disabled = isFileDisabled(file.name);
         return (
           <div

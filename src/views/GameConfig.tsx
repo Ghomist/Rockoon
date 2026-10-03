@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { join } from "@tauri-apps/api/path";
+import { useNavigate } from "react-router-dom";
 import {
   Monitor,
   Volume2,
@@ -9,7 +10,8 @@ import {
   Image as ImageIcon,
   TriangleAlert,
   Bug,
-  FileText
+  FileText,
+  Sparkles
 } from "lucide-react";
 import backend from "@/backend";
 import { useAppStore } from "@/stores/app";
@@ -41,9 +43,25 @@ const mutateOptions = (mutator: (opts: BallanceOptions) => void): void => {
   });
 };
 
+/**
+ * 只写 Bin/Player.ini 的分区。
+ * 原版 Player 读的是注册表（Rockoon 不写注册表），所以没装「新 Player」时
+ * 这些选项改了不会生效 —— 整段隐起来，并在页面顶部说明原因。
+ */
+const INI_ONLY_SECTIONS = [
+  "display",
+  "compat",
+  "graphics",
+  "advanced",
+  "startup"
+];
+
 export default function GameConfig() {
   const t = useT();
+  const navigate = useNavigate();
   const selectedInstanceData = useAppStore(s => s.selectedInstanceData);
+  // 装了「新 Player」才会读 Bin/Player.ini：没装时写 ini 的选项一律不显示
+  const newPlayer = selectedInstanceData?.playerType === "new";
   const [launchConfig, setLaunchConfig] = useState<BallanceLaunchConfig>();
   const [launchConfigPath, setLaunchConfigPath] = useState("");
 
@@ -181,7 +199,7 @@ export default function GameConfig() {
       icon: Bug,
       badge: t("common.advanced")
     }
-  ];
+  ].filter(item => newPlayer || !INI_ONLY_SECTIONS.includes(item.id));
 
   const displaySchema: (Schema & SchemaItem)[] = [
     {
@@ -244,7 +262,8 @@ export default function GameConfig() {
     }
   ];
 
-  const gameplaySchema: (Schema & SchemaItem)[] = [
+  /** 玩法里写 Player.ini 的三项（没装新 Player 时不显示，见 INI_ONLY_SECTIONS） */
+  const gameplayIniSchema: (Schema & SchemaItem)[] = [
     {
       label: t("gameConfig.game.language.label"),
       tip: t("gameConfig.game.language.tip"),
@@ -269,7 +288,10 @@ export default function GameConfig() {
       tip: t("gameConfig.game.rookie.tip"),
       type: "switch",
       field: cfgField("Game", "Rookie")
-    },
+    }
+  ];
+
+  const gameplaySchema: (Schema & SchemaItem)[] = [
     {
       label: t("gameConfig.inGameOptions.cloudLayer.label"),
       type: "switch",
@@ -454,11 +476,29 @@ export default function GameConfig() {
         </div>
 
         <div className="flex flex-col gap-4 p-6">
-          <section id="section-display" data-section className="scroll-mt-16">
-            <FormSection title={t("gameConfig.nav.display")} icon={Monitor}>
-              <NFormWrapper schema={displaySchema} />
-            </FormSection>
-          </section>
+          {!newPlayer && (
+            <div className="flex flex-wrap items-center gap-3 rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm">
+              <Sparkles className="size-4 shrink-0 text-amber-600 dark:text-amber-400" />
+              <span className="min-w-0 flex-1 text-muted-foreground">
+                {t("gameConfig.newPlayerRequired")}
+              </span>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => navigate("/patches")}
+              >
+                {t("gameConfig.newPlayerGotoPatches")}
+              </Button>
+            </div>
+          )}
+
+          {newPlayer && (
+            <section id="section-display" data-section className="scroll-mt-16">
+              <FormSection title={t("gameConfig.nav.display")} icon={Monitor}>
+                <NFormWrapper schema={displaySchema} />
+              </FormSection>
+            </section>
+          )}
 
           <section id="section-audio" data-section className="scroll-mt-16">
             <FormSection title={t("gameConfig.nav.audio")} icon={Volume2}>
@@ -519,40 +559,68 @@ export default function GameConfig() {
           <section id="section-gameplay" data-section className="scroll-mt-16">
             <FormSection title={t("gameConfig.nav.gameplay")} icon={BookOpen}>
               <NFormWrapper schema={gameplaySchema} />
+              {newPlayer ? (
+                <>
+                  <Separator className="my-4" />
+                  <p className="mb-2 text-xs text-muted-foreground">
+                    {t("gameConfig.newPlayerSectionNote")}
+                  </p>
+                  <NFormWrapper schema={gameplayIniSchema} />
+                </>
+              ) : null}
             </FormSection>
           </section>
 
-          <section id="section-compat" data-section className="scroll-mt-16">
-            <FormSection title={t("gameConfig.nav.compat")} icon={Wrench}>
-              <NFormWrapper schema={compatSchema} />
-            </FormSection>
-          </section>
+          {newPlayer && (
+            <section id="section-compat" data-section className="scroll-mt-16">
+              <FormSection title={t("gameConfig.nav.compat")} icon={Wrench}>
+                <NFormWrapper schema={compatSchema} />
+              </FormSection>
+            </section>
+          )}
 
-          <section id="section-graphics" data-section className="scroll-mt-16">
-            <FormSection title={t("gameConfig.nav.graphics")} icon={ImageIcon}>
-              <NFormWrapper schema={graphicsSchema} />
-            </FormSection>
-          </section>
-
-          <section id="section-advanced" data-section className="scroll-mt-16">
-            <FormSection
-              title={t("gameConfig.nav.advanced")}
-              icon={TriangleAlert}
-              badge={t("common.advanced")}
+          {newPlayer && (
+            <section
+              id="section-graphics"
+              data-section
+              className="scroll-mt-16"
             >
-              <NFormWrapper schema={advancedSchema} />
-            </FormSection>
-          </section>
+              <FormSection
+                title={t("gameConfig.nav.graphics")}
+                icon={ImageIcon}
+              >
+                <NFormWrapper schema={graphicsSchema} />
+              </FormSection>
+            </section>
+          )}
 
-          <section id="section-startup" data-section className="scroll-mt-16">
-            <FormSection
-              title={t("gameConfig.nav.startup")}
-              icon={Bug}
-              badge={t("common.advanced")}
+          {newPlayer && (
+            <section
+              id="section-advanced"
+              data-section
+              className="scroll-mt-16"
             >
-              <NFormWrapper schema={startupSchema} />
-            </FormSection>
-          </section>
+              <FormSection
+                title={t("gameConfig.nav.advanced")}
+                icon={TriangleAlert}
+                badge={t("common.advanced")}
+              >
+                <NFormWrapper schema={advancedSchema} />
+              </FormSection>
+            </section>
+          )}
+
+          {newPlayer && (
+            <section id="section-startup" data-section className="scroll-mt-16">
+              <FormSection
+                title={t("gameConfig.nav.startup")}
+                icon={Bug}
+                badge={t("common.advanced")}
+              >
+                <NFormWrapper schema={startupSchema} />
+              </FormSection>
+            </section>
+          )}
         </div>
       </div>
     </div>

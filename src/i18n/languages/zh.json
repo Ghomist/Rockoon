@@ -38,6 +38,17 @@
     "done": "补丁安装完成",
     "installDone": "{name} {version} 已安装",
     "markerMissing": "安装后没找到 {file}，可能不是这个补丁的安装包",
+    "conflictHintDisable": "与已安装的 {names} 互斥：安装会把对方禁用（文件改名 .disable，随时能装回来）",
+    "conflictHintOverwrite": "与已安装的 {names} 互斥：两者产出的文件相同，安装会直接覆盖对方",
+    "conflictTitle": "要先处理互斥的补丁",
+    "conflictBody": "BML 与 BML+ 只能有一个生效；两种「新 Player」构建产出的也是同一批文件，同一组里只能留一个。",
+    "conflictWillDisable": "将被禁用：{names}",
+    "conflictWillOverwrite": "将被覆盖：{names}",
+    "conflictAfter": "处理完就继续安装 {name}。",
+    "conflictConfirm": "继续安装",
+    "conflictCancel": "取消",
+    "conflictResolved": "已禁用 {names}",
+    "installOptionsMutexNote": "BML 与 BML+ 互斥，只能装一个（不确定就保持默认的 BML+）。",
     "updateTitle": "补丁有更新",
     "updateBody": "检测到以下补丁有新版本：",
     "updateHint": "可以现在更新，也可以稍后在「补丁」页手动更新。",
@@ -54,6 +65,7 @@
     "installingPatch": "正在安装 {name}…"
   },
   "menu": {
+    "modConfigs": "Mod 配置",
     "game": "启动游戏",
     "options": "游戏选项",
     "resources": "资源管理",
@@ -172,6 +184,14 @@
     "success": "设置成功！"
   },
   "resources": {
+    "search": {
+      "placeholder": "搜索名称…",
+      "empty": "没有匹配「{query}」的内容"
+    },
+    "empty": {
+      "map": "这个目录里还没有自制地图",
+      "mod": "还没有安装 mod"
+    },
     "status": {
       "disabled": "已禁用"
     },
@@ -327,6 +347,7 @@
     "ingameMotdContent": "欢迎语"
   },
   "common": {
+    "loading": "加载中…",
     "none": "无",
     "unknown": "未知",
     "advanced": "高级",
@@ -351,9 +372,24 @@
       "unavailableKey": "该按键在 Ballance 中不可用"
     }
   },
+  "modConfigs": {
+    "summary": "共 {total} 个配置文件 · 显示 {files} 个",
+    "searchPlaceholder": "搜索 mod 名…",
+    "empty": "ModLoader/Configs 里还没有配置文件（装一个带配置的 mod（如 BML+、BML），运行一次游戏后就会生成）",
+    "noMatch": "没有匹配「{query}」的配置",
+    "running": "游戏正在运行：这些文件会在游戏退出时被 mod 覆写，先关闭游戏再改。",
+    "save": "保存",
+    "saved": "已保存 {count} 个配置文件",
+    "dirty": "已修改",
+    "saveFailed": "保存失败：{error}",
+    "loadFailed": "读取配置失败：{error}"
+  },
   "gameConfig": {
     "selectInstance": "请先选择一个游戏实例",
     "openConfigFile": "打开配置文件",
+    "newPlayerRequired": "下面这些选项写的是 Bin/Player.ini，只有装了「新 Player」补丁的游戏会读它；原版读的是注册表（Rockoon 不写注册表），所以先隐起来。想改原版的显示/图形设置，请在游戏内选项里改。",
+    "newPlayerGotoPatches": "去「补丁」页安装新 Player",
+    "newPlayerSectionNote": "以下选项需要新 Player（写 Bin/Player.ini）",
     "nav": {
       "display": "显示",
       "audio": "声音",

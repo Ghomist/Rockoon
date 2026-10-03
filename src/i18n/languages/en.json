@@ -38,6 +38,17 @@
     "done": "Patch installed",
     "installDone": "{name} {version} installed",
     "markerMissing": "After install, {file} was not found — this may not be the right package",
+    "conflictHintDisable": "Conflicts with the installed {names}: installing will disable them (renamed to .disable, can be re-enabled anytime)",
+    "conflictHintOverwrite": "Conflicts with the installed {names}: both ship the same files, so installing will overwrite them",
+    "conflictTitle": "Resolve patch conflicts first",
+    "conflictBody": "Only one of BML and BML+ can be active, and both \"new Player\" builds ship the same files — one patch per group.",
+    "conflictWillDisable": "Will be disabled: {names}",
+    "conflictWillOverwrite": "Will be overwritten: {names}",
+    "conflictAfter": "{name} will be installed afterwards.",
+    "conflictConfirm": "Install anyway",
+    "conflictCancel": "Cancel",
+    "conflictResolved": "Disabled {names}",
+    "installOptionsMutexNote": "BML and BML+ are mutually exclusive — pick one (keep the default BML+ if unsure).",
     "updateTitle": "Patch updates available",
     "updateBody": "These patches have newer versions:",
     "updateHint": "You can update now, or later from the Patches page.",
@@ -54,6 +65,7 @@
     "installingPatch": "Installing {name}…"
   },
   "menu": {
+    "modConfigs": "Mod configs",
     "game": "Start Game",
     "options": "Options",
     "resources": "Resources",
@@ -193,6 +205,7 @@
     "githubDesc": "Rockoon source repository"
   },
   "common": {
+    "loading": "Loading…",
     "none": "None",
     "unknown": "Unknown",
     "advanced": "Advanced",
@@ -244,7 +257,22 @@
     "invalid": "This is not a valid Ballance game directory, or key files are corrupted!",
     "success": "Setup complete!"
   },
+  "modConfigs": {
+    "summary": "{total} config files · showing {files}",
+    "searchPlaceholder": "Search mod name…",
+    "empty": "No config files in ModLoader/Configs yet (install a mod that ships a config, e.g. BML+, and run the game once).",
+    "noMatch": "No config matches \"{query}\"",
+    "running": "The game is running: mods rewrite these files on exit, so close the game first.",
+    "save": "Save",
+    "saved": "Saved {count} config files",
+    "dirty": "edited",
+    "saveFailed": "Save failed: {error}",
+    "loadFailed": "Failed to read configs: {error}"
+  },
   "gameConfig": {
+    "newPlayerRequired": "These options are written to Bin/Player.ini, which only the \"new Player\" patch reads — the original game reads the registry (Rockoon does not write it), so they are hidden. To change the original's display/graphics settings, use the in-game options.",
+    "newPlayerGotoPatches": "Install the new Player on the Patches page",
+    "newPlayerSectionNote": "These options need the new Player (written to Bin/Player.ini)",
     "game": {
       "applyHotfix": {
         "label": "Apply hot fix"
@@ -470,6 +498,14 @@
     }
   },
   "resources": {
+    "search": {
+      "placeholder": "Search by name…",
+      "empty": "Nothing matches \"{query}\""
+    },
+    "empty": {
+      "map": "No custom maps in this folder yet",
+      "mod": "No mods installed yet"
+    },
     "status": {
       "disabled": "Disabled"
     },
