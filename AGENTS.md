@@ -52,6 +52,7 @@ Communication flow: `React Component → store/service → src/backend wrapper �
   - `RcResult = Result<(), RcError>` — use for void commands (no generic param).
   - `RcResultWith<T> = Result<T, RcError>` — use when returning data.
 - Ballance logic (`src-tauri/src/ballance/`): `options.rs` reads/writes `Database.tdb` (game options + scores), `tdb/` is a custom Virtools DB parser, `mod_config.rs` handles BML/BMLPlus INI configs, `brp.rs` validates/installs BRP resource packages.
+- **BRP 模组（`category: "mod"`）**：一个包里可以同时带 `.bmod`（老 BML）与 `.bmodp`（BML+）两份产物 —— 两种加载器各自只认自己的扩展名（BML+ 的 `ExploreMods` 只挑 `.zip`/`.bmodp`，老 BML 只挑 `.bmod`），对方的文件放着无害。安装时按实例**启用中**的加载器（`BuildingBlocks/BMLPlus.dll` / `BML.dll`，`.disable` 不算数）只装匹配的那一份；包里没匹配的就把现有的装上并置 `modVariantMismatch`（前端提示用户）；没有加载器时两份都装。目标目录与老类别一致：`ModLoader/Mods/`。`bmod`/`bmodp` 类别保留兼容。下载站侧规则见 `ballance-resource-hub/docs/mod-category.md`。
 - Serde structs must use `#[serde(rename_all = "camelCase")]` so Rust snake_case maps to the TS frontend.
 - `tauri.conf.json` (not `package.json`) holds the **app version** for releases/updater — currently `2.1.0`; `package.json` version (`0.1.0`) is not the shipped version.
 

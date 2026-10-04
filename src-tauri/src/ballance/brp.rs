@@ -25,8 +25,11 @@ const SKY_LETTERS: &[&str] = &[
 ];
 
 /// All categories defined by BRP spec §4
+/// （`mod` 是合并后的模组类别：一个包里可以同时带 .bmod 与 .bmodp 两份产物；
+/// `bmod`/`bmodp` 保留兼容，历史资源包里仍是这两个类别）
 const SUPPORTED_CATEGORIES: &[&str] = &[
     "map",
+    "mod",
     "bmod",
     "bmodp",
     "sound",
@@ -78,6 +81,12 @@ pub struct BrpInstallResult {
     pub installed_paths: Vec<String>,
     /// Human-readable target (e.g. `ModLoader/Maps/`).
     pub target_description: String,
+    /// mod 类别：这次实际装进去的产物（bmod / bmodp）；其它类别为空
+    pub installed_mod_formats: Vec<String>,
+    /// mod 类别：实例里最终会加载 mod 的那个加载器（bml / bmlp / none）
+    pub mod_loader: String,
+    /// mod 类别：包里没有与实例加载器匹配的产物，装的是另一种（前端据此提醒用户）
+    pub mod_variant_mismatch: bool,
 }
 
 fn v_err(msg: impl Into<String>) -> RcError {
@@ -202,6 +211,7 @@ pub fn validate_brp(
     // Category-specific checks (V9-V16)
     match manifest.category.as_str() {
         "map" => validate_map(&content_files, &first_level)?,
+        "mod" => validate_mod(&content_files, &first_level, &manifest)?,
         "bmod" => validate_mod_like(&content_files, &first_level, &manifest, &["bmod", "zip"])?,
         "bmodp" => validate_mod_like(&content_files, &first_level, &manifest, &["bmodp", "zip"])?,
         "sound" => validate_sound(&content_files, instance_path)?,
@@ -216,6 +226,75 @@ pub fn validate_brp(
         content_entries: first_level,
         content_files,
     })
+}
+
+/// mod（合并后的模组类别）：`content/` 根下 1~2 个条目，可以同时带 .bmod（老 BML）与
+/// .bmodp（BML+）。两种加载器各自只认自己的扩展名（BML+ 只看 .zip/.bmodp，老 BML 只看
+/// .bmod），所以两份放一个包里是安全的，站点的依赖也只需要写一个资源 id。
+fn validate_mod(
+    content_files: &[String],
+    first_level: &[String],
+    manifest: &BrpManifest,
+) -> Result<(), RcError> {
+    if first_level.is_empty() || first_level.len() > 2 {
+        return Err(v_err(format!(
+            "V10/V11: mod 类型要求 content/ 根目录下 1~2 个条目，实际 {} 个",
+            first_level.len()
+        )));
+    }
+
+    let mut seen: Vec<&str> = Vec::new();
+    let mut has_artifact = false;
+    for entry in first_level {
+        // 目录形式（沿用 bmod/bmodp 的老规则）：V12 name 必填且等于目录名
+        if content_files.iter().any(|f| f.starts_with(&format!("{}/", entry))) {
+            match &manifest.name {
+                Some(n) if n == entry => {}
+                Some(n) => {
+                    return Err(v_err(format!(
+                        "V12: 目录名「{}」必须等于 manifest.name「{}」",
+                        entry, n
+                    )))
+                }
+                None => {
+                    return Err(v_err(format!(
+                        "V12: 目录形式要求 manifest.name 必填，且等于目录名「{}」",
+                        entry
+                    )))
+                }
+            }
+            continue;
+        }
+
+        let lower = entry.to_lowercase();
+        let ext = if lower.ends_with(".bmodp") {
+            "bmodp"
+        } else if lower.ends_with(".bmod") {
+            "bmod"
+        } else if lower.ends_with(".zip") {
+            "zip"
+        } else {
+            return Err(v_err(format!(
+                "V10/V11: mod 类型条目必须是 .bmod/.bmodp/.zip，实际：{}",
+                entry
+            )));
+        };
+        if ext != "zip" {
+            has_artifact = true;
+        }
+        if seen.contains(&ext) {
+            return Err(v_err(format!(
+                "V10/V11: mod 类型不允许两份同为 {} 的产物",
+                ext
+            )));
+        }
+        seen.push(ext);
+    }
+
+    if !has_artifact {
+        return Err(v_err("V10/V11: mod 类型至少要有一份 .bmod 或 .bmodp 产物"));
+    }
+    Ok(())
 }
 
 /// V9: exactly one .nmo/.cmo file at content/ root, no subdirs.
@@ -407,6 +486,31 @@ pub fn install_brp(
     fs::create_dir_all(&target_dir)?;
     info!("Installing BRP (cat={}) into {}", info.manifest.category, target_dir.display());
 
+    // mod：一个包里可能同时带 .bmod 与 .bmodp，按实例里实际会加载的那个加载器选一份装；
+    // 另一份对当前加载器没意义（BML+ 不看 .bmod，老 BML 不看 .bmodp）。
+    let mod_loader = detect_mod_loader(instance_path);
+    let available_formats = mod_artifacts(&info);
+    let mut mod_formats: Vec<String> = Vec::new();
+    let mut mod_variant_mismatch = false;
+    if info.manifest.category == "mod" {
+        let prefer = match mod_loader {
+            "bml" => Some("bmod"),
+            "bmlp" => Some("bmodp"),
+            _ => None,
+        };
+        match prefer {
+            // 包里正好有对应产物：只装那一份
+            Some(p) if available_formats.iter().any(|f| f == p) => mod_formats.push(p.to_string()),
+            // 装了加载器但包里没这份产物：把现有的装上，并在结果里标记不匹配
+            Some(_) => {
+                mod_formats = available_formats.clone();
+                mod_variant_mismatch = true;
+            }
+            // 没检测到加载器：两份都放进去，之后装哪种加载器都能用
+            None => mod_formats = available_formats.clone(),
+        }
+    }
+
     let mut installed: Vec<String> = Vec::new();
     for i in 0..archive.len() {
         let mut entry = archive.by_index(i)?;
@@ -419,6 +523,14 @@ pub fn install_brp(
         };
         if rel.is_empty() {
             continue;
+        }
+        // mod：只装与实例加载器匹配的那份产物（非 mod 产物或目录形式照旧安装）
+        if !mod_formats.is_empty() {
+            if let Some(ext) = mod_ext_of(rel) {
+                if !mod_formats.iter().any(|f| f == ext) {
+                    continue;
+                }
+            }
         }
         // sky：把占位符 X 换成目标关卡的字母（只动文件名首缀，路径其它部分不动）
         let rel = match &sky_letter {
@@ -450,7 +562,53 @@ pub fn install_brp(
         manifest: info.manifest,
         installed_paths: installed,
         target_description,
+        installed_mod_formats: mod_formats,
+        mod_loader: mod_loader.to_string(),
+        mod_variant_mismatch,
     })
+}
+
+/// 实例里最终会加载 mod 的那个加载器。
+/// 只看启用中的 dll：`.disable` 后缀是启动器的「禁用」机制，被禁用的加载器不算数。
+/// 两个都在启用时以 BML+ 为准 —— 它是仍在维护的那个，Rockoon 自己的 mod 也只跑在它上面。
+fn detect_mod_loader(instance: &Path) -> &'static str {
+    let dir = instance.join("BuildingBlocks");
+    if dir.join("BMLPlus.dll").is_file() {
+        "bmlp"
+    } else if dir.join("BML.dll").is_file() {
+        "bml"
+    } else {
+        "none"
+    }
+}
+
+/// 包里带上了哪几种 mod 产物，固定按 bmod、bmodp 的顺序返回。
+fn mod_artifacts(info: &BrpInfo) -> Vec<String> {
+    let mut formats: Vec<String> = Vec::new();
+    for f in &info.content_files {
+        if let Some(ext) = mod_ext_of(f) {
+            if !formats.iter().any(|x| x == ext) {
+                formats.push(ext.to_string());
+            }
+        }
+    }
+    formats.sort_by_key(|f| match f.as_str() {
+        "bmod" => 0,
+        _ => 1,
+    });
+    formats
+}
+
+/// 相对路径的 mod 产物类型（`.bmodp` / `.bmod`），不是这两类就返回 None。
+fn mod_ext_of(path: &str) -> Option<&'static str> {
+    let lower = path.to_lowercase();
+    if lower.ends_with(".bmodp") {
+        Some("bmodp")
+    } else if lower.ends_with(".bmod") {
+        Some("bmod")
+    } else {
+        None
+    }
 }
 
 /// Map a BRP category to its on-disk install target inside the game instance.
@@ -460,7 +618,7 @@ fn target_for_category(category: &str, instance: &Path) -> (PathBuf, String) {
             instance.join("ModLoader").join("Maps"),
             "ModLoader/Maps/".into(),
         ),
-        "bmod" | "bmodp" => (
+        "mod" | "bmod" | "bmodp" => (
             instance.join("ModLoader").join("Mods"),
             "ModLoader/Mods/".into(),
         ),
@@ -610,5 +768,115 @@ mod tests {
 
         let err = install_brp(&brp, &inst, Some("Z")).unwrap_err();
         assert!(format!("{}", err).contains("非法"), "错误信息应说明字母非法：{}", err);
+    }
+
+    /// 写一个 mod brp：content/ 下按给定扩展名放文件
+    fn write_mod_brp(path: &Path, exts: &[&str]) {
+        let file = File::create(path).unwrap();
+        let mut zw = zip::ZipWriter::new(file);
+        let opts = SimpleFileOptions::default();
+        zw.start_file("manifest.json", opts).unwrap();
+        zw.write_all(br#"{"manifest_version":1,"category":"mod","name":"mod test"}"#)
+            .unwrap();
+        for (i, ext) in exts.iter().enumerate() {
+            zw.start_file(format!("content/Mod{}.{}", i, ext), opts)
+                .unwrap();
+            zw.write_all(b"fake").unwrap();
+        }
+        zw.finish().unwrap();
+    }
+
+    /// 在实例里放一个（启用中的）加载器 dll
+    fn put_loader(instance: &Path, name: &str) {
+        let dir = instance.join("BuildingBlocks");
+        fs::create_dir_all(&dir).unwrap();
+        fs::write(dir.join(name), b"fake-dll").unwrap();
+    }
+
+    #[test]
+    fn mod_brp_accepts_one_or_both_artifacts() {
+        for exts in [
+            vec!["bmod"],
+            vec!["bmodp"],
+            vec!["bmod", "bmodp"],
+            vec!["bmod", "zip"],
+        ] {
+            let dir = fresh("mod-ok");
+            let brp = dir.join("m.brp");
+            write_mod_brp(&brp, &exts);
+            let info = validate_brp(&brp, &dir.join("inst"))
+                .unwrap_or_else(|e| panic!("{:?} 应该通过校验，实际：{}", exts, e));
+            assert_eq!(info.manifest.category, "mod");
+        }
+    }
+
+    #[test]
+    fn mod_brp_rejects_bad_shapes() {
+        let cases: [(Vec<&str>, &str); 4] = [
+            (vec!["bmod", "bmod"], "两份同为"),
+            (vec!["zip"], "至少要有一份"),
+            (vec!["bmod", "bmodp", "zip"], "1~2 个条目"),
+            (vec!["txt"], "必须是 .bmod/.bmodp/.zip"),
+        ];
+        for (exts, needle) in cases {
+            let dir = fresh("mod-bad");
+            let brp = dir.join("m.brp");
+            write_mod_brp(&brp, &exts);
+            let err = validate_brp(&brp, &dir.join("inst"))
+                .err()
+                .unwrap_or_else(|| panic!("{:?} 不应该通过校验", exts));
+            let msg = format!("{}", err);
+            assert!(msg.contains(needle), "{:?} 的错误信息应包含「{}」，实际：{}", exts, needle, msg);
+        }
+    }
+
+    #[test]
+    fn mod_install_follows_installed_loader() {
+        // 实例里装了 BML+：只装 .bmodp
+        let dir = fresh("mod-bmlp");
+        let brp = dir.join("m.brp");
+        let inst = dir.join("inst");
+        write_mod_brp(&brp, &["bmod", "bmodp"]);
+        put_loader(&inst, "BMLPlus.dll");
+        let res = install_brp(&brp, &inst, None).unwrap();
+        assert_eq!(res.mod_loader, "bmlp");
+        assert_eq!(names_of(&res), vec!["Mod1.bmodp"]);
+        assert_eq!(res.installed_mod_formats, vec!["bmodp"]);
+        assert!(!res.mod_variant_mismatch);
+        assert!(!inst.join("ModLoader/Mods/Mod0.bmod").exists(), "老 BML 的那份不应装进去");
+
+        // 实例里装了老 BML：只装 .bmod
+        let inst = dir.join("inst-bml");
+        put_loader(&inst, "BML.dll");
+        let res = install_brp(&brp, &inst, None).unwrap();
+        assert_eq!(res.mod_loader, "bml");
+        assert_eq!(names_of(&res), vec!["Mod0.bmod"]);
+
+        // 没有加载器：两份都装
+        let inst = dir.join("inst-none");
+        fs::create_dir_all(&inst).unwrap();
+        let res = install_brp(&brp, &inst, None).unwrap();
+        assert_eq!(res.mod_loader, "none");
+        assert_eq!(names_of(&res), vec!["Mod0.bmod", "Mod1.bmodp"]);
+
+        // 被禁用的加载器不算数：只有 BML.dll.disable 时按「没有加载器」处理
+        let inst = dir.join("inst-disabled");
+        put_loader(&inst, "BML.dll.disable");
+        let res = install_brp(&brp, &inst, None).unwrap();
+        assert_eq!(res.mod_loader, "none");
+    }
+
+    #[test]
+    fn mod_install_flags_variant_mismatch() {
+        // 包只有 .bmod，但实例装的是 BML+：装上并标记不匹配
+        let dir = fresh("mod-mismatch");
+        let brp = dir.join("m.brp");
+        let inst = dir.join("inst");
+        write_mod_brp(&brp, &["bmod"]);
+        put_loader(&inst, "BMLPlus.dll");
+        let res = install_brp(&brp, &inst, None).unwrap();
+        assert_eq!(res.mod_loader, "bmlp");
+        assert_eq!(names_of(&res), vec!["Mod0.bmod"]);
+        assert!(res.mod_variant_mismatch, "应标记产物与加载器不匹配");
     }
 }

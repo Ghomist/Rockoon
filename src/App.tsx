@@ -40,7 +40,7 @@ import { usePrefStore } from "@/stores/pref";
 import { useProfilesStore } from "@/stores/profiles";
 import { dialog, message } from "@/utils/ui/feedback";
 import { checkRunningInstance } from "@/services/launcher";
-import { importFromFile, describeBrp } from "@/services/brp";
+import { importFromFile, describeBrp, modInstallNotice } from "@/services/brp";
 import { askSkyTarget } from "@/services/sky";
 import backend from "@/backend";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
@@ -233,10 +233,11 @@ function MainLayout() {
         count: m.installedPaths.length,
         target: m.targetDescription
       });
+      const notice = modInstallNotice(m);
       setImportResult(
-        importDepCount > 0
-          ? `${success}${t("brp.import.withDeps", { count: importDepCount })}`
-          : success
+        `${success}${notice ? `\n\n${notice}` : ""}${
+          importDepCount > 0 ? t("brp.import.withDeps", { count: importDepCount }) : ""
+        }`
       );
       setImportPhase("done");
       useAppStore.getState().triggerRefresh();

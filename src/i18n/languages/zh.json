@@ -122,12 +122,17 @@
     },
     "category": {
       "map": "地图",
+      "mod": "模组",
       "bmod": "BML Mod",
       "bmodp": "BMLPlus Mod",
       "sound": "声音替换",
       "sky": "天空盒",
       "texture": "材质替换",
       "xpatch": "自由补丁"
+    },
+    "modNotice": {
+      "noLoader": "未检测到模组加载器，BML 与 BML+ 两种版本的产物都已放入 ModLoader/Mods（装哪种加载器都能直接用）。",
+      "mismatch": "这个模组没有 {loader} 版本，已按 {installed} 版本安装；要配合 {installed} 加载器才会生效。"
     }
   },
   "header": {

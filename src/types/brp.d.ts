@@ -20,7 +20,7 @@ type SkyLetter =
 /** BRP manifest — mirrors the snake_case field names defined in the BRP spec. */
 type BrpManifest = {
   manifest_version: number;
-  category: "map" | "bmod" | "bmodp" | "sound" | "sky" | "texture" | "x-patch";
+  category: "map" | "mod" | "bmod" | "bmodp" | "sound" | "sky" | "texture" | "x-patch";
   name?: string;
   author?: string;
   authors?: string[];
@@ -44,6 +44,12 @@ type BrpImportResult = {
   installedPaths: string[];
   /** Human-readable target (e.g. `ModLoader/Maps/`). */
   targetDescription: string;
+  /** mod 类别：这次实际装进去的产物（bmod / bmodp）；其它类别为空 */
+  installedModFormats: string[];
+  /** mod 类别：实例里最终会加载 mod 的那个加载器（bml / bmlp / none） */
+  modLoader: string;
+  /** mod 类别：包里没有与实例加载器匹配的产物，装的是另一种 */
+  modVariantMismatch: boolean;
 };
 
 /** Progress event payload from async BRP import. */

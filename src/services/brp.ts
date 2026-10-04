@@ -7,12 +7,36 @@ import { listen } from "@tauri-apps/api/event";
 
 const CATEGORY_LABEL_KEY: Record<BrpManifest["category"], string> = {
   map: "brp.category.map",
+  mod: "brp.category.mod",
   bmod: "brp.category.bmod",
   bmodp: "brp.category.bmodp",
   sound: "brp.category.sound",
   sky: "brp.category.sky",
   texture: "brp.category.texture",
   "x-patch": "brp.category.xpatch"
+};
+
+/** 加载器与产物的显示名（BML / BML+ 是产品名，不翻译） */
+const LOADER_NAME: Record<string, string> = { bml: "BML", bmlp: "BML+", none: "" };
+const FORMAT_NAME: Record<string, string> = { bmod: "BML", bmodp: "BML+" };
+
+/**
+ * mod 装完后的补充说明：一个 mod 包里可能带 BML 与 BML+ 两份产物，
+ * 实际装了哪份取决于实例里装的加载器 —— 两种情况下要说一句，否则用户会莫名其妙。
+ */
+export const modInstallNotice = (r: BrpImportResult): string => {
+  if (r.manifest.category !== "mod") return "";
+  if (r.modLoader === "none") return t("brp.modNotice.noLoader");
+  if (r.modVariantMismatch) {
+    const installed = r.installedModFormats
+      .map(f => FORMAT_NAME[f] ?? f)
+      .join(" / ");
+    return t("brp.modNotice.mismatch", {
+      loader: LOADER_NAME[r.modLoader] ?? r.modLoader,
+      installed
+    });
+  }
+  return "";
 };
 
 /** Render a short description of what the manifest contains, for notifications. */
@@ -61,13 +85,14 @@ export async function importFromFile(
   try {
     const result = await backend.importBrp(filePath, instance.path, skyLetter);
     loading.destroy();
+    const notice = modInstallNotice(result);
     dialog.success({
       title: t("brp.import.successTitle"),
-      content: t("brp.import.success", {
+      content: `${t("brp.import.success", {
         what: describeBrp(result.manifest),
         count: result.installedPaths.length,
         target: result.targetDescription
-      }),
+      })}${notice ? `\n\n${notice}` : ""}`,
       positiveText: t("common.dialog.confirm")
     });
     useAppStore.getState().triggerRefresh();

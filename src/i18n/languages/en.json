@@ -122,12 +122,17 @@
     },
     "category": {
       "map": "Map",
+      "mod": "Mod",
       "bmod": "BML Mod",
       "bmodp": "BMLPlus Mod",
       "sound": "Sound Replacement",
       "sky": "Skybox",
       "texture": "Texture Replacement",
       "xpatch": "Free Patch"
+    },
+    "modNotice": {
+      "noLoader": "No mod loader detected — both the BML and BML+ builds were placed in ModLoader/Mods, so either loader works.",
+      "mismatch": "This mod has no {loader} build; the {installed} build was installed instead. It takes effect only with the {installed} loader."
     }
   },
   "header": {
