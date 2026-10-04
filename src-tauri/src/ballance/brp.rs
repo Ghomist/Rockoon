@@ -244,7 +244,6 @@ fn validate_mod(
     }
 
     let mut seen: Vec<&str> = Vec::new();
-    let mut has_artifact = false;
     for entry in first_level {
         // 目录形式（沿用 bmod/bmodp 的老规则）：V12 name 必填且等于目录名
         if content_files.iter().any(|f| f.starts_with(&format!("{}/", entry))) {
@@ -267,21 +266,19 @@ fn validate_mod(
         }
 
         let lower = entry.to_lowercase();
-        let ext = if lower.ends_with(".bmodp") {
+        let ext = if lower.ends_with(".bmodp") || lower.ends_with(".bmodp.zip") {
             "bmodp"
-        } else if lower.ends_with(".bmod") {
+        } else if lower.ends_with(".bmod") || lower.ends_with(".bmod.zip") {
             "bmod"
         } else if lower.ends_with(".zip") {
-            "zip"
+            // 普通 zip：作者直接传 BRP 包时认不出归属，不参与「同格式只能一份」的判定
+            continue;
         } else {
             return Err(v_err(format!(
                 "V10/V11: mod 类型条目必须是 .bmod/.bmodp/.zip，实际：{}",
                 entry
             )));
         };
-        if ext != "zip" {
-            has_artifact = true;
-        }
         if seen.contains(&ext) {
             return Err(v_err(format!(
                 "V10/V11: mod 类型不允许两份同为 {} 的产物",
@@ -291,9 +288,6 @@ fn validate_mod(
         seen.push(ext);
     }
 
-    if !has_artifact {
-        return Err(v_err("V10/V11: mod 类型至少要有一份 .bmod 或 .bmodp 产物"));
-    }
     Ok(())
 }
 
@@ -501,6 +495,8 @@ pub fn install_brp(
         match prefer {
             // 包里正好有对应产物：只装那一份
             Some(p) if available_formats.iter().any(|f| f == p) => mod_formats.push(p.to_string()),
+            // 没有任何带归属的产物（比如只有一个普通 zip）：认不出属于谁，照装且不报不匹配
+            Some(_) if available_formats.is_empty() => {}
             // 装了加载器但包里没这份产物：把现有的装上，并在结果里标记不匹配
             Some(_) => {
                 mod_formats = available_formats.clone();
@@ -599,12 +595,14 @@ fn mod_artifacts(info: &BrpInfo) -> Vec<String> {
     formats
 }
 
-/// 相对路径的 mod 产物类型（`.bmodp` / `.bmod`），不是这两类就返回 None。
+/// 相对路径的 mod 产物类型（`.bmod`/`.bmod.zip` → bmod，`.bmodp`/`.bmodp.zip` → bmodp）。
+/// 下载站的上传表单会把 zip 改名带归属后缀（作者用槽位声明那份产物属于哪个加载器），
+/// 普通 `.zip`（作者直接传的 BRP 包）认不出归属，返回 None。
 fn mod_ext_of(path: &str) -> Option<&'static str> {
     let lower = path.to_lowercase();
-    if lower.ends_with(".bmodp") {
+    if lower.ends_with(".bmodp") || lower.ends_with(".bmodp.zip") {
         Some("bmodp")
-    } else if lower.ends_with(".bmod") {
+    } else if lower.ends_with(".bmod") || lower.ends_with(".bmod.zip") {
         Some("bmod")
     } else {
         None
@@ -812,9 +810,8 @@ mod tests {
 
     #[test]
     fn mod_brp_rejects_bad_shapes() {
-        let cases: [(Vec<&str>, &str); 4] = [
+        let cases: [(Vec<&str>, &str); 3] = [
             (vec!["bmod", "bmod"], "两份同为"),
-            (vec!["zip"], "至少要有一份"),
             (vec!["bmod", "bmodp", "zip"], "1~2 个条目"),
             (vec!["txt"], "必须是 .bmod/.bmodp/.zip"),
         ];
@@ -878,5 +875,38 @@ mod tests {
         assert_eq!(res.mod_loader, "bmlp");
         assert_eq!(names_of(&res), vec!["Mod0.bmod"]);
         assert!(res.mod_variant_mismatch, "应标记产物与加载器不匹配");
+    }
+
+    #[test]
+    fn mod_zip_with_kind_suffix_is_recognized() {
+        // 下载站上传表单会把 zip 改名成 X.bmod.zip / X.bmodp.zip，启动器要按归属挑
+        let dir = fresh("mod-zip-kind");
+        let brp = dir.join("m.brp");
+        let inst = dir.join("inst");
+        write_mod_brp(&brp, &["bmod.zip", "bmodp.zip"]);
+        put_loader(&inst, "BMLPlus.dll");
+        let res = install_brp(&brp, &inst, None).unwrap();
+        assert_eq!(names_of(&res), vec!["Mod1.bmodp.zip"]);
+        assert_eq!(res.installed_mod_formats, vec!["bmodp"]);
+        assert!(!res.mod_variant_mismatch);
+
+        // 带归属后缀的 zip 与同类型的产物算重复
+        write_mod_brp(&brp, &["bmod", "bmod.zip"]);
+        let err = validate_brp(&brp, &inst).err().expect("应被拒");
+        assert!(format!("{}", err).contains("两份同为"), "{}", err);
+    }
+
+    #[test]
+    fn mod_install_installs_plain_zip_without_mismatch() {
+        // 只有普通 zip（认不出归属，作者直接传 BRP 包的情况）：照装，不算不匹配
+        let dir = fresh("mod-plain-zip");
+        let brp = dir.join("m.brp");
+        let inst = dir.join("inst");
+        write_mod_brp(&brp, &["zip"]);
+        put_loader(&inst, "BMLPlus.dll");
+        let res = install_brp(&brp, &inst, None).unwrap();
+        assert_eq!(names_of(&res), vec!["Mod0.zip"]);
+        assert!(res.installed_mod_formats.is_empty());
+        assert!(!res.mod_variant_mismatch, "认不出归属时不应该报不匹配");
     }
 }
