@@ -97,6 +97,16 @@ BMLPlus plugin (`RockoonIO.bmodp`) built via CMake + `build.ps1`. Sources in `sr
   `default-src 'self'` 静默拦截（只在 webview 控制台报错，业务代码只会看到网络失败）。
   历史上所有网络请求都走 Rust（ureq，不受 CSP 管），所以这是加「补丁页 / 深链读依赖」
   时第一次踩到的坑。同理，以后要显示远程图片得加 `img-src`。
+- **本地音效预览要 `media-src`**：`<audio>`（HTMLMediaElement）受 **`media-src`** 管，不受
+  `img-src` / `connect-src` 管。`convertFileSrc()` 生成的是**另一个源**的 URL
+  （Windows 上 `http://asset.localhost/...`），所以只给 `img-src` 放行时，图片能显示、
+  音频却会被 `default-src 'self'` 拦掉，报 `NotSupportedError` + 控制台一条
+  `securitypolicyviolation (media-src)`，业务代码只看到「播放失败」。
+  修法：`media-src 'self' asset: http://asset.localhost`（与 `img-src` 同源列表）。
+  验证方法：`.local-logs/audio-csp-test/` —— 两个端口的双源复现（页面带/不带 `media-src`），
+  用无头 Edge 抓 DOM 看 `play()` 结果与 `csp-violation` 事件。
+- **CSP 会连内联脚本一起拦**：`default-src 'self'` 下 `securitypolicyviolation` 之外的
+  内联 `<script>` 不执行 —— 写临时验证页时要外链 JS，否则页面看起来「没反应」。
 - **Windows-only**: macOS/Linux are commented out in `.github/workflows/release.yml`.
 - **Hot reload**: Vite ignores `src-tauri/**` (`vite.config.ts`). Rust changes require restarting `pnpm tauri dev`.
 - **Vite port 1420 is strict** (`strictPort: true`) — if taken, dev fails rather than incrementing.
