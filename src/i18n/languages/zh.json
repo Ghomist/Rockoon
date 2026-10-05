@@ -17,6 +17,7 @@
     "loadFailed": "获取补丁信息失败：{error}",
     "notInstalled": "未安装",
     "installed": "已安装 {version}",
+    "installedShort": "已安装",
     "installedOld": "有更新（当前 {version}）",
     "installedUnknown": "已安装（版本未知）",
     "installLatest": "安装最新版",

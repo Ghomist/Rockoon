@@ -53,16 +53,101 @@ function downloadUrl(
  */
 export type PatchInstallTarget = { version: number; tag: string } | null;
 
-/** Rockoon 记录的已安装版本（手动装的补丁没有记录） */
+/**
+ * 兼容旧安装的版本记录。
+ * 早期版本把补丁版本写在启动器配置里，且 key 只有补丁名没有游戏目录，
+ * 多个游戏目录会互相串；现在改用游戏目录里的记录文件，这个只读不写。
+ */
 export function installedVersion(key: string): string | undefined {
   return usePrefStore.getState().patchVersions?.[key] || undefined;
+}
+
+/** 记录文件的目录 / 文件名（固定在游戏根目录下，与补丁装到哪无关） */
+const PATCH_RECORD_DIR = "ModLoader";
+const PATCH_RECORD_FILE = ".rockoon-patch.json";
+
+type PatchRecordEntry = { tag: string; at: string };
+type PatchRecord = Record<string, PatchRecordEntry>;
+
+async function patchRecordDir(instancePath: string): Promise<string> {
+  return join(instancePath, PATCH_RECORD_DIR);
+}
+
+/**
+ * 读游戏目录里的补丁记录。
+ * 读不到 / 解析不了都当成空记录 —— 它只用来展示版本号，坏了不该拦住任何操作。
+ */
+/**
+ * 最近一次读到的记录（按游戏目录缓存）。
+ * 记录文件是异步读的，而 Player 的「构建/版本」两个 getter 是同步的（UI 里直接调用），
+ * 所以 detectInstalled 读完之后这里留一份供它们同步取用。
+ */
+let recordCache: { instancePath: string; record: PatchRecord } | null = null;
+
+async function readPatchRecord(instancePath: string): Promise<PatchRecord> {
+  try {
+    const path = await join(await patchRecordDir(instancePath), PATCH_RECORD_FILE);
+    if (!(await backend.exists(path))) {
+      recordCache = { instancePath, record: {} };
+      return {};
+    }
+    const parsed: unknown = JSON.parse(await backend.readTextFile(path));
+    const record = parsed && typeof parsed === "object" ? (parsed as PatchRecord) : {};
+    recordCache = { instancePath, record };
+    return record;
+  } catch (e) {
+    console.warn("Read patch record failed:", e);
+    recordCache = { instancePath, record: {} };
+    return {};
+  }
+}
+
+/**
+ * 往游戏目录的记录文件里写一条已安装版本（合并已有内容）。
+ * 写失败只记日志：绝不能因为记不上版本而让安装失败。
+ */
+async function writePatchRecord(
+  instancePath: string,
+  key: string,
+  tag: string
+): Promise<void> {
+  try {
+    const dir = await patchRecordDir(instancePath);
+    await backend.mkdir(dir);
+    const record = await readPatchRecord(instancePath);
+    record[key] = { tag, at: new Date().toISOString() };
+    await backend.writeTextFile(
+      await join(dir, PATCH_RECORD_FILE),
+      JSON.stringify(record, null, 2)
+    );
+  } catch (e) {
+    console.warn("Write patch record failed:", e);
+  }
+}
+
+/** 删掉记录里的某个条目（互斥补丁被禁用后调用），失败同样只记日志 */
+async function removePatchRecordEntry(
+  instancePath: string,
+  key: string
+): Promise<void> {
+  try {
+    const record = await readPatchRecord(instancePath);
+    if (!(key in record)) return;
+    delete record[key];
+    await backend.writeTextFile(
+      await join(await patchRecordDir(instancePath), PATCH_RECORD_FILE),
+      JSON.stringify(record, null, 2)
+    );
+  } catch (e) {
+    console.warn("Remove patch record entry failed:", e);
+  }
 }
 
 /**
  * 这个游戏里装了没装某个补丁？
  * - null：没装（校验文件不在）
- * - ""：装了，但版本未知（不是 Rockoon 装的）
- * - 其他：Rockoon 装的版本号
+ * - ""：装了，但版本未知（不是 Rockoon 装的，或下载站标注不跟踪版本）
+ * - 其他：Rockoon 装的版本号（优先读游戏目录里的记录，老配置只作兼容）
  */
 export async function detectInstalled(
   component: PatchComponent,
@@ -71,11 +156,17 @@ export async function detectInstalled(
   // 新 Player：两种构建产出的文件一样，磁盘上只有「装了 / 没装」两种状态
   if (isPlayerPatch(component.key)) {
     if (!(await detectPlayer(instancePath))) return null;
-    return installedPlayerVersion() ?? "";
+    // 两种构建的本质是同一个补丁：记录里哪个 player key 有值都算数
+    const record = await readPatchRecord(instancePath);
+    const tag = PLAYER_KEYS.map(key => record[key]?.tag).find(value => Boolean(value));
+    return tag ?? installedPlayerVersion() ?? "";
   }
   const dir = await patchTargetDir(component, instancePath);
   if (!(await backend.exists(await join(dir, component.marker)))) return null;
-  return installedVersion(component.key) ?? "";
+  // 版本读不出来的补丁只回答装了没装，避免展示一个跨游戏目录串来的假版本号
+  if (component.track_version === false) return "";
+  const record = await readPatchRecord(instancePath);
+  return record[component.key]?.tag ?? installedVersion(component.key) ?? "";
 }
 
 /**
@@ -142,21 +233,19 @@ export async function installPatch(
               }
               // 记录装的是哪个版本，供更新检测与「已安装」展示使用
               const installed = target?.tag ?? component.latest;
-              usePrefStore.setState(s => {
-                const merged = {
-                  ...(s.patchVersions ?? {}),
-                  [component.key]: installed
-                };
-                // 两种 Player 构建产出的文件一样，只保留刚装的那个记录
-                const next = isPlayerPatch(component.key)
-                  ? Object.fromEntries(
-                      Object.entries(merged).filter(
-                        ([key]) => !isPlayerPatch(key) || key === component.key
-                      )
-                    )
-                  : merged;
-                return { patchVersions: next };
-              });
+              if (isPlayerPatch(component.key)) {
+                // 两种 Player 构建产出的文件一样，记录里只保留刚装的那个 key
+                await writePatchRecord(instancePath, component.key, installed);
+                for (const key of PLAYER_KEYS) {
+                  if (key !== component.key) {
+                    await removePatchRecordEntry(instancePath, key);
+                  }
+                }
+              } else {
+                // 版本记录进游戏目录（key 带游戏目录，多个实例才不会互相串），
+                // 写失败只记日志，不影响安装结果
+                await writePatchRecord(instancePath, component.key, installed);
+              }
               hooks.onPhase("done");
               hooks.onPercent(100);
               resolve();
@@ -247,21 +336,34 @@ export async function detectPlayer(instancePath: string): Promise<boolean> {
   }
 }
 
+/** Player 在记录文件里的版本（记录文件异步读，这里只读缓存） */
+function playerRecordVersions(): Partial<Record<(typeof PLAYER_KEYS)[number], string>> {
+  const record = recordCache?.record ?? {};
+  return Object.fromEntries(
+    PLAYER_KEYS.filter(key => record[key]?.tag).map(key => [key, record[key].tag])
+  );
+}
+
 /** 已装的新 Player 是哪种构建（两边都有记录 = 分不清，下次装一次就自愈） */
 export function installedPlayerBuild():
   | (typeof PLAYER_KEYS)[number]
   | undefined {
+  const fromRecord = Object.keys(playerRecordVersions()) as (typeof PLAYER_KEYS)[number][];
+  if (fromRecord.length === 1) return fromRecord[0];
+  if (fromRecord.length > 1) return undefined;
+  // 记录文件里没有（老版本装的）→ 退回老配置
   const versions = usePrefStore.getState().patchVersions ?? {};
   const hits = PLAYER_KEYS.filter(key => versions[key]);
   return hits.length === 1 ? hits[0] : undefined;
 }
 
-/** 新 Player 记录里的版本号（不管当时装的是哪种构建） */
+/** 新 Player 的版本号（不管当时装的是哪种构建） */
 export function installedPlayerVersion(): string | undefined {
+  const fromRecord = Object.values(playerRecordVersions()).find(value => Boolean(value));
+  if (fromRecord) return fromRecord;
+  // 记录文件里没有（老版本装的）→ 退回老配置
   const versions = usePrefStore.getState().patchVersions ?? {};
-  return (
-    versions[DEFAULT_PLAYER_KEY] ?? versions["player-msvc2022"] ?? undefined
-  );
+  return versions[DEFAULT_PLAYER_KEY] ?? versions["player-msvc2022"] ?? undefined;
 }
 
 /** 找出与它互斥、且当前确实装着的补丁（装之前要先处理掉这些） */
@@ -299,7 +401,7 @@ export async function resolveConflicts(
         await backend.disable(dir, disable.file);
       }
     }
-    // 记录里也要清掉，否则下次检测还会认为它装着
+    // 记录里也要清掉（老配置和游戏目录记录都要），否则下次检测还会认为它装着
     usePrefStore.setState(s => ({
       patchVersions: Object.fromEntries(
         Object.entries(s.patchVersions ?? {}).filter(
@@ -307,6 +409,7 @@ export async function resolveConflicts(
         )
       )
     }));
+    await removePatchRecordEntry(instancePath, other.key);
     handled.push(other);
   }
 
@@ -330,8 +433,11 @@ export async function checkPatchUpdates(
     if (!component.package_id || !component.latest) continue;
     // 两种 Player 构建是同一个补丁，只按主构建提示一次
     if (isSecondaryPlayer(component.key)) continue;
+    // 下载站标注不跟踪版本的补丁（BML）不可能判断是否落后，直接不提醒
+    if (component.track_version === false) continue;
     const installed = await detectInstalled(component, instancePath);
     if (installed === null) continue; // 没装过 → 不提示
+    if (installed === "") continue; // 装了但版本未知（手动解压）→ 不提示
     if (installed === component.latest) continue; // 已是最新
     if (seen[component.key] === component.latest) continue; // 这个版本提示过并被忽略了
     out.push({ component, installed });

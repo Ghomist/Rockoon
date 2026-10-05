@@ -17,6 +17,7 @@
     "loadFailed": "Failed to load patches: {error}",
     "notInstalled": "Not installed",
     "installed": "Installed {version}",
+    "installedShort": "Installed",
     "installedOld": "Update available (current {version})",
     "installedUnknown": "Installed (version unknown)",
     "installLatest": "Install latest",

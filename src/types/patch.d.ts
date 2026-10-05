@@ -13,6 +13,8 @@ type PatchComponent = {
   strip_top_level: boolean;
   /** 装完用来校验的文件（相对安装目录） */
   marker: string;
+  /** 该补丁的版本能否从文件读出；false = 只回答「装了没装」（目前是 BML） */
+  track_version: boolean;
   package_id: number | null;
   versions: number;
   /** 最新版本号，与上游 GitHub 发布版本（tag）对齐 */

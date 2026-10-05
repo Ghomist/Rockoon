@@ -232,6 +232,12 @@ export default function Patches() {
 
   const statusOf = (component: PatchComponent) => {
     const version = installed[component.key];
+    // 下载站标注不跟踪版本（BML）：只回答装了没装，不展示版本号
+    if (component.track_version === false) {
+      return version === null
+        ? { label: t("patches.notInstalled"), tone: "muted" as const }
+        : { label: t("patches.installedShort"), tone: "ok" as const };
+    }
     if (version === null)
       return { label: t("patches.notInstalled"), tone: "muted" as const };
     if (version === "")
@@ -292,6 +298,7 @@ export default function Patches() {
               ? `${status.label} · ${buildLabel(playerBuild)}`
               : status.label;
             const outdated =
+              component.track_version !== false &&
               component.latest &&
               status.tone !== "ok" &&
               installed[component.key] !== null;
