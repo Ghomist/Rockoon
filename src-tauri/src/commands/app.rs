@@ -34,8 +34,24 @@ pub fn hide_window<R: Runtime>(window: Window<R>) -> RcResult {
 
 #[command]
 pub fn show_window<R: Runtime>(window: Window<R>) -> RcResult {
-    window.show()?;
+    raise_window(&window);
     Ok(())
+}
+
+/// 把窗口提到最前：还原（可能最小化或藏在托盘）→ 显示 → 抢焦点。
+///
+/// 为什么需要：下载站用 rockoon:// 一键安装时，用户需要立刻看到进度，
+/// 窗口只 show 不 focus 的话经常就叠在浏览器后面，看起来像“什么都没发生”。
+/// Windows 的前台窗口锁会拒后台进程抢焦点，所以再等一拍确认一下，没抢到就闪任务栏。
+pub fn raise_window<R: Runtime>(window: &Window<R>) {
+    let _ = window.unminimize();
+    let _ = window.show();
+    let _ = window.set_focus();
+
+    std::thread::sleep(std::time::Duration::from_millis(120));
+    if !window.is_focused().unwrap_or(true) {
+        let _ = window.request_user_attention(Some(tauri::UserAttentionType::Informational));
+    }
 }
 
 #[command]
@@ -44,7 +60,7 @@ pub fn toggle_window<R: Runtime>(window: Window<R>) -> RcResult {
     if visible {
         window.hide()?;
     } else {
-        window.show()?;
+        raise_window(&window);
     }
     Ok(())
 }

@@ -74,13 +74,21 @@ pub fn run() {
         .expect("error while running tauri application");
 }
 
+/// 用户从下载站点「一键安装」时，浏览器会再拉一次本应用（带 rockoon:// 参数），
+/// 被单实例插件拦住并把参数转到已有窗口——这里要做的就是把窗口提到最前，
+/// 否则它常常就叠在浏览器后面，用户不知道下载有没有开始。
 fn show_singleton_window(app: &AppHandle) {
-    let windows = app.webview_windows();
+    let Some(window) = app.webview_windows().values().next().cloned() else {
+        return;
+    };
 
-    windows
-        .values()
-        .next()
-        .expect("Sorry, no window found")
-        .set_focus()
-        .expect("Can't Bring Window to Focus");
+    let _ = window.unminimize();
+    let _ = window.show();
+    let _ = window.set_focus();
+
+    // Windows 前台窗口锁可能拒绝抢焦点：稍等确认一下，没抢到就闪任务栏兜底
+    std::thread::sleep(std::time::Duration::from_millis(120));
+    if !window.is_focused().unwrap_or(true) {
+        let _ = window.request_user_attention(Some(tauri::UserAttentionType::Informational));
+    }
 }

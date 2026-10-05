@@ -322,11 +322,11 @@ function MainLayout() {
         const parsed = new URL(raw);
         if (parsed.protocol !== "rockoon:") return;
         if (parsed.host === "import") {
-          // bring window to front, but don't let a failure block the import
+          // 把窗口提到最前（还原 → 显示 → 抢焦点），失败不阻塞导入：
+          // 单实例回调也会提一次，两边都做是怕浏览器拉起的时机太早、前端监听还没挂上。
           try {
-            const win = getCurrentWindow();
-            await win.show();
-            await win.setFocus();
+            await getCurrentWindow().unminimize();
+            await backend.showWindow();
           } catch {
             /* window API not ready yet — continue */
           }
