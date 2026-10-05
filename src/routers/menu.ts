@@ -11,6 +11,7 @@ import ResourcesSounds from "@/views/ResourcesSounds";
 import Patches from "@/views/Patches";
 import ModConfigs from "@/views/ModConfigs";
 import Settings from "@/views/Settings";
+import { hubUrl } from "@/services/hub";
 
 export type MenuItem =
   | ({
@@ -52,7 +53,7 @@ export const getExternalLinks = (): ExternalLinkItem[] => [
   {
     label: t("menu.downloadSite"),
     description: t("home.downloadSiteDesc"),
-    url: "https://dl.ballance.top/",
+    url: hubUrl("/"),
     icon: "download"
   },
   {

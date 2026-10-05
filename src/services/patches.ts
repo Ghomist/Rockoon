@@ -2,7 +2,7 @@ import { listen } from "@tauri-apps/api/event";
 import { join } from "@tauri-apps/api/path";
 
 import backend from "@/backend";
-import { RESOURCE_HUB } from "@/services/game";
+import { hubFetch, hubUrl } from "@/services/hub";
 import { usePrefStore } from "@/stores/pref";
 import { t } from "@/i18n";
 
@@ -13,8 +13,7 @@ type VersionList = { items: PatchVersion[] };
 
 /** 拉取补丁清单（含安装提示：装到哪、要不要剥层、校验文件） */
 export async function fetchPatches(): Promise<PatchComponent[]> {
-  const res = await fetch(`${RESOURCE_HUB}/patches`);
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const res = await hubFetch("/patches");
   const data = (await res.json()) as PatchList;
   return data.items ?? [];
 }
@@ -23,8 +22,7 @@ export async function fetchPatches(): Promise<PatchComponent[]> {
 export async function fetchPatchVersions(
   packageId: number
 ): Promise<PatchVersion[]> {
-  const res = await fetch(`${RESOURCE_HUB}/packages/${packageId}/versions`);
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const res = await hubFetch(`/packages/${packageId}/versions`);
   const data = (await res.json()) as VersionList;
   return data.items ?? [];
 }
@@ -45,8 +43,8 @@ function downloadUrl(
 ): string {
   if (!component.package_id) throw new Error("该补丁还没有可下载的版本");
   return fileVersion
-    ? `${RESOURCE_HUB}/packages/${component.package_id}/versions/${fileVersion}/download`
-    : `${RESOURCE_HUB}/packages/${component.package_id}/download`;
+    ? hubUrl(`/packages/${component.package_id}/versions/${fileVersion}/download`)
+    : hubUrl(`/packages/${component.package_id}/download`);
 }
 
 /**

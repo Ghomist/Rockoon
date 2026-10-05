@@ -3,7 +3,7 @@ import { Download, Loader2, RefreshCw, RotateCcw } from "lucide-react";
 
 import backend from "@/backend";
 import { useT } from "@/i18n";
-import { RESOURCE_HUB } from "@/services/game";
+import { hubUrl } from "@/services/hub";
 import {
   DEFAULT_PLAYER_KEY,
   detectInstalled,
@@ -346,7 +346,7 @@ export default function Patches() {
                     className="underline decoration-dotted hover:text-foreground"
                     onClick={() =>
                       void backend.open(
-                        `${RESOURCE_HUB}/resource/${component.package_id}`
+                        hubUrl(`/resource/${component.package_id}`)
                       )
                     }
                   >

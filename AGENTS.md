@@ -92,6 +92,13 @@ BMLPlus plugin (`RockoonIO.bmodp`) built via CMake + `build.ps1`. Sources in `sr
 
 ## Operational gotchas
 
+- **下载站有备用域名（`.top` 会被部分运营商拦）**：`dl.bcrc.site` 是 `dl.ballance.top` 的
+  别名（同一台 nginx、同一份后端）。所有对下载站的请求一律走 `src/services/hub.ts`：
+  `hubFetch()` 主域名失败/超时（5s）自动切别名、并记住这次能用的那个；`hubUrl()` 拼给
+  Rust 下载器/外部浏览器的地址；`hubReady()` 在递交下载 URL 前先探一次。
+  **不要再直接写 `https://dl.ballance.top`**（被拦的用户会整条链路失效）。
+  CSP 的 `connect-src`、`plugins.updater.endpoints` 里都并列带着别名。
+
 - **前端直连下载站要改 CSP**：`tauri.conf.json` 的 `app.security.csp` 必须写上
   `connect-src ... https://dl.ballance.top`，否则 webview 里的 `fetch` 会被
   `default-src 'self'` 静默拦截（只在 webview 控制台报错，业务代码只会看到网络失败）。

@@ -1,4 +1,4 @@
-import { RESOURCE_HUB } from "@/services/game";
+import { hubFetch, hubUrl, rebaseHubUrl } from "@/services/hub";
 
 /**
  * 深链「一键安装」的安装队列。
@@ -31,8 +31,7 @@ function packageIdFromUrl(url: string): number | null {
 
 async function fetchPackageInfo(id: number): Promise<PackageInfo | null> {
   try {
-    const res = await fetch(`${RESOURCE_HUB}/packages/${id}`);
-    if (!res.ok) return null;
+    const res = await hubFetch(`/packages/${id}`);
     const data = (await res.json()) as {
       name?: unknown;
       dependencies?: unknown;
@@ -60,7 +59,9 @@ async function fetchPackageInfo(id: number): Promise<PackageInfo | null> {
  */
 export async function buildImportQueue(mainUrl: string): Promise<ImportTask[]> {
   const mainId = packageIdFromUrl(mainUrl);
-  if (mainId === null) return [{ url: mainUrl, name: "", isDependency: false }];
+  if (mainId === null) {
+    return [{ url: rebaseHubUrl(mainUrl), name: "", isDependency: false }];
+  }
 
   const tasks: ImportTask[] = [];
   const seen = new Set<number>();
@@ -78,7 +79,7 @@ export async function buildImportQueue(mainUrl: string): Promise<ImportTask[]> {
       await visit(Number(dep), depth + 1, true);
     }
     tasks.push({
-      url: `${RESOURCE_HUB}/packages/${id}/download`,
+      url: hubUrl(`/packages/${id}/download`),
       name: info.name,
       isDependency,
       category: info.category
@@ -88,5 +89,5 @@ export async function buildImportQueue(mainUrl: string): Promise<ImportTask[]> {
   await visit(mainId, 0, false);
   return tasks.length
     ? tasks
-    : [{ url: mainUrl, name: "", isDependency: false }];
+    : [{ url: rebaseHubUrl(mainUrl), name: "", isDependency: false }];
 }

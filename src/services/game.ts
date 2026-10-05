@@ -5,14 +5,12 @@ import { open as browseDir } from "@tauri-apps/plugin-dialog";
 import backend from "@/backend";
 import type { ImportPhase } from "@/components/ImportProgressDialog";
 import { t } from "@/i18n";
+import { hubReady, hubUrl } from "@/services/hub";
 import { useAppStore } from "@/stores/app";
 import { usePrefStore } from "@/stores/pref";
 import { useProfilesStore } from "@/stores/profiles";
 import { fetchPatches, installPatch } from "@/services/patches";
 import { message } from "@/utils/ui/feedback";
-
-/** 原版游戏镜像挂在下载站上（与更新源同一个站） */
-export const RESOURCE_HUB = "https://dl.ballance.top";
 
 export interface VanillaInstallDialog {
   open: boolean;
@@ -192,7 +190,9 @@ export function useVanillaInstall(): {
     ];
 
     try {
-      taskId.current = await backend.startInstall(`${RESOURCE_HUB}/game/download`, folder);
+      // 先把下载站域名探一次（被运营商拦 .top 时自动切别名），再把 URL 交给 Rust 下载器
+      await hubReady();
+      taskId.current = await backend.startInstall(hubUrl("/game/download"), folder);
     } catch (e) {
       unlisten.forEach(fn => fn());
       setError(String(e));
