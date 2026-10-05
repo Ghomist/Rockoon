@@ -12,13 +12,36 @@
  *   先经过一次上面的探测，避免把被拦的域名塞给它。
  */
 
-/** 候选地址，第一个是正式域名 */
+/** 内置候选地址：首次连接时的引导用；连上后会采用下载站返回的根域名表（加新域名不用改这里） */
 export const HUB_ORIGINS = ["https://dl.ballance.top", "https://dl.bcrc.site"] as const;
 
 /** 单个候选的超时（被运营商拦时通常是干等，所以给短一点） */
 const PROBE_TIMEOUT_MS = 5000;
 
+/** 实际候选表 = 内置 + 下载站配置里的根域名 */
+let origins: string[] = [...HUB_ORIGINS];
+let originsAdopted = false;
 let activeOrigin: string | null = null;
+
+/**
+ * 连上之后拉一次根域名表（`/site/domains`），把里面的根域名并进候选表。
+ * 这样以后加新根域名只需改下载站配置，启动器不用跟着发版。
+ */
+async function adoptHubOrigins(origin: string): Promise<void> {
+  try {
+    const res = await fetch(`${origin}/site/domains`, {
+      signal: AbortSignal.timeout(PROBE_TIMEOUT_MS)
+    });
+    if (!res.ok) return;
+    const data = (await res.json()) as { roots?: { frontend?: unknown }[] };
+    const extra = (data.roots ?? [])
+      .map(root => root.frontend)
+      .filter((url): url is string => typeof url === "string" && url.startsWith("http"));
+    if (extra.length) origins = [...new Set([...origins, ...extra])];
+  } catch {
+    // 拿不到就用内置的
+  }
+}
 
 /** 当前认定的下载站基地址（没探测过时用正式域名） */
 export function hubOrigin(): string {
@@ -32,8 +55,8 @@ export function hubUrl(path: string): string {
 
 /** 按“已认定的优先”排候选 */
 function candidateOrder(): string[] {
-  if (!activeOrigin) return [...HUB_ORIGINS];
-  return [activeOrigin, ...HUB_ORIGINS.filter(origin => origin !== activeOrigin)];
+  if (!activeOrigin) return [...origins];
+  return [activeOrigin, ...origins.filter(origin => origin !== activeOrigin)];
 }
 
 /**
@@ -57,6 +80,10 @@ export async function hubFetch(path: string, init?: RequestInit): Promise<Respon
         throw new Error(`${origin} 返回的不是下载站（content-type: ${contentType || "空"}）`);
       }
       activeOrigin = origin;
+      if (!originsAdopted) {
+        originsAdopted = true;
+        void adoptHubOrigins(origin);
+      }
       return res;
     } catch (error) {
       lastError = error;
@@ -88,7 +115,7 @@ export async function hubReady(): Promise<string> {
 export function rebaseHubUrl(url: string): string {
   try {
     const parsed = new URL(url);
-    const isHub = HUB_ORIGINS.some(origin => new URL(origin).host === parsed.host);
+    const isHub = origins.some(origin => new URL(origin).host === parsed.host);
     if (!isHub) return url;
     return `${hubOrigin()}${parsed.pathname}${parsed.search}`;
   } catch {
