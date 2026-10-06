@@ -6,7 +6,6 @@ import { useAppStore } from "@/stores/app";
 import { usePrefStore } from "@/stores/pref";
 import { useProfilesStore } from "@/stores/profiles";
 import { checkForUpdate } from "@/services/updater";
-import ImportProgressDialog from "@/components/ImportProgressDialog";
 import PatchOptionsDialog from "@/components/PatchOptionsDialog";
 import { useVanillaInstall } from "@/services/game";
 import { useT } from "@/i18n";
@@ -73,7 +72,8 @@ export default function Settings() {
   const onReload = () => location.reload();
 
   // 换目录时不只支持「选已有目录」，也支持直接装一份干净的原版游戏
-  const { start: installGame, dialog: gameDialog, optionsDialog: gameOptions } = useVanillaInstall();
+  const { start: installGame, optionsDialog: gameOptions } =
+    useVanillaInstall();
 
   const onChangeInstancePath = async () => {
     const folder = await browseDir({
@@ -234,7 +234,6 @@ export default function Settings() {
         <NFormWrapper schema={instanceSchema} />
       </section>
 
-      <ImportProgressDialog {...gameDialog} />
       <PatchOptionsDialog {...gameOptions} />
 
       <section className="flex flex-col gap-2.5">

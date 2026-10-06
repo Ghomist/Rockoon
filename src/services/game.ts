@@ -1,31 +1,16 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useState } from "react";
 import { listen } from "@tauri-apps/api/event";
 import { open as browseDir } from "@tauri-apps/plugin-dialog";
 
 import backend from "@/backend";
-import type { ImportPhase } from "@/components/ImportProgressDialog";
 import { t } from "@/i18n";
 import { hubReady, hubUrl } from "@/services/hub";
 import { useAppStore } from "@/stores/app";
+import { useDownloadsStore } from "@/stores/downloads";
 import { usePrefStore } from "@/stores/pref";
 import { useProfilesStore } from "@/stores/profiles";
-import { fetchPatches, installPatch } from "@/services/patches";
+import { fetchPatches, installPatchAsTask } from "@/services/patches";
 import { message } from "@/utils/ui/feedback";
-
-export interface VanillaInstallDialog {
-  open: boolean;
-  phase: ImportPhase;
-  percent: number;
-  error: string;
-  resultText: string;
-  onCancel: () => void;
-  onClose: () => void;
-  /** 已下载 / 总字节数（弹窗里显示大小与速度） */
-  downloaded: number;
-  total: number;
-  /** 阶段文案：装游戏与装补丁各一套，直接展开给 ImportProgressDialog */
-  labels: Partial<Record<ImportPhase, string>>;
-}
 
 /** 装原版游戏时顺带装的补丁（用户可在弹窗里改） */
 export interface PatchChoice {
@@ -56,55 +41,25 @@ const PATCH_ORDER: { flag: keyof PatchChoice; key: string }[] = [
   { flag: "bml", key: "bml" }
 ];
 
-const GAME_LABELS: Partial<Record<ImportPhase, string>> = {
-  connecting: t("game.connecting"),
-  downloading: t("game.downloading"),
-  importing: t("game.extracting"),
-  done: t("game.done")
-};
-
-const PATCH_LABELS: Partial<Record<ImportPhase, string>> = {
-  connecting: t("patches.connecting"),
-  downloading: t("patches.downloading"),
-  importing: t("patches.extracting"),
-  done: t("patches.done")
-};
+/** 占位任务 id：后端 id 要等 start 返回才拿到，先拿它登记任务（拿到后 update 替换） */
+let taskSeq = 0;
 
 /**
  * 「安装原版游戏」流程：先问要不要顺带装补丁（默认 新 Player + BML+）→ 选目标
  * 文件夹 → 从下载站下载解压 → 设为当前实例 → 按勾选依次安装补丁。
  *
  * 首次引导（没有可用游戏时）和设置里「换文件夹 / 装新游戏」共用这一套；
- * 返回的 dialog 展开给 <ImportProgressDialog />，optionsDialog 给
- * <PatchOptionsDialog />。
+ * 下载本身是「下载任务」页里的后台任务（见 stores/downloads），这里只在装完时弹一条
+ * 结果，optionsDialog 仍是补丁勾选弹窗。
  */
 export function useVanillaInstall(): {
   start: () => void;
   busy: boolean;
-  dialog: VanillaInstallDialog;
   optionsDialog: PatchOptionsState;
 } {
   const [busy, setBusy] = useState(false);
-  const [open, setOpen] = useState(false);
   const [optionsOpen, setOptionsOpen] = useState(false);
   const [choice, setChoice] = useState<PatchChoice>(DEFAULT_PATCH_CHOICE);
-  const [stage, setStage] = useState<"game" | "patch">("game");
-  const [phase, setPhase] = useState<ImportPhase>("connecting");
-  const [percent, setPercent] = useState(0);
-  const [bytes, setBytes] = useState({ downloaded: 0, total: 0 });
-  const [error, setError] = useState("");
-  const [resultText, setResultText] = useState("");
-  const taskId = useRef("");
-
-  const onCancel = useCallback(() => {
-    if (taskId.current) void backend.cancelInstall(taskId.current);
-  }, []);
-
-  const onClose = useCallback(() => {
-    setOpen(false);
-    setError("");
-    setResultText("");
-  }, []);
 
   /** 点「安装原版游戏」：先弹补丁选项（默认勾好），确认后才选目录 */
   const start = useCallback(() => {
@@ -112,128 +67,119 @@ export function useVanillaInstall(): {
     setOptionsOpen(true);
   }, [busy]);
 
-  const run = useCallback(async (picked: PatchChoice) => {
-    const folder = await browseDir({
-      directory: true,
-      title: t("game.pickTarget")
-    });
-    if (!folder) return;
-
-    setOpen(true);
-    setStage("game");
-    setPhase("connecting");
-    setPercent(0);
-    setBytes({ downloaded: 0, total: 0 });
-    setError("");
-    setResultText("");
+  /** 真正开始：已经选好目录，装游戏 + （可选）装补丁都在这里跑完 */
+  const run = async (folder: string, picked: PatchChoice) => {
     setBusy(true);
+    let id = "";
+    try {
+      // 先把下载站域名探一次（被运营商拦 .top 时自动切别名），再把 URL 交给 Rust 下载器
+      await hubReady();
+      const url = hubUrl("/game/download");
+      const { task, duplicate } = useDownloadsStore.getState().begin({
+        id: `game-${++taskSeq}`,
+        key: `game:${url}:${folder}`,
+        kind: "game",
+        title: t("game.install"),
+        target: folder,
+        cancellable: true,
+        retry: () => void run(folder, picked)
+      });
+      // 同一个目录已经在装了：不重复下载
+      if (duplicate) return;
+      id = task.id;
 
-    const unlisten = [
-      await listen<GameInstallProgress>("game-install:progress", e => {
-        setPhase(e.payload.phase);
-        setPercent(e.payload.percent);
-        setBytes({ downloaded: e.payload.downloaded, total: e.payload.total });
-      }),
-      await listen<GameInstallComplete>("game-install:complete", async e => {
-        unlisten.forEach(fn => fn());
-        const { success, error: message_, target } = e.payload;
+      const unlisten: (() => void)[] = [
+        await listen<GameInstallProgress>("game-install:progress", e => {
+          if (e.payload.id !== id) return;
+          const downloads = useDownloadsStore.getState();
+          downloads.progress(id, e.payload.downloaded, e.payload.total);
+          if (e.payload.phase !== "done")
+            downloads.update(id, { phase: e.payload.phase });
+        })
+      ];
+      try {
+        let settleComplete: (payload: GameInstallComplete) => void = () => {};
+        const completed = new Promise<GameInstallComplete>(resolve => {
+          settleComplete = resolve;
+        });
+        unlisten.push(
+          await listen<GameInstallComplete>("game-install:complete", e => {
+            if (e.payload.id === id) settleComplete(e.payload);
+          })
+        );
 
-        if (!success) {
-          setError(message_ || t("game.failed"));
-          setBusy(false);
+        const backendId = await backend.startInstall(url, folder);
+        // 任务 id 换成后端的，取消才能真的中断这次下载
+        useDownloadsStore.getState().update(id, { id: backendId });
+        id = backendId;
+
+        const result = await completed;
+        const target = result.target ?? folder;
+        if (!result.success) {
+          const reason = result.error || t("game.failed");
+          useDownloadsStore.getState().fail(id, reason);
+          message.error(reason);
           return;
         }
 
         // 装好就把它设为当前实例，用户不用再去手动选一次
-        if (target) {
-          const ok = await useAppStore.getState().loadInstance(target);
-          if (ok) {
-            usePrefStore.setState({ instancePath: target });
-            await useProfilesStore.getState().load();
-          }
+        useDownloadsStore.getState().succeed(id);
+        if (await useAppStore.getState().loadInstance(target)) {
+          usePrefStore.setState({ instancePath: target });
+          await useProfilesStore.getState().load();
         }
 
         // 顺带装勾选的补丁：失败不影响已经装好的游戏，只提示一次
         const installedPatches: string[] = [];
-        if (target) {
-          try {
-            const components = await fetchPatches();
-            setStage("patch");
-            for (const { flag, key } of PATCH_ORDER) {
-              if (!picked[flag]) continue;
-              const component = components.find(c => c.key === key);
-              if (!component || !component.package_id) continue;
-              setPhase("connecting");
-              setPercent(0);
-              setBytes({ downloaded: 0, total: 0 });
-              await installPatch(component, target, null, {
-                onPhase: p => setPhase(p),
-                onPercent: p => setPercent(p),
-                onBytes: (downloaded, total) => setBytes({ downloaded, total }),
-                onTaskId: id => {
-                  taskId.current = id;
-                }
-              });
+        try {
+          const components = await fetchPatches();
+          for (const { flag, key } of PATCH_ORDER) {
+            if (!picked[flag]) continue;
+            const component = components.find(c => c.key === key);
+            if (!component || !component.package_id) continue;
+            if (await installPatchAsTask(component, target, null))
               installedPatches.push(`${component.name} ${component.latest}`);
-            }
-          } catch (patchError) {
-            console.warn("Patch install after game install failed:", patchError);
-            message.error(t("game.patchFailed"));
           }
+        } catch (patchError) {
+          console.warn("Patch install after game install failed:", patchError);
+          message.error(t("game.patchFailed"));
         }
 
-        setStage("game");
-        setPhase("done");
-        setPercent(100);
-        setResultText(
+        message.success(
           installedPatches.length
             ? t("game.installedWithPatches", {
-                path: target ?? folder,
+                path: target,
                 patches: installedPatches.join("、")
               })
-            : t("game.installed", { path: target ?? folder })
+            : t("game.installed", { path: target })
         );
-        setBusy(false);
-      })
-    ];
-
-    try {
-      // 先把下载站域名探一次（被运营商拦 .top 时自动切别名），再把 URL 交给 Rust 下载器
-      await hubReady();
-      taskId.current = await backend.startInstall(hubUrl("/game/download"), folder);
+      } finally {
+        unlisten.forEach(fn => fn());
+      }
     } catch (e) {
-      unlisten.forEach(fn => fn());
-      setError(String(e));
+      const reason = e instanceof Error ? e.message : String(e);
+      if (id) useDownloadsStore.getState().fail(id, reason);
+      message.error(reason || t("game.failed"));
+    } finally {
       setBusy(false);
     }
-  }, []);
+  };
 
   const optionsDialog: PatchOptionsState = {
     open: optionsOpen,
     value: choice,
     onChange: setChoice,
-    onConfirm: () => {
+    onConfirm: async () => {
       setOptionsOpen(false);
-      void run(choice);
+      const folder = await browseDir({
+        directory: true,
+        title: t("game.pickTarget")
+      });
+      if (!folder) return;
+      await run(folder, choice);
     },
     onCancel: () => setOptionsOpen(false)
   };
 
-  return {
-    start,
-    busy,
-    optionsDialog,
-    dialog: {
-      open,
-      phase,
-      percent,
-      downloaded: bytes.downloaded,
-      total: bytes.total,
-      error,
-      resultText,
-      onCancel,
-      onClose,
-      labels: stage === "patch" ? PATCH_LABELS : GAME_LABELS
-    }
-  };
+  return { start, busy, optionsDialog };
 }

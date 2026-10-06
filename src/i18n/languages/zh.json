@@ -69,7 +69,34 @@
     "cancel": "取消",
     "installingPatch": "正在安装 {name}…"
   },
+  "downloads": {
+    "title": "下载任务",
+    "runningCount": "{count} 个进行中",
+    "empty": "暂无下载任务",
+    "emptyHint": "在下载站点「一键下载」，或在补丁页安装补丁，任务都会出现在这里。",
+    "clearFinished": "清空已完成",
+    "cancel": "取消",
+    "retry": "重试",
+    "remove": "从列表移除",
+    "noCancel": "启动器自更新不支持取消",
+    "target": "目标：{target}",
+    "started": "开始下载 {title}",
+    "startedUnknown": "开始下载资源…",
+    "status": {
+      "running": "进行中",
+      "success": "已完成",
+      "error": "失败",
+      "cancelled": "已取消"
+    },
+    "phase": {
+      "connecting": "连接中",
+      "downloading": "下载中",
+      "importing": "安装中",
+      "done": "完成"
+    }
+  },
   "menu": {
+    "downloads": "下载任务",
     "modConfigs": "Mod 配置",
     "game": "启动游戏",
     "options": "游戏选项",
@@ -608,6 +635,7 @@
   },
   "updater": {
     "title": "发现新版本",
+    "taskTitle": "启动器更新",
     "available": "发现新版本 {version}，是否立即更新？",
     "downloading": "正在下载更新...",
     "installing": "正在安装更新...",

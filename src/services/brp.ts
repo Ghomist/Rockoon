@@ -1,6 +1,7 @@
 import backend from "@/backend";
 import { askSkyTarget } from "@/services/sky";
 import { useAppStore } from "@/stores/app";
+import { useDownloadsStore } from "@/stores/downloads";
 import { dialog, message } from "@/utils/ui/feedback";
 import { t } from "@/i18n";
 import { listen } from "@tauri-apps/api/event";
@@ -108,65 +109,120 @@ export async function importFromFile(
   }
 }
 
+/** 一次 BRP 导入的结局：装好 / 失败 / 被取消 / 同一个任务已经在跑 */
+export type BrpImportOutcome = "done" | "failed" | "cancelled" | "duplicate";
+
+export interface BrpImportOptions {
+  /** 任务标题（深链带来的资源名）；缺省时显示「开始下载资源…」 */
+  title?: string;
+  /** true = 这是被依赖的资源：失败多提示一句名字，成功不打扰 */
+  isDependency?: boolean;
+}
+
+/** 占位任务 id：后端 id 要等 start 返回才拿到，先拿它登记任务（拿到后 update 替换） */
+let taskSeq = 0;
+
 /** Download a BRP from `url`, then validate + install.
- *  Non-blocking: fires `startBrpImport` on backend, listens for completion
- *  via Tauri events, shows loading/success/error toast.
+ *  Non-blocking：把这次导入登记成「下载任务」（见 stores/downloads），进度与结果都写进
+ *  任务里，只在开始/成功/失败时各弹一条 message —— 没有进度弹窗，切到别的页面也照样跑。
  *  `skyLetter` 只对 sky 包有意义（把 Sky_X_* 的占位符换成目标关卡字母）。 */
 export async function importFromUrl(
   url: string,
-  skyLetter?: SkyLetter
-): Promise<string | null> {
+  skyLetter?: SkyLetter,
+  options: BrpImportOptions = {}
+): Promise<BrpImportOutcome> {
   const instance = useAppStore.getState().selectedInstanceData;
   if (!instance) {
-    dialog.error({
-      title: t("brp.import.failedTitle"),
-      content: t("brp.error.noInstance"),
-      positiveText: t("common.dialog.confirm")
-    });
-    return null;
+    message.error(t("brp.error.noInstance"));
+    return "failed";
   }
-  const loading = message.loading(t("brp.downloading"), { duration: 0 });
-  try {
-    const id = await backend.startBrpImport(url, instance.path, skyLetter);
 
-    // Listen for completion — fire-and-forget, toast will update on result
-    const unlisten = await listen<BrpImportCompleteEvent>(
-      "brp-import:complete",
-      event => {
+  const title = options.title?.trim() ?? "";
+  const { task, duplicate } = useDownloadsStore.getState().begin({
+    id: `brp-${++taskSeq}`,
+    key: `brp:${url}:${instance.path}`,
+    kind: "brp",
+    title,
+    target: instance.path,
+    cancellable: true,
+    retry: () => void importFromUrl(url, skyLetter, options)
+  });
+  // 同一个资源已经在装了：不重复下载
+  if (duplicate) return "duplicate";
+  message.success(
+    title ? t("downloads.started", { title }) : t("downloads.startedUnknown")
+  );
+
+  let id = task.id;
+  const unlisten: (() => void)[] = [];
+
+  try {
+    unlisten.push(
+      await listen<BrpImportProgressEvent>("brp-import:progress", event => {
         if (event.payload.id !== id) return;
-        unlisten();
-        loading.destroy();
-        if (event.payload.success && event.payload.manifest) {
-          const m = event.payload.manifest;
-          dialog.success({
-            title: t("brp.import.successTitle"),
-            content: t("brp.import.success", {
-              what: describeBrp(m.manifest),
-              count: m.installedPaths.length,
-              target: m.targetDescription
-            }),
-            positiveText: t("common.dialog.confirm")
-          });
-          useAppStore.getState().triggerRefresh();
-        } else {
-          dialog.error({
-            title: t("brp.import.failedTitle"),
-            content: t("brp.import.failed", {
-              reason: event.payload.error ?? ""
-            }),
-            positiveText: t("common.dialog.confirm")
-          });
-        }
-      }
+        const downloads = useDownloadsStore.getState();
+        downloads.progress(id, event.payload.downloaded, event.payload.total);
+        if (event.payload.phase === "importing")
+          downloads.update(id, { phase: "importing" });
+      })
     );
-    return id;
-  } catch (e) {
-    loading.destroy();
-    dialog.error({
-      title: t("brp.import.failedTitle"),
-      content: t("brp.import.failed", { reason: String(e) }),
-      positiveText: t("common.dialog.confirm")
+
+    let settleComplete: (payload: BrpImportCompleteEvent) => void = () => {};
+    const completed = new Promise<BrpImportCompleteEvent>(resolve => {
+      settleComplete = resolve;
     });
-    return null;
+    unlisten.push(
+      await listen<BrpImportCompleteEvent>("brp-import:complete", event => {
+        if (event.payload.id === id) settleComplete(event.payload);
+      })
+    );
+
+    const backendId = await backend.startBrpImport(
+      url,
+      instance.path,
+      skyLetter
+    );
+    // 任务 id 换成后端的，取消才能真的中断这次下载
+    useDownloadsStore.getState().update(id, { id: backendId });
+    id = backendId;
+
+    const result = await completed;
+    if (!result.success || !result.manifest) {
+      const reason = result.error ?? t("brp.import.failedTitle");
+      if (reason.includes("cancelled")) {
+        useDownloadsStore.getState().markCancelled(id);
+        return "cancelled";
+      }
+      useDownloadsStore.getState().fail(id, reason);
+      message.error(
+        options.isDependency
+          ? t("brp.import.depFailed", { name: title })
+          : t("brp.import.failed", { reason })
+      );
+      return "failed";
+    }
+
+    const m = result.manifest;
+    const what = describeBrp(m.manifest);
+    useDownloadsStore.getState().succeed(id, { title: what });
+    useAppStore.getState().triggerRefresh();
+    if (!options.isDependency) {
+      const notice = modInstallNotice(m);
+      message.success(
+        `${t("brp.import.success", {
+          what,
+          count: m.installedPaths.length,
+          target: m.targetDescription
+        })}${notice ? `\n\n${notice}` : ""}`
+      );
+    }
+    return "done";
+  } catch (e) {
+    const reason = e instanceof Error ? e.message : String(e);
+    useDownloadsStore.getState().fail(id, reason);
+    message.error(t("brp.import.failed", { reason }));
+    return "failed";
+  } finally {
+    unlisten.forEach(fn => fn());
   }
 }

@@ -10,6 +10,7 @@ import ResourcesTextures from "@/views/ResourcesTextures";
 import ResourcesSounds from "@/views/ResourcesSounds";
 import Patches from "@/views/Patches";
 import ModConfigs from "@/views/ModConfigs";
+import Downloads from "@/views/Downloads";
 import Settings from "@/views/Settings";
 import { hubUrl } from "@/services/hub";
 
@@ -118,6 +119,12 @@ export const getMenuItems = (): MenuItem[] => [
     view: ResourcesSounds
   },
   "-",
+  {
+    label: t("menu.downloads"),
+    route: "/downloads",
+    icon: "arrow-down-to-line",
+    view: Downloads
+  },
   {
     label: t("menu.settings"),
     route: "/settings",

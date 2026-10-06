@@ -3,6 +3,7 @@ import { join } from "@tauri-apps/api/path";
 
 import backend from "@/backend";
 import { hubFetch, hubUrl } from "@/services/hub";
+import { useDownloadsStore } from "@/stores/downloads";
 import { usePrefStore } from "@/stores/pref";
 import { t } from "@/i18n";
 
@@ -171,13 +172,14 @@ export async function detectInstalled(
 
 /**
  * 安装 / 更新 / 回退到指定版本（version 为空表示装最新版）。
- * 进度复用原版游戏安装的事件通道，取消走 backend.cancelInstall。
+ * 进度写进「下载任务」（`taskId` 是调用方用 begin 登记的占位任务 id，拿到后端 id 后替换），
+ * 结束/失败也由这里落到任务上；取消走 stores/downloads 的 cancel → backend.cancelInstall。
  */
 export async function installPatch(
   component: PatchComponent,
   instancePath: string,
   target: PatchInstallTarget,
-  hooks: PatchInstallProgress
+  taskId: string
 ): Promise<void> {
   const targetDir = await patchTargetDir(component, instancePath);
   const url = downloadUrl(component, target?.version ?? null);
@@ -199,6 +201,13 @@ export async function installPatch(
 
   return new Promise<void>((resolve, reject) => {
     let unlisten: (() => void)[] = [];
+    // 后端 id 要等 install 返回才拿到：先拿占位 id 用着，拿到后连任务一起换过来
+    let id = taskId;
+    const downloads = () => useDownloadsStore.getState();
+    const failWith = (reason: string): Error => {
+      downloads().fail(id, reason);
+      return new Error(reason);
+    };
 
     const cleanup = () => {
       unlisten.forEach(fn => fn());
@@ -209,16 +218,18 @@ export async function installPatch(
       try {
         unlisten = [
           await listen<GameInstallProgress>("game-install:progress", e => {
-            hooks.onPhase(e.payload.phase);
-            hooks.onPercent(e.payload.percent);
-            hooks.onBytes(e.payload.downloaded, e.payload.total);
+            if (e.payload.id !== id) return;
+            downloads().progress(id, e.payload.downloaded, e.payload.total);
+            if (e.payload.phase !== "done")
+              downloads().update(id, { phase: e.payload.phase });
           }),
           await listen<GameInstallComplete>(
             "game-install:complete",
             async e => {
+              if (e.payload.id !== id) return;
               cleanup();
               if (!e.payload.success) {
-                reject(new Error(e.payload.error || t("game.failed")));
+                reject(failWith(e.payload.error || t("game.failed")));
                 return;
               }
               // 装完校验：确认文件真的落到该在的位置（上游包结构变了会在这里暴露）
@@ -226,7 +237,7 @@ export async function installPatch(
                 !(await backend.exists(await join(targetDir, component.marker)))
               ) {
                 reject(
-                  new Error(
+                  failWith(
                     t("patches.markerMissing", { file: component.marker })
                   )
                 );
@@ -247,25 +258,56 @@ export async function installPatch(
                 // 写失败只记日志，不影响安装结果
                 await writePatchRecord(instancePath, component.key, installed);
               }
-              hooks.onPhase("done");
-              hooks.onPercent(100);
+              downloads().succeed(id);
               resolve();
             }
           )
         ];
 
-        const id = await backend.patches.install(
+        const backendId = await backend.patches.install(
           url,
           targetDir,
           component.strip_top_level
         );
-        hooks.onTaskId(id);
+        // 任务 id 换成后端的，取消才能真的中断这次下载
+        downloads().update(id, { id: backendId });
+        id = backendId;
       } catch (e) {
         cleanup();
-        reject(e instanceof Error ? e : new Error(String(e)));
+        reject(failWith(e instanceof Error ? e.message : String(e)));
       }
     })();
   });
+}
+
+/** 占位任务 id：后端 id 要等 install 返回才拿到，先拿它登记任务（拿到后 update 替换） */
+let taskSeq = 0;
+
+/**
+ * 把一次补丁安装登记成「下载任务」并跑完它。
+ * 同一个补丁、同一个版本、同一个目标目录只允许有一个任务在跑：重复调用会直接返回
+ * false（不会重复下载）。装好返回 true，失败抛出异常（任务已被标成失败）。
+ */
+export async function installPatchAsTask(
+  component: PatchComponent,
+  instancePath: string,
+  target: PatchInstallTarget
+): Promise<boolean> {
+  const key = `patch:${component.key}:${
+    target?.version ?? component.latest ?? "latest"
+  }:${instancePath}`;
+  const { task, duplicate } = useDownloadsStore.getState().begin({
+    id: `patch-${++taskSeq}`,
+    key,
+    kind: "patch",
+    title: component.name,
+    target: instancePath,
+    cancellable: true,
+    retry: () => void installPatchAsTask(component, instancePath, target)
+  });
+  if (duplicate) return false;
+  await installPatch(component, instancePath, target, task.id);
+  return true;
 }
 
 /**

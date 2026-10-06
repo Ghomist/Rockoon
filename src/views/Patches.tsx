@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useState } from "react";
 import { Download, Loader2, RefreshCw, RotateCcw } from "lucide-react";
 
 import backend from "@/backend";
@@ -10,7 +10,7 @@ import {
   fetchPatches,
   fetchPatchVersions,
   findConflicts,
-  installPatch,
+  installPatchAsTask,
   installedPlayerBuild,
   isPlayerPatch,
   isSecondaryPlayer,
@@ -21,8 +21,6 @@ import {
 import { useWaitForSelectedInstance } from "@/utils/ui/waitForInstance";
 import { message } from "@/utils/ui/feedback";
 import { formatFileSize } from "@/utils/format";
-import type { ImportPhase } from "@/components/ImportProgressDialog";
-import ImportProgressDialog from "@/components/ImportProgressDialog";
 import ListViewPage from "@/views/components/ListViewPage";
 import {
   AlertDialog,
@@ -65,30 +63,12 @@ export default function Patches() {
   const [picker, setPicker] = useState<PatchComponent | null>(null);
   const [versions, setVersions] = useState<PickerItem[]>([]);
   const [versionsLoading, setVersionsLoading] = useState(false);
-  const [progress, setProgress] = useState<{
-    open: boolean;
-    phase: ImportPhase;
-    percent: number;
-    downloaded: number;
-    total: number;
-    error: string;
-    resultText: string;
-  }>({
-    open: false,
-    phase: "connecting",
-    percent: 0,
-    downloaded: 0,
-    total: 0,
-    error: "",
-    resultText: ""
-  });
   /** 待确认的互斥安装：同组的另一个补丁还装着 */
   const [pendingConflict, setPendingConflict] = useState<{
     component: PatchComponent;
     items: PatchComponent[];
     target: PatchInstallTarget;
   } | null>(null);
-  const taskId = useRef("");
 
   const refresh = useCallback(async (instancePath: string) => {
     try {
@@ -137,6 +117,10 @@ export default function Patches() {
     }
   };
 
+  /**
+   * 安装一个补丁：登记成「下载任务」后跑完它（进度在「下载任务」页看），
+   * 装好才弹提示并刷新列表。
+   */
   const doInstall = async (
     component: PatchComponent,
     target: { version: number; tag: string } | null
@@ -144,41 +128,18 @@ export default function Patches() {
     if (!instance) return;
     setPicker(null);
     setBusyKey(component.key);
-    setProgress({
-      open: true,
-      phase: "connecting",
-      percent: 0,
-      downloaded: 0,
-      total: 0,
-      error: "",
-      resultText: ""
-    });
     try {
-      await installPatch(component, instance.path, target, {
-        onPhase: phase => setProgress(s => ({ ...s, phase })),
-        onPercent: percent => setProgress(s => ({ ...s, percent })),
-        onBytes: (downloaded, total) =>
-          setProgress(s => ({ ...s, downloaded, total })),
-        onTaskId: id => {
-          taskId.current = id;
-        }
-      });
-      const done = target?.tag ?? component.latest;
-      setProgress(s => ({
-        ...s,
-        phase: "done",
-        percent: 100,
-        resultText: t("patches.installDone", {
-          name: component.name,
-          version: done
-        })
-      }));
+      if (await installPatchAsTask(component, instance.path, target)) {
+        message.success(
+          t("patches.installDone", {
+            name: component.name,
+            version: target?.tag ?? component.latest
+          })
+        );
+      }
       await refresh(instance.path);
     } catch (e) {
-      setProgress(s => ({
-        ...s,
-        error: e instanceof Error ? e.message : String(e)
-      }));
+      message.error(e instanceof Error ? e.message : String(e));
     } finally {
       setBusyKey("");
     }
@@ -554,28 +515,6 @@ export default function Patches() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-      <ImportProgressDialog
-        open={progress.open}
-        phase={progress.phase}
-        percent={progress.percent}
-        downloaded={progress.downloaded}
-        total={progress.total}
-        error={progress.error}
-        resultText={progress.resultText}
-        labels={{
-          connecting: t("patches.connecting"),
-          downloading: t("patches.downloading"),
-          importing: t("patches.extracting"),
-          done: t("patches.done")
-        }}
-        onCancel={() => {
-          if (taskId.current) void backend.cancelInstall(taskId.current);
-        }}
-        onClose={() =>
-          setProgress(s => ({ ...s, open: false, error: "", resultText: "" }))
-        }
-      />
     </ListViewPage>
   );
 }

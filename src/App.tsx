@@ -1,10 +1,4 @@
-import {
-  startTransition,
-  useCallback,
-  useEffect,
-  useMemo,
-  useState
-} from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { ChevronDown, Check, Plus, Pencil, Trash2 } from "lucide-react";
 import { Toaster } from "@/components/ui/sonner";
 import { Button } from "@/components/ui/button";
@@ -19,12 +13,8 @@ import {
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Input } from "@/components/ui/input";
 import AppSidebar from "@/components/AppSidebar";
-import AppUpdateProgress from "@/components/AppUpdateProgress";
 import GlobalDialogHost from "@/components/GlobalDialogHost";
 import PatchUpdateWatcher from "@/components/PatchUpdateWatcher";
-import ImportProgressDialog, {
-  type ImportPhase
-} from "@/components/ImportProgressDialog";
 import TitleBarControls from "@/components/TitleBarControls";
 import { AnimatedGridPattern } from "@/components/ui/animated-grid-pattern";
 import { Particles } from "@/components/ui/particles";
@@ -33,7 +23,7 @@ import { HexagonPattern } from "@/components/ui/hexagon-pattern";
 import { WordRotate } from "@/components/ui/word-rotate";
 
 import Onboarding from "@/views/Onboarding";
-import { buildImportQueue, type ImportTask } from "@/services/deepLinkImport";
+import { buildImportQueue } from "@/services/deepLinkImport";
 import { AppRoutes } from "@/routers";
 import { t, useT } from "@/i18n";
 import { useAppStore } from "@/stores/app";
@@ -41,7 +31,7 @@ import { usePrefStore } from "@/stores/pref";
 import { useProfilesStore } from "@/stores/profiles";
 import { dialog, message } from "@/utils/ui/feedback";
 import { checkRunningInstance } from "@/services/launcher";
-import { importFromFile, describeBrp, modInstallNotice } from "@/services/brp";
+import { importFromFile, importFromUrl } from "@/services/brp";
 import { askSkyTarget } from "@/services/sky";
 import backend from "@/backend";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
@@ -50,7 +40,6 @@ import {
   getCurrent as getCurrentDeepLink,
   onOpenUrl
 } from "@tauri-apps/plugin-deep-link";
-import { listen } from "@tauri-apps/api/event";
 import { useNavigate, useLocation } from "react-router-dom";
 import { getVersion } from "@tauri-apps/api/app";
 
@@ -111,8 +100,6 @@ export default function App() {
     <>
       <Toaster richColors closeButton position="top-right" />
       <GlobalDialogHost />
-      {/* 启动器自更新的进度弹窗：没游戏时（引导页）也可能在下载，所以挂在这一层 */}
-      <AppUpdateProgress />
       <TooltipProvider>
         {hasInstance ? <MainLayout /> : <Onboarding />}
       </TooltipProvider>
@@ -126,157 +113,44 @@ function MainLayout() {
   const [collapsed, setCollapsed] = useState(false);
   const [appVersion, setAppVersion] = useState("");
 
-  // BRP import progress dialog state.
-  // 队列：深链一键安装时，依赖在前、主资源在后（见 services/deepLinkImport）。
-  const [importQueue, setImportQueue] = useState<ImportTask[]>([]);
-  const [importPending, setImportPending] = useState(false);
-  const [importDepCount, setImportDepCount] = useState(0);
-  const [importId, setImportId] = useState<string | null>(null);
-  const [importPhase, setImportPhase] = useState<ImportPhase>("connecting");
-  const [importPercent, setImportPercent] = useState(0);
-  const [importBytes, setImportBytes] = useState({ downloaded: 0, total: 0 });
-  const [importError, setImportError] = useState("");
-  const [importResult, setImportResult] = useState("");
-  /** 天空盒包要装到哪一关（X 是占位符，安装时由后端替换成对应字母） */
-  const [skyLetter, setSkyLetter] = useState<SkyLetter | undefined>(undefined);
-
-  const importCurrent = importQueue[0] ?? null;
-
-  /** 深链点进来看：先把依赖展开成安装队列，再按顺序逐个导入 */
+  /**
+   * 深链点进来是「一键安装」：先把依赖展开成安装队列（依赖在前、主资源在后，见
+   * services/deepLinkImport），再按顺序逐个导入 —— 每个资源都在「下载任务」里登记成
+   * 后台任务，开始/进度/结束全写进任务，只在开始与结束时弹 message，没有进度弹窗。
+   * `name` 是下载站带来的资源名（可选），没带就用下载站返回的资源名。
+   */
   const startDeepLinkImport = useCallback(
-    async (url: string) => {
-      // 已经在装了就不接新的：弹窗锁死挡住了启动器自己，但浏览器那边还能再点一次「一键下载」
-      if (importQueue.length > 0 || importPending) {
-        message.warning(t("brp.import.busy"));
-        return;
-      }
-      setImportPending(true);
-      setImportPhase("connecting");
-      setImportPercent(0);
-      setImportBytes({ downloaded: 0, total: 0 });
-      setImportError("");
-      setImportResult("");
-      const queue = await buildImportQueue(url);
-      setImportDepCount(queue.filter(task => task.isDependency).length);
+    async (url: string, name?: string) => {
+      try {
+        const queue = await buildImportQueue(url);
+        if (queue.length === 0) return;
 
-      // 天空盒包内的文件名是 Sky_X_<方位>.bmp（X 是占位符）：装之前问用户装到哪一关
-      setSkyLetter(undefined);
-      if (queue.some(task => task.category === "sky")) {
-        const letter = await askSkyTarget();
-        if (letter === null) {
-          setImportPending(false);
-          return; // 用户取消了安装
+        // 天空盒包的文件名是 Sky_X_<方位>.bmp（X 是占位符）：装之前问用户装到哪一关
+        let skyLetter: SkyLetter | undefined;
+        if (queue.some(task => task.category === "sky")) {
+          const letter = await askSkyTarget();
+          if (letter === null) return; // 用户取消了安装
+          skyLetter = letter;
         }
-        setSkyLetter(letter);
-      }
 
-      setImportPending(false);
-      setImportQueue(queue);
+        for (const task of queue) {
+          const outcome = await importFromUrl(task.url, skyLetter, {
+            title: task.isDependency ? task.name : name || task.name,
+            isDependency: task.isDependency
+          });
+          // 用户取消了就断掉整条依赖链（失败或去重命中都继续装下一个）
+          if (outcome === "cancelled") break;
+        }
+      } catch (e) {
+        message.error(
+          t("brp.import.failed", {
+            reason: e instanceof Error ? e.message : String(e)
+          })
+        );
+      }
     },
-    [importPending, importQueue.length]
+    []
   );
-
-  // Run import when the current task is set (async, non-blocking via Tauri events).
-  useEffect(() => {
-    if (!importCurrent) return;
-
-    let disposed = false;
-    const unlisteners: (() => void)[] = [];
-
-    setImportPhase("connecting");
-    setImportPercent(0);
-    setImportBytes({ downloaded: 0, total: 0 });
-    setImportResult("");
-    if (!importCurrent.isDependency) setImportError("");
-
-    const instance = useAppStore.getState().selectedInstanceData;
-    if (!instance) {
-      setImportError(t("brp.error.noInstance"));
-      return;
-    }
-
-    // Start download on backend (returns immediately with an ID).
-    backend
-      .startBrpImport(importCurrent.url, instance.path, skyLetter)
-      .then(id => {
-        if (disposed) return;
-        setImportId(id);
-      });
-
-    // Listen for progress events.
-    listen<BrpImportProgressEvent>("brp-import:progress", event => {
-      if (disposed) return;
-      const p = event.payload;
-      if (p.phase === "downloading") setImportPhase("downloading");
-      else if (p.phase === "importing") setImportPhase("importing");
-      setImportPercent(p.percent);
-      setImportBytes({ downloaded: p.downloaded, total: p.total });
-    }).then(fn => unlisteners.push(fn));
-
-    // Listen for completion event.
-    listen<BrpImportCompleteEvent>("brp-import:complete", event => {
-      if (disposed) return;
-      const p = event.payload;
-      if (!p.success) {
-        if (p.error?.includes("cancelled")) {
-          setImportQueue([]);
-          return;
-        }
-        // 依赖装失败：跳过它继续装主资源，别把整个安装卡住
-        if (importCurrent.isDependency) {
-          message.error(
-            t("brp.import.depFailed", { name: importCurrent.name })
-          );
-          setImportQueue(q => q.slice(1));
-          return;
-        }
-        setImportError(p.error ?? t("brp.import.failedTitle"));
-        return;
-      }
-      const m = p.manifest;
-      if (!m) {
-        setImportError(t("brp.import.failedTitle"));
-        return;
-      }
-      // 队列里还有（依赖装在前面）：接着装下一个，全部装完再报结果
-      if (importQueue.length > 1) {
-        setImportQueue(q => q.slice(1));
-        return;
-      }
-      const success = t("brp.import.success", {
-        what: describeBrp(m.manifest),
-        count: m.installedPaths.length,
-        target: m.targetDescription
-      });
-      const notice = modInstallNotice(m);
-      setImportResult(
-        `${success}${notice ? `\n\n${notice}` : ""}${
-          importDepCount > 0 ? t("brp.import.withDeps", { count: importDepCount }) : ""
-        }`
-      );
-      setImportPhase("done");
-      useAppStore.getState().triggerRefresh();
-    }).then(fn => unlisteners.push(fn));
-
-    return () => {
-      disposed = true;
-      unlisteners.forEach(fn => fn());
-    };
-  }, [importCurrent?.url, skyLetter]);
-
-  const handleImportCancel = () => {
-    if (importId) {
-      // Fire-and-forget: don't await so UI closes immediately
-      backend.cancelBrpImport(importId).then(() => {
-        message.info(t("brp.import.cancelled"));
-      });
-    }
-    startTransition(() => setImportQueue([]));
-  };
-
-  const handleImportClose = () => {
-    setImportQueue([]);
-  };
   const backgroundType = usePrefStore(s => s.backgroundType);
   const isDark = useDarkMode();
   const translate = useT();
@@ -346,7 +220,11 @@ function MainLayout() {
             /* window API not ready yet — continue */
           }
           const brpUrl = parsed.searchParams.get("url");
-          if (brpUrl) void startDeepLinkImport(brpUrl);
+          if (brpUrl)
+            void startDeepLinkImport(
+              brpUrl,
+              parsed.searchParams.get("name") ?? undefined
+            );
           else message.warning(t("brp.error.invalidFile"));
         }
       } catch {
@@ -568,31 +446,6 @@ function MainLayout() {
           <AppRoutes />
         </main>
         <PatchUpdateWatcher />
-        {(importCurrent || importPending) && (
-          <ImportProgressDialog
-            open={true}
-            phase={importPhase}
-            percent={importPercent}
-            downloaded={importBytes.downloaded}
-            total={importBytes.total}
-            error={importError}
-            resultText={importResult}
-            labels={
-              importCurrent?.isDependency
-                ? {
-                    downloading: t("brp.import.depDownloading", {
-                      name: importCurrent.name
-                    }),
-                    importing: t("brp.import.depImporting", {
-                      name: importCurrent.name
-                    })
-                  }
-                : undefined
-            }
-            onCancel={handleImportCancel}
-            onClose={handleImportClose}
-          />
-        )}
       </div>
     </div>
   );

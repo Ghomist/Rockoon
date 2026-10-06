@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Rocket, FolderOpen, Download, Loader2 } from "lucide-react";
 import { useT } from "@/i18n";
-import ImportProgressDialog from "@/components/ImportProgressDialog";
 import PatchOptionsDialog from "@/components/PatchOptionsDialog";
 import { useVanillaInstall } from "@/services/game";
 import { useAppStore } from "@/stores/app";
@@ -21,7 +20,11 @@ export default function Onboarding() {
 
   const [picking, setPicking] = useState(false);
   // 原版游戏安装：没有游戏时也能一键下好（否则新用户得先自己去搞一份游戏才能用）
-  const { start: installGame, busy: installing, dialog, optionsDialog } = useVanillaInstall();
+  const {
+    start: installGame,
+    busy: installing,
+    optionsDialog
+  } = useVanillaInstall();
 
   const onPickFolder = async () => {
     setPicking(true);
@@ -98,7 +101,6 @@ export default function Onboarding() {
         </div>
       </div>
 
-      <ImportProgressDialog {...dialog} />
       <PatchOptionsDialog {...optionsDialog} busy={installing} />
     </div>
   );

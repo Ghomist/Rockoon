@@ -1,43 +1,18 @@
 import { check, type Update } from "@tauri-apps/plugin-updater";
-import { create } from "zustand";
 
-import type { ImportPhase } from "@/components/ImportProgressDialog";
+import { useDownloadsStore } from "@/stores/downloads";
 import { dialog, message } from "@/utils/ui/feedback";
 import { t } from "@/i18n";
 
 /**
  * 启动器自更新（下载 + 安装新版本）。
  *
- * 进度只有一份：检查更新可能来自设置页，也可能来自启动 3 秒后的自动检查
- * （main.tsx），所以状态放在这个 store 里，界面交给 App 里常驻的
- * <AppUpdateProgress /> 渲染。
+ * 下载是「下载任务」页里的一个后台任务（见 stores/downloads），所以从设置页检查、
+ * 还是启动 3 秒后的自动检查（main.tsx）触发都一样，界面上不需要常驻的进度组件。
  *
- * 注意：tauri 的更新插件**没有取消接口**，这段下载中断不了 —— 因此进度弹窗
- * 锁死后不给「取消」按钮（ImportProgressDialog 不传 onCancel 就没有），
- * 只能等它下完（或直接关掉启动器）。
+ * 注意：tauri 的更新插件**没有取消接口**，这段下载中断不了 —— 所以任务登记成
+ * cancellable: false（界面上不出现「取消」按钮），只能等它下完（或关掉启动器）。
  */
-interface UpdateProgressState {
-  open: boolean;
-  phase: ImportPhase;
-  percent: number;
-  downloaded: number;
-  total: number;
-  error: string;
-  apply: (patch: Partial<UpdateProgressState>) => void;
-  close: () => void;
-}
-
-export const useUpdateProgress = create<UpdateProgressState>(set => ({
-  open: false,
-  phase: "connecting",
-  percent: 0,
-  downloaded: 0,
-  total: 0,
-  error: "",
-  apply: patch => set(patch),
-  close: () =>
-    set({ open: false, error: "", percent: 0, downloaded: 0, total: 0 })
-}));
 
 export async function checkForUpdate(): Promise<void> {
   try {
@@ -56,7 +31,7 @@ export async function checkForUpdate(): Promise<void> {
 function showUpdateDialog(update: Update): void {
   const version = update.version;
   const notes = update.body ?? "";
-  // 点了「立即更新」就让确认框退场，改由锁死的进度弹窗显示下载；只有用户放弃时才提示
+  // 点了「立即更新」就让确认框退场，改由「下载任务」页显示进度；只有用户放弃时才提示
   let started = false;
 
   const content = notes
@@ -78,17 +53,22 @@ function showUpdateDialog(update: Update): void {
   });
 }
 
-async function downloadAndInstall(update: Update): Promise<void> {
-  const { apply } = useUpdateProgress.getState();
-  apply({
-    open: true,
-    phase: "downloading",
-    percent: 0,
-    downloaded: 0,
-    total: 0,
-    error: ""
-  });
+/** 自更新没有后端任务 id，任务 id 就用这个（同一次运行内不重复） */
+let taskSeq = 0;
 
+async function downloadAndInstall(update: Update): Promise<void> {
+  const downloads = useDownloadsStore.getState();
+  const { task, duplicate } = downloads.begin({
+    id: `update-${++taskSeq}`,
+    key: `update:${update.version}`,
+    kind: "update",
+    title: t("updater.taskTitle"),
+    cancellable: false
+  });
+  // 同一个版本已经在下载了：不重复下载
+  if (duplicate) return;
+
+  const id = task.id;
   let total = 0;
   let downloaded = 0;
   try {
@@ -96,21 +76,15 @@ async function downloadAndInstall(update: Update): Promise<void> {
       switch (event.event) {
         case "Started":
           total = event.data.contentLength ?? 0;
-          apply({ total });
+          downloads.update(id, { total, phase: "downloading" });
           break;
         case "Progress":
           downloaded += event.data.chunkLength;
-          apply({
-            downloaded,
-            percent:
-              total > 0
-                ? Math.min(100, Math.round((downloaded / total) * 100))
-                : 0
-          });
+          downloads.progress(id, downloaded, total);
           break;
         case "Finished":
           // 下载完了，接下来是跑安装包（启动器会被替换掉）
-          apply({
+          downloads.update(id, {
             phase: "importing",
             percent: 100,
             downloaded: total || downloaded
@@ -118,9 +92,11 @@ async function downloadAndInstall(update: Update): Promise<void> {
           break;
       }
     });
-    apply({ phase: "done", percent: 100 });
+    downloads.succeed(id);
+    message.success(t("updater.installed"));
   } catch (e) {
     console.error("Update failed:", e);
-    apply({ error: t("updater.error") });
+    downloads.fail(id, t("updater.error"));
+    message.error(t("updater.error"));
   }
 }

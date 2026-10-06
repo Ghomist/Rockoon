@@ -69,7 +69,34 @@
     "cancel": "Cancel",
     "installingPatch": "Installing {name}…"
   },
+  "downloads": {
+    "title": "Downloads",
+    "runningCount": "{count} running",
+    "empty": "No download tasks",
+    "emptyHint": "Tasks show up here when you use one-click install on the download site, or install a patch.",
+    "clearFinished": "Clear finished",
+    "cancel": "Cancel",
+    "retry": "Retry",
+    "remove": "Remove from list",
+    "noCancel": "Launcher updates can't be cancelled",
+    "target": "Target: {target}",
+    "started": "Downloading {title}",
+    "startedUnknown": "Downloading…",
+    "status": {
+      "running": "Running",
+      "success": "Done",
+      "error": "Failed",
+      "cancelled": "Cancelled"
+    },
+    "phase": {
+      "connecting": "Connecting",
+      "downloading": "Downloading",
+      "importing": "Installing",
+      "done": "Done"
+    }
+  },
   "menu": {
+    "downloads": "Downloads",
     "modConfigs": "Mod configs",
     "game": "Start Game",
     "options": "Options",
@@ -494,6 +521,7 @@
   },
   "updater": {
     "title": "Update Available",
+    "taskTitle": "Launcher update",
     "available": "A new version {version} is available. Update now?",
     "downloading": "Downloading update...",
     "installing": "Installing update...",
