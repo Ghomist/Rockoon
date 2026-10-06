@@ -53,6 +53,7 @@ pub fn run() {
             commands::fs::read_text_file,
             commands::fs::write_text_file,
             commands::fs::analyze_skybox_files,
+            commands::fs::convert_texture,
             commands::process::execute,
             commands::process::kill,
             commands::process::check,

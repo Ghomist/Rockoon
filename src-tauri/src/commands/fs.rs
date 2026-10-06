@@ -400,6 +400,41 @@ pub fn analyze_skybox_files(dir_path: String) -> RcResultWith<SkyboxAnalysisResu
     Ok(SkyboxAnalysisResult { files, directions })
 }
 
+/// 把浏览器显示不了的贴图（TGA：原版 `Textures/` 里就有 16 张）转成 PNG 缓存，
+/// 返回缓存文件路径 —— 前端 `convertFileSrc()` 之后直接当图片用，
+/// 不必给 CSP 开 `data:` / `blob:`。
+///
+/// 缓存名里带「路径 + 大小 + 修改时间」，所以贴图被换掉后会重新生成，不会显示旧图。
+#[command]
+pub fn convert_texture(path: String) -> RcResultWith<String> {
+    let source = path::Path::new(&path);
+    let meta = fs::metadata(source)?;
+    let modified = meta
+        .modified()?
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_secs();
+
+    let cache_dir = std::env::temp_dir().join("rockoon-textures");
+    let key = fnv1a(&format!("{}|{}|{}", path, meta.len(), modified));
+    let target = cache_dir.join(format!("{key:016x}.png"));
+
+    if !target.exists() {
+        fs::create_dir_all(&cache_dir)?;
+        image::open(source)?.save(&target)?;
+        info!("Converted texture {} -> {}", path, target.display());
+    }
+
+    Ok(target.to_string_lossy().to_string())
+}
+
+/// FNV-1a：只用来给缓存文件起个稳定名字，不值得再加个 hash 依赖。
+fn fnv1a(text: &str) -> u64 {
+    text.bytes().fold(0xcbf2_9ce4_8422_2325, |hash, byte| {
+        (hash ^ u64::from(byte)).wrapping_mul(0x0100_0000_01b3)
+    })
+}
+
 #[command]
 pub fn rename(from: String, to: String) -> RcResult {
     fs::rename(&from, &to)?;

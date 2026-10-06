@@ -24,6 +24,8 @@ tauri = { version = "2", features = [
     "image-png",
     "devtools",
 ] }
+# TGA 贴图转 PNG 用（tauri 的 image-png 已经把 image 拉进依赖树，这里只是多开一个 tga 解码器）
+image = { version = "0.25", default-features = false, features = ["png", "tga"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 tauri-plugin-shell = "^2"

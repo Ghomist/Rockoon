@@ -6,6 +6,8 @@ pub enum RcError {
     IOError(#[from] std::io::Error),
     #[error("zip error: {0}")]
     ZipError(#[from] zip::result::ZipError),
+    #[error("image error: {0}")]
+    ImageError(#[from] image::ImageError),
     #[error("tauri error: {0}")]
     TauriError(#[from] tauri::Error),
     #[error("tdb parse error: {0}")]

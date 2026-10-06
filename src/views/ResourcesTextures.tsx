@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { ImageOff, Loader2 } from "lucide-react";
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { join } from "@tauri-apps/api/path";
 import backend from "@/backend";
@@ -18,6 +18,9 @@ import {
 
 type BackendFile = { name: string; size: number };
 
+/** 浏览器不认 TGA，但原版 Textures/ 里就有 16 张 —— 这些交给后端转成 PNG 再显示。 */
+const isTga = (name: string) => name.toLowerCase().endsWith(".tga");
+
 export default function ResourcesTextures() {
   const t = useT();
   const selectedInstanceData = useAppStore(s => s.selectedInstanceData);
@@ -27,6 +30,8 @@ export default function ResourcesTextures() {
   const [texturesPath, setTexturesPath] = useState("");
   const [refreshKey, setRefreshKey] = useState(Date.now());
   const [previewFile, setPreviewFile] = useState<BackendFile | null>(null);
+  /** TGA 文件名 → 后端转出来的 PNG 地址（空串 = 转不出来） */
+  const [tgaUrls, setTgaUrls] = useState<Record<string, string>>({});
 
   const loadTextures = useCallback(
     async (showMessage = false) => {
@@ -34,8 +39,10 @@ export default function ResourcesTextures() {
       const path = await join(selectedInstanceData.path, "Textures");
       setTexturesPath(path);
       try {
-        // ponytail: only BMP — TGA/AVI not renderable by browsers, converting needs backend work
-        const list = (await backend.list(path, ["bmp"])) as BackendFile[];
+        const list = (await backend.list(path, [
+          "bmp",
+          "tga"
+        ])) as BackendFile[];
         setFiles(list);
         setRefreshKey(Date.now());
         if (showMessage) message.success(t("common.action.refreshSuccess"));
@@ -56,6 +63,10 @@ export default function ResourcesTextures() {
         : "",
     [texturesPath, refreshKey]
   );
+
+  /** 缩略图/大图地址：undefined = 还在转（转失败是空串） */
+  const getDisplayUrl = (file: BackendFile) =>
+    isTga(file.name) ? tgaUrls[file.name] : getAssetUrl(file.name);
 
   const onRefresh = () => {
     setLoading(true);
@@ -79,10 +90,40 @@ export default function ResourcesTextures() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // TGA 先让后端转成 PNG 缓存（Rust 侧按 mtime 复用，前端不必自己缓存）
+  useEffect(() => {
+    const tgaFiles = files.filter(file => isTga(file.name));
+    if (!texturesPath || !tgaFiles.length) return;
+
+    let cancelled = false;
+    void (async () => {
+      const entries = await Promise.all(
+        tgaFiles.map(async file => {
+          try {
+            const png = await backend.convertTexture(
+              `${texturesPath}/${file.name}`
+            );
+            return [file.name, convertFileSrc(png)] as const;
+          } catch (error) {
+            console.error("Failed to convert texture:", file.name, error);
+            return [file.name, ""] as const;
+          }
+        })
+      );
+      if (!cancelled) setTgaUrls(Object.fromEntries(entries));
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [files, texturesPath]);
+
   useEffect(() => {
     void loadTextures();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [appRefreshKey]);
+
+  const previewSrc = previewFile ? getDisplayUrl(previewFile) : undefined;
 
   return (
     <ListViewPage
@@ -105,24 +146,33 @@ export default function ResourcesTextures() {
         </div>
       ) : (
         <div className="grid grid-cols-[repeat(auto-fill,minmax(128px,1fr))] gap-2 p-3">
-          {files.map(file => (
-            <button
-              key={file.name}
-              type="button"
-              className="group relative flex aspect-square flex-col items-center justify-center overflow-hidden rounded-lg border border-border/60 bg-muted/30 transition-colors hover:border-primary/40 hover:bg-muted/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              onClick={() => setPreviewFile(file)}
-            >
-              <img
-                src={getAssetUrl(file.name)}
-                alt={file.name}
-                className="h-full w-full object-contain p-2 transition-transform group-hover:scale-105"
-                loading="lazy"
-              />
-              <div className="absolute inset-x-0 bottom-0 translate-y-full bg-background/85 px-1.5 py-1 text-[10px] leading-tight transition-transform group-hover:translate-y-0">
-                <span className="line-clamp-2 break-all">{file.name}</span>
-              </div>
-            </button>
-          ))}
+          {files.map(file => {
+            const src = getDisplayUrl(file);
+            return (
+              <button
+                key={file.name}
+                type="button"
+                className="group relative flex aspect-square flex-col items-center justify-center overflow-hidden rounded-lg border border-border/60 bg-muted/30 transition-colors hover:border-primary/40 hover:bg-muted/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                onClick={() => setPreviewFile(file)}
+              >
+                {src === undefined ? (
+                  <Loader2 className="size-5 animate-spin text-muted-foreground" />
+                ) : src === "" ? (
+                  <ImageOff className="size-6 text-muted-foreground" />
+                ) : (
+                  <img
+                    src={src}
+                    alt={file.name}
+                    className="h-full w-full object-contain p-2 transition-transform group-hover:scale-105"
+                    loading="lazy"
+                  />
+                )}
+                <div className="absolute inset-x-0 bottom-0 translate-y-full bg-background/85 px-1.5 py-1 text-[10px] leading-tight transition-transform group-hover:translate-y-0">
+                  <span className="line-clamp-2 break-all">{file.name}</span>
+                </div>
+              </button>
+            );
+          })}
         </div>
       )}
 
@@ -138,11 +188,15 @@ export default function ResourcesTextures() {
           </DialogHeader>
           {previewFile && (
             <div className="flex items-center justify-center rounded bg-muted/50 p-4">
-              <img
-                src={getAssetUrl(previewFile.name)}
-                alt={previewFile.name}
-                className="max-h-[70vh] object-contain"
-              />
+              {previewSrc ? (
+                <img
+                  src={previewSrc}
+                  alt={previewFile.name}
+                  className="max-h-[70vh] object-contain"
+                />
+              ) : (
+                <Loader2 className="size-6 animate-spin text-muted-foreground" />
+              )}
             </div>
           )}
         </DialogContent>

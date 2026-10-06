@@ -73,6 +73,8 @@ const fs = {
   writeFile: (path: string, data: number[]) =>
     invoke<undefined>("write_file", { path, data }),
   readTextFile: (path: string) => invoke<string>("read_text_file", { path }),
+  /** TGA 等浏览器显示不了的贴图 → PNG 缓存文件路径，配 `convertFileSrc()` 使用 */
+  convertTexture: (path: string) => invoke<string>("convert_texture", { path }),
   writeTextFile: (path: string, content: string) =>
     invoke<undefined>("write_text_file", { path, content }),
   // BRP (Ballance Resource Package)

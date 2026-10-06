@@ -3806,6 +3806,7 @@ version = "0.1.0"
 dependencies = [
  "encoding",
  "env_logger",
+ "image",
  "log",
  "regex",
  "serde",
