@@ -26,6 +26,14 @@ export const formatFileSize = (b: number) => {
   return mb + "MB";
 };
 
+/** 下载进度 / 速度用：保留一位小数，小文件也能看出变化 */
+export const formatBytes = (b: number) => {
+  if (b < 1024) return `${b} B`;
+  if (b < 1024 * 1024) return `${(b / 1024).toFixed(1)} KB`;
+  if (b < 1024 * 1024 * 1024) return `${(b / 1024 / 1024).toFixed(1)} MB`;
+  return `${(b / 1024 / 1024 / 1024).toFixed(2)} GB`;
+};
+
 /** 格式化文件后缀 */
 export const formatFileType = (fileName: string) => {
   if (fileName.endsWith(".disable")) {

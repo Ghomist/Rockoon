@@ -43,4 +43,6 @@ type PatchInstallProgress = {
   onPhase: (phase: PatchInstallPhase) => void;
   onPercent: (percent: number) => void;
   onTaskId: (id: string) => void;
+  /** 已下载 / 总字节数（弹窗里显示大小与速度） */
+  onBytes: (downloaded: number, total: number) => void;
 };

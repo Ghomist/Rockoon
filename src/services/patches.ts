@@ -211,6 +211,7 @@ export async function installPatch(
           await listen<GameInstallProgress>("game-install:progress", e => {
             hooks.onPhase(e.payload.phase);
             hooks.onPercent(e.payload.percent);
+            hooks.onBytes(e.payload.downloaded, e.payload.total);
           }),
           await listen<GameInstallComplete>(
             "game-install:complete",

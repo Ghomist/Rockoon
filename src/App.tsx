@@ -19,6 +19,7 @@ import {
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Input } from "@/components/ui/input";
 import AppSidebar from "@/components/AppSidebar";
+import AppUpdateProgress from "@/components/AppUpdateProgress";
 import GlobalDialogHost from "@/components/GlobalDialogHost";
 import PatchUpdateWatcher from "@/components/PatchUpdateWatcher";
 import ImportProgressDialog, {
@@ -110,6 +111,8 @@ export default function App() {
     <>
       <Toaster richColors closeButton position="top-right" />
       <GlobalDialogHost />
+      {/* 启动器自更新的进度弹窗：没游戏时（引导页）也可能在下载，所以挂在这一层 */}
+      <AppUpdateProgress />
       <TooltipProvider>
         {hasInstance ? <MainLayout /> : <Onboarding />}
       </TooltipProvider>
@@ -131,6 +134,7 @@ function MainLayout() {
   const [importId, setImportId] = useState<string | null>(null);
   const [importPhase, setImportPhase] = useState<ImportPhase>("connecting");
   const [importPercent, setImportPercent] = useState(0);
+  const [importBytes, setImportBytes] = useState({ downloaded: 0, total: 0 });
   const [importError, setImportError] = useState("");
   const [importResult, setImportResult] = useState("");
   /** 天空盒包要装到哪一关（X 是占位符，安装时由后端替换成对应字母） */
@@ -139,29 +143,38 @@ function MainLayout() {
   const importCurrent = importQueue[0] ?? null;
 
   /** 深链点进来看：先把依赖展开成安装队列，再按顺序逐个导入 */
-  const startDeepLinkImport = useCallback(async (url: string) => {
-    setImportPending(true);
-    setImportPhase("connecting");
-    setImportPercent(0);
-    setImportError("");
-    setImportResult("");
-    const queue = await buildImportQueue(url);
-    setImportDepCount(queue.filter(task => task.isDependency).length);
-
-    // 天空盒包内的文件名是 Sky_X_<方位>.bmp（X 是占位符）：装之前问用户装到哪一关
-    setSkyLetter(undefined);
-    if (queue.some(task => task.category === "sky")) {
-      const letter = await askSkyTarget();
-      if (letter === null) {
-        setImportPending(false);
-        return; // 用户取消了安装
+  const startDeepLinkImport = useCallback(
+    async (url: string) => {
+      // 已经在装了就不接新的：弹窗锁死挡住了启动器自己，但浏览器那边还能再点一次「一键下载」
+      if (importQueue.length > 0 || importPending) {
+        message.warning(t("brp.import.busy"));
+        return;
       }
-      setSkyLetter(letter);
-    }
+      setImportPending(true);
+      setImportPhase("connecting");
+      setImportPercent(0);
+      setImportBytes({ downloaded: 0, total: 0 });
+      setImportError("");
+      setImportResult("");
+      const queue = await buildImportQueue(url);
+      setImportDepCount(queue.filter(task => task.isDependency).length);
 
-    setImportPending(false);
-    setImportQueue(queue);
-  }, []);
+      // 天空盒包内的文件名是 Sky_X_<方位>.bmp（X 是占位符）：装之前问用户装到哪一关
+      setSkyLetter(undefined);
+      if (queue.some(task => task.category === "sky")) {
+        const letter = await askSkyTarget();
+        if (letter === null) {
+          setImportPending(false);
+          return; // 用户取消了安装
+        }
+        setSkyLetter(letter);
+      }
+
+      setImportPending(false);
+      setImportQueue(queue);
+    },
+    [importPending, importQueue.length]
+  );
 
   // Run import when the current task is set (async, non-blocking via Tauri events).
   useEffect(() => {
@@ -172,6 +185,7 @@ function MainLayout() {
 
     setImportPhase("connecting");
     setImportPercent(0);
+    setImportBytes({ downloaded: 0, total: 0 });
     setImportResult("");
     if (!importCurrent.isDependency) setImportError("");
 
@@ -196,6 +210,7 @@ function MainLayout() {
       if (p.phase === "downloading") setImportPhase("downloading");
       else if (p.phase === "importing") setImportPhase("importing");
       setImportPercent(p.percent);
+      setImportBytes({ downloaded: p.downloaded, total: p.total });
     }).then(fn => unlisteners.push(fn));
 
     // Listen for completion event.
@@ -558,6 +573,8 @@ function MainLayout() {
             open={true}
             phase={importPhase}
             percent={importPercent}
+            downloaded={importBytes.downloaded}
+            total={importBytes.total}
             error={importError}
             resultText={importResult}
             labels={

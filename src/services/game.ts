@@ -20,6 +20,9 @@ export interface VanillaInstallDialog {
   resultText: string;
   onCancel: () => void;
   onClose: () => void;
+  /** 已下载 / 总字节数（弹窗里显示大小与速度） */
+  downloaded: number;
+  total: number;
   /** 阶段文案：装游戏与装补丁各一套，直接展开给 ImportProgressDialog */
   labels: Partial<Record<ImportPhase, string>>;
 }
@@ -88,6 +91,7 @@ export function useVanillaInstall(): {
   const [stage, setStage] = useState<"game" | "patch">("game");
   const [phase, setPhase] = useState<ImportPhase>("connecting");
   const [percent, setPercent] = useState(0);
+  const [bytes, setBytes] = useState({ downloaded: 0, total: 0 });
   const [error, setError] = useState("");
   const [resultText, setResultText] = useState("");
   const taskId = useRef("");
@@ -119,6 +123,7 @@ export function useVanillaInstall(): {
     setStage("game");
     setPhase("connecting");
     setPercent(0);
+    setBytes({ downloaded: 0, total: 0 });
     setError("");
     setResultText("");
     setBusy(true);
@@ -127,6 +132,7 @@ export function useVanillaInstall(): {
       await listen<GameInstallProgress>("game-install:progress", e => {
         setPhase(e.payload.phase);
         setPercent(e.payload.percent);
+        setBytes({ downloaded: e.payload.downloaded, total: e.payload.total });
       }),
       await listen<GameInstallComplete>("game-install:complete", async e => {
         unlisten.forEach(fn => fn());
@@ -159,9 +165,11 @@ export function useVanillaInstall(): {
               if (!component || !component.package_id) continue;
               setPhase("connecting");
               setPercent(0);
+              setBytes({ downloaded: 0, total: 0 });
               await installPatch(component, target, null, {
                 onPhase: p => setPhase(p),
                 onPercent: p => setPercent(p),
+                onBytes: (downloaded, total) => setBytes({ downloaded, total }),
                 onTaskId: id => {
                   taskId.current = id;
                 }
@@ -219,6 +227,8 @@ export function useVanillaInstall(): {
       open,
       phase,
       percent,
+      downloaded: bytes.downloaded,
+      total: bytes.total,
       error,
       resultText,
       onCancel,

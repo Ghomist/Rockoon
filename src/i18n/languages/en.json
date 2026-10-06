@@ -109,6 +109,7 @@
     "import": {
       "success": "Imported: {what} ({count} file(s) → {target})",
       "failed": "Import failed: {reason}",
+      "busy": "Another resource is still downloading — wait for it to finish or cancel it first",
       "cancelled": "Import cancelled",
       "successTitle": "Import Successful",
       "failedTitle": "Import Failed",
@@ -249,6 +250,13 @@
       "changeKeyTip": "Press the keyboard or click a virtual keyboard key below to change key binding",
       "changeKeyTitle": "Change key binding",
       "unavailableKey": "This key is not available in Ballance"
+    },
+    "transfer": {
+      "size": "{downloaded} / {total}",
+      "sizeUnknown": "{downloaded} downloaded",
+      "speed": "{speed}/s",
+      "lockedHint": "Can't be closed while downloading — use Cancel to stop it",
+      "lockedHintNoCancel": "Can't be closed while downloading — please wait for it to finish"
     }
   },
   "profile": {
@@ -488,8 +496,8 @@
     "title": "Update Available",
     "available": "A new version {version} is available. Update now?",
     "downloading": "Downloading update...",
-    "downloadProgress": "Downloading update... {downloaded} / {total}",
     "installing": "Installing update...",
+    "installed": "Update downloaded — the launcher restarts to finish",
     "updateNow": "Update Now",
     "later": "Later",
     "notes": "Release Notes",

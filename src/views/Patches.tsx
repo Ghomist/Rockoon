@@ -69,12 +69,16 @@ export default function Patches() {
     open: boolean;
     phase: ImportPhase;
     percent: number;
+    downloaded: number;
+    total: number;
     error: string;
     resultText: string;
   }>({
     open: false,
     phase: "connecting",
     percent: 0,
+    downloaded: 0,
+    total: 0,
     error: "",
     resultText: ""
   });
@@ -144,6 +148,8 @@ export default function Patches() {
       open: true,
       phase: "connecting",
       percent: 0,
+      downloaded: 0,
+      total: 0,
       error: "",
       resultText: ""
     });
@@ -151,6 +157,8 @@ export default function Patches() {
       await installPatch(component, instance.path, target, {
         onPhase: phase => setProgress(s => ({ ...s, phase })),
         onPercent: percent => setProgress(s => ({ ...s, percent })),
+        onBytes: (downloaded, total) =>
+          setProgress(s => ({ ...s, downloaded, total })),
         onTaskId: id => {
           taskId.current = id;
         }
@@ -551,6 +559,8 @@ export default function Patches() {
         open={progress.open}
         phase={progress.phase}
         percent={progress.percent}
+        downloaded={progress.downloaded}
+        total={progress.total}
         error={progress.error}
         resultText={progress.resultText}
         labels={{

@@ -109,6 +109,7 @@
     "import": {
       "success": "导入成功：{what}（{count} 个文件 → {target}）",
       "failed": "导入失败：{reason}",
+      "busy": "已有资源正在下载安装，等它完成或取消后再试",
       "cancelled": "已取消导入",
       "successTitle": "导入成功",
       "failedTitle": "导入失败",
@@ -390,6 +391,13 @@
       "changeKeyTitle": "更改按键绑定",
       "changeKeyTip": "按下键盘或单击下方的虚拟键盘按键以更改按键绑定",
       "unavailableKey": "该按键在 Ballance 中不可用"
+    },
+    "transfer": {
+      "size": "{downloaded} / {total}",
+      "sizeUnknown": "已下载 {downloaded}",
+      "speed": "{speed}/s",
+      "lockedHint": "下载中不可关闭；需要中断请点右侧「取消」",
+      "lockedHintNoCancel": "下载中不可关闭，请等它完成"
     }
   },
   "modConfigs": {
@@ -602,8 +610,8 @@
     "title": "发现新版本",
     "available": "发现新版本 {version}，是否立即更新？",
     "downloading": "正在下载更新...",
-    "downloadProgress": "正在下载更新... {downloaded} / {total}",
     "installing": "正在安装更新...",
+    "installed": "更新已下载，安装完成后启动器会重启",
     "updateNow": "立即更新",
     "later": "稍后再说",
     "notes": "更新日志",
