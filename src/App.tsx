@@ -314,19 +314,24 @@ function MainLayout() {
 
   return (
     <div className="flex h-screen flex-col bg-background text-foreground">
-      <header className="flex h-13 shrink-0 items-center gap-4 border-b bg-background pl-4 pr-0">
-        <div className="flex items-center gap-2">
+      {/* 自定义标题栏（decorations: false）：除了窗口按钮与配置下拉，剩下地方都可按住拖拽。
+          注意 items-stretch：窗口按钮靠它撑满整条 header，hover 底色才不会只有一条。 */}
+      <header
+        data-tauri-drag-region
+        className="flex h-13 shrink-0 items-stretch gap-4 border-b bg-background pr-2 pl-4"
+      >
+        <div data-tauri-drag-region className="flex items-center gap-2">
           <img
             src="/logo.png"
             alt="Rockoon"
-            className="size-5 rounded-sm"
+            className="pointer-events-none size-5 rounded-sm"
             draggable={false}
           />
-          <span className="select-none text-base font-semibold tracking-tight">
+          <span className="pointer-events-none text-base font-semibold tracking-tight select-none">
             Rockoon
           </span>
           {appVersion && (
-            <span className="select-none text-xs text-muted-foreground">
+            <span className="pointer-events-none text-xs text-muted-foreground select-none">
               v{appVersion}
             </span>
           )}
@@ -337,14 +342,14 @@ function MainLayout() {
         >
           {rotateWords.length > 0 && (
             <WordRotate
-              className="select-none text-sm text-muted-foreground"
+              className="pointer-events-none text-sm text-muted-foreground select-none"
               duration={4000}
               words={rotateWords}
             />
           )}
         </div>
-        <div className="flex items-center gap-2">
-          <span className="hidden text-sm text-muted-foreground sm:inline">
+        <div data-tauri-drag-region className="flex items-center gap-2">
+          <span className="pointer-events-none hidden text-sm text-muted-foreground sm:inline">
             {t("profile.currentLabel")}
           </span>
           <DropdownMenu>

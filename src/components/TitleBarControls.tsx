@@ -25,13 +25,18 @@ export default function TitleBarControls() {
   const onMax = () => appWindow.toggleMaximize();
   const onClose = () => appWindow.close();
 
+  // 与 header 里的其它按钮（配置下拉）保持一致：size-8 圆角图标按钮 + 微小间距，
+  // 而不是撑满整条标题栏的方角条。
+  const btn =
+    "inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors";
+
   return (
-    <div className="flex shrink-0 items-stretch">
+    <div className="flex shrink-0 items-center gap-1">
       <button
         type="button"
         aria-label="minimize"
         onClick={onMin}
-        className="inline-flex w-11 items-center justify-center text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+        className={`${btn} hover:bg-accent hover:text-foreground`}
       >
         <Minus className="size-4" />
       </button>
@@ -39,7 +44,7 @@ export default function TitleBarControls() {
         type="button"
         aria-label="maximize"
         onClick={onMax}
-        className="inline-flex w-11 items-center justify-center text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+        className={`${btn} hover:bg-accent hover:text-foreground`}
       >
         {isMaximized ? (
           <Copy className="size-3.5" />
@@ -51,7 +56,7 @@ export default function TitleBarControls() {
         type="button"
         aria-label="close"
         onClick={onClose}
-        className="inline-flex w-11 items-center justify-center text-muted-foreground transition-colors hover:bg-red-600 hover:text-white"
+        className={`${btn} hover:bg-red-600 hover:text-white`}
       >
         <X className="size-4" />
       </button>
