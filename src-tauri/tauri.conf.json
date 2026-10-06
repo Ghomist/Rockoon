@@ -1,4 +1,4 @@
-﻿{
+{
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "rockoon",
   "version": "2.4.1",
