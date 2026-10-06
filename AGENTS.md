@@ -90,7 +90,27 @@ BMLPlus plugin (`RockoonIO.bmodp`) built via CMake + `build.ps1`. Sources in `sr
   新 Player，按这个顺序装），失败不推翻已装好的游戏，只提示去补丁页重试。
 - 手动装的补丁没有版本记录：界面显示「已安装（版本未知）」，更新按钮仍可用。
 
+## Downloads (所有下载都走一条路)
+
+- 中枢：`src/stores/downloads.ts`；界面：`src/views/Downloads.tsx`（菜单项在「启动器设置」上面）。
+- 四条链路必须在此登记任务，**不要自己弹模态框**：下载站一键安装 / 深链
+  （`src/App.tsx` + `src/services/brp.ts`）、原版游戏与补丁（`src/services/game.ts` / `patches.ts`）、
+  启动器自更新（`src/services/updater.ts`）。
+- 去重靠 `begin()` 的 key：同 key 已有 running 任务时会返回已有任务 + `duplicate: true`，
+  调用方必须立即 return（重复点「一键下载」不能再下一次）。
+- 任务 id 要用后端 id：先 `begin()` 拿去重结论，`start*` 返回后
+  `update(id, { id: backendId })` 换过去 —— 否则任务页上的「取消」打不到后端任务。
+- 启动器自更新没有取消接口（`cancellable: false`），不要加假取消按钮；
+  它的「提醒」仍然是模态弹窗，但下载本身在后台。
+- 进度/成功/失败一律写进任务；需要用户决策的（选目录、选补丁版本、更新提醒）才用弹窗。
+  旧的 `ImportProgressDialog`（锁死式进度弹窗）已删除，不要再引回来。
+
 ## Operational gotchas
+
+- PowerShell 5.1 写仓库里的文件**不要用 `Set-Content -Encoding UTF8`** —— 它会带 UTF-8 BOM，
+  Rust 侧解析 `src-tauri/tauri.conf.json` 会直接失败（CI 的 tauri-action 步骤莫名挂掉，run #78 就是这么挂的）。
+  改用 `[System.IO.File]::WriteAllText($p, $text, (New-Object System.Text.UTF8Encoding $false))`；
+  中文 commit message 也照这个写法先落文件再 `git commit -F`。
 
 - **下载站有备用域名（`.top` 会被部分运营商拦）**：`dl.bcrc.site` 是 `dl.ballance.top` 的
   别名（同一台 nginx、同一份后端）。所有对下载站的请求一律走 `src/services/hub.ts`：
