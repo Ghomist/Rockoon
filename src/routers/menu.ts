@@ -13,6 +13,7 @@ import ModConfigs from "@/views/ModConfigs";
 import Downloads from "@/views/Downloads";
 import Settings from "@/views/Settings";
 import { hubUrl } from "@/services/hub";
+import { openTasEditorWindow } from "@/services/tasWindow";
 
 export type MenuItem =
   | ({
@@ -24,6 +25,13 @@ export type MenuItem =
       | { view?: undefined; children: MenuItem[] }
     ))
   | "-";
+
+/** 不占路由、点一下执行动作的菜单项（如打开 TAS 编辑器窗口）。 */
+export type MenuActionItem = {
+  label: string;
+  icon: string;
+  action: () => void;
+};
 
 export type ExternalLinkItem = {
   label: string;
@@ -65,7 +73,7 @@ export const getExternalLinks = (): ExternalLinkItem[] => [
   }
 ];
 
-export const getMenuItems = (): MenuItem[] => [
+export const getMenuItems = (): (MenuItem | MenuActionItem)[] => [
   { label: t("menu.game"), route: "/game", icon: "gamepad-2", view: Start },
   "-",
   {
@@ -75,6 +83,14 @@ export const getMenuItems = (): MenuItem[] => [
     view: GameConfig
   },
   { label: t("menu.data"), route: "/data", icon: "flag", view: GameData },
+  {
+    // 独立窗口：点一下开 TAS 编辑器，不切当前页面
+    label: t("menu.tasEditor"),
+    icon: "film",
+    action: () => {
+      void openTasEditorWindow();
+    }
+  },
   "-",
   {
     label: t("menu.maps"),

@@ -51,6 +51,7 @@ pub fn run() {
             commands::fs::install_rockoon_mod,
             commands::fs::write_file,
             commands::fs::read_text_file,
+            commands::fs::read_file,
             commands::fs::write_text_file,
             commands::fs::analyze_skybox_files,
             commands::fs::convert_texture,

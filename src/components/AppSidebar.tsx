@@ -91,6 +91,25 @@ export default function AppSidebar({
           if (item === "-") {
             return <div key={`sep-${idx}`} className="my-2 mx-2 border-t" />;
           }
+          if ("action" in item) {
+            const Icon = resolveIcon(item.icon);
+            return (
+              <button
+                key={item.label}
+                type="button"
+                title={collapsed ? item.label : undefined}
+                onClick={item.action}
+                className={cn(
+                  "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors",
+                  "hover:bg-accent hover:text-accent-foreground text-foreground",
+                  collapsed && "justify-center"
+                )}
+              >
+                <Icon className="size-4 shrink-0" />
+                {!collapsed && <span>{item.label}</span>}
+              </button>
+            );
+          }
           if ("view" in item && item.view) {
             const Icon = resolveIcon(item.icon);
             return (

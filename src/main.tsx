@@ -3,6 +3,8 @@ import { createRoot } from "react-dom/client";
 import { MemoryRouter } from "react-router-dom";
 import { moveWindow, Position } from "@tauri-apps/plugin-positioner";
 import App from "@/App";
+import GlobalDialogHost from "@/components/GlobalDialogHost";
+import TasEditorWindow from "@/views/tas/TasEditorWindow";
 import { initStores } from "@/stores";
 import { usePrefStore } from "@/stores/pref";
 import { switchLanguage, useI18nStore } from "@/i18n";
@@ -28,21 +30,37 @@ window.addEventListener("keydown", e => {
 // initStores or backend calls can never leave #app empty.
 const rootEl = document.getElementById("app");
 if (!rootEl) throw new Error("#app not found");
+
+// 独立窗口：同一个 index.html，带 ?window=tas 就只渲染 TAS 编辑器。
+// （应用用的是 MemoryRouter，路径不体现在 URL 上，所以用查询参数分流路由）
+const isTasWindow =
+  new URLSearchParams(window.location.search).get("window") === "tas";
+
 createRoot(rootEl).render(
-  <MemoryRouter>
-    <App />
-  </MemoryRouter>
+  isTasWindow ? (
+    // 帮助模态等弹窗走同一个 dialog store，所以 TAS 窗口也要挂一个 host
+    <>
+      <TasEditorWindow />
+      <GlobalDialogHost />
+    </>
+  ) : (
+    <MemoryRouter>
+      <App />
+    </MemoryRouter>
+  )
 );
 
 initStores().catch(e => console.error("initStores failed:", e));
 
-if (usePrefStore.getState().centerWindow) {
-  moveWindow(Position.Center).catch(() => {
-    // ignore: positioner plugin may not be ready
-  });
-}
+if (!isTasWindow) {
+  if (usePrefStore.getState().centerWindow) {
+    moveWindow(Position.Center).catch(() => {
+      // ignore: positioner plugin may not be ready
+    });
+  }
 
-// Background update check.
-setTimeout(checkForUpdate, 3000);
+  // Background update check.
+  setTimeout(checkForUpdate, 3000);
+}
 
 console.info("Rockoon UI initialized");

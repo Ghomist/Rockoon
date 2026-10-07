@@ -311,6 +311,14 @@ pub fn read_text_file(path: String) -> RcResultWith<String> {
     Ok(content)
 }
 
+/// 读二进制文件（TAS 编辑器读 .tas 用）。返回字节数组，前端在 JS 侧解 zlib。
+#[command]
+pub fn read_file(path: String) -> RcResultWith<Vec<u8>> {
+    let data = fs::read(&path)?;
+    info!("Read {} bytes from {}", data.len(), path);
+    Ok(data)
+}
+
 #[command]
 pub fn write_text_file(path: String, content: String) -> RcResult {
     // 确保目标目录存在

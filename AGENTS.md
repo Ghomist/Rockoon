@@ -42,6 +42,7 @@ Communication flow: `React Component → store/service → src/backend wrapper �
 - **i18n (`src/i18n/index.ts`)**: zustand-based; eagerly globs `src/i18n/languages/*.json` (`en.json`, `zh.json`), exposes `t()` with dotted keys and `{param}` interpolation, falls back to English, and follows `pref.language`.
 - **Logger (`src/utils/logger.ts`)**: `registerLoggers()` hooks all `console.*` and forwards to Rust via `backend.log()`. Frontend logs appear in the Rust log stream; set `RUST_LOG` for Rust-side level.
 - **Global types (`src/types/*.d.ts`)**: `Instance`, `BallanceOptions`, `ModConfig`, BRP types, etc. are ambient — no imports needed.
+- **TAS 编辑器（`src/views/tas/` + `src/tas/`）**：独立窗口（`?window=tas`，见 `src/services/tasWindow.ts`）。`src/tas/editing.ts` 是**纯数据操作**（不碰 DOM，能在 node 里直接跑）、`render.ts` 是 canvas 渲染、`viewport.ts` 是坐标换算 —— 改交互先改这里，视图层只调它们。编辑器偏好走**单独的 localStorage 键**（`src/tas/prefs.ts`），**不要**并进 `pref` store（两个 webview 同时写会把对方抹了），而这个窗口的弹窗走 `dialog.create` + `main.tsx` 里那一份 `GlobalDialogHost`。规格与交互表见 `docs/tas-editor.md`。
 - Path alias: `@/` → `src/`.
 
 ### Backend (`src-tauri/`)

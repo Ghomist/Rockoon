@@ -1,5 +1,5 @@
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
-import { getMenuItems, type MenuItem } from "./menu";
+import { getMenuItems, type MenuActionItem, type MenuItem } from "./menu";
 
 /**
  * Build the route tree from `getMenuItems()`.
@@ -8,10 +8,12 @@ import { getMenuItems, type MenuItem } from "./menu";
  *   children keep absolute paths.
  * - "-" separators are ignored.
  */
-function buildRoutes(items: MenuItem[]): JSX.Element[] {
+function buildRoutes(items: (MenuItem | MenuActionItem)[]): JSX.Element[] {
   const out: JSX.Element[] = [];
   items.forEach(item => {
     if (item === "-") return;
+    // 动作项（如打开 TAS 编辑器窗口）不占路由
+    if ("action" in item) return;
     if ("view" in item && item.view) {
       out.push(
         <Route key={item.route} path={item.route} element={<item.view />} />
