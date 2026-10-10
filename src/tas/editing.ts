@@ -6,7 +6,13 @@
  * 不自己算这些规则 —— 这样规则可以用 `.local-logs/tas-logic-test.ts` 单独验证。
  */
 
-import { FRAME_SIZE, KEY_BITS, keyMask, type TasFile, type TasKey } from "./format";
+import {
+  FRAME_SIZE,
+  KEY_BITS,
+  keyMask,
+  type TasFile,
+  type TasKey
+} from "./format";
 
 /** 全部按键的掩码（判断「这一帧有没有按键」用）。 */
 export const ALL_KEYS_MASK = (1 << KEY_BITS.length) - 1;
@@ -21,12 +27,21 @@ export const GROW_MARGIN_FRAMES = 120;
 
 /** 帧数据的 DataView。内层循环（渲染、扫描）每次 `new DataView` 太浪费，统一走这里。 */
 export function frameView(tas: TasFile): DataView {
-  return new DataView(tas.data.buffer, tas.data.byteOffset, tas.data.byteLength);
+  return new DataView(
+    tas.data.buffer,
+    tas.data.byteOffset,
+    tas.data.byteLength
+  );
 }
 
-/** 第 frame 帧的 keystates（越界返回 0）。 */
+/**
+ * 第 frame 帧的 keystates（越界返回 0）。
+ * 右端越界也要挡：光标 / 选区可以落在数据末尾之后的「可编辑余量」里（paintableFrames），
+ * DataView 读到外面会抛 RangeError —— 在渲染里调用的话整个编辑器就崩了。
+ */
 export function keystatesAt(view: DataView, frame: number): number {
-  return frame < 0 ? 0 : view.getUint32(frame * FRAME_SIZE + 4, true);
+  const at = frame * FRAME_SIZE + 4;
+  return frame < 0 || at + 4 > view.byteLength ? 0 : view.getUint32(at, true);
 }
 
 /** 这一帧有没有任何按键。 */
@@ -46,20 +61,127 @@ export function lastKeyedFrame(tas: TasFile): number {
   return -1;
 }
 
+/** 文件里第一个有按键的帧；全是空帧返回 0（打开文件时光标落在这里）。 */
+export function firstPressedFrame(tas: TasFile): number {
+  const view = frameView(tas);
+  for (let f = 0; f < tas.frameCount; f++) {
+    if ((view.getUint32(f * FRAME_SIZE + 4, true) & ALL_KEYS_MASK) !== 0)
+      return f;
+  }
+  return 0;
+}
+
 // ---------------------------------------------------------------- 区块
 
 /**
  * 抓取 `(frame, key)` 所在的**横向连通块**：向左右扩展，返回闭区间 `[start, end]`。
  * 该格为空（或越界）时返回 null —— Alt 拖拽用它决定「抓住的是哪一块」。
  */
-export function grabRun(tas: TasFile, frame: number, key: TasKey): [number, number] | null {
+export function grabRun(
+  tas: TasFile,
+  frame: number,
+  key: TasKey
+): [number, number] | null {
   const view = frameView(tas);
-  if (frame < 0 || frame >= tas.frameCount || !hasKeyAt(view, frame, key)) return null;
+  if (frame < 0 || frame >= tas.frameCount || !hasKeyAt(view, frame, key))
+    return null;
   let start = frame;
   while (start > 0 && hasKeyAt(view, start - 1, key)) start--;
   let end = frame;
   while (end + 1 < tas.frameCount && hasKeyAt(view, end + 1, key)) end++;
   return [start, end];
+}
+
+/**
+ * 把 `[f0,f1]` 选区里 `key` 的按键设成**恰好 `length` 帧**（`length = 0` = 删掉选区内这一段）。
+ * 选区外的数据一概不动 —— 选中一整段时这就是「改这段的时长」，框住其中一部分时
+ * 只是把那一部分伸缩/切断（改小会在该段中间留一个空档，那是预期的）。
+ * `length` 超过选区长度时多出来的帧会伸到选区右侧（空选区上就是从 0 新建按键）。
+ */
+export function setRunLength(
+  tas: TasFile,
+  f0: number,
+  f1: number,
+  key: TasKey,
+  length: number,
+  deltaMs: number
+): boolean {
+  if (f0 < 0 || f0 >= tas.frameCount) return false;
+  const targetEnd = length > 0 ? f0 + length - 1 : f0 - 1;
+  // 要归位的范围 = 选区 ∪ 目标段，多出来的尾巴得清掉
+  const end = Math.max(f1, targetEnd, f0);
+  if (end >= tas.frameCount) growToFit(tas, end, deltaMs);
+  const view = frameView(tas);
+  const mask = keyMask(key);
+  let changed = false;
+  const stop = Math.min(end, tas.frameCount - 1);
+  for (let f = f0; f <= stop; f++) {
+    const want = length > 0 && f <= targetEnd;
+    const states = view.getUint32(f * FRAME_SIZE + 4, true);
+    if (want !== ((states & mask) !== 0)) {
+      view.setUint32(
+        f * FRAME_SIZE + 4,
+        (want ? states | mask : states & ~mask) >>> 0,
+        true
+      );
+      changed = true;
+    }
+  }
+  return changed;
+}
+
+/**
+ * 选择模式「框选」用：把拖出的帧区间 `[fa,fb]`（同一行内）收拢成**一段连续按下的帧**。
+ * - 锚点那格有按键 → 取包含锚点的那一段与该区间的交集（= 框住整段的一部分）；
+ * - 锚点是空格、区间内别处有按键 → 取区间内离锚点最近的那一段；
+ * - 区间里一点按键都没有 → 原样返回（时长 0，用户可以把时长改成 >0 在此新建按键）。
+ */
+export function snapDragToRun(
+  tas: TasFile,
+  key: TasKey,
+  anchorFrame: number,
+  fa: number,
+  fb: number
+): [number, number] {
+  const a = Math.max(0, Math.min(fa, fb));
+  const b = Math.min(Math.max(fa, fb), tas.frameCount - 1);
+  if (b < a) return [a, a];
+  const view = frameView(tas);
+  const mask = keyMask(key);
+  const on = (f: number) =>
+    (view.getUint32(f * FRAME_SIZE + 4, true) & mask) !== 0;
+  const anchor = Math.max(a, Math.min(anchorFrame, b));
+  let seed = anchor;
+  if (!on(seed)) {
+    seed = -1;
+    for (let f = anchor + 1; f <= b && seed < 0; f++) if (on(f)) seed = f;
+    for (let f = anchor - 1; f >= a && seed < 0; f--) if (on(f)) seed = f;
+    if (seed < 0) return [a, b];
+  }
+  const run = grabRun(tas, seed, key);
+  if (!run) return [a, b];
+  return [Math.max(a, run[0]), Math.min(b, run[1])];
+}
+/**
+ * 跳到方向 `dir`（-1 左 / +1 右）上最近的**按键段边缘**：把所有轨道的每段起点与末帧
+ * 放在一起看，取帧号距 `frame` 最近的那个。没有可跳的就返回 null。
+ */
+export function jumpRunEdge(
+  tas: TasFile,
+  tracks: TasKey[],
+  frame: number,
+  dir: -1 | 1
+): number | null {
+  let best: number | null = null;
+  for (const key of tracks) {
+    for (const [start, end] of collectRuns(tas, key, 0, tas.frameCount)) {
+      for (const edge of [start, end]) {
+        if (dir > 0 ? edge <= frame : edge >= frame) continue;
+        if (best === null || (dir > 0 ? edge < best : edge > best)) best = edge;
+      }
+    }
+  }
+  return best;
 }
 
 /**
@@ -92,7 +214,7 @@ export function collectRuns(
   return runs;
 }
 
-// ---------------------------------------------------------------- 选区
+// ---------------------------------------------------------------- 选择模式
 
 /** 选区 = 帧区间 × 轨道下标区间（闭区间，已归一化）。 */
 export type TasSelection = { f0: number; f1: number; t0: number; t1: number };
@@ -184,6 +306,39 @@ export function shiftRange(
   return changed;
 }
 
+/**
+ * 「填充模式」：把一个矩形 `[f0,f1] × [t0,t1]`（轨道下标闭区间）整块置位/清除。
+ * 左键 = 全部置位、右键 = 全部清除；锁定轨道跳过。
+ */
+export function fillRange(
+  tas: TasFile,
+  f0: number,
+  f1: number,
+  t0: number,
+  t1: number,
+  tracks: TasKey[],
+  value: boolean,
+  locked: ReadonlySet<TasKey> = NO_LOCKS,
+  deltaMs = tas.commonDeltaTime
+): boolean {
+  const from = Math.max(0, Math.min(f0, f1));
+  const rawTo = Math.max(f0, f1);
+  if (rawTo < from) return false;
+  if (!value)
+    return clearRange(tas, { f0: from, f1: rawTo, t0, t1 }, tracks, locked);
+  if (rawTo >= tas.frameCount) growToFit(tas, rawTo, deltaMs);
+  const to = Math.min(rawTo, tas.frameCount - 1);
+  let changed = false;
+  for (let t = t0; t <= t1; t++) {
+    const key = tracks[t];
+    if (!key || locked.has(key)) continue;
+    for (let f = from; f <= to; f++) {
+      if (paintCell(tas, f, key, true)) changed = true;
+    }
+  }
+  return changed;
+}
+
 /** 归一化：不管从哪个角开始拖，都变成 f0<=f1、t0<=t1。 */
 export function normalizeSelection(
   fa: number,
@@ -202,18 +357,27 @@ export function normalizeSelection(
 // ---------------------------------------------------------------- 长度 / 时长
 
 /** 补空帧到 `frames` 帧（新帧 deltaTime = deltaMs、无按键）。返回是否加长了。 */
-export function ensureFrames(tas: TasFile, frames: number, deltaMs: number): boolean {
+export function ensureFrames(
+  tas: TasFile,
+  frames: number,
+  deltaMs: number
+): boolean {
   if (frames <= tas.frameCount) return false;
   const next = new Uint8Array(frames * FRAME_SIZE);
   next.set(tas.data, 0);
   const view = new DataView(next.buffer);
-  for (let f = tas.frameCount; f < frames; f++) view.setFloat32(f * FRAME_SIZE, deltaMs, true);
+  for (let f = tas.frameCount; f < frames; f++)
+    view.setFloat32(f * FRAME_SIZE, deltaMs, true);
   tas.data = next;
   return true;
 }
 
 /** 编辑到 `frame` 之后自动加长：新长度 = max(现有, frame + 1 + 余量)。 */
-export function growToFit(tas: TasFile, frame: number, deltaMs: number): boolean {
+export function growToFit(
+  tas: TasFile,
+  frame: number,
+  deltaMs: number
+): boolean {
   return ensureFrames(tas, frame + 1 + GROW_MARGIN_FRAMES, deltaMs);
 }
 
@@ -230,11 +394,17 @@ export function trimTail(tas: TasFile): number {
 /** 全局统一帧时长：把每一帧都写成同一个值（编辑器不支持逐帧不同）。 */
 export function setFrameDuration(tas: TasFile, ms: number): void {
   const view = frameView(tas);
-  for (let f = 0; f < tas.frameCount; f++) view.setFloat32(f * FRAME_SIZE, ms, true);
+  for (let f = 0; f < tas.frameCount; f++)
+    view.setFloat32(f * FRAME_SIZE, ms, true);
 }
 
 /** 涂改一格；返回是否真的改了数据（没变就不算一次编辑）。 */
-export function paintCell(tas: TasFile, frame: number, key: TasKey, down: boolean): boolean {
+export function paintCell(
+  tas: TasFile,
+  frame: number,
+  key: TasKey,
+  down: boolean
+): boolean {
   if (frame < 0 || frame >= tas.frameCount) return false;
   if (tas.getKey(frame, key) === down) return false;
   tas.setKey(frame, key, down);
@@ -247,7 +417,12 @@ export function paintCell(tas: TasFile, frame: number, key: TasKey, down: boolea
 export type TasClip = { width: number; tracks: TasKey[]; cells: Uint8Array };
 
 /** 复制帧区间 `[from, to]`（闭区间）在给定轨道上的内容。 */
-export function copyRange(tas: TasFile, tracks: TasKey[], from: number, to: number): TasClip {
+export function copyRange(
+  tas: TasFile,
+  tracks: TasKey[],
+  from: number,
+  to: number
+): TasClip {
   const width = Math.max(1, to - from + 1);
   const cells = new Uint8Array(width * tracks.length);
   const view = frameView(tas);
@@ -255,7 +430,11 @@ export function copyRange(tas: TasFile, tracks: TasKey[], from: number, to: numb
     const mask = keyMask(key);
     for (let i = 0; i < width; i++) {
       const f = from + i;
-      if (f >= 0 && f < tas.frameCount && (view.getUint32(f * FRAME_SIZE + 4, true) & mask) !== 0) {
+      if (
+        f >= 0 &&
+        f < tas.frameCount &&
+        (view.getUint32(f * FRAME_SIZE + 4, true) & mask) !== 0
+      ) {
         cells[t * width + i] = 1;
       }
     }
@@ -266,7 +445,8 @@ export function copyRange(tas: TasFile, tracks: TasKey[], from: number, to: numb
 function blankFrames(count: number, deltaMs: number): Uint8Array {
   const bytes = new Uint8Array(count * FRAME_SIZE);
   const view = new DataView(bytes.buffer);
-  for (let i = 0; i < count; i++) view.setFloat32(i * FRAME_SIZE, deltaMs, true);
+  for (let i = 0; i < count; i++)
+    view.setFloat32(i * FRAME_SIZE, deltaMs, true);
   return bytes;
 }
 
@@ -301,7 +481,12 @@ export function pasteClip(
       const states = view.getUint32(f * FRAME_SIZE + 4, true);
       const want = clip.cells[t * clip.width + i] === 1;
       const is = (states & mask) !== 0;
-      if (want !== is) view.setUint32(f * FRAME_SIZE + 4, (want ? states | mask : states & ~mask) >>> 0, true);
+      if (want !== is)
+        view.setUint32(
+          f * FRAME_SIZE + 4,
+          (want ? states | mask : states & ~mask) >>> 0,
+          true
+        );
     }
   });
   return [frame, frame + clip.width - 1];
@@ -352,7 +537,10 @@ export function moveBlock(
   const bits: boolean[] = [];
   for (let i = 0; i < width; i++) {
     const f = from[0] + i;
-    bits.push(f < tas.frameCount && (view.getUint32(f * FRAME_SIZE + 4, true) & srcMask) !== 0);
+    bits.push(
+      f < tas.frameCount &&
+        (view.getUint32(f * FRAME_SIZE + 4, true) & srcMask) !== 0
+    );
   }
   ensureFrames(tas, toFrame + width, deltaMs);
   const after = frameView(tas);
@@ -366,7 +554,11 @@ export function moveBlock(
     const f = toFrame + i;
     if (f >= tas.frameCount) break;
     const states = after.getUint32(f * FRAME_SIZE + 4, true);
-    after.setUint32(f * FRAME_SIZE + 4, (bits[i] ? states | dstMask : states & ~dstMask) >>> 0, true);
+    after.setUint32(
+      f * FRAME_SIZE + 4,
+      (bits[i] ? states | dstMask : states & ~dstMask) >>> 0,
+      true
+    );
   }
   return true;
 }

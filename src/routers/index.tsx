@@ -12,7 +12,7 @@ function buildRoutes(items: (MenuItem | MenuActionItem)[]): JSX.Element[] {
   const out: JSX.Element[] = [];
   items.forEach(item => {
     if (item === "-") return;
-    // 动作项（如打开 TAS 编辑器窗口）不占路由
+    // 动作项（不占路由）
     if ("action" in item) return;
     if ("view" in item && item.view) {
       out.push(

@@ -124,22 +124,37 @@ export function viewportSettled(cur: Viewport, target: Viewport): boolean {
 }
 
 /**
- * 主刻度的候选步长（**帧**）。挑的是人能一眼读出来的帧号，而不是任意秒数 ——
- * 刻度尺按帧标注，缩放时自动换到更密/更疏的档。
+ * 分区/主刻度的基准：**0.5 秒一个大区**，一个大区多少帧按当前全局帧时长折算
+ *（`frameMs = 10` → 50 帧，`= 5` → 100 帧，`= 20` → 25 帧）。
  */
-export const TICK_STEPS = [
-  1, 2, 5, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000, 25000, 50000
-];
+export const BAND_SECONDS = 0.5;
+
+/** 大区标签至少要隔这么宽才排得下（`50 (0.500s)` 差不多就这么宽）。 */
+const MAJOR_MIN_PX = 110;
+/** 次刻度至少要隔这么宽才画。 */
+const MINOR_MIN_PX = 10;
+/**
+ * 缩放不够时把基准按这些倍数放大 —— 大区于是变成 0.5s 的整数倍（1s / 2s / 5s…），
+ * 这是唯一允许偏离 0.5s 的情况，目的是不让标签糊成一片。
+ */
+const MAJOR_SCALES = [1, 2, 5, 10, 25, 50, 100, 250, 500, 1000];
 
 /**
- * 刻度尺密度：主刻度至少隔 110px（标签 `50 (0.208s)` 大约就要这么宽），返回**帧步长**。
- * 缩放很小时自动切到更疏的档（1000 / 5000 帧…），标签不会糊成一片。
+ * 刻度尺密度：主刻度 = 0.5 秒（换算成帧），返回**帧步长**。
+ * 帧时长变了结果会变，所以调用方必须把当前的 `frameMs` 传进来。
  */
-export function tickFrames(cellW: number): { major: number; minor: number } {
-  const major =
-    TICK_STEPS.find(f => f * cellW >= 110) ?? TICK_STEPS[TICK_STEPS.length - 1];
-  // 次刻度取主刻度的 1/5 或 1/2，间距太窄就不要
-  const minor = [major / 5, major / 2].find(m => m >= 1 && m * cellW >= 10) ?? 0;
+export function tickFrames(cellW: number, frameMs: number): { major: number; minor: number } {
+  const base = frameMs > 0 ? (BAND_SECONDS * 1000) / frameMs : 50;
+  let major = Math.max(1, Math.round(base));
+  for (const k of MAJOR_SCALES) {
+    major = Math.max(1, Math.round(base * k));
+    if (major * cellW >= MAJOR_MIN_PX) break;
+  }
+  // 次刻度取大区的 1/5 或 1/2（必须是整数帧），间距太窄就不要
+  const minor =
+    [major / 5, major / 2].find(
+      m => Number.isInteger(m) && m >= 1 && m * cellW >= MINOR_MIN_PX
+    ) ?? 0;
   return { major, minor };
 }
 

@@ -80,6 +80,8 @@ type PreferenceStore = {
 
   /** 点击地图行时是否弹出确认启动对话框 */
   confirmLaunchMap: boolean;
+  /** 实验功能：TAS 编辑器（关着时侧边栏看不到入口；默认关） */
+  enableTasEditor: boolean;
   /** 已安装补丁的版本记录：{ [组件键]: 版本号 }（只记 Rockoon 自己装的） */
   patchVersions: Record<string, string>;
   /** 用户已经忽略过更新提示的补丁：{ [组件键]: 提示过的版本号 } */

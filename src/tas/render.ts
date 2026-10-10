@@ -7,7 +7,7 @@
  * 性能：每帧只扫可见列（`visibleFrames`），一次 `frameView()` 复用 DataView。
  */
 
-import { FRAME_SIZE, KEY_BITS, type TasFile, type TasKey } from "./format";
+import { FRAME_SIZE, KEY_BITS, keyMask, type TasFile, type TasKey } from "./format";
 import { collectRuns, frameView, type TasSelection } from "./editing";
 import {
   MAX_CELL_W,
@@ -34,6 +34,9 @@ export type TasPalette = {
   hGrid: string;
   cursorFill: string;
   cursorLine: string;
+  /** 刻度尺上的「当前帧」小徽标：底色 / 文字。 */
+  cursorBadge: string;
+  cursorBadgeText: string;
   selectionFill: string;
   selectionLine: string;
   /** 锁定轨道上的半透明蒙版。 */
@@ -41,6 +44,11 @@ export type TasPalette = {
   hover: string;
   ghost: string;
   empty: string;
+  /** 填充模式的矩形预览：置位 / 清除。 */
+  fillSet: string;
+  fillSetLine: string;
+  fillClear: string;
+  fillClearLine: string;
   miniDot: string;
   miniBox: string;
   miniBoxFill: string;
@@ -64,12 +72,18 @@ export function tasPalette(dark: boolean): TasPalette {
         hGrid: "#32323a",
         cursorFill: "rgba(96,165,250,0.14)",
         cursorLine: "#60a5fa",
+        cursorBadge: "#2563eb",
+        cursorBadgeText: "#ffffff",
         selectionFill: "rgba(96,165,250,0.16)",
         selectionLine: "rgba(147,197,253,0.75)",
         lockVeil: "rgba(0,0,0,0.42)",
         hover: "rgba(226,232,240,0.28)",
         ghost: "rgba(226,232,240,0.45)",
         empty: "#141417",
+        fillSet: "rgba(52,211,153,0.22)",
+        fillSetLine: "rgba(52,211,153,0.9)",
+        fillClear: "rgba(248,113,113,0.22)",
+        fillClearLine: "rgba(248,113,113,0.9)",
         miniDot: "rgba(161,161,170,0.55)",
         miniBox: "rgba(212,212,216,0.75)",
         miniBoxFill: "rgba(212,212,216,0.10)"
@@ -86,12 +100,18 @@ export function tasPalette(dark: boolean): TasPalette {
         hGrid: "#e2e4e8",
         cursorFill: "rgba(59,130,246,0.13)",
         cursorLine: "#3b82f6",
+        cursorBadge: "#3b82f6",
+        cursorBadgeText: "#ffffff",
         selectionFill: "rgba(59,130,246,0.14)",
         selectionLine: "rgba(37,99,235,0.7)",
         lockVeil: "rgba(255,255,255,0.55)",
         hover: "rgba(24,24,27,0.22)",
         ghost: "rgba(24,24,27,0.35)",
         empty: "#f2f3f5",
+        fillSet: "rgba(16,185,129,0.20)",
+        fillSetLine: "rgba(5,150,105,0.9)",
+        fillClear: "rgba(239,68,68,0.16)",
+        fillClearLine: "rgba(220,38,38,0.9)",
         miniDot: "rgba(82,82,91,0.45)",
         miniBox: "rgba(63,63,70,0.8)",
         miniBoxFill: "rgba(63,63,70,0.08)"
@@ -159,10 +179,15 @@ export type Ghost = {
   color: string;
 };
 
+/** 填充模式的矩形预览（拖动中）。 */
+export type FillPreview = { f0: number; f1: number; t0: number; t1: number; value: boolean };
+
 export type SceneOptions = {
   tas: TasFile;
   order: TasKey[];
   frameMs: number;
+  /** 胶囊块开头的文字（这一块多少帧）；不传就不写。 */
+  blockLabel?: (frames: number) => string;
   vp: Viewport;
   width: number;
   height: number;
@@ -175,11 +200,25 @@ export type SceneOptions = {
   hover: { frame: number; track: number } | null;
   vGrid: boolean;
   hGrid: boolean;
+  /** 「分区」：主刻度区间的交替底色（独立于纵线）。 */
+  bands: boolean;
   dark: boolean;
   ghost: Ghost | null;
+  /** 填充模式的矩形预览。 */
+  fill: FillPreview | null;
 };
 
 const RULER_FONT = '11px ui-sans-serif, system-ui, "Segoe UI", sans-serif';
+/** 胶囊块开头的帧数标签：小一号，够看清又不抢眼。 */
+const BLOCK_FONT = '10px ui-sans-serif, system-ui, "Segoe UI", sans-serif';
+/** 刻度尺上的「当前帧」徽标：和块标签同号。 */
+const BADGE_FONT = '10px ui-sans-serif, system-ui, "Segoe UI", sans-serif';
+/** 徽标高度（刻度尺高 28px，居中放得下）。 */
+const BADGE_H = 15;
+/** 徽标左右内边距（单边） */
+const BADGE_PAD_X = 5;
+/** 徽标与光标竖线的间距。 */
+const BADGE_GAP = 3;
 
 /**
  * 画一整帧画面：刻度尺（顶部固定）+ 轨道网格 + 胶囊 + 各种高亮。
@@ -207,9 +246,9 @@ export function drawScene(ctx: CanvasRenderingContext2D, o: SceneOptions): void 
     ctx.fillRect(xAtFrame(o.vp, drawFrom), rowsTop, (drawTo - drawFrom) * o.vp.cellW, rowsH);
   }
 
-  // 1) 「变色大区」：**每个主刻度区间**交替底色（与纵向网格线共用「纵线」开关）
-  const bandFrames = tickFrames(o.vp.cellW).major;
-  if (o.vGrid) {
+  // 1) 「分区」：**每个主刻度区间**交替底色（独立开关，与纵线无关）
+  const bandFrames = tickFrames(o.vp.cellW, o.frameMs).major;
+  if (o.bands) {
     const bandFrom = Math.floor(drawFrom / bandFrames) * bandFrames;
     for (let f = bandFrom; f < drawTo; f += bandFrames) {
       const idx = Math.round(f / bandFrames);
@@ -247,9 +286,11 @@ export function drawScene(ctx: CanvasRenderingContext2D, o: SceneOptions): void 
     }
   }
 
-  // 4) 胶囊：同轨道连续帧合并
+  // 4) 胶囊：同轨道连续帧合并；块的开头标出这一段有多少帧
   const pad = rowH >= 18 ? 3 : 1;
   const radius = 4;
+  // 块太窄 / 行太矮就不写
+  const showBlockLabel = !!o.blockLabel && !runMode && rowH >= 16;
   for (let t = 0; t < o.order.length; t++) {
     const key = o.order[t];
     const y = rowY(t);
@@ -263,6 +304,40 @@ export function drawScene(ctx: CanvasRenderingContext2D, o: SceneOptions): void 
       roundedRect(ctx, x, y + pad, w, rowH - pad * 2, radius);
       ctx.fill();
     }
+    if (!showBlockLabel) continue;
+    const label = o.blockLabel!;
+    const view = frameView(o.tas);
+    const mask = keyMask(key);
+    ctx.save();
+    ctx.font = BLOCK_FONT;
+    ctx.textAlign = "left";
+    ctx.textBaseline = "middle";
+    ctx.lineWidth = 2;
+    for (const [a, b] of runs) {
+      const xLeft = Math.max(xAtFrame(o.vp, a), 0);
+      const xRight = Math.min(xAtFrame(o.vp, b + 1), width);
+      const visibleW = xRight - xLeft;
+      if (visibleW <= 0) continue;
+      // 标签里写的是这一段的**真实总帧数**。一段长按的 run 可能从屏幕左边一直
+      // 延伸出去（放大后只看得到其中 10 帧），那时不能拿可见宽度当长度 ——
+      // 所以从裁剪后的两端往外走到真正的 run 边界，再算帧数。
+      const last = o.tas.frameCount - 1;
+      let a0 = a;
+      let b0 = Math.min(b, last);
+      while (a0 > 0 && (view.getUint32((a0 - 1) * FRAME_SIZE + 4, true) & mask) !== 0) a0--;
+      while (b0 < last && (view.getUint32((b0 + 1) * FRAME_SIZE + 4, true) & mask) !== 0) b0++;
+      const text = label(b0 - a0 + 1);
+      // 文字（含左右各 5px 内缩）在**可见的那一段**里放不下就不写
+      if (ctx.measureText(text).width + 10 > visibleW) continue;
+      const tx = xLeft + 5;
+      const ty = y + rowH / 2;
+      // 先描一圈深色再填白，保证在任意按键配色上都读得清
+      ctx.strokeStyle = "rgba(0,0,0,0.38)";
+      ctx.strokeText(text, tx, ty);
+      ctx.fillStyle = "rgba(255,255,255,0.95)";
+      ctx.fillText(text, tx, ty);
+    }
+    ctx.restore();
   }
 
   // 5) 选区
@@ -292,7 +367,23 @@ export function drawScene(ctx: CanvasRenderingContext2D, o: SceneOptions): void 
     }
   }
 
-  // 5b) 锁定轨道：整行盖一层蒙版（画在胶囊/选区之上，一眼看出这行改不动）
+  // 5b) 填充模式的矩形预览（松手前）：置位用绿、清除用红
+  if (o.fill) {
+    const fl = o.fill;
+    const x0 = Math.max(0, xAtFrame(o.vp, fl.f0));
+    const x1 = Math.min(width, xAtFrame(o.vp, fl.f1 + 1));
+    const y0 = Math.max(rowsTop, rowY(fl.t0));
+    const y1 = Math.min(height, rowY(fl.t1 + 1));
+    if (x1 > x0 && y1 > y0) {
+      ctx.fillStyle = fl.value ? p.fillSet : p.fillClear;
+      ctx.fillRect(x0, y0, x1 - x0, y1 - y0);
+      ctx.strokeStyle = fl.value ? p.fillSetLine : p.fillClearLine;
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(x0 + 0.5, y0 + 0.5, Math.max(1, x1 - x0 - 1), Math.max(1, y1 - y0 - 1));
+    }
+  }
+
+  // 5c) 锁定轨道：整行盖一层蒙版（画在胶囊/选区之上，一眼看出这行改不动）
   if (o.locked.size > 0) {
     ctx.fillStyle = p.lockVeil;
     for (let t = 0; t < o.order.length; t++) {
@@ -353,7 +444,7 @@ export function drawScene(ctx: CanvasRenderingContext2D, o: SceneOptions): void 
   ctx.font = RULER_FONT;
   ctx.textBaseline = "middle";
   // 主/次刻度都是**帧**：次刻度先画（短），主刻度带标签 `50 (0.208s)`
-  const { major, minor } = tickFrames(o.vp.cellW);
+  const { major, minor } = tickFrames(o.vp.cellW, o.frameMs);
   const rulerEnd = o.vp.scroll + width / o.vp.cellW;
   if (minor > 0) {
     ctx.fillStyle = p.rulerTickMinor;
@@ -371,10 +462,38 @@ export function drawScene(ctx: CanvasRenderingContext2D, o: SceneOptions): void 
     if (x < -40 || x > width + 40) continue;
     if (x >= 0) {
       ctx.fillRect(x, rowsTop - 12, 1, 11);
-      ctx.fillStyle = p.rulerText;
-      ctx.fillText(formatTickLabel(f, o.frameMs), x + 4, 9);
-      ctx.fillStyle = p.rulerTick;
+      const label = formatTickLabel(f, o.frameMs);
+      // 标签右边会越过画布边缘就整个不画（刻度线还在）——被裁掉一半反而比没有更难读
+      if (x + 4 + ctx.measureText(label).width <= width) {
+        ctx.fillStyle = p.rulerText;
+        ctx.fillText(label, x + 4, 9);
+        ctx.fillStyle = p.rulerTick;
+      }
     }
+  }
+
+  // 10) 当前帧徽标：贴着光标竖线、画在刻度尺里（钳制在画布内，靠边也不被裁）
+  if (cursorX + o.vp.cellW > 0 && cursorX < width) {
+    const text = String(o.cursor);
+    ctx.save();
+    ctx.font = BADGE_FONT;
+    ctx.textAlign = "left";
+    ctx.textBaseline = "middle";
+    const badgeW = ctx.measureText(text).width + BADGE_PAD_X * 2;
+    // 默认挂在竖线右边；右边放不下就翻到左边，两头都放不下时再钳进画布
+    let bx = cursorX + BADGE_GAP;
+    if (bx + badgeW > width - 2) bx = cursorX - BADGE_GAP - badgeW;
+    bx = Math.max(2, Math.min(width - badgeW - 2, bx));
+    const by = Math.round((rowsTop - BADGE_H) / 2);
+    ctx.fillStyle = p.cursorBadge;
+    roundedRect(ctx, bx, by, badgeW, BADGE_H, BADGE_H / 2);
+    ctx.fill();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = "rgba(0,0,0,0.4)";
+    ctx.strokeText(text, bx + BADGE_PAD_X, by + BADGE_H / 2);
+    ctx.fillStyle = p.cursorBadgeText;
+    ctx.fillText(text, bx + BADGE_PAD_X, by + BADGE_H / 2);
+    ctx.restore();
   }
   ctx.restore();
 }

@@ -3824,6 +3824,7 @@ dependencies = [
  "tauri-plugin-upload",
  "thiserror 2.0.18",
  "ureq",
+ "windows-sys 0.61.2",
  "zip 2.4.2",
 ]
 

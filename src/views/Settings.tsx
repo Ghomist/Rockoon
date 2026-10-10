@@ -31,7 +31,8 @@ function usePrefFields() {
     mapOnlyMode: usePrefStore(s => s.mapOnlyMode),
     levelSlot: usePrefStore(s => s.levelSlot),
     ingameMotd: usePrefStore(s => s.ingameMotd),
-    ingameMotdContent: usePrefStore(s => s.ingameMotdContent)
+    ingameMotdContent: usePrefStore(s => s.ingameMotdContent),
+    enableTasEditor: usePrefStore(s => s.enableTasEditor)
   };
 }
 
@@ -191,6 +192,15 @@ export default function Settings() {
     }
   ];
 
+  const labsSchema: (Schema & SchemaItem)[] = [
+    {
+      type: "switch",
+      label: t("settings.enableTasEditor"),
+      tip: t("settings.enableTasEditorTip"),
+      field: prefField(pref, "enableTasEditor")
+    }
+  ];
+
   const debugSchema: (Schema & SchemaItem)[] = [
     {
       type: "button",
@@ -250,6 +260,14 @@ export default function Settings() {
           {t("settings.ingame")}
         </h2>
         <NFormWrapper schema={ingameSchema} />
+      </section>
+
+      <section className="flex flex-col gap-2.5">
+        <h2 className="flex items-center gap-2 text-lg font-semibold">
+          <span className="size-1.5 rounded-full bg-primary" />
+          {t("settings.labs")}
+        </h2>
+        <NFormWrapper schema={labsSchema} />
       </section>
 
       <section className="flex flex-col gap-2.5">

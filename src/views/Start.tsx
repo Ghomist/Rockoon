@@ -12,6 +12,7 @@ import {
 } from "@/services/launcher";
 import { formatPlaytime } from "@/utils/format";
 import { useT } from "@/i18n";
+import { confirmTasAutoplayOff } from "@/services/tasGuard";
 import backend from "@/backend";
 import { join } from "@tauri-apps/api/path";
 import { open } from "@tauri-apps/plugin-shell";
@@ -89,6 +90,8 @@ export default function Start() {
         return;
       }
     }
+    // BallanceTAS 还开着「启动时自动播放」（TAS 编辑器留下的）就先问一句
+    if (!(await confirmTasAutoplayOff(selectedInstanceData.path))) return;
     await launchInstance();
     message.success(t("home.launching"));
   };

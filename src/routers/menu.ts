@@ -73,7 +73,9 @@ export const getExternalLinks = (): ExternalLinkItem[] => [
   }
 ];
 
-export const getMenuItems = (): (MenuItem | MenuActionItem)[] => [
+export const getMenuItems = (
+  options: { tasEditor?: boolean } = {}
+): (MenuItem | MenuActionItem)[] => [
   { label: t("menu.game"), route: "/game", icon: "gamepad-2", view: Start },
   "-",
   {
@@ -83,14 +85,6 @@ export const getMenuItems = (): (MenuItem | MenuActionItem)[] => [
     view: GameConfig
   },
   { label: t("menu.data"), route: "/data", icon: "flag", view: GameData },
-  {
-    // 独立窗口：点一下开 TAS 编辑器，不切当前页面
-    label: t("menu.tasEditor"),
-    icon: "film",
-    action: () => {
-      void openTasEditorWindow();
-    }
-  },
   "-",
   {
     label: t("menu.maps"),
@@ -135,6 +129,19 @@ export const getMenuItems = (): (MenuItem | MenuActionItem)[] => [
     view: ResourcesSounds
   },
   "-",
+  // 实验功能：设置里打开才显示（默认关）。独立窗口：点一下开 TAS 编辑器，不切当前页面
+  ...(options.tasEditor
+    ? ([
+        {
+          label: t("menu.tasEditor"),
+          icon: "film",
+          action: () => {
+            void openTasEditorWindow();
+          }
+        },
+        "-"
+      ] as const)
+    : []),
   {
     label: t("menu.downloads"),
     route: "/downloads",

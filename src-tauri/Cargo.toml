@@ -40,6 +40,15 @@ env_logger = "0.11.8"
 tauri-plugin-opener = "2"
 ureq = "2.12.1"
 regex = "1"
+# 游戏窗口嵌入（commands/embed.rs）用的 Win32 调用；Win32_Graphics_Gdi 是为 RedrawWindow / ClientToScreen
+windows-sys = { version = "0.61", features = [
+    "Win32_Foundation",
+    "Win32_UI_WindowsAndMessaging",
+    "Win32_Graphics_Gdi",
+    "Win32_System_LibraryLoader",
+    "Win32_System_Memory",
+    "Win32_System_Threading",
+] }
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-positioner = "2"

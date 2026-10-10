@@ -12,6 +12,12 @@ export const registerLoggers = () => {
   window.addEventListener("unhandledrejection", event => {
     console.error(event.reason);
   });
+
+  // 未捕获的同步异常（包括 React 渲染时抛的：它会再抛一次到这里）。不挂这个的话日志里只剩
+  // React 那句「The above error occurred in <X>」，真正的错误信息丢了
+  window.addEventListener("error", event => {
+    console.error(event.error ?? event.message);
+  });
 };
 
 const hookConsoleFunction = (

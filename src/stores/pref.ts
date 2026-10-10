@@ -27,6 +27,7 @@ const defaultState: PreferenceStore = {
   ingameMotd: true,
   ingameMotdContent: "Launched from Rockoon!",
   confirmLaunchMap: true,
+  enableTasEditor: false,
   patchVersions: {},
   seenPatchVersions: {}
 };

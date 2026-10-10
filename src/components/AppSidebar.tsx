@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
 import { getMenuItems, getExternalLinks, type MenuItem } from "@/routers/menu";
+import { usePrefStore } from "@/stores/pref";
 
 interface AppSidebarProps {
   collapsed: boolean;
@@ -43,7 +44,9 @@ export default function AppSidebar({
   onCollapsedChange
 }: AppSidebarProps) {
   const location = useLocation();
-  const items = getMenuItems();
+  // 订阅开关：设置里一切换，入口立刻出现 / 消失
+  const tasEditor = usePrefStore(s => s.enableTasEditor);
+  const items = getMenuItems({ tasEditor });
   const externals = getExternalLinks();
 
   // Auto-open the group containing the current route.
@@ -100,7 +103,7 @@ export default function AppSidebar({
                 title={collapsed ? item.label : undefined}
                 onClick={item.action}
                 className={cn(
-                  "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors",
+                  "flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors",
                   "hover:bg-accent hover:text-accent-foreground text-foreground",
                   collapsed && "justify-center"
                 )}
@@ -145,7 +148,7 @@ export default function AppSidebar({
                     type="button"
                     title={collapsed ? item.label : undefined}
                     className={cn(
-                      "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors",
+                      "flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors",
                       "hover:bg-accent hover:text-accent-foreground text-foreground",
                       collapsed && "justify-center"
                     )}
@@ -211,7 +214,7 @@ export default function AppSidebar({
                 key={link.url}
                 type="button"
                 onClick={() => openExternal(link.url)}
-                className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+                className="flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
               >
                 <Icon className="size-4 shrink-0" />
                 <span className="flex-1 text-left">{link.label}</span>
@@ -226,7 +229,7 @@ export default function AppSidebar({
         <Button
           variant="ghost"
           size="icon"
-          className="w-full"
+          className="w-full cursor-pointer"
           onClick={() => onCollapsedChange(!collapsed)}
         >
           <ChevronRight

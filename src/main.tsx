@@ -4,6 +4,7 @@ import { MemoryRouter } from "react-router-dom";
 import { moveWindow, Position } from "@tauri-apps/plugin-positioner";
 import App from "@/App";
 import GlobalDialogHost from "@/components/GlobalDialogHost";
+import { Toaster } from "@/components/ui/sonner";
 import TasEditorWindow from "@/views/tas/TasEditorWindow";
 import { initStores } from "@/stores";
 import { usePrefStore } from "@/stores/pref";
@@ -32,16 +33,18 @@ const rootEl = document.getElementById("app");
 if (!rootEl) throw new Error("#app not found");
 
 // 独立窗口：同一个 index.html，带 ?window=tas 就只渲染 TAS 编辑器。
-// （应用用的是 MemoryRouter，路径不体现在 URL 上，所以用查询参数分流路由）
+// （应用用的是 MemoryRouter，路径不体现在 URL 上，所以用查询参数分流）
 const isTasWindow =
   new URLSearchParams(window.location.search).get("window") === "tas";
 
 createRoot(rootEl).render(
   isTasWindow ? (
-    // 帮助模态等弹窗走同一个 dialog store，所以 TAS 窗口也要挂一个 host
+    // 帮助模态等弹窗走同一个 dialog store，所以 TAS 窗口也要挂一份 host；
+    // toast 同理：Toaster 只挂在主窗口的 App 里，不在这里也挂一份的话编辑器的提示全都看不见
     <>
       <TasEditorWindow />
       <GlobalDialogHost />
+      <Toaster richColors closeButton position="top-right" />
     </>
   ) : (
     <MemoryRouter>

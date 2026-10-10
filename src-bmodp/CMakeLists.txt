@@ -16,6 +16,8 @@ message(STATUS "BML_DIR=${BML_DIR}")
 message(STATUS "VirtoolsSDK_DIR=${VirtoolsSDK_DIR}")
 
 add_library(RockoonIO SHARED
+			src/FramePacer.h
+			src/FramePacer.cpp
 			src/MapLoader.h
 			src/MapLoader.cpp
 			src/RockoonIO.h

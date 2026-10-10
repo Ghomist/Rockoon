@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { Minus, Square, X, Copy } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 /** Minimize / Maximize-Restore / Close window controls. */
 export default function TitleBarControls() {
@@ -25,41 +26,41 @@ export default function TitleBarControls() {
   const onMax = () => appWindow.toggleMaximize();
   const onClose = () => appWindow.close();
 
-  // 与 header 里的其它按钮（配置下拉）保持一致：size-8 圆角图标按钮 + 微小间距，
-  // 而不是撑满整条标题栏的方角条。
-  const btn =
-    "inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors";
-
+  // 用 shadcn 的 Button（ghost + icon-sm），与 header 里其它图标按钮同一套样式；
+  // 关闭按钮只把悬停色换成红色（窗口关闭的惯例）
   return (
     <div className="flex shrink-0 items-center gap-1">
-      <button
-        type="button"
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        className="cursor-pointer text-muted-foreground"
         aria-label="minimize"
         onClick={onMin}
-        className={`${btn} hover:bg-accent hover:text-foreground`}
       >
-        <Minus className="size-4" />
-      </button>
-      <button
-        type="button"
+        <Minus />
+      </Button>
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        className="cursor-pointer text-muted-foreground"
         aria-label="maximize"
         onClick={onMax}
-        className={`${btn} hover:bg-accent hover:text-foreground`}
       >
         {isMaximized ? (
           <Copy className="size-3.5" />
         ) : (
           <Square className="size-3.5" />
         )}
-      </button>
-      <button
-        type="button"
+      </Button>
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        className="cursor-pointer text-muted-foreground hover:bg-red-600 hover:text-white dark:hover:bg-red-600"
         aria-label="close"
         onClick={onClose}
-        className={`${btn} hover:bg-red-600 hover:text-white`}
       >
-        <X className="size-4" />
-      </button>
+        <X />
+      </Button>
     </div>
   );
 }

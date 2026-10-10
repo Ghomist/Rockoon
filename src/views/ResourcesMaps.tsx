@@ -15,6 +15,7 @@ import { useT } from "@/i18n";
 import { formatFileSize } from "@/utils/format";
 import { dialog, message } from "@/utils/ui/feedback";
 import { launchMap } from "@/services/launcher";
+import { confirmTasAutoplayOff } from "@/services/tasGuard";
 import { importResources } from "@/services/resourceImport";
 import ListViewPage from "./components/ListViewPage";
 import ResourceToolbar from "./components/ResourceToolbar";
@@ -174,7 +175,13 @@ export default function ResourcesMaps() {
   /** Launch a map file, optionally with a confirm dialog (skippable via pref). */
   const confirmAndLaunch = (item: DirItem) => {
     const launch = () => {
-      void launchMap([currentPath, item.name].join("/")).catch(() => {
+      void (async () => {
+        // BallanceTAS 还开着「启动时自动播放」（TAS 编辑器留下的）就先问一句
+        const instancePath = usePrefStore.getState().instancePath;
+        if (instancePath && !(await confirmTasAutoplayOff(instancePath)))
+          return;
+        await launchMap([currentPath, item.name].join("/"));
+      })().catch(() => {
         message.error(t("resources.launch.error"));
       });
     };

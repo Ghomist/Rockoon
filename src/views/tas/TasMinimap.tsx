@@ -52,9 +52,12 @@ const TasMinimap = forwardRef<TasMinimapHandle, Props>(function TasMinimap(
   /** 可视框几何（帧）。timeline 每帧写这里 + 直接改 DOM。 */
   const geoRef = useRef({ first: 0, last: 1, total: 1 });
   const sizeRef = useRef({ w: 0, pxW: 0 });
-  const dragRef = useRef<{ mode: DragMode; startX: number; first: number; last: number } | null>(
-    null
-  );
+  const dragRef = useRef<{
+    mode: DragMode;
+    startX: number;
+    first: number;
+    last: number;
+  } | null>(null);
 
   const paint = useCallback(() => {
     const canvas = canvasRef.current;
@@ -190,7 +193,7 @@ const TasMinimap = forwardRef<TasMinimapHandle, Props>(function TasMinimap(
     <div className={className}>
       <div
         ref={hostRef}
-        className="relative select-none"
+        className="relative cursor-pointer select-none"
         style={{ height: HEIGHT, maxWidth: MAX_WIDTH }}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
@@ -204,7 +207,8 @@ const TasMinimap = forwardRef<TasMinimapHandle, Props>(function TasMinimap(
           className="absolute top-0 bottom-0 cursor-grab rounded-sm border active:cursor-grabbing"
           style={{
             borderColor: "var(--color-muted-foreground)",
-            backgroundColor: "color-mix(in oklab, var(--color-foreground) 8%, transparent)",
+            backgroundColor:
+              "color-mix(in oklab, var(--color-foreground) 8%, transparent)",
             left: 0
           }}
         >

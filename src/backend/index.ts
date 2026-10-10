@@ -4,6 +4,25 @@ import { dumpBallanceLaunchConfig, parseBallanceLaunchConfig } from "./utils";
 
 export type LogLevel = "error" | "warn" | "info" | "debug" | "trace";
 
+/** `game_window_info` 的返回：当前有没有游戏窗口被嵌进来。 */
+export type GameWindowInfo = {
+  attached: boolean;
+  pid: number;
+  hwnd: number;
+  focused: boolean;
+  /** 可交互（鼠标键盘交给游戏）；false = 只看不碰（点击穿透、不抢前台） */
+  interactive: boolean;
+  rect: [number, number, number, number];
+};
+
+/** `game_frame_limit` 的返回：TAS 回放调速槽的当前状态。 */
+export type GameFrameLimit = {
+  /** 目标帧率（<= 0 = 不限速） */
+  targetFps: number;
+  /** 游戏里实测的逻辑帧率（约每 0.5 秒更新） */
+  measuredFps: number;
+};
+
 type SkyboxFile = {
   path: string;
   direction: string;
@@ -101,10 +120,46 @@ const fs = {
 };
 
 const process = {
-  execute: (cwd: string, bin: string, env?: Record<string, string>) =>
-    invoke<number>("execute", { cwd, bin, env }),
+  /** `args` 是额外的命令行参数（TAS 编辑器用它给游戏定分辨率）；
+   * `highPriority` 把游戏提到「高」优先级（TAS 回放防被编辑器抢 CPU） */
+  execute: (
+    cwd: string,
+    bin: string,
+    env?: Record<string, string>,
+    args?: string[],
+    highPriority?: boolean
+  ) => invoke<number>("execute", { cwd, bin, env, args, highPriority }),
   kill: (pid: number) => invoke<undefined>("kill", { pid }),
-  check: (pid: number) => invoke<boolean>("check", { pid })
+  check: (pid: number) => invoke<boolean>("check", { pid }),
+  /** 按映像名列出在跑的进程 pid（如 `Player.exe`；Ballance 不支持多开，启动前要确认没有残留） */
+  findProcesses: (image: string) =>
+    invoke<number[]>("find_processes", { image })
+};
+
+/**
+ * 把 Ballance 的主窗口以「顶层窗口 + owner」摆到当前窗口里的一块区域（见 embed.rs）。
+ * 坐标都是**宿主窗口客户区的物理像素**（前端 CSS px × devicePixelRatio）。
+ */
+const embed = {
+  attachGameWindow: (
+    pid: number,
+    x: number,
+    y: number,
+    width: number,
+    height: number
+  ) => invoke<number>("attach_game_window", { pid, x, y, width, height }),
+  moveGameWindow: (x: number, y: number, width: number, height: number) =>
+    invoke<undefined>("move_game_window", { x, y, width, height }),
+  detachGameWindow: () => invoke<undefined>("detach_game_window"),
+  gameWindowInfo: () => invoke<GameWindowInfo>("game_window_info"),
+  /** true = 鼠标键盘交给游戏；false = 只看不碰（默认，鼠标不会被游戏吃掉） */
+  setGameWindowInteractive: (interactive: boolean) =>
+    invoke<undefined>("set_game_window_interactive", { interactive }),
+  /** TAS 回放调速：写目标帧率（<= 0 = 不限速）。游戏还没建好槽时会报错，过会儿重试 */
+  setGameFrameLimit: (pid: number, fps: number) =>
+    invoke<undefined>("set_game_frame_limit", { pid, fps }),
+  gameFrameLimit: (pid: number) =>
+    invoke<GameFrameLimit>("game_frame_limit", { pid })
 };
 
 const game = {
@@ -129,6 +184,7 @@ export default {
   ...ballance,
   ...fs,
   ...process,
+  ...embed,
   ...game,
   patches
 };

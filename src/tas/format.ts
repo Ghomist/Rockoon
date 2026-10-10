@@ -13,7 +13,7 @@
  * 注意：这个位序与界面上的「轨道顺序」无关。轨道顺序只是显示概念（默认按用户指定的
  * ↑ ← → ↓ Shift Space Q Enter Esc 排列，且允许用户拖拽调整），读写始终按位序。
  *
- * 实测样本 `D:\Ballance\ModLoader\TASRecords\SR_01_1.16.726.tas`：
+ * 实测样本 `D:\Ballance\ModLoader\TAS\SR_01_1.16.726.tas`：
  *   19600 帧，每帧 deltaTime 都是 4.166667 毫秒，即 1000/240 —— 游戏是 240Hz 固定步长。
  */
 
