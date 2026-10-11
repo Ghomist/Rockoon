@@ -4,6 +4,8 @@
  * 2.0.0-beta.1 起：录像（`.tas`）在启动时只是「armed」，要等关卡载入才开始播；
  * `Startup.Level` 让游戏启动后自己进那一关（`Level_01` … `Level_13`）。录像文件里
  * 没有关卡信息，所以关卡要由编辑器给出（文件名能猜就猜，见 `inferLevel`）。
+ * 自制图不走 `Startup.Level`（写 `None`），而是像「自制地图」页那样用 `ROCKOON_STARTUP`
+ * 让 RockoonIO 在主菜单载入它；录像同样等关卡载入才开始播。
  * 游戏里这两项是单选列表（`BML_SetConfigPropertyChoices`），但写进 cfg 仍是普通的 `S`。
  *
  * 「从当前帧播放」= `TAS.SkipRenderUntilFrame`（`I`）：回放照常从第 0 帧跑物理，只是第 N 帧
@@ -51,8 +53,8 @@ const SKIP = {
 export type PlaybackTarget = {
   /** 项目名（`.tas` 文件名去掉扩展名） */
   project: string;
-  /** 关卡 1~13 */
-  level: number;
+  /** 关卡 1~13；null = 自制图（由 RockoonIO 载入，`Startup.Level` 写 `None`） */
+  level: number | null;
   /** 从第几帧开始看（之前的帧快进）；0 = 从头 */
   skipFrames: number;
 };
@@ -110,7 +112,12 @@ const targets = ({ project, level, skipFrames }: PlaybackTarget): Target[] => [
     datatype: "B" as const
   })),
   { ...PROJECT, value: project, toggle: false, datatype: "S" },
-  { ...LEVEL, value: levelValue(level), toggle: false, datatype: "S" },
+  {
+    ...LEVEL,
+    value: level === null ? "None" : levelValue(level),
+    toggle: false,
+    datatype: "S"
+  },
   {
     ...SKIP,
     value: String(Math.max(0, Math.floor(skipFrames))),

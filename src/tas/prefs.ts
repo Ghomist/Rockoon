@@ -12,6 +12,9 @@ import storage from "@/utils/storage";
 
 const PREFS_KEY = "rockoon-tas-editor";
 
+/** 一键播放要进的地图：原版关卡号（1~13），或自制图相对 `ModLoader/Maps` 的路径。 */
+export type TasMapRef = number | string;
+
 /** 回放速度倍率上限（再快就是 CPU 跑不动了，没意义）。 */
 export const MAX_PLAY_SPEED = 64;
 /** 速度滑条的档位（倍率，从慢到快）；最后一档 0 = 不限速。 */
@@ -35,8 +38,11 @@ export type TasEditorPrefs = {
   /** 右上游戏区域的分辨率（启动游戏时用 `-w/-h` 定死，之后区域就按它的大小画）。 */
   gameWidth: number;
   gameHeight: number;
-  /** 一键播放时每个项目进哪一关（项目名 → 1~13）；没记过就按文件名猜。 */
-  projectLevels: Record<string, number>;
+  /**
+   * 一键播放时每个项目进哪张图（项目名 → 地图）；没记过就按文件名猜原版关卡。
+   * 数字 = 原版第 1~13 关；字符串 = 自制图在 `ModLoader/Maps` 下的相对路径（正斜杠）。
+   */
+  projectMaps: Record<string, TasMapRef>;
   /** 回放速度倍率（相对录像帧率）；0 = 不限速。播放中随时可改。 */
   playSpeed: number;
 };
@@ -72,7 +78,7 @@ export const DEFAULT_TAS_PREFS: TasEditorPrefs = {
   locked: [],
   gameWidth: 1024,
   gameHeight: 768,
-  projectLevels: {},
+  projectMaps: {},
   playSpeed: 1
 };
 
@@ -103,18 +109,27 @@ function sanitizeLocked(value: unknown): TasKey[] {
   return [...seen] as TasKey[];
 }
 
-/** 项目 → 关卡表来自 localStorage：只留 1~13 的整数。 */
-function sanitizeLevels(value: unknown): Record<string, number> {
+/** 项目 → 地图表来自 localStorage：只留 1~13 的整数和非空的相对路径。 */
+function sanitizeMaps(value: unknown): Record<string, TasMapRef> {
   if (!value || typeof value !== "object") return {};
-  const out: Record<string, number> = {};
-  for (const [name, level] of Object.entries(value)) {
-    if (Number.isInteger(level) && level >= 1 && level <= 13) out[name] = level;
+  const out: Record<string, TasMapRef> = {};
+  for (const [name, map] of Object.entries(value)) {
+    if (
+      typeof map === "number" &&
+      Number.isInteger(map) &&
+      map >= 1 &&
+      map <= 13
+    )
+      out[name] = map;
+    else if (typeof map === "string" && map.trim()) out[name] = map;
   }
   return out;
 }
 
 export function loadTasPrefs(): TasEditorPrefs {
-  const raw = storage.getWithDefault<Partial<TasEditorPrefs>>(PREFS_KEY, {});
+  const raw = storage.getWithDefault<
+    Partial<TasEditorPrefs> & { projectLevels?: unknown }
+  >(PREFS_KEY, {});
   return {
     vGrid: raw.vGrid ?? DEFAULT_TAS_PREFS.vGrid,
     hGrid: raw.hGrid ?? DEFAULT_TAS_PREFS.hGrid,
@@ -129,7 +144,8 @@ export function loadTasPrefs(): TasEditorPrefs {
       2160,
       DEFAULT_TAS_PREFS.gameHeight
     ),
-    projectLevels: sanitizeLevels(raw.projectLevels),
+    // 老版本只存关卡号（`projectLevels`），读进来当原版关卡用
+    projectMaps: sanitizeMaps(raw.projectMaps ?? raw.projectLevels),
     playSpeed:
       typeof raw.playSpeed === "number" &&
       Number.isFinite(raw.playSpeed) &&

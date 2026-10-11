@@ -2,16 +2,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { save as saveDialog } from "@tauri-apps/plugin-dialog";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import {
-  Clapperboard,
-  Eye,
   FileClock,
-  FileText,
   Gamepad2,
-  Hash,
   Loader2,
+  Map as MapIcon,
   Maximize2,
   MousePointerClick,
-  PencilLine,
   Play,
   Redo2,
   RefreshCw,
@@ -36,16 +32,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle
 } from "@/components/ui/alert-dialog";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardAction,
-  CardContent,
-  CardHeader,
-  CardTitle
-} from "@/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -55,6 +43,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
 import { Slider } from "@/components/ui/slider";
 import { Toggle } from "@/components/ui/toggle";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
@@ -105,7 +94,6 @@ import {
   type UndoEntry
 } from "@/tas/editing";
 import {
-  TAS_LEVELS,
   applyPlayback,
   rememberRestore,
   inferLevel,
@@ -121,7 +109,8 @@ import {
   PLAY_SPEED_STOPS,
   loadTasPrefs,
   saveTasPrefs,
-  type TasEditorPrefs
+  type TasEditorPrefs,
+  type TasMapRef
 } from "@/tas/prefs";
 import { trackColor } from "@/tas/render";
 import { formatFrameTime, paintableFrames } from "@/tas/viewport";
@@ -131,6 +120,7 @@ import TasTimeline, {
   type TasTimelineHandle
 } from "./TasTimeline";
 import TasHintBar from "./TasHints";
+import TasMapList, { mapDisplayName } from "./TasMapList";
 
 type ManagedFile = { name: string; size: number };
 /** 文件列表里显示的元数据。 */
@@ -424,6 +414,30 @@ export default function TasEditorWindow() {
     el.select();
   }, [selection]);
 
+  /** 「当前帧」输入框（滚轮 = 逐帧移动光标）。 */
+  const frameInputRef = useRef<HTMLInputElement | null>(null);
+
+  // 当前帧滚轮：上滚 +1 / 下滚 -1，Shift ×10（与「按键时长」一致）；不需要先聚焦。
+  // 同样必须挂原生监听才能 preventDefault；moveCursor 在后面定义，回调里才用到，不踩 TDZ。
+  useEffect(() => {
+    const el = frameInputRef.current;
+    if (!el) return;
+    const onWheel = (ev: WheelEvent) => {
+      if (!docRef.current || ev.deltaY === 0) return;
+      ev.preventDefault();
+      const step = (ev.deltaY > 0 ? -1 : 1) * (ev.shiftKey ? 10 : 1);
+      const next = Math.max(
+        0,
+        Math.min(docRef.current.tas.frameCount - 1, cursorRef.current + step)
+      );
+      moveCursor(next, false);
+      // 聚焦时显示的是本地文本，跟着改，不然失焦时会被旧文本跳回去
+      if (document.activeElement === el) setFrameText(String(next));
+    };
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel);
+  });
+
   // 帧数滚轮微调：必须挂原生监听（React 的 onWheel 是 passive 的，preventDefault 拦不住滚动）。
   // 回调体只在事件发生时执行，所以这里引用后面定义的 applyRunLength 不会踩 TDZ。
   useEffect(() => {
@@ -479,14 +493,14 @@ export default function TasEditorWindow() {
     [persistPrefs]
   );
 
-  /** 一键播放要进的关卡：记过的优先，否则按项目名猜（猜不出 = null，播放前必须先选）。 */
-  const levelFor = (project: string): number | null =>
-    prefsRef.current.projectLevels[project] ?? inferLevel(project);
+  /** 一键播放要进的地图：记过的优先，否则按项目名猜原版关卡（猜不出 = null，播放前必须先选）。 */
+  const mapFor = (project: string): TasMapRef | null =>
+    prefsRef.current.projectMaps[project] ?? inferLevel(project);
 
-  const setProjectLevel = (project: string, level: number) => {
+  const setProjectMap = (project: string, map: TasMapRef) => {
     persistPrefs({
       ...prefsRef.current,
-      projectLevels: { ...prefsRef.current.projectLevels, [project]: level }
+      projectMaps: { ...prefsRef.current.projectMaps, [project]: map }
     });
   };
 
@@ -808,63 +822,69 @@ export default function TasEditorWindow() {
 
   gameWindowRef.current = { hide: hideGameWindow, show: showGameWindow };
 
-  /** 启动游戏，并把它的窗口嵌进右上区域（分辨率在启动时用 `-w/-h` 定死）。 */
-  const startGame = useCallback(async (): Promise<boolean> => {
-    const instancePathNow = usePrefStore.getState().instancePath;
-    const app = useAppStore.getState();
-    if (!instancePathNow) {
-      toast.error(t("tas.playNoInstance"));
-      return false;
-    }
-    // launchInstance 读的是 app store 里的实例数据；TAS 窗口不一定加载过
-    if (!app.selectedInstanceData) {
-      const ok = await app.loadInstance(instancePathNow);
-      if (!ok) {
+  /**
+   * 启动游戏，并把它的窗口嵌进游戏区域（分辨率在启动时用 `-w/-h` 定死）。
+   * `extraEnv`：自制图要带上 RockoonIO 的 `ROCKOON_STARTUP` 那几项。
+   */
+  const startGame = useCallback(
+    async (extraEnv?: Record<string, string>): Promise<boolean> => {
+      const instancePathNow = usePrefStore.getState().instancePath;
+      const app = useAppStore.getState();
+      if (!instancePathNow) {
         toast.error(t("tas.playNoInstance"));
         return false;
       }
-    }
-    const rect = regionRect();
-    if (!rect) {
-      toast.error(t("tas.gameRegionMissing"));
-      return false;
-    }
-    const { gameWidth, gameHeight } = prefsRef.current;
-    setGame({ state: "launching", pid: 0 });
-    setInteractive(false);
-    setMeasuredFps(null);
-    try {
-      const initialFps = targetFpsRef.current;
-      const pid = await launchInstance({
-        // 游戏的渲染上下文是固定尺寸：分辨率必须在启动时定，之后窗口变大只会拉伸画面
-        args: ["-w", String(gameWidth), "-h", String(gameHeight)],
-        // 带上它 RockoonIO 才会打开回放调速（初始帧率；之后走共享内存随时改）
-        env: { ROCKOON_TAS_FPS: String(initialFps) },
-        // 主窗口不要因为「启动时隐藏窗口」那个偏好被藏走（TAS 编辑器要一直看得到）
-        keepMainWindowVisible: true,
-        // 回放期间别让编辑器（WebView2/mouse 一动就烧 CPU）把游戏挤掉帧
-        highPriority: true
-      });
-      if (!pid) throw new Error(t("tas.gameLaunchFailed"));
-      // 初始帧率已经随环境变量进去了；启动期间改过速度的话，running 之后会补发
-      sentFpsRef.current = initialFps;
-      setGame({ state: "launching", pid });
-      // 游戏窗口要几秒才出来；Rust 那边自己在等（最多 30s）
-      await backend.attachGameWindow(
-        pid,
-        rect.x,
-        rect.y,
-        rect.width,
-        rect.height
-      );
-      setGame({ state: "running", pid });
-      return true;
-    } catch (e) {
-      toast.error(String(e));
-      setGame({ state: "idle", pid: 0 });
-      return false;
-    }
-  }, [regionRect]);
+      // launchInstance 读的是 app store 里的实例数据；TAS 窗口不一定加载过
+      if (!app.selectedInstanceData) {
+        const ok = await app.loadInstance(instancePathNow);
+        if (!ok) {
+          toast.error(t("tas.playNoInstance"));
+          return false;
+        }
+      }
+      const rect = regionRect();
+      if (!rect) {
+        toast.error(t("tas.gameRegionMissing"));
+        return false;
+      }
+      const { gameWidth, gameHeight } = prefsRef.current;
+      setGame({ state: "launching", pid: 0 });
+      setInteractive(false);
+      setMeasuredFps(null);
+      try {
+        const initialFps = targetFpsRef.current;
+        const pid = await launchInstance({
+          // 游戏的渲染上下文是固定尺寸：分辨率必须在启动时定，之后窗口变大只会拉伸画面
+          args: ["-w", String(gameWidth), "-h", String(gameHeight)],
+          // 带上它 RockoonIO 才会打开回放调速（初始帧率；之后走共享内存随时改）
+          env: { ...extraEnv, ROCKOON_TAS_FPS: String(initialFps) },
+          // 主窗口不要因为「启动时隐藏窗口」那个偏好被藏走（TAS 编辑器要一直看得到）
+          keepMainWindowVisible: true,
+          // 回放期间别让编辑器（WebView2/mouse 一动就烧 CPU）把游戏挤掉帧
+          highPriority: true
+        });
+        if (!pid) throw new Error(t("tas.gameLaunchFailed"));
+        // 初始帧率已经随环境变量进去了；启动期间改过速度的话，running 之后会补发
+        sentFpsRef.current = initialFps;
+        setGame({ state: "launching", pid });
+        // 游戏窗口要几秒才出来；Rust 那边自己在等（最多 30s）
+        await backend.attachGameWindow(
+          pid,
+          rect.x,
+          rect.y,
+          rect.width,
+          rect.height
+        );
+        setGame({ state: "running", pid });
+        return true;
+      } catch (e) {
+        toast.error(String(e));
+        setGame({ state: "idle", pid: 0 });
+        return false;
+      }
+    },
+    [regionRect]
+  );
 
   /**
    * 停止：解除嵌入 + 结束游戏进程，**等 Player.exe 真的退干净**才回到空态。
@@ -1067,12 +1087,31 @@ export default function TasEditorWindow() {
       toast.error(t("tas.playNeedsSave"));
       return;
     }
-    // 录像不带关卡信息，2.0 的录像要等关卡载入才播：没有关卡就只会停在菜单里干等
+    // 录像不带关卡信息，2.0 的录像要等关卡载入才播：没有地图就只会停在菜单里干等
     const project = d.name.replace(/\.tas$/i, "");
-    const level = levelFor(project);
-    if (level === null) {
+    const map = mapFor(project);
+    if (map === null) {
       toast.error(t("tas.playNeedsLevel"));
       return;
+    }
+    // 自制图：`Startup.Level` 写 None，改由 RockoonIO 在主菜单载入（与「自制地图」页同一套环境变量）
+    const level = typeof map === "number" ? map : null;
+    let mapEnv: Record<string, string> | undefined;
+    if (typeof map === "string") {
+      const mapPath = `${instancePath}/ModLoader/Maps/${map}`.replace(
+        /\//g,
+        "\\"
+      );
+      if (!(await backend.exists(mapPath).catch(() => false))) {
+        toast.error(t("tas.playMapMissing", { map }));
+        return;
+      }
+      mapEnv = {
+        ROCKOON_STARTUP: mapPath,
+        // 回放里退出关卡（AutoRestart 等）不能把游戏一起关掉；关游戏交给编辑器的「停止」
+        ROCKOON_MAP_ONLY: "0",
+        ROCKOON_LEVEL_SLOT: String(usePrefStore.getState().levelSlot ?? 0)
+      };
     }
     // 2. 有未保存的改动先保存（走既有 save，含自动 .bak）
     if (dirty && !(await save(false))) return;
@@ -1135,15 +1174,16 @@ export default function TasEditorWindow() {
       }
     }
     // 6. 启动，并把游戏窗口嵌进右上区域
-    if (!(await startGame())) return;
+    if (!(await startGame(mapEnv))) return;
+    const mapText = level !== null ? levelValue(level) : mapDisplayName(map);
     toast.success(
       skipFrames > 0
         ? t("tas.playStartingAt", {
             project,
-            level: levelValue(level),
+            level: mapText,
             frame: skipFrames
           })
-        : t("tas.playStarting", { project, level: levelValue(level) })
+        : t("tas.playStarting", { project, level: mapText })
     );
   };
 
@@ -1664,9 +1704,11 @@ export default function TasEditorWindow() {
   const playFromFrame = doc
     ? Math.max(0, Math.min(cursor, doc.tas.frameCount - 1))
     : 0;
-  const playLevel = projectName
-    ? (prefs.projectLevels[projectName] ?? inferLevel(projectName))
-    : null;
+  /** 当前项目一键播放要进的地图（手选过的 / 按文件名猜的）。 */
+  const playMapSaved = projectName ? prefs.projectMaps[projectName] : undefined;
+  const playMap: TasMapRef | null =
+    playMapSaved ?? (projectName ? inferLevel(projectName) : null);
+  const playMapGuessed = playMapSaved === undefined && playMap !== null;
   /** 右上区域的 CSS 尺寸（物理像素 = 选定分辨率）。 */
   const regionCssW = prefs.gameWidth / dpr;
   const regionCssH = prefs.gameHeight / dpr;
@@ -1829,6 +1871,258 @@ export default function TasEditorWindow() {
                 );
               })}
             </div>
+
+            {/* 回放：播放 / 速度 / 分辨率 / 地图（游戏区域上面不放任何按钮：游戏窗口压在 HTML 上，点不到） */}
+            <div className="flex shrink-0 flex-col gap-2 border-t px-3 py-2.5">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[11px] font-medium text-muted-foreground">
+                  {t("tas.sectionPlayback")}
+                </span>
+                <span
+                  className="flex min-w-0 items-center gap-1.5 truncate text-[11px] text-muted-foreground tabular-nums"
+                  title={t("tas.speedMeasuredHint")}
+                >
+                  <span
+                    className={cn(
+                      "size-1.5 shrink-0 rounded-full",
+                      game.state === "running"
+                        ? "bg-emerald-500"
+                        : gameBusy
+                          ? "animate-pulse bg-amber-500"
+                          : "bg-muted-foreground/40"
+                    )}
+                  />
+                  {game.state === "running"
+                    ? measuredFps !== null
+                      ? `${t("tas.gameStateRunning")} · ${t("tas.speedMeasured", { fps: Math.round(measuredFps) })}`
+                      : t("tas.gameStateRunning")
+                    : game.state === "launching"
+                      ? t("tas.gameStateLaunching")
+                      : game.state === "stopping"
+                        ? t("tas.gameStateStopping")
+                        : t("tas.gameStateIdle")}
+                </span>
+              </div>
+              {/* 游戏在跑时再点 = 改配置 + 重启（TAS 配置只在启动时读），会先问一句 */}
+              <div className="grid grid-cols-[1fr_auto] gap-1.5">
+                <Button
+                  size="sm"
+                  disabled={!doc || busy || gameBusy}
+                  title={t("tas.playFromCursorHint", {
+                    frame: playFromFrame.toLocaleString()
+                  })}
+                  onClick={() => void playProject(false)}
+                >
+                  {gameBusy ? <Loader2 className="animate-spin" /> : <Play />}
+                  <span className="truncate">
+                    {t("tas.gamePlay")}
+                    <span className="ml-1.5 font-normal opacity-75 tabular-nums">
+                      {t("tas.playFromFrameShort", {
+                        frame: playFromFrame.toLocaleString()
+                      })}
+                    </span>
+                  </span>
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={!doc || busy || gameBusy}
+                  title={t("tas.playFromStartHint")}
+                  onClick={() => void playProject(true)}
+                >
+                  <SkipBack />
+                  {t("tas.playFromStart")}
+                </Button>
+              </div>
+              {game.state === "running" && (
+                <div className="grid grid-cols-2 gap-1.5">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => void stopGame()}
+                  >
+                    <Square />
+                    {t("tas.gameStop")}
+                  </Button>
+                  <Toggle
+                    variant="outline"
+                    size="sm"
+                    pressed={interactive}
+                    onPressedChange={() => void toggleInteractive()}
+                    title={t("tas.gameInteractiveHint")}
+                  >
+                    <MousePointerClick />
+                    {t("tas.gameInteractive")}
+                  </Toggle>
+                </div>
+              )}
+              {/* 标签 │ 控件 两列：速度 / 分辨率 / 地图 */}
+              <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-1.5 text-xs">
+                <Label
+                  htmlFor="tas-speed"
+                  className="text-xs font-normal text-muted-foreground"
+                  title={t("tas.speedHint")}
+                >
+                  {t("tas.speedShort")}
+                </Label>
+                {/* 滑条按档位走；拖动中每一档都即时推给游戏（RockoonIO 限速，下一帧生效） */}
+                <div className="flex items-center gap-2">
+                  <Slider
+                    id="tas-speed"
+                    className="min-w-0 flex-1"
+                    min={0}
+                    max={PLAY_SPEED_STOPS.length - 1}
+                    step={1}
+                    value={[speedStop]}
+                    onValueChange={([i]) => setPlaySpeed(PLAY_SPEED_STOPS[i])}
+                    aria-label={t("tas.speed")}
+                    title={t("tas.speedHint")}
+                  />
+                  {/* 点一下回到 1× */}
+                  <button
+                    type="button"
+                    className="w-[5.5rem] shrink-0 rounded px-1 py-0.5 text-right tabular-nums transition-colors hover:bg-accent"
+                    title={t("tas.speedResetHint")}
+                    onClick={() => setPlaySpeed(1)}
+                  >
+                    <span className="font-semibold">
+                      {speedLabel(prefs.playSpeed)}
+                    </span>
+                    <span className="ml-1 text-[10px] text-muted-foreground">
+                      {targetFps > 0 ? `${Math.round(targetFps)}fps` : "∞"}
+                    </span>
+                  </button>
+                </div>
+
+                <Label
+                  htmlFor="tas-resolution"
+                  className="text-xs font-normal text-muted-foreground"
+                  title={t("tas.gameResolutionHint")}
+                >
+                  {t("tas.gameResolution")}
+                </Label>
+                {/* 分辨率在启动时用 -w/-h 定死，游戏跑着时不能改 */}
+                <Select
+                  value={`${prefs.gameWidth}x${prefs.gameHeight}`}
+                  onValueChange={value => {
+                    const [w, h] = value.split("x").map(Number);
+                    persistPrefs({
+                      ...prefsRef.current,
+                      gameWidth: w,
+                      gameHeight: h
+                    });
+                  }}
+                  disabled={game.state !== "idle"}
+                >
+                  <SelectTrigger
+                    id="tas-resolution"
+                    size="sm"
+                    className="h-7 w-full text-xs"
+                    title={t("tas.gameResolutionHint")}
+                  >
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {GAME_RESOLUTIONS.map(([w, h]) => (
+                      <SelectItem key={`${w}x${h}`} value={`${w}x${h}`}>
+                        {`${w} × ${h}`}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <span
+                  className="text-muted-foreground"
+                  title={t("tas.gameLevelHint")}
+                >
+                  {t("tas.mapLabel")}
+                </span>
+                {/* 在右侧地图列表里选；这里只显示 */}
+                <span
+                  className="flex min-w-0 items-center gap-1.5"
+                  title={t("tas.gameLevelHint")}
+                >
+                  <MapIcon className="size-3.5 shrink-0 text-muted-foreground" />
+                  <span
+                    className={cn(
+                      "truncate",
+                      playMap === null && "text-muted-foreground"
+                    )}
+                  >
+                    {playMap !== null
+                      ? mapDisplayName(playMap)
+                      : doc
+                        ? t("tas.mapNone")
+                        : "—"}
+                  </span>
+                  {playMapGuessed && (
+                    <Badge
+                      variant="outline"
+                      className="shrink-0 px-1 py-0 text-[10px] font-normal"
+                      title={t("tas.mapGuessedHint")}
+                    >
+                      {t("tas.mapGuessed")}
+                    </Badge>
+                  )}
+                </span>
+              </div>
+              {!regionFits && (
+                <p
+                  className="flex items-start gap-1.5 text-[11px] text-amber-600 dark:text-amber-500"
+                  title={t("tas.gameTooSmallHint")}
+                >
+                  <TriangleAlert className="mt-px size-3.5 shrink-0" />
+                  {t("tas.gameTooSmall")}
+                </p>
+              )}
+            </div>
+
+            {/* 文件：保存 / 另存为 / 裁尾 + 改动状态 */}
+            <div className="flex shrink-0 flex-col gap-1.5 border-t px-3 py-2.5">
+              <div className="flex items-center gap-1.5">
+                <Button
+                  size="sm"
+                  className="h-7"
+                  disabled={!doc || !dirty || busy}
+                  title="Ctrl+S"
+                  onClick={() => void save(false)}
+                >
+                  {busy ? <Loader2 className="animate-spin" /> : <Save />}
+                  {t("tas.save")}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7"
+                  disabled={!doc || busy}
+                  title="Ctrl+Shift+S"
+                  onClick={() => void save(true)}
+                >
+                  {t("tas.saveAs")}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  className="ml-auto"
+                  title={`${t("tas.trimTail")} — ${t("tas.trimTailHint")}`}
+                  disabled={!doc}
+                  onClick={trimTailCmd}
+                >
+                  <Scissors />
+                </Button>
+              </div>
+              <p
+                className={cn(
+                  "truncate text-[11px]",
+                  dirty
+                    ? "text-amber-600 dark:text-amber-500"
+                    : "text-muted-foreground"
+                )}
+              >
+                {status ||
+                  (doc ? (dirty ? t("tas.modified") : t("tas.clean")) : "—")}
+              </p>
+            </div>
           </div>
 
           {/* 中：游戏视口（游戏窗口以「顶层窗口 + owner」摆在这块区域上，见 embed.rs）。宽度 = 分辨率，
@@ -1875,530 +2169,276 @@ export default function TasEditorWindow() {
             </div>
           </div>
 
-          {/* 右：控制面板 —— 所有功能按钮都在这里，按使用频率从上到下分组（与左侧文件列表等宽）。
-              全部用 shadcn 组件：Card 分组、Label + Input/Select、ToggleGroup / Toggle、Badge、Alert */}
-          <div className="flex min-h-0 min-w-0 flex-1 basis-0 flex-col gap-3 overflow-y-auto border-l bg-muted/30 p-3">
-            {/* ── 回放：播放 / 速度 / 关卡 / 分辨率（游戏区域上面不放任何按钮） ── */}
-            <Card className="gap-3 py-4">
-              <CardHeader className="px-4">
-                <CardTitle className="flex items-center gap-2 text-sm">
-                  <Clapperboard className="size-4 text-muted-foreground" />
-                  {t("tas.sectionPlayback")}
-                </CardTitle>
-                <CardAction>
-                  <Badge
-                    variant="outline"
-                    className="gap-1.5 font-normal tabular-nums"
-                    title={t("tas.speedMeasuredHint")}
-                  >
-                    <span
-                      className={cn(
-                        "size-1.5 rounded-full",
-                        game.state === "running"
-                          ? "bg-emerald-500"
-                          : gameBusy
-                            ? "animate-pulse bg-amber-500"
-                            : "bg-muted-foreground/40"
-                      )}
-                    />
-                    {game.state === "running"
-                      ? measuredFps !== null
-                        ? `${t("tas.gameStateRunning")} · ${t("tas.speedMeasured", { fps: Math.round(measuredFps) })}`
-                        : t("tas.gameStateRunning")
-                      : game.state === "launching"
-                        ? t("tas.gameStateLaunching")
-                        : game.state === "stopping"
-                          ? t("tas.gameStateStopping")
-                          : t("tas.gameStateIdle")}
-                  </Badge>
-                </CardAction>
-              </CardHeader>
-              <CardContent className="flex flex-col gap-3 px-4">
-                {/* 游戏在跑时再点 = 改配置 + 重启（TAS 配置只在启动时读），会先问一句 */}
-                <div className="grid grid-cols-[1fr_auto] gap-2">
-                  <Button
-                    disabled={!doc || busy || gameBusy}
-                    title={t("tas.playFromCursorHint", {
-                      frame: playFromFrame.toLocaleString()
-                    })}
-                    onClick={() => void playProject(false)}
-                  >
-                    {gameBusy ? <Loader2 className="animate-spin" /> : <Play />}
-                    <span className="truncate">
-                      {t("tas.gamePlay")}
-                      <span className="ml-1.5 font-normal opacity-75 tabular-nums">
-                        {t("tas.playFromFrameShort", {
-                          frame: playFromFrame.toLocaleString()
-                        })}
-                      </span>
-                    </span>
-                  </Button>
-                  <Button
-                    variant="outline"
-                    disabled={!doc || busy || gameBusy}
-                    title={t("tas.playFromStartHint")}
-                    onClick={() => void playProject(true)}
-                  >
-                    <SkipBack />
-                    {t("tas.playFromStart")}
-                  </Button>
-                </div>
-                {game.state === "running" && (
-                  <div className="grid grid-cols-2 gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => void stopGame()}
-                    >
-                      <Square />
-                      {t("tas.gameStop")}
-                    </Button>
-                    <Toggle
-                      variant="outline"
-                      size="sm"
-                      pressed={interactive}
-                      onPressedChange={() => void toggleInteractive()}
-                      title={t("tas.gameInteractiveHint")}
-                    >
-                      <MousePointerClick />
-                      {t("tas.gameInteractive")}
-                    </Toggle>
-                  </div>
-                )}
-
-                {/* 速度：滑条按档位走；拖动中每一档都即时推给游戏（RockoonIO 限速，下一帧生效） */}
-                <div className="grid gap-1.5">
-                  <Label htmlFor="tas-speed" title={t("tas.speedHint")}>
-                    {t("tas.speedShort")}
-                  </Label>
-                  <div className="flex items-center gap-3">
-                    <Slider
-                      id="tas-speed"
-                      className="min-w-0 flex-1"
-                      min={0}
-                      max={PLAY_SPEED_STOPS.length - 1}
-                      step={1}
-                      value={[speedStop]}
-                      onValueChange={([i]) => setPlaySpeed(PLAY_SPEED_STOPS[i])}
-                      aria-label={t("tas.speed")}
-                      title={t("tas.speedHint")}
-                    />
-                    {/* 点一下回到 1× */}
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-auto w-16 flex-col items-end gap-0 px-1.5 py-0.5"
-                      title={t("tas.speedResetHint")}
-                      onClick={() => setPlaySpeed(1)}
-                    >
-                      <span className="text-sm font-semibold tabular-nums">
-                        {speedLabel(prefs.playSpeed)}
-                      </span>
-                      <span className="text-[10px] font-normal text-muted-foreground tabular-nums">
-                        {targetFps > 0
-                          ? `${Math.round(targetFps)} fps`
-                          : "∞ fps"}
-                      </span>
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  {/* 一键播放后自动进入的关卡（BallanceTAS 的 Startup.Level），按项目记住 */}
-                  <div className="grid min-w-0 gap-1.5">
-                    <Label htmlFor="tas-level" title={t("tas.gameLevelHint")}>
-                      {t("tas.gameLevel")}
-                    </Label>
-                    <Select
-                      value={playLevel ? String(playLevel) : ""}
-                      onValueChange={value => {
-                        if (projectName)
-                          setProjectLevel(projectName, Number(value));
-                      }}
-                      disabled={!doc}
-                    >
-                      <SelectTrigger
-                        id="tas-level"
-                        size="sm"
-                        className="w-full"
-                        title={t("tas.gameLevelHint")}
-                      >
-                        <SelectValue placeholder={t("tas.gameLevelPick")} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {TAS_LEVELS.map(n => (
-                          <SelectItem key={n} value={String(n)}>
-                            {t("tas.levelN", { n })}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  {/* 分辨率在启动时用 -w/-h 定死，游戏跑着时不能改 */}
-                  <div className="grid min-w-0 gap-1.5">
-                    <Label
-                      htmlFor="tas-resolution"
-                      title={t("tas.gameResolutionHint")}
-                    >
-                      {t("tas.gameResolution")}
-                    </Label>
-                    <Select
-                      value={`${prefs.gameWidth}x${prefs.gameHeight}`}
-                      onValueChange={value => {
-                        const [w, h] = value.split("x").map(Number);
-                        persistPrefs({
-                          ...prefsRef.current,
-                          gameWidth: w,
-                          gameHeight: h
-                        });
-                      }}
-                      disabled={game.state !== "idle"}
-                    >
-                      <SelectTrigger
-                        id="tas-resolution"
-                        size="sm"
-                        className="w-full"
-                        title={t("tas.gameResolutionHint")}
-                      >
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {GAME_RESOLUTIONS.map(([w, h]) => (
-                          <SelectItem key={`${w}x${h}`} value={`${w}x${h}`}>
-                            {`${w} × ${h}`}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                {!regionFits && (
-                  <Alert title={t("tas.gameTooSmallHint")}>
-                    <TriangleAlert />
-                    <AlertDescription>{t("tas.gameTooSmall")}</AlertDescription>
-                  </Alert>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* ── 文件 ── */}
-            <Card className="gap-3 py-4">
-              <CardHeader className="px-4">
-                <CardTitle className="flex items-center gap-2 text-sm">
-                  <FileText className="size-4 text-muted-foreground" />
-                  {t("tas.sectionFile")}
-                </CardTitle>
-                {doc && (
-                  <CardAction>
-                    <Badge variant={dirty ? "secondary" : "outline"}>
-                      {dirty ? t("tas.modified") : t("tas.clean")}
-                    </Badge>
-                  </CardAction>
-                )}
-              </CardHeader>
-              <CardContent className="flex flex-col gap-2 px-4">
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    size="sm"
-                    disabled={!doc || !dirty || busy}
-                    title="Ctrl+S"
-                    onClick={() => void save(false)}
-                  >
-                    {busy ? <Loader2 className="animate-spin" /> : <Save />}
-                    {t("tas.save")}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={!doc || busy}
-                    title="Ctrl+Shift+S"
-                    onClick={() => void save(true)}
-                  >
-                    {t("tas.saveAs")}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    title={t("tas.trimTailHint")}
-                    disabled={!doc}
-                    onClick={trimTailCmd}
-                  >
-                    <Scissors />
-                    {t("tas.trimTail")}
-                  </Button>
-                </div>
-                {status && (
-                  <p className="truncate text-xs text-muted-foreground">
-                    {status}
-                  </p>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* ── 编辑：鼠标模式 + 撤销重做 ── */}
-            <Card className="gap-3 py-4">
-              <CardHeader className="px-4">
-                <CardTitle className="flex items-center gap-2 text-sm">
-                  <PencilLine className="size-4 text-muted-foreground" />
-                  {t("tas.sectionEdit")}
-                </CardTitle>
-                <CardAction className="flex gap-1">
-                  <Button
-                    variant="ghost"
-                    size="icon-xs"
-                    title={`${t("tas.undo")} (Ctrl+Z)`}
-                    disabled={!undoState.canUndo}
-                    onClick={undo}
-                  >
-                    <Undo2 />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon-xs"
-                    title={`${t("tas.redo")} (Ctrl+Shift+Z)`}
-                    disabled={!undoState.canRedo}
-                    onClick={redo}
-                  >
-                    <Redo2 />
-                  </Button>
-                </CardAction>
-              </CardHeader>
-              <CardContent className="px-4">
-                {/* 鼠标模式四选一：选择 / 绘制 / 填充 / 录入（快捷键 1~4） */}
-                <ToggleGroup
-                  type="single"
-                  variant="outline"
-                  size="sm"
-                  className="w-full"
-                  value={mode}
-                  onValueChange={value => {
-                    // 单选组再点一下当前项会传空串：保持当前模式
-                    if (!value) return;
-                    recordRoundRef.current = null;
-                    setMode(value as TasMouseMode);
-                  }}
-                  disabled={!doc}
-                  aria-label={t("tas.mode")}
-                >
-                  {MOUSE_MODES.map(m => (
-                    <ToggleGroupItem
-                      key={m.id}
-                      value={m.id}
-                      className="flex-1"
-                      title={`${t(m.hintKey)} (${m.key})`}
-                    >
-                      <span className="text-[10px] opacity-60">{m.key}</span>
-                      {t(m.labelKey)}
-                    </ToggleGroupItem>
-                  ))}
-                </ToggleGroup>
-              </CardContent>
-            </Card>
-
-            {/* ── 帧：当前帧 / 按键时长 / 录像帧率 + 本帧按键 ── */}
-            <Card className="gap-3 py-4">
-              <CardHeader className="px-4">
-                <CardTitle className="flex items-center gap-2 text-sm">
-                  <Hash className="size-4 text-muted-foreground" />
-                  {t("tas.sectionFrame")}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="flex flex-col gap-3 px-4">
-                <div className="grid grid-cols-3 gap-3">
-                  {/* 当前帧：实时跟着光标走；输入帧号 + Enter / 失焦就跳过去 */}
-                  <div className="grid min-w-0 gap-1.5">
-                    <Label htmlFor="tas-frame">{t("tas.currentFrame")}</Label>
-                    <Input
-                      id="tas-frame"
-                      type="text"
-                      inputMode="numeric"
-                      className="h-8 tabular-nums"
-                      disabled={!doc}
-                      value={frameFocus ? frameText : String(cursor)}
-                      onFocus={() => {
-                        setFrameText(String(cursor));
-                        setFrameFocus(true);
-                      }}
-                      onChange={e => setFrameText(e.target.value)}
-                      onBlur={() => {
-                        setFrameFocus(false);
-                        const raw = frameText.trim();
-                        const n = Number(raw);
-                        const d = docRef.current;
-                        if (raw === "" || !Number.isInteger(n) || !d) return; // 非法：恢复成当前值
-                        moveCursor(
-                          Math.max(0, Math.min(d.tas.frameCount - 1, n)),
-                          false
-                        );
-                      }}
-                      onKeyDown={e => {
-                        if (e.key === "Enter") e.currentTarget.blur();
-                      }}
-                    />
-                  </div>
-                  {/* 选择模式：选中一段按键后，这里直接显示/修改它的帧数 */}
-                  <div className="grid min-w-0 gap-1.5">
-                    <Label
-                      htmlFor="tas-run-length"
-                      title={t("tas.runLengthHint")}
-                    >
-                      {t("tas.runLength")}
-                    </Label>
-                    <Input
-                      id="tas-run-length"
-                      ref={lenInputRef}
-                      type="text"
-                      inputMode="numeric"
-                      className="h-8 tabular-nums"
-                      title={t("tas.runLengthHint")}
-                      disabled={
-                        !doc || !selection || selection.t0 !== selection.t1
-                      }
-                      value={lenFocus ? lenText : String(selectionLength)}
-                      onFocus={() => {
-                        setLenText(String(selectionLength));
-                        setLenFocus(true);
-                      }}
-                      onChange={e => applyRunLength(e.target.value)}
-                      onBlur={() => setLenFocus(false)}
-                      onKeyDown={e => {
-                        if (e.key === "Enter") e.currentTarget.blur();
-                      }}
-                    />
-                  </div>
-                  {/* 帧率：全局统一，改它 = 把每一帧都写成 1000/fps 毫秒（不支持变速） */}
-                  <div className="grid min-w-0 gap-1.5">
-                    <Label
-                      htmlFor="tas-record-fps"
-                      title={t("tas.recordFpsHint")}
-                    >
-                      {t("tas.recordFps")}
-                    </Label>
-                    <Input
-                      id="tas-record-fps"
-                      type="text"
-                      inputMode="decimal"
-                      className="h-8 tabular-nums"
-                      title={t("tas.recordFpsHint")}
-                      disabled={!doc}
-                      value={fpsFocus ? fpsText : msToText(fps)}
-                      onFocus={() => {
-                        setFpsText(msToText(fps));
-                        setFpsFocus(true);
-                      }}
-                      onChange={e => setFpsText(e.target.value)}
-                      onBlur={() => {
-                        setFpsFocus(false);
-                        const raw = fpsText.trim();
-                        const n = Number(raw);
-                        if (raw !== "" && Number.isFinite(n) && n > 0)
-                          applyFrameMs(1000 / n);
-                      }}
-                      onKeyDown={e => {
-                        if (e.key === "Enter") e.currentTarget.blur();
-                      }}
-                    />
-                  </div>
-                </div>
-                {/* 当前帧的按键一眼可见（录入模式尤其需要） */}
-                <div
-                  className="flex min-w-0 flex-wrap items-center gap-1.5"
-                  aria-label={t("tas.frameKeys")}
-                >
-                  <Label className="mr-1">{t("tas.frameKeys")}</Label>
-                  {currentKeys.length === 0 ? (
-                    <span className="text-xs text-muted-foreground">
-                      {t("tas.noKeys")}
-                    </span>
-                  ) : (
-                    currentKeys.map(key => (
-                      <Badge key={key} variant="outline" className="gap-1.5">
-                        <span
-                          className="size-1.5 rounded-full"
-                          style={{ background: trackColor(key, dark) }}
-                        />
-                        {KEY_META[key].short}
-                      </Badge>
-                    ))
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* ── 视图：网格开关 + 缩放 ── */}
-            <Card className="gap-3 py-4">
-              <CardHeader className="px-4">
-                <CardTitle className="flex items-center gap-2 text-sm">
-                  <Eye className="size-4 text-muted-foreground" />
-                  {t("tas.sectionView")}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="flex flex-wrap items-center gap-2 px-4">
-                {/* 纵线 / 横线 / 分区：三个互相独立的开关 */}
-                <ToggleGroup
-                  type="multiple"
-                  variant="outline"
-                  size="sm"
-                  value={GRID_TOGGLES.filter(g => prefs[g.key]).map(g => g.key)}
-                  onValueChange={values =>
-                    persistPrefs({
-                      ...prefsRef.current,
-                      vGrid: values.includes("vGrid"),
-                      hGrid: values.includes("hGrid"),
-                      bands: values.includes("bands")
-                    })
-                  }
-                  disabled={!doc}
-                >
-                  {GRID_TOGGLES.map(g => (
-                    <ToggleGroupItem
-                      key={g.key}
-                      value={g.key}
-                      title={t(g.hintKey)}
-                    >
-                      {t(g.labelKey)}
-                    </ToggleGroupItem>
-                  ))}
-                </ToggleGroup>
-                <div className="ml-auto flex items-center gap-1">
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    title={`${t("tas.zoomOut")} (S)`}
-                    disabled={!doc}
-                    onClick={() => timelineRef.current?.zoomStep(-1)}
-                  >
-                    <ZoomOut />
-                  </Button>
-                  <span className="w-12 text-center text-xs text-muted-foreground tabular-nums">
-                    {zoomText}
-                  </span>
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    title={`${t("tas.zoomIn")} (W)`}
-                    disabled={!doc}
-                    onClick={() => timelineRef.current?.zoomStep(1)}
-                  >
-                    <ZoomIn />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    title={t("tas.zoomFit")}
-                    disabled={!doc}
-                    onClick={() => timelineRef.current?.fitAll()}
-                  >
-                    <Maximize2 />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+          {/* 右：地图列表（原版 1~13 关 + 自制图），点一下 = 当前项目一键播放要进的地图 */}
+          <div className="flex min-h-0 min-w-0 flex-1 basis-0 flex-col border-l">
+            <TasMapList
+              instancePath={instancePath ?? ""}
+              selected={playMap}
+              guessed={playMapGuessed}
+              disabled={!doc}
+              onSelect={map => {
+                if (projectName) setProjectMap(projectName, map);
+              }}
+            />
           </div>
         </div>
 
         {/* 下半区：时间轴 + 说明条 */}
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+          {/* 时间轴 header：左 = 编辑（鼠标模式 + 撤销重做）、视图（网格 + 缩放）；右 = 帧 */}
+          <div className="flex h-10 shrink-0 items-center gap-2 border-b bg-muted/30 px-2">
+            {/* ── 编辑 ── */}
+            <div className="flex shrink-0 items-center gap-1">
+              <span className="hidden px-1 text-[11px] font-medium text-muted-foreground 2xl:inline">
+                {t("tas.sectionEdit")}
+              </span>
+              {/* 鼠标模式四选一：选择 / 绘制 / 填充 / 录入（快捷键 1~4） */}
+              <ToggleGroup
+                type="single"
+                variant="outline"
+                size="sm"
+                className="h-7"
+                value={mode}
+                onValueChange={value => {
+                  // 单选组再点一下当前项会传空串：保持当前模式
+                  if (!value) return;
+                  recordRoundRef.current = null;
+                  setMode(value as TasMouseMode);
+                }}
+                disabled={!doc}
+                aria-label={t("tas.mode")}
+              >
+                {MOUSE_MODES.map(m => (
+                  <ToggleGroupItem
+                    key={m.id}
+                    value={m.id}
+                    className="h-7 px-2.5 text-xs"
+                    title={`${t(m.hintKey)} (${m.key})`}
+                  >
+                    <span className="text-[10px] opacity-50">{m.key}</span>
+                    {t(m.labelKey)}
+                  </ToggleGroupItem>
+                ))}
+              </ToggleGroup>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                title={`${t("tas.undo")} (Ctrl+Z)`}
+                disabled={!undoState.canUndo}
+                onClick={undo}
+              >
+                <Undo2 />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                title={`${t("tas.redo")} (Ctrl+Shift+Z)`}
+                disabled={!undoState.canRedo}
+                onClick={redo}
+              >
+                <Redo2 />
+              </Button>
+            </div>
+
+            <Separator orientation="vertical" className="!h-5" />
+
+            {/* ── 视图：纵线 / 横线 / 分区（互相独立）+ 缩放 ── */}
+            <div className="flex shrink-0 items-center gap-1">
+              <span className="hidden px-1 text-[11px] font-medium text-muted-foreground 2xl:inline">
+                {t("tas.sectionView")}
+              </span>
+              <ToggleGroup
+                type="multiple"
+                variant="outline"
+                size="sm"
+                className="h-7"
+                value={GRID_TOGGLES.filter(g => prefs[g.key]).map(g => g.key)}
+                onValueChange={values =>
+                  persistPrefs({
+                    ...prefsRef.current,
+                    vGrid: values.includes("vGrid"),
+                    hGrid: values.includes("hGrid"),
+                    bands: values.includes("bands")
+                  })
+                }
+                disabled={!doc}
+              >
+                {GRID_TOGGLES.map(g => (
+                  <ToggleGroupItem
+                    key={g.key}
+                    value={g.key}
+                    className="h-7 px-2.5 text-xs"
+                    title={t(g.hintKey)}
+                  >
+                    {t(g.labelKey)}
+                  </ToggleGroupItem>
+                ))}
+              </ToggleGroup>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                title={`${t("tas.zoomOut")} (S)`}
+                disabled={!doc}
+                onClick={() => timelineRef.current?.zoomStep(-1)}
+              >
+                <ZoomOut />
+              </Button>
+              <span className="w-11 text-center text-xs text-muted-foreground tabular-nums">
+                {zoomText}
+              </span>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                title={`${t("tas.zoomIn")} (W)`}
+                disabled={!doc}
+                onClick={() => timelineRef.current?.zoomStep(1)}
+              >
+                <ZoomIn />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                title={t("tas.zoomFit")}
+                disabled={!doc}
+                onClick={() => timelineRef.current?.fitAll()}
+              >
+                <Maximize2 />
+              </Button>
+            </div>
+
+            {/* ── 帧（右对齐）：本帧按键 / 当前帧 / 按键时长 / 录像帧率 ── */}
+            <div className="ml-auto flex min-w-0 items-center gap-3">
+              {/* 当前帧的按键一眼可见（录入模式尤其需要）；窗口窄时先被挤掉 */}
+              <div
+                className="flex min-w-0 items-center gap-1 overflow-hidden"
+                aria-label={t("tas.frameKeys")}
+                title={t("tas.frameKeys")}
+              >
+                {currentKeys.length === 0 ? (
+                  <span className="truncate text-xs text-muted-foreground">
+                    {t("tas.noKeys")}
+                  </span>
+                ) : (
+                  currentKeys.map(key => (
+                    <Badge
+                      key={key}
+                      variant="outline"
+                      className="shrink-0 gap-1 px-1.5 py-0 text-[11px]"
+                    >
+                      <span
+                        className="size-1.5 rounded-full"
+                        style={{ background: trackColor(key, dark) }}
+                      />
+                      {KEY_META[key].short}
+                    </Badge>
+                  ))
+                )}
+              </div>
+              {/* 当前帧：实时跟着光标走；输入帧号 + Enter / 失焦就跳过去；滚轮逐帧移动（Shift ×10） */}
+              <div className="flex shrink-0 items-center gap-1.5">
+                <Label
+                  htmlFor="tas-frame"
+                  className="text-xs font-normal text-muted-foreground"
+                  title={t("tas.wheelHint")}
+                >
+                  {t("tas.currentFrame")}
+                </Label>
+                <Input
+                  id="tas-frame"
+                  ref={frameInputRef}
+                  type="text"
+                  inputMode="numeric"
+                  className="h-7 w-20 px-2 text-xs tabular-nums"
+                  title={t("tas.wheelHint")}
+                  disabled={!doc}
+                  value={frameFocus ? frameText : String(cursor)}
+                  onFocus={() => {
+                    setFrameText(String(cursor));
+                    setFrameFocus(true);
+                  }}
+                  onChange={e => setFrameText(e.target.value)}
+                  onBlur={() => {
+                    setFrameFocus(false);
+                    const raw = frameText.trim();
+                    const n = Number(raw);
+                    const d = docRef.current;
+                    if (raw === "" || !Number.isInteger(n) || !d) return; // 非法：恢复成当前值
+                    moveCursor(
+                      Math.max(0, Math.min(d.tas.frameCount - 1, n)),
+                      false
+                    );
+                  }}
+                  onKeyDown={e => {
+                    if (e.key === "Enter") e.currentTarget.blur();
+                  }}
+                />
+              </div>
+              {/* 选择模式：选中一段按键后，这里直接显示/修改它的帧数；滚轮 ±1（Shift ±10） */}
+              <div className="flex shrink-0 items-center gap-1.5">
+                <Label
+                  htmlFor="tas-run-length"
+                  className="text-xs font-normal text-muted-foreground"
+                  title={t("tas.runLengthHint")}
+                >
+                  {t("tas.runLength")}
+                </Label>
+                <Input
+                  id="tas-run-length"
+                  ref={lenInputRef}
+                  type="text"
+                  inputMode="numeric"
+                  className="h-7 w-16 px-2 text-xs tabular-nums"
+                  title={t("tas.runLengthHint")}
+                  disabled={!doc || !selection || selection.t0 !== selection.t1}
+                  value={lenFocus ? lenText : String(selectionLength)}
+                  onFocus={() => {
+                    setLenText(String(selectionLength));
+                    setLenFocus(true);
+                  }}
+                  onChange={e => applyRunLength(e.target.value)}
+                  onBlur={() => setLenFocus(false)}
+                  onKeyDown={e => {
+                    if (e.key === "Enter") e.currentTarget.blur();
+                  }}
+                />
+              </div>
+              {/* 帧率：全局统一，改它 = 把每一帧都写成 1000/fps 毫秒（不支持变速） */}
+              <div className="flex shrink-0 items-center gap-1.5">
+                <Label
+                  htmlFor="tas-record-fps"
+                  className="text-xs font-normal text-muted-foreground"
+                  title={t("tas.recordFpsHint")}
+                >
+                  {t("tas.recordFps")}
+                </Label>
+                <Input
+                  id="tas-record-fps"
+                  type="text"
+                  inputMode="decimal"
+                  className="h-7 w-16 px-2 text-xs tabular-nums"
+                  title={t("tas.recordFpsHint")}
+                  disabled={!doc}
+                  value={fpsFocus ? fpsText : msToText(fps)}
+                  onFocus={() => {
+                    setFpsText(msToText(fps));
+                    setFpsFocus(true);
+                  }}
+                  onChange={e => setFpsText(e.target.value)}
+                  onBlur={() => {
+                    setFpsFocus(false);
+                    const raw = fpsText.trim();
+                    const n = Number(raw);
+                    if (raw !== "" && Number.isFinite(n) && n > 0)
+                      applyFrameMs(1000 / n);
+                  }}
+                  onKeyDown={e => {
+                    if (e.key === "Enter") e.currentTarget.blur();
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+
           {!doc ? (
             <div className="flex flex-1 items-center justify-center p-8 text-center text-sm text-muted-foreground">
               {t("tas.hint")}
