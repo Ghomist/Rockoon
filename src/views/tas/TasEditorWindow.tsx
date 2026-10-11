@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { save as saveDialog } from "@tauri-apps/plugin-dialog";
+import {
+  open as openDialog,
+  save as saveDialog
+} from "@tauri-apps/plugin-dialog";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import {
   FileClock,
@@ -9,8 +12,12 @@ import {
   Maximize2,
   MousePointerClick,
   Play,
+  Settings2,
   Redo2,
+  FolderOpen,
+  FolderSearch,
   RefreshCw,
+  RotateCcw,
   Search,
   Save,
   Scissors,
@@ -33,6 +40,7 @@ import {
   AlertDialogTitle
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -42,9 +50,16 @@ import {
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { Kbd, KbdGroup } from "@/components/ui/kbd";
 import { Label } from "@/components/ui/label";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger
+} from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
 import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
 import { Toggle } from "@/components/ui/toggle";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
@@ -78,10 +93,11 @@ import {
   copyRange,
   coverRange,
   createUndoStack,
+  deleteFrameRange,
   firstPressedFrame,
   frameView,
   hasKeyAt,
-  moveBlock,
+  insertFrames,
   pasteClip,
   setFrameDuration,
   grabRun,
@@ -97,7 +113,6 @@ import {
   applyPlayback,
   rememberRestore,
   inferLevel,
-  levelValue,
   looksLikeBallanceTas,
   planPlayback,
   type TasCfgChange
@@ -137,8 +152,32 @@ type PlayAsk =
 const GRID_TOGGLES = [
   { key: "vGrid", labelKey: "tas.gridV", hintKey: "tas.gridVHint" },
   { key: "hGrid", labelKey: "tas.gridH", hintKey: "tas.gridHHint" },
-  { key: "bands", labelKey: "tas.bands", hintKey: "tas.bandsHint" }
+  { key: "bands", labelKey: "tas.bands", hintKey: "tas.bandsHint" },
+  {
+    key: "cellBlocks",
+    labelKey: "tas.cellBlocks",
+    hintKey: "tas.cellBlocksHint"
+  }
 ] as const;
+
+/**
+ * 速度滑条的档位下标。偏好里存的是倍率：不在档位上（老版本存的自定义值）就取对数距离
+ * 最近的那一档；不限速（0）永远是最后一档。滑条和 `,` / `.` 快捷键共用。
+ */
+function speedStopIndex(speed: number): number {
+  const exact = PLAY_SPEED_STOPS.indexOf(speed);
+  if (exact >= 0) return exact;
+  let best = PLAY_SPEED_STOPS.indexOf(1);
+  PLAY_SPEED_STOPS.forEach((v, i) => {
+    if (v <= 0) return;
+    if (
+      Math.abs(Math.log(v / speed)) <
+      Math.abs(Math.log(PLAY_SPEED_STOPS[best] / speed))
+    )
+      best = i;
+  });
+  return best;
+}
 
 const MOUSE_MODES: {
   id: TasMouseMode;
@@ -153,22 +192,22 @@ const MOUSE_MODES: {
     hintKey: "tas.modeSelectHint"
   },
   {
-    id: "draw",
-    key: "2",
-    labelKey: "tas.modeDraw",
-    hintKey: "tas.modeDrawHint"
-  },
-  {
     id: "fill",
-    key: "3",
+    key: "2",
     labelKey: "tas.modeFill",
     hintKey: "tas.modeFillHint"
   },
   {
     id: "record",
-    key: "4",
+    key: "3",
     labelKey: "tas.modeRecord",
     hintKey: "tas.modeRecordHint"
+  },
+  {
+    id: "frames",
+    key: "4",
+    labelKey: "tas.modeFrames",
+    hintKey: "tas.modeFramesHint"
   }
 ];
 
@@ -187,21 +226,24 @@ function isTypingTarget(target: EventTarget | null): boolean {
   );
 }
 
-/** 文件是不是躺在 TAS 目录里（`instancePath` 是反斜杠、文件列表里拼的是正斜杠，先归一化）。 */
+/** 路径归一化（`instancePath` 是反斜杠、文件列表里拼的是正斜杠）：正斜杠、去尾斜杠、小写。 */
+const normPath = (s: string) =>
+  s.replace(/\\/g, "/").replace(/\/+$/, "").toLowerCase();
+
+/** 文件是不是躺在 TAS 目录里。 */
 function pathInTasDir(path: string, tasDir: string): boolean {
   if (!tasDir) return false;
-  const norm = (s: string) =>
-    s.replace(/\\/g, "/").replace(/\/+$/, "").toLowerCase();
-  return norm(path).startsWith(`${norm(tasDir)}/`);
+  return normPath(path).startsWith(`${normPath(tasDir)}/`);
 }
 
 const msToText = (ms: number) => String(Math.round(ms * 1000) / 1000);
 
 /**
- * 游戏两侧（文件列表 / 控制面板）各自至少要这么宽才好用；窗口装不下时给提示。
- * 两栏本身是等宽的（flex-1 + basis-0），不存宽度。
+ * 布局：左边 TAS 文件 │ 地图两栏平分（flex-1 + basis-0），每栏至少 `LIST_MIN_W`；
+ * 右边功能面板固定 `PANEL_W`。窗口装不下时给提示。
  */
-const SIDE_MIN_W = 320;
+const LIST_MIN_W = 180;
+const PANEL_W = 300;
 /** 下半区（时间轴 + 说明条）至少要留这么高。 */
 const TIMELINE_MIN_H = 200;
 
@@ -268,8 +310,11 @@ export default function TasEditorWindow() {
   const dark = useDarkMode();
 
   const instancePath = usePrefStore(s => s.instancePath);
-  /** BallanceTAS 2.0 把项目放在 `ModLoader/TAS`（旧的 TASSupport 用 TASRecords，已废弃）。 */
-  const tasDir = instancePath ? `${instancePath}/ModLoader/TAS` : "";
+  /**
+   * BallanceTAS 2.0 把项目放在 `ModLoader/TAS`（旧的 TASSupport 用 TASRecords，已废弃）。
+   * 一键播放只认这个目录，所以它和「文件列表显示哪个目录」分开：后者可以手动换。
+   */
+  const gameTasDir = instancePath ? `${instancePath}/ModLoader/TAS` : "";
   /** BallanceTAS 的配置（一键播放要改的就是它）。 */
   const cfgPath = instancePath
     ? `${instancePath}/ModLoader/Configs/BallanceTAS.cfg`
@@ -289,6 +334,11 @@ export default function TasEditorWindow() {
     return () => window.clearTimeout(timer);
   }, [status]);
   const [prefs, setPrefs] = useState<TasEditorPrefs>(initialPrefs);
+  /** 文件列表的目录：手动选过就用它，否则 = 游戏的 TAS 目录。 */
+  const tasDir = prefs.tasDirOverride || gameTasDir;
+  /** 列表目录是不是游戏的 TAS 目录（不是的话，里面的文件要另存到 TAS 目录才能一键播放）。 */
+  const listingGameDir =
+    !!gameTasDir && normPath(tasDir) === normPath(gameTasDir);
   const [order, setOrder] = useState<TasKey[]>(initialPrefs.trackOrder);
   const [cursor, setCursor] = useState(0);
   const [selection, setSelection] = useState<TasSelection | null>(null);
@@ -301,7 +351,7 @@ export default function TasEditorWindow() {
   );
   const [fpsFocus, setFpsFocus] = useState(false);
   const [cellW, setCellW] = useState(initialPrefs.cellW);
-  /** 鼠标模式（选择 / 绘制 / 填充 / 录入，不持久化，默认选择）。 */
+  /** 鼠标模式（选择 / 填充 / 录入 / 插删帧，不持久化，默认选择）。 */
   const [mode, setMode] = useState<TasMouseMode>("select");
   /** 时间轴右键菜单：指针位置 + 命中的格（null = 关着）。 */
   const [menu, setMenu] = useState<{
@@ -321,6 +371,8 @@ export default function TasEditorWindow() {
   });
   /** 一键播放的确认框（同一时刻只会开一个：先问配置、再问重启）。 */
   const [playAsk, setPlayAsk] = useState<PlayAsk | null>(null);
+  /** 重启确认框里的「记住选择」。 */
+  const [restartRemember, setRestartRemember] = useState(false);
   /** 关闭窗口时问「游戏要不要一起关」。 */
   const [closeAsk, setCloseAsk] = useState(false);
   /** 游戏里实测的逻辑帧率（回放调速槽读回来的；没在跑 = null）。 */
@@ -354,6 +406,11 @@ export default function TasEditorWindow() {
   const dirtyRef = useRef(false);
   /** 藏 / 摆回游戏窗口（定义在后面；换文件时的询问框要用）。HTML 弹窗盖不住游戏窗口。 */
   const gameWindowRef = useRef({ hide: () => {}, show: () => {} });
+  /** 回放快捷键（F5 / Ctrl+F5 / Shift+F5）要调的动作；定义在后面，渲染时挂上来。 */
+  const playActionsRef = useRef({
+    play: (_fromStart: boolean) => {},
+    stop: () => {}
+  });
   /** `save` 定义在后面；关窗 / 换文件时要用，先占个位。 */
   const saveRef = useRef<(asNew?: boolean) => Promise<boolean>>(
     async () => false
@@ -366,12 +423,8 @@ export default function TasEditorWindow() {
   const cursorRef = useRef(0);
   const prefsRef = useRef(prefs);
   const modeRef = useRef(mode);
-  /** 录入「一轮」：同一帧（或同一选区）连续按键期间累积的键。 */
-  const recordRoundRef = useRef<{
-    f0: number;
-    f1: number;
-    keys: Set<TasKey>;
-  } | null>(null);
+  /** 按键填充模式：此刻按住的映射键（按下加、松开减、窗口失焦清空）。 */
+  const heldKeysRef = useRef(new Set<TasKey>());
   /** 一键播放确认框的 resolve（等用户点「打开并播放 / 重启并播放 / 取消」）。 */
   const playAnswerRef = useRef<((ok: boolean) => void) | null>(null);
   /** `beginOp` 依赖 `snapshot`，定义在下面；选择模式的两个回调先定义、用时再取。 */
@@ -475,6 +528,9 @@ export default function TasEditorWindow() {
 
   /** 写盘做 300ms 防抖：滚轮缩放时 cellW 每帧都在变，不能每帧写 localStorage。 */
   const persistPrefs = useCallback((next: TasEditorPrefs) => {
+    // ref 立刻跟上：同一轮里接着读偏好的地方（一键播放确认框的「记住选择」、连按 , / . 调速）
+    // 不能等下一次渲染才看到新值
+    prefsRef.current = next;
     setPrefs(next);
     window.clearTimeout(prefTimerRef.current);
     prefTimerRef.current = window.setTimeout(() => saveTasPrefs(next), 300);
@@ -487,7 +543,6 @@ export default function TasEditorWindow() {
       const next = cur.includes(key)
         ? cur.filter(k => k !== key)
         : [...cur, key];
-      recordRoundRef.current = null;
       persistPrefs({ ...prefsRef.current, locked: next });
     },
     [persistPrefs]
@@ -540,71 +595,31 @@ export default function TasEditorWindow() {
     }
   }, []);
 
-  /** 选择模式：方向键直接搬动选中的那一段（左右 = 帧、上下 = 轨道）。 */
-  const moveSelection = useCallback((dFrame: number, dTrack: number) => {
-    const d = docRef.current;
-    const sel = selectionRef.current;
-    if (!d || !sel || sel.t0 !== sel.t1) return;
-    const tracks = orderRef.current;
-    const toTrack = sel.t0 + dTrack;
-    const toFrame = sel.f0 + dFrame;
-    if (toTrack < 0 || toTrack >= tracks.length || toFrame < 0) return;
-    const key = tracks[sel.t0];
-    if (!key || lockedRef.current.has(key)) return;
-    const op = beginOpRef.current();
-    if (hasKeyAt(frameView(d.tas), sel.f0, key)) {
-      // 有内容：真的搬（目标轨道被锁住就整段不搬）
-      if (lockedRef.current.has(tracks[toTrack])) {
-        op.discard();
-        return;
-      }
-      moveBlock(
-        d.tas,
-        [sel.f0, sel.f1],
-        sel.t0,
-        toFrame,
-        toTrack,
-        tracks,
-        frameMsRef.current
-      );
-      op.commit();
-      setVersion(v => v + 1);
-    } else {
-      op.discard(); // 空选：只挪插入点
-    }
-    const next = {
-      f0: toFrame,
-      f1: Math.max(toFrame, sel.f1 + dFrame),
-      t0: toTrack,
-      t1: toTrack
-    };
-    selectionRef.current = next;
-    setSelection(next);
-    // 「按键时长」聚焦时显示的是 lenText，得同步一份，不然方向键搬完数字还是旧的
-    setLenText(String(next.f1 - next.f0 + 1));
-    cursorRef.current = next.f0;
-    setCursor(next.f0);
-    timelineRef.current?.reveal(next.f0);
-  }, []);
-
   // ---------------------------------------------------------------- 文件列表
 
   /** 列表里每个文件的元数据（解析一遍 .tas 得到）；key = 文件名|大小，null = 读不出来。 */
   const [fileMeta, setFileMeta] = useState<Record<string, FileMeta | null>>({});
   const fileMetaRef = useRef(new Map<string, FileMeta | null>());
   const [fileFilter, setFileFilter] = useState("");
-  const metaKey = (f: ManagedFile) => `${f.name}|${f.size}`;
+  /** 缓存 key 带上完整路径：换了列表目录，同名文件不能串用。 */
+  const metaKey = (f: ManagedFile) =>
+    `${normPath(`${tasDir}/${f.name}`)}|${f.size}`;
 
   /** 保存后同名文件的内容变了（大小可能没变）：丢掉它的缓存，下次刷新重新解析。 */
-  const invalidateMeta = (name: string) => {
+  const invalidateMeta = (path: string) => {
+    const prefix = `${normPath(path)}|`;
     for (const key of [...fileMetaRef.current.keys()])
-      if (key.startsWith(`${name}|`)) fileMetaRef.current.delete(key);
+      if (key.startsWith(prefix)) fileMetaRef.current.delete(key);
   };
 
+  /** 列表请求序号：只认最新一次（换目录时旧目录的 list 可能后到，不能把列表盖回去）。 */
+  const listSeqRef = useRef(0);
   const refresh = useCallback(async () => {
     if (!tasDir) return;
+    const seq = ++listSeqRef.current;
     try {
       const list = await backend.list(tasDir, ["tas"]);
+      if (seq !== listSeqRef.current) return;
       // 后端只列普通文件（不递归），这里再挡一道：`temp/`（BallanceTAS 的工作目录）里的东西不列
       setFiles(
         list
@@ -614,7 +629,7 @@ export default function TasEditorWindow() {
           )
       );
     } catch (e) {
-      setError(String(e));
+      if (seq === listSeqRef.current) setError(String(e));
     }
   }, [tasDir]);
 
@@ -622,15 +637,52 @@ export default function TasEditorWindow() {
     void refresh();
   }, [refresh]);
 
+  /** 在资源管理器里打开列表目录（还没有就提示，不替用户建）。 */
+  const openTasDir = async () => {
+    if (!tasDir) return;
+    const win = tasDir.replace(/\//g, "\\");
+    if (!(await backend.exists(win).catch(() => false))) {
+      toast.error(t("tas.dirMissing", { dir: win }));
+      return;
+    }
+    await backend.openInExplorer(win).catch(e => toast.error(String(e)));
+  };
+
+  /** 手动换列表目录；选回游戏的 TAS 目录 = 恢复默认。 */
+  const pickTasDir = async () => {
+    const picked = await openDialog({
+      directory: true,
+      title: t("tas.dirPick"),
+      defaultPath: tasDir ? tasDir.replace(/\//g, "\\") : undefined
+    });
+    if (typeof picked !== "string" || !picked) return;
+    const same = !!gameTasDir && normPath(picked) === normPath(gameTasDir);
+    setFiles([]);
+    persistPrefs({ ...prefsRef.current, tasDirOverride: same ? "" : picked });
+  };
+
+  const resetTasDir = () => {
+    setFiles([]);
+    persistPrefs({ ...prefsRef.current, tasDirOverride: "" });
+  };
+
   // 打开编辑器时：上次一键播放没来得及改回去的配置（关编辑器时选了「保留运行」、
   // 编辑器崩了）现在补上 —— 游戏还在跑的话 restoreTasConfig 自己会跳过
   useEffect(() => {
-    void restoreTasConfig();
+    void restoreTasConfig(true);
   }, []);
 
   // 列表变了：把还没解析过的文件挨个读一遍（.tas 很小，几十个也就一眨眼）
   useEffect(() => {
     let cancelled = false;
+    const live = new Set(files.map(metaKey));
+    for (const key of [...fileMetaRef.current.keys()])
+      if (!live.has(key)) fileMetaRef.current.delete(key);
+    setFileMeta(m => {
+      const keys = Object.keys(m);
+      if (keys.every(k => live.has(k))) return m;
+      return Object.fromEntries(Object.entries(m).filter(([k]) => live.has(k)));
+    });
     void (async () => {
       for (const f of files) {
         const key = metaKey(f);
@@ -750,7 +802,7 @@ export default function TasEditorWindow() {
         }
         setDirty(false);
         setStatus(t("tas.saved"));
-        invalidateMeta(target.split(/[\\/]/).pop() ?? d.name);
+        invalidateMeta(target);
         void refresh();
         return true;
       } catch (e) {
@@ -776,6 +828,10 @@ export default function TasEditorWindow() {
     });
 
   const answerPlay = (ok: boolean) => {
+    // 「记住选择」：两个确认框共用一个开关；只在确认时记（取消不记：那样就再也播不了了）
+    if (ok && restartRemember)
+      persistPrefs({ ...prefsRef.current, skipPlayAsk: true });
+    setRestartRemember(false);
     setPlayAsk(null);
     const resolve = playAnswerRef.current;
     playAnswerRef.current = null;
@@ -907,7 +963,7 @@ export default function TasEditorWindow() {
     gameRef.current = { state: "idle", pid: 0 };
     setGame({ state: "idle", pid: 0 });
     if (!gone) toast.error(t("tas.gameStillRunning"));
-    else if (restore) void restoreTasConfig();
+    else if (restore) void restoreTasConfig(true);
     return gone;
   }, []);
 
@@ -951,7 +1007,7 @@ export default function TasEditorWindow() {
         setMeasuredFps(null);
         setInteractive(false);
         // 游戏自己退出了（玩家在游戏里退出 / 崩了）：一样把配置改回去
-        void restoreTasConfig();
+        void restoreTasConfig(true);
         return;
       }
       // 上次没写进去（模组还没建好槽）或速度改过 → 再发一次
@@ -1041,7 +1097,7 @@ export default function TasEditorWindow() {
           if (choice === "kill") {
             await backend.kill(g.pid).catch(() => undefined);
             // 等它退干净再改回配置；「保留运行」时改不了，留到下次（编辑器打开 / 正常启动前）
-            if (await waitForPlayerExit()) await restoreTasConfig();
+            if (await waitForPlayerExit()) await restoreTasConfig(true);
           }
           // destroy 需要 core:window:allow-destroy 权限（capabilities/default.json）；
           // 被拒时不要默默失败 —— 那会让窗口彻底关不掉。
@@ -1083,7 +1139,7 @@ export default function TasEditorWindow() {
       ? 0
       : Math.max(0, Math.min(cursorRef.current, d.tas.frameCount - 1));
     // 1. BallanceTAS 只从 ModLoader/TAS 里找项目，文件必须先躺在那里
-    if (!pathInTasDir(d.path, tasDir)) {
+    if (!pathInTasDir(d.path, gameTasDir)) {
       toast.error(t("tas.playNeedsSave"));
       return;
     }
@@ -1132,6 +1188,7 @@ export default function TasEditorWindow() {
     // 4. 要动开关（不只是改项目名）就先问一句，用户确认了才写配置
     if (
       changes.some(c => c.toggle) &&
+      !prefsRef.current.skipPlayAsk &&
       !(await askPlay({ kind: "config", changes }))
     )
       return;
@@ -1151,7 +1208,11 @@ export default function TasEditorWindow() {
       .findProcesses(PLAYER_IMAGE)
       .catch(() => [] as number[]);
     if (gameRef.current.state === "running" || others.length > 0) {
-      if (!(await askPlay({ kind: "restart" }))) return;
+      if (
+        !prefsRef.current.skipPlayAsk &&
+        !(await askPlay({ kind: "restart" }))
+      )
+        return;
       // 摆在区域里的那个必须走 stopGame：先切出 running 再杀，否则 400ms 的存活轮询
       // 会看到旧 pid 没了，转头把**新**游戏的窗口 detach 掉
       if (gameRef.current.state === "running" && !(await stopGame(false)))
@@ -1174,17 +1235,13 @@ export default function TasEditorWindow() {
       }
     }
     // 6. 启动，并把游戏窗口嵌进右上区域
-    if (!(await startGame(mapEnv))) return;
-    const mapText = level !== null ? levelValue(level) : mapDisplayName(map);
-    toast.success(
-      skipFrames > 0
-        ? t("tas.playStartingAt", {
-            project,
-            level: mapText,
-            frame: skipFrames
-          })
-        : t("tas.playStarting", { project, level: mapText })
-    );
+    // 成功就不弹提示了：游戏画面本身就是反馈，提示框反而挡视野
+    await startGame(mapEnv);
+  };
+
+  playActionsRef.current = {
+    play: fromStart => void playProject(fromStart),
+    stop: () => void stopGame()
   };
 
   // ---------------------------------------------------------------- 撤销 / 重做
@@ -1291,7 +1348,7 @@ export default function TasEditorWindow() {
   const moveCursor = useCallback((frame: number, extend: boolean) => {
     const d = docRef.current;
     if (!d) return;
-    const limit = paintableFrames(d.tas.frameCount) - 1;
+    const limit = paintableFrames(d.tas.frameCount, frameMsRef.current) - 1;
     const f = Math.max(0, Math.min(limit, frame));
     const prevCursor = cursorRef.current;
     cursorRef.current = f;
@@ -1320,7 +1377,6 @@ export default function TasEditorWindow() {
       const d = docRef.current;
       if (!d) return;
       const sel = selectionRef.current;
-      recordRoundRef.current = null;
       if (!sel) {
         moveCursor(cursorRef.current + dir, false);
         return;
@@ -1338,7 +1394,7 @@ export default function TasEditorWindow() {
       ) {
         op.commit();
         setVersion(v => v + 1);
-        const limit = paintableFrames(d.tas.frameCount) - 1;
+        const limit = paintableFrames(d.tas.frameCount, frameMsRef.current) - 1;
         const next = {
           f0: Math.max(0, Math.min(limit, sel.f0 + dir)),
           f1: Math.max(0, Math.min(limit, sel.f1 + dir)),
@@ -1358,29 +1414,24 @@ export default function TasEditorWindow() {
   );
 
   /**
-   * 录入模式：按一次映射键 = **完全覆盖**当前帧（有选区则覆盖整个选区）。
-   * 同一帧内连续按键是累加；光标离开该帧再回来就重新开始一轮。
+   * 按键填充模式：每按一次映射键，把当前帧（有选区则是整个选区）的按键**直接替换**成
+   * 「此刻按住的映射键」—— 不在同一帧里累加；要组合键就同时按住（按住 ↑ 再按 → = ↑+→）。
+   * 锁定轨道不动（`coverRange` 只改非锁定轨道）。
    */
   const recordKey = useCallback(
-    (key: TasKey) => {
+    (keys: TasKey[]) => {
       const d = docRef.current;
       if (!d) return;
       const sel = selectionRef.current;
       const f0 = sel ? sel.f0 : cursorRef.current;
       const f1 = sel ? sel.f1 : cursorRef.current;
-      let round = recordRoundRef.current;
-      if (!round || round.f0 !== f0 || round.f1 !== f1) {
-        round = { f0, f1, keys: new Set<TasKey>() };
-        recordRoundRef.current = round;
-      }
-      round.keys.add(key);
       const op = beginOp();
       if (
         coverRange(
           d.tas,
           f0,
           f1,
-          [...round.keys],
+          keys,
           orderRef.current,
           lockedRef.current,
           frameMsRef.current
@@ -1391,6 +1442,58 @@ export default function TasEditorWindow() {
       } else {
         op.discard();
       }
+    },
+    [beginOp]
+  );
+
+  /**
+   * 插入 / 移除整帧（所有轨道一起移，锁定轨道也不例外 —— 动的是时间轴本身）。
+   * 插入：在 `f0` 前插 (f1-f0+1) 帧，新帧的按键 = `template` 那一帧的按键（默认 = `f0`，
+   * 即选区 / 拖出范围的起始帧），插完把新帧选中；移除：删掉 [f0, f1]。
+   */
+  const editFrames = useCallback(
+    (
+      op: "insert" | "delete",
+      f0: number,
+      f1: number,
+      template: number = f0
+    ) => {
+      const d = docRef.current;
+      if (!d || f1 < f0) return;
+      const n = f1 - f0 + 1;
+      const handle = beginOp();
+      if (op === "insert") {
+        if (!insertFrames(d.tas, f0, n, frameMsRef.current, template)) {
+          handle.discard();
+          return;
+        }
+        handle.commit();
+        const sel = {
+          f0,
+          f1: f0 + n - 1,
+          t0: 0,
+          t1: orderRef.current.length - 1
+        };
+        selectionRef.current = sel;
+        setSelection(sel);
+        setStatus(t("tas.framesInserted", { n }));
+      } else {
+        const removed = deleteFrameRange(d.tas, f0, f1);
+        if (removed <= 0) {
+          handle.discard();
+          return;
+        }
+        handle.commit();
+        selectionRef.current = null;
+        setSelection(null);
+        setStatus(t("tas.framesDeleted", { n: removed }));
+      }
+      selAnchorRef.current = null;
+      const to = Math.max(0, Math.min(f0, d.tas.frameCount - 1));
+      cursorRef.current = to;
+      setCursor(to);
+      setVersion(v => v + 1);
+      timelineRef.current?.reveal(to);
     },
     [beginOp]
   );
@@ -1419,6 +1522,15 @@ export default function TasEditorWindow() {
     selectionRef.current = sel;
     setSelection(sel);
   }, [menu, moveCursor]);
+
+  /** 右键菜单里「插入 / 删除帧」作用的帧区间：点在选区里 = 选区的帧，否则 = 点的那一帧。 */
+  const menuFrames = useMemo((): [number, number] | null => {
+    if (!menu) return null;
+    const sel = selection;
+    if (sel && menu.frame >= sel.f0 && menu.frame <= sel.f1)
+      return [sel.f0, sel.f1];
+    return [Math.max(0, menu.frame), Math.max(0, menu.frame)];
+  }, [menu, selection]);
 
   /** 右键命中的格上有没有按键段（决定「选中整段」能不能点）。 */
   const menuHasRun = useMemo(() => {
@@ -1508,6 +1620,20 @@ export default function TasEditorWindow() {
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
+      // 回放：F5 = 从当前帧播放，Ctrl+F5 = 从头播放，Shift+F5 = 停止（VS 那套习惯）。
+      // 放在最前面、焦点在输入框里也先拦下：F5 / Ctrl+F5 在 WebView 里是刷新页面，
+      // 误按会把没保存的修改直接刷没。有弹窗开着时（一键播放的确认框等）只拦不做。
+      if (e.key === "F5") {
+        e.preventDefault();
+        if (
+          e.repeat ||
+          document.querySelector('[role="alertdialog"], [role="dialog"]')
+        )
+          return;
+        if (e.shiftKey) playActionsRef.current.stop();
+        else playActionsRef.current.play(e.ctrlKey);
+        return;
+      }
       if (!docRef.current) return;
       // 「按键时长」聚焦时：只有数字/退格/复制粘贴留给输入框，方向键与字母照旧归编辑器（用户 m09881 #2 #3）
       const lenEl = lenInputRef.current;
@@ -1554,24 +1680,31 @@ export default function TasEditorWindow() {
         }
         return;
       }
+      // 回放速度：`,` 减速、`.` 加速（每次一档，和滑条的档位一致；最右一档 = 不限速）。
+      // 播放中随时可按，下一帧生效
+      if (e.key === "," || e.key === ".") {
+        e.preventDefault();
+        const i = speedStopIndex(prefsRef.current.playSpeed);
+        const next = Math.max(
+          0,
+          Math.min(PLAY_SPEED_STOPS.length - 1, i + (e.key === "." ? 1 : -1))
+        );
+        persistPrefs({
+          ...prefsRef.current,
+          playSpeed: PLAY_SPEED_STOPS[next]
+        });
+        return;
+      }
       if (e.key === "Tab") {
         e.preventDefault();
         stepTab(e.shiftKey ? -1 : 1);
         return;
       }
-      // 鼠标模式四选一（1 选择 / 2 绘制 / 3 填充 / 4 录入）
-      if (e.key === "1" || e.key === "2" || e.key === "3" || e.key === "4") {
+      // 鼠标模式四选一（1 选择 / 2 填充 / 3 录入 / 4 插删帧）
+      const modeByKey = MOUSE_MODES.find(m => m.key === e.key);
+      if (modeByKey) {
         e.preventDefault();
-        recordRoundRef.current = null;
-        setMode(
-          e.key === "1"
-            ? "select"
-            : e.key === "2"
-              ? "draw"
-              : e.key === "3"
-                ? "fill"
-                : "record"
-        );
+        setMode(modeByKey.id);
         return;
       }
       // `[` / `]` = 跳到上/下一个按键段的边缘（Shift = 顺带把选区扩过去）
@@ -1591,22 +1724,14 @@ export default function TasEditorWindow() {
         timelineRef.current?.zoomStep(-1);
         return;
       }
-      // 选择模式：方向键直接搬动选中的那一段（左右 = 帧、上下 = 轨道）
-      if (modeRef.current === "select" && selectionRef.current) {
-        const dFrame =
-          e.key === "ArrowLeft" ? -1 : e.key === "ArrowRight" ? 1 : 0;
-        const dTrack = e.key === "ArrowUp" ? -1 : e.key === "ArrowDown" ? 1 : 0;
-        if (dFrame !== 0 || dTrack !== 0) {
-          e.preventDefault();
-          moveSelection(dFrame, dTrack);
-          return;
-        }
-      }
       if (modeRef.current === "record") {
         const key = recordKeyFor(e.key);
         if (key) {
           e.preventDefault();
-          recordKey(key);
+          // 长按的自动重复不算新的一次按键
+          if (e.repeat) return;
+          heldKeysRef.current.add(key);
+          recordKey([...heldKeysRef.current]);
           return;
         }
         // Home/End/Delete 在两种模式下都一样；其余未映射的键（W/S/A/D…）交给时间轴
@@ -1620,14 +1745,6 @@ export default function TasEditorWindow() {
         }
       }
       switch (e.key) {
-        case "ArrowLeft":
-          e.preventDefault();
-          moveCursor(cursorRef.current - 1, e.shiftKey);
-          break;
-        case "ArrowRight":
-          e.preventDefault();
-          moveCursor(cursorRef.current + 1, e.shiftKey);
-          break;
         case "Home":
           e.preventDefault();
           moveCursor(0, e.shiftKey);
@@ -1649,14 +1766,26 @@ export default function TasEditorWindow() {
           break;
       }
     };
+    // 按键填充模式要知道「此刻按住了哪些映射键」：松开就从集合里拿掉，失焦一律清空
+    const onKeyUp = (e: KeyboardEvent) => {
+      const key = recordKeyFor(e.key);
+      if (key) heldKeysRef.current.delete(key);
+    };
+    const onBlur = () => heldKeysRef.current.clear();
     window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
+    window.addEventListener("keyup", onKeyUp);
+    window.addEventListener("blur", onBlur);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("keyup", onKeyUp);
+      window.removeEventListener("blur", onBlur);
+    };
   }, [
     copySelection,
     deleteSelection,
     moveCursor,
-    moveSelection,
     pasteClipboard,
+    persistPrefs,
     recordKey,
     redo,
     stepTab,
@@ -1684,22 +1813,7 @@ export default function TasEditorWindow() {
   targetFpsRef.current = targetFps;
   const speedLabel = (v: number) =>
     v > 0 ? `${Math.round(v * 100) / 100}×` : t("tas.speedUnlimited");
-  /**
-   * 速度滑条的档位下标。偏好里存的是倍率：不在档位上（老版本存的自定义值）就取对数距离
-   * 最近的那一档显示；不限速永远是最后一档。
-   */
-  const speedStop = (() => {
-    const exact = PLAY_SPEED_STOPS.indexOf(prefs.playSpeed);
-    if (exact >= 0) return exact;
-    let best = PLAY_SPEED_STOPS.indexOf(1);
-    PLAY_SPEED_STOPS.forEach((v, i) => {
-      if (v <= 0) return;
-      const d = Math.abs(Math.log(v / prefs.playSpeed));
-      if (d < Math.abs(Math.log(PLAY_SPEED_STOPS[best] / prefs.playSpeed)))
-        best = i;
-    });
-    return best;
-  })();
+  const speedStop = speedStopIndex(prefs.playSpeed);
   /** 「播放」从哪一帧开始看（光标可能在右侧余量里，夹回录像范围）。 */
   const playFromFrame = doc
     ? Math.max(0, Math.min(cursor, doc.tas.frameCount - 1))
@@ -1725,7 +1839,7 @@ export default function TasEditorWindow() {
   const topH = Math.max(0, Math.min(regionCssH, winSize.h - TIMELINE_MIN_H));
   /** 窗口装不下这个区域时给个提示（不然游戏窗口会被剪掉一截）。 */
   const regionFits =
-    topH >= regionCssH && regionCssW + 2 * SIDE_MIN_W <= winSize.w;
+    topH >= regionCssH && regionCssW + 2 * LIST_MIN_W + PANEL_W <= winSize.w;
   /** 缩到最小时 14px/帧 的百分比只剩个位数，保留一位小数才看得出还在变。 */
   const zoomText = `${zoomPct >= 10 ? Math.round(zoomPct) : zoomPct.toFixed(1)}%`;
   const titleText = useMemo(() => {
@@ -1776,104 +1890,166 @@ export default function TasEditorWindow() {
       )}
 
       <div className="flex min-h-0 flex-1 flex-col">
-        {/* 上半区：文件列表 │ 游戏（居中，按分辨率 1:1）│ 控制面板。左右两栏等宽（flex-1 + basis-0），
-            平分游戏以外的宽度 */}
+        {/* 上半区：[TAS 文件 │ 地图]（吃剩余宽度）│ 功能面板（固定 PANEL_W）│ 游戏（按分辨率 1:1，贴右边） */}
         <div
           className="flex min-h-0 shrink-0 border-b"
           style={{ height: topH }}
         >
-          {/* 左：TAS 目录里的文件（与右侧控制面板等宽） */}
-          <div className="flex min-h-0 min-w-0 flex-1 basis-0 flex-col">
-            <div className="flex items-center justify-between gap-2 border-b px-3 py-2">
-              <span
-                className="truncate text-xs font-medium whitespace-nowrap text-muted-foreground"
-                title={t("tas.openRecent")}
-              >
-                {t("tas.openRecent")}
-              </span>
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                title={t("tas.reload")}
-                onClick={() => void refresh()}
-              >
-                <RefreshCw className="size-3.5" />
-              </Button>
-            </div>
-            {/* 筛选：按文件名（不区分大小写） */}
-            <div className="border-b p-2">
-              <div className="relative">
-                <Search className="pointer-events-none absolute top-1/2 left-2 size-3.5 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  type="search"
-                  className="h-7 pl-7 text-xs"
-                  placeholder={t("tas.fileFilter")}
-                  aria-label={t("tas.fileFilter")}
-                  value={fileFilter}
-                  onChange={e => setFileFilter(e.target.value)}
-                  onKeyDown={e => {
-                    if (e.key === "Escape") {
-                      setFileFilter("");
-                      e.currentTarget.blur();
-                    }
-                  }}
-                />
+          {/* 左：TAS 文件 │ 地图（原版 + 自制图）两栏平分 */}
+          <div className="flex min-h-0 min-w-0 flex-1">
+            <div className="flex min-h-0 min-w-0 flex-1 basis-0 flex-col">
+              <div className="flex items-center justify-between gap-2 border-b px-3 py-2">
+                <span
+                  className="truncate text-xs font-medium whitespace-nowrap text-muted-foreground"
+                  title={t("tas.openRecent")}
+                >
+                  {t("tas.openRecent")}
+                </span>
+                <div className="flex shrink-0 items-center">
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    title={t("tas.dirOpen")}
+                    disabled={!tasDir}
+                    onClick={() => void openTasDir()}
+                  >
+                    <FolderOpen className="size-3.5" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    title={t("tas.dirPick")}
+                    onClick={() => void pickTasDir()}
+                  >
+                    <FolderSearch className="size-3.5" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    title={t("tas.reload")}
+                    onClick={() => void refresh()}
+                  >
+                    <RefreshCw className="size-3.5" />
+                  </Button>
+                </div>
+              </div>
+              {/* 当前列表目录：路径太长时保留结尾（目录名比盘符有用）；手动选过的可以一键恢复 */}
+              {tasDir && (
+                <div className="flex items-center gap-1 border-b px-3 py-1">
+                  <span
+                    className="min-w-0 flex-1 truncate text-left font-mono text-[10px] text-muted-foreground"
+                    dir="rtl"
+                    title={tasDir.replace(/\//g, "\\")}
+                  >
+                    {/* rtl 下用 LRM 包住，免得斜杠被挪到另一头 */}
+                    {`\u200E${tasDir.replace(/\//g, "\\")}\u200E`}
+                  </span>
+                  {!listingGameDir && (
+                    <Button
+                      variant="ghost"
+                      size="icon-xs"
+                      className="shrink-0"
+                      title={t("tas.dirReset")}
+                      onClick={resetTasDir}
+                    >
+                      <RotateCcw className="size-3" />
+                    </Button>
+                  )}
+                </div>
+              )}
+              {/* 筛选：按文件名（不区分大小写） */}
+              <div className="border-b p-2">
+                <div className="relative">
+                  <Search className="pointer-events-none absolute top-1/2 left-2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    type="search"
+                    className="h-7 pl-7 text-xs"
+                    placeholder={t("tas.fileFilter")}
+                    aria-label={t("tas.fileFilter")}
+                    value={fileFilter}
+                    onChange={e => setFileFilter(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === "Escape") {
+                        setFileFilter("");
+                        e.currentTarget.blur();
+                      }
+                    }}
+                  />
+                </div>
+              </div>
+              <div className="min-h-0 flex-1 overflow-auto p-1.5">
+                {!tasDir && (
+                  <p className="px-1 py-2 text-xs text-muted-foreground">
+                    {t("tas.noInstance")}
+                  </p>
+                )}
+                {tasDir && files.length === 0 && (
+                  <p className="px-1 py-2 text-xs text-muted-foreground">
+                    {t("tas.noFiles")}
+                  </p>
+                )}
+                {tasDir && files.length > 0 && visibleFiles.length === 0 && (
+                  <p className="px-1 py-2 text-xs text-muted-foreground">
+                    {t("tas.fileFilterNone")}
+                  </p>
+                )}
+                {visibleFiles.map(file => {
+                  const path = `${tasDir}/${file.name}`;
+                  const active = doc?.path === path;
+                  const key = metaKey(file);
+                  const meta = fileMeta[key];
+                  return (
+                    <button
+                      key={file.name}
+                      type="button"
+                      title={file.name}
+                      onClick={() => void open(path, file.name)}
+                      className={`flex w-full flex-col gap-0.5 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-accent ${
+                        active ? "bg-accent" : ""
+                      }`}
+                    >
+                      <span
+                        className={`truncate text-xs ${active ? "font-medium" : ""}`}
+                      >
+                        {file.name.replace(/\.tas$/i, "")}
+                      </span>
+                      <span className="truncate text-[10px] text-muted-foreground tabular-nums">
+                        {key in fileMeta
+                          ? meta
+                            ? t("tas.fileMeta", {
+                                frames: meta.frames.toLocaleString(),
+                                fps: Math.round(meta.fps * 100) / 100,
+                                time: formatFrameTime(meta.seconds)
+                              })
+                            : t("tas.fileMetaBroken")
+                          : t("tas.fileMetaLoading")}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
-            <div className="min-h-0 flex-1 overflow-auto p-1.5">
-              {!tasDir && (
-                <p className="px-1 py-2 text-xs text-muted-foreground">
-                  {t("tas.noInstance")}
-                </p>
-              )}
-              {tasDir && files.length === 0 && (
-                <p className="px-1 py-2 text-xs text-muted-foreground">
-                  {t("tas.noFiles")}
-                </p>
-              )}
-              {tasDir && files.length > 0 && visibleFiles.length === 0 && (
-                <p className="px-1 py-2 text-xs text-muted-foreground">
-                  {t("tas.fileFilterNone")}
-                </p>
-              )}
-              {visibleFiles.map(file => {
-                const path = `${tasDir}/${file.name}`;
-                const active = doc?.path === path;
-                const key = metaKey(file);
-                const meta = fileMeta[key];
-                return (
-                  <button
-                    key={file.name}
-                    type="button"
-                    title={file.name}
-                    onClick={() => void open(path, file.name)}
-                    className={`flex w-full flex-col gap-0.5 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-accent ${
-                      active ? "bg-accent" : ""
-                    }`}
-                  >
-                    <span
-                      className={`truncate text-xs ${active ? "font-medium" : ""}`}
-                    >
-                      {file.name.replace(/\.tas$/i, "")}
-                    </span>
-                    <span className="truncate text-[10px] text-muted-foreground tabular-nums">
-                      {key in fileMeta
-                        ? meta
-                          ? t("tas.fileMeta", {
-                              frames: meta.frames.toLocaleString(),
-                              fps: Math.round(meta.fps * 100) / 100,
-                              time: formatFrameTime(meta.seconds)
-                            })
-                          : t("tas.fileMetaBroken")
-                        : t("tas.fileMetaLoading")}
-                    </span>
-                  </button>
-                );
-              })}
+            {/* 地图列表（原版 1~13 关 + 自制图），点一下 = 当前项目一键播放要进的地图 */}
+            <div className="flex min-h-0 min-w-0 flex-1 basis-0 flex-col border-l">
+              <TasMapList
+                instancePath={instancePath ?? ""}
+                selected={playMap}
+                guessed={playMapGuessed}
+                disabled={!doc}
+                onSelect={map => {
+                  if (projectName) setProjectMap(projectName, map);
+                }}
+              />
             </div>
+          </div>
 
+          {/* 中：功能面板（回放 / 文件），固定宽度；夹在列表和游戏之间，离两边都近 */}
+          <div
+            className="flex min-h-0 shrink-0 flex-col overflow-y-auto border-l bg-muted/20"
+            style={{ width: PANEL_W }}
+          >
             {/* 回放：播放 / 速度 / 分辨率 / 地图（游戏区域上面不放任何按钮：游戏窗口压在 HTML 上，点不到） */}
-            <div className="flex shrink-0 flex-col gap-2 border-t px-3 py-2.5">
+            <div className="flex shrink-0 flex-col gap-2 px-3 py-2.5">
               <div className="flex items-center justify-between gap-2">
                 <span className="text-[11px] font-medium text-muted-foreground">
                   {t("tas.sectionPlayback")}
@@ -1903,14 +2079,16 @@ export default function TasEditorWindow() {
                         : t("tas.gameStateIdle")}
                 </span>
               </div>
-              {/* 游戏在跑时再点 = 改配置 + 重启（TAS 配置只在启动时读），会先问一句 */}
-              <div className="grid grid-cols-[1fr_auto] gap-1.5">
+              {/* 按钮各占一行，快捷键键帽才放得下（两列并排时挤成一团）。
+                  游戏在跑时再点播放 = 改配置 + 重启（TAS 配置只在启动时读），会先问一句 */}
+              <div className="flex flex-col gap-1.5">
                 <Button
                   size="sm"
+                  className="w-full"
                   disabled={!doc || busy || gameBusy}
-                  title={t("tas.playFromCursorHint", {
+                  title={`${t("tas.playFromCursorHint", {
                     frame: playFromFrame.toLocaleString()
-                  })}
+                  })} (F5)`}
                   onClick={() => void playProject(false)}
                 >
                   {gameBusy ? <Loader2 className="animate-spin" /> : <Play />}
@@ -1922,31 +2100,45 @@ export default function TasEditorWindow() {
                       })}
                     </span>
                   </span>
+                  <Kbd className="ml-auto bg-primary-foreground/20 text-primary-foreground">
+                    F5
+                  </Kbd>
                 </Button>
                 <Button
                   variant="outline"
                   size="sm"
+                  className="w-full"
                   disabled={!doc || busy || gameBusy}
-                  title={t("tas.playFromStartHint")}
+                  title={`${t("tas.playFromStartHint")} (Ctrl+F5)`}
                   onClick={() => void playProject(true)}
                 >
                   <SkipBack />
                   {t("tas.playFromStart")}
+                  <KbdGroup className="ml-auto">
+                    <Kbd>Ctrl</Kbd>
+                    <Kbd>F5</Kbd>
+                  </KbdGroup>
                 </Button>
-              </div>
-              {game.state === "running" && (
-                <div className="grid grid-cols-2 gap-1.5">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => void stopGame()}
-                  >
-                    <Square />
-                    {t("tas.gameStop")}
-                  </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                  disabled={game.state !== "running"}
+                  title={`${t("tas.gameStop")} (Shift+F5)`}
+                  onClick={() => void stopGame()}
+                >
+                  <Square />
+                  {t("tas.gameStop")}
+                  <KbdGroup className="ml-auto">
+                    <Kbd>Shift</Kbd>
+                    <Kbd>F5</Kbd>
+                  </KbdGroup>
+                </Button>
+                {game.state === "running" && (
                   <Toggle
                     variant="outline"
                     size="sm"
+                    className="w-full"
                     pressed={interactive}
                     onPressedChange={() => void toggleInteractive()}
                     title={t("tas.gameInteractiveHint")}
@@ -1954,19 +2146,42 @@ export default function TasEditorWindow() {
                     <MousePointerClick />
                     {t("tas.gameInteractive")}
                   </Toggle>
+                )}
+              </div>
+
+              <Separator />
+
+              {/* 速度：标签 + 读数（点一下回到 1×）一行，滑条一行（两端标着快捷键 , / .）。
+                  滑条按档位走；拖动中每一档都即时推给游戏（RockoonIO 限速，下一帧生效） */}
+              <div className="flex flex-col gap-1.5">
+                <div className="flex items-center justify-between gap-2">
+                  <Label
+                    htmlFor="tas-speed"
+                    className="text-xs font-normal text-muted-foreground"
+                    title={t("tas.speedHint")}
+                  >
+                    {t("tas.speedShort")}
+                  </Label>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 gap-1.5 px-1.5 tabular-nums"
+                    title={t("tas.speedResetHint")}
+                    onClick={() => setPlaySpeed(1)}
+                  >
+                    <span className="font-semibold">
+                      {speedLabel(prefs.playSpeed)}
+                    </span>
+                    <span className="text-[10px] font-normal text-muted-foreground">
+                      {targetFps > 0 ? `${Math.round(targetFps)} fps` : "∞"}
+                    </span>
+                  </Button>
                 </div>
-              )}
-              {/* 标签 │ 控件 两列：速度 / 分辨率 / 地图 */}
-              <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-1.5 text-xs">
-                <Label
-                  htmlFor="tas-speed"
-                  className="text-xs font-normal text-muted-foreground"
-                  title={t("tas.speedHint")}
-                >
-                  {t("tas.speedShort")}
-                </Label>
-                {/* 滑条按档位走；拖动中每一档都即时推给游戏（RockoonIO 限速，下一帧生效） */}
                 <div className="flex items-center gap-2">
+                  {/* Kbd 自带 pointer-events-none，title 挂在它身上永远不显示 —— 挂在外面的 span 上 */}
+                  <span title={t("tas.speedSlower")} className="inline-flex">
+                    <Kbd>,</Kbd>
+                  </span>
                   <Slider
                     id="tas-speed"
                     className="min-w-0 flex-1"
@@ -1978,22 +2193,16 @@ export default function TasEditorWindow() {
                     aria-label={t("tas.speed")}
                     title={t("tas.speedHint")}
                   />
-                  {/* 点一下回到 1× */}
-                  <button
-                    type="button"
-                    className="w-[5.5rem] shrink-0 rounded px-1 py-0.5 text-right tabular-nums transition-colors hover:bg-accent"
-                    title={t("tas.speedResetHint")}
-                    onClick={() => setPlaySpeed(1)}
-                  >
-                    <span className="font-semibold">
-                      {speedLabel(prefs.playSpeed)}
-                    </span>
-                    <span className="ml-1 text-[10px] text-muted-foreground">
-                      {targetFps > 0 ? `${Math.round(targetFps)}fps` : "∞"}
-                    </span>
-                  </button>
+                  <span title={t("tas.speedFaster")} className="inline-flex">
+                    <Kbd>.</Kbd>
+                  </span>
                 </div>
+              </div>
 
+              <Separator />
+
+              {/* 标签 │ 控件 两列：分辨率 / 地图 */}
+              <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-2 text-xs">
                 <Label
                   htmlFor="tas-resolution"
                   className="text-xs font-normal text-muted-foreground"
@@ -2125,8 +2334,8 @@ export default function TasEditorWindow() {
             </div>
           </div>
 
-          {/* 中：游戏视口（游戏窗口以「顶层窗口 + owner」摆在这块区域上，见 embed.rs）。宽度 = 分辨率，
-                所以两侧等宽时游戏正好居中。所有按钮都在右侧控制面板：游戏窗口压在 HTML 上面，这里放控件也点不到。 */}
+          {/* 右：游戏视口（游戏窗口以「顶层窗口 + owner」摆在这块区域上，见 embed.rs）。宽度 = 分辨率，
+                贴着窗口右边。所有按钮都在左边的功能面板：游戏窗口压在 HTML 上面，这里放控件也点不到。 */}
           <div
             className="flex min-h-0 shrink-0 flex-col border-l bg-neutral-950"
             style={{ width: regionCssW }}
@@ -2168,19 +2377,6 @@ export default function TasEditorWindow() {
               </div>
             </div>
           </div>
-
-          {/* 右：地图列表（原版 1~13 关 + 自制图），点一下 = 当前项目一键播放要进的地图 */}
-          <div className="flex min-h-0 min-w-0 flex-1 basis-0 flex-col border-l">
-            <TasMapList
-              instancePath={instancePath ?? ""}
-              selected={playMap}
-              guessed={playMapGuessed}
-              disabled={!doc}
-              onSelect={map => {
-                if (projectName) setProjectMap(projectName, map);
-              }}
-            />
-          </div>
         </div>
 
         {/* 下半区：时间轴 + 说明条 */}
@@ -2192,7 +2388,7 @@ export default function TasEditorWindow() {
               <span className="hidden px-1 text-[11px] font-medium text-muted-foreground 2xl:inline">
                 {t("tas.sectionEdit")}
               </span>
-              {/* 鼠标模式四选一：选择 / 绘制 / 填充 / 录入（快捷键 1~4） */}
+              {/* 鼠标模式四选一：选择 / 填充 / 录入 / 插删帧（快捷键 1~4） */}
               <ToggleGroup
                 type="single"
                 variant="outline"
@@ -2202,7 +2398,6 @@ export default function TasEditorWindow() {
                 onValueChange={value => {
                   // 单选组再点一下当前项会传空串：保持当前模式
                   if (!value) return;
-                  recordRoundRef.current = null;
                   setMode(value as TasMouseMode);
                 }}
                 disabled={!doc}
@@ -2258,7 +2453,8 @@ export default function TasEditorWindow() {
                     ...prefsRef.current,
                     vGrid: values.includes("vGrid"),
                     hGrid: values.includes("hGrid"),
-                    bands: values.includes("bands")
+                    bands: values.includes("bands"),
+                    cellBlocks: values.includes("cellBlocks")
                   })
                 }
                 disabled={!doc}
@@ -2304,6 +2500,59 @@ export default function TasEditorWindow() {
               >
                 <Maximize2 />
               </Button>
+              {/* 不常改的设置：网格线深浅、重启前是否询问 */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    title={t("tas.settings")}
+                  >
+                    <Settings2 />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent align="start" className="w-64 space-y-4">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-xs">{t("tas.gridStrength")}</Label>
+                      <span className="text-xs text-muted-foreground tabular-nums">
+                        {Math.round(prefs.gridStrength * 100)}%
+                      </span>
+                    </div>
+                    <Slider
+                      min={0}
+                      max={100}
+                      step={5}
+                      value={[Math.round(prefs.gridStrength * 100)]}
+                      onValueChange={([v]) =>
+                        persistPrefs({
+                          ...prefsRef.current,
+                          gridStrength: v / 100
+                        })
+                      }
+                      aria-label={t("tas.gridStrength")}
+                    />
+                    <p className="text-[11px] text-muted-foreground">
+                      {t("tas.gridStrengthHint")}
+                    </p>
+                  </div>
+                  <div className="flex items-center justify-between gap-3">
+                    <Label htmlFor="tas-restart-ask" className="text-xs">
+                      {t("tas.restartAsk")}
+                    </Label>
+                    <Switch
+                      id="tas-restart-ask"
+                      checked={!prefs.skipPlayAsk}
+                      onCheckedChange={v =>
+                        persistPrefs({
+                          ...prefsRef.current,
+                          skipPlayAsk: !v
+                        })
+                      }
+                    />
+                  </div>
+                </PopoverContent>
+              </Popover>
             </div>
 
             {/* ── 帧（右对齐）：本帧按键 / 当前帧 / 按键时长 / 录像帧率 ── */}
@@ -2454,8 +2703,11 @@ export default function TasEditorWindow() {
               vGrid={prefs.vGrid}
               hGrid={prefs.hGrid}
               bands={prefs.bands}
+              gridStrength={prefs.gridStrength}
+              cellBlocks={prefs.cellBlocks}
               mode={mode}
               onMenu={at => setMenu(at)}
+              onFrames={editFrames}
               cursor={cursor}
               selection={selection}
               version={version}
@@ -2493,7 +2745,7 @@ export default function TasEditorWindow() {
             />
           )}
 
-          {/* 时间轴右键菜单（只在选择模式弹） */}
+          {/* 时间轴右键菜单（选择 / 录入模式弹） */}
           <DropdownMenu
             open={menu !== null}
             onOpenChange={open => !open && setMenu(null)}
@@ -2551,6 +2803,46 @@ export default function TasEditorWindow() {
               >
                 {t("tas.menu.delete")}
               </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              {/* 插入 / 删除整帧：点在选区里按选区的帧数，否则按 1 帧 */}
+              <DropdownMenuItem
+                disabled={!menuFrames}
+                onSelect={() => {
+                  if (!menuFrames) return;
+                  const [a, b] = menuFrames;
+                  editFrames("insert", a, b);
+                }}
+              >
+                {t("tas.menu.insertLeft", {
+                  n: menuFrames ? menuFrames[1] - menuFrames[0] + 1 : 1
+                })}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                disabled={!menuFrames}
+                onSelect={() => {
+                  if (!menuFrames) return;
+                  const [a, b] = menuFrames;
+                  // 新帧按选区起始帧的按键填充
+                  editFrames("insert", b + 1, b + 1 + (b - a), a);
+                }}
+              >
+                {t("tas.menu.insertRight", {
+                  n: menuFrames ? menuFrames[1] - menuFrames[0] + 1 : 1
+                })}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                disabled={
+                  !menuFrames || !doc || menuFrames[0] >= doc.tas.frameCount
+                }
+                onSelect={() => {
+                  if (!menuFrames) return;
+                  editFrames("delete", menuFrames[0], menuFrames[1]);
+                }}
+              >
+                {t("tas.menu.deleteFrames", {
+                  n: menuFrames ? menuFrames[1] - menuFrames[0] + 1 : 1
+                })}
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
 
@@ -2586,6 +2878,15 @@ export default function TasEditorWindow() {
                 <li key={`${c.category}.${c.name}`}>{describeChange(c)}</li>
               ))}
             </ul>
+          )}
+          {playAsk && (
+            <label className="flex w-fit cursor-pointer items-center gap-2 text-sm text-muted-foreground">
+              <Checkbox
+                checked={restartRemember}
+                onCheckedChange={v => setRestartRemember(v === true)}
+              />
+              {t("tas.playRestartRemember")}
+            </label>
           )}
           <AlertDialogFooter>
             <AlertDialogCancel>{t("common.dialog.cancel")}</AlertDialogCancel>

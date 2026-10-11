@@ -45,6 +45,17 @@ export type TasEditorPrefs = {
   projectMaps: Record<string, TasMapRef>;
   /** 回放速度倍率（相对录像帧率）；0 = 不限速。播放中随时可改。 */
   playSpeed: number;
+  /** 网格线 / 分隔线的深浅（0 = 最淡，1 = 最深）。 */
+  gridStrength: number;
+  /** 「分格」视图：每一帧单独画成一格（不合并成连续的胶囊，也不标帧数）。 */
+  cellBlocks: boolean;
+  /**
+   * 一键播放不再弹确认框（「打开自动加载」「重启游戏」两个框共用；勾了「记住选择」之后）。
+   * 老版本只管重启框（`skipRestartAsk`），**不迁移**：这个开关还会跳过会写配置的确认框。
+   */
+  skipPlayAsk: boolean;
+  /** 文件列表手动选的目录（绝对路径）；空串 = 用游戏的 `ModLoader/TAS`。 */
+  tasDirOverride: string;
 };
 
 /** 常见的游戏窗口分辨率（4:3 为主；宽屏那几项需要游戏配置里打开 UnlockWidescreen）。 */
@@ -79,7 +90,11 @@ export const DEFAULT_TAS_PREFS: TasEditorPrefs = {
   gameWidth: 1024,
   gameHeight: 768,
   projectMaps: {},
-  playSpeed: 1
+  playSpeed: 1,
+  gridStrength: 0.5,
+  cellBlocks: false,
+  skipPlayAsk: false,
+  tasDirOverride: ""
 };
 
 /** 轨道顺序来自 localStorage，可能被手改坏：必须是 9 个键各一次，否则回退默认。 */
@@ -128,7 +143,9 @@ function sanitizeMaps(value: unknown): Record<string, TasMapRef> {
 
 export function loadTasPrefs(): TasEditorPrefs {
   const raw = storage.getWithDefault<
-    Partial<TasEditorPrefs> & { projectLevels?: unknown }
+    Partial<TasEditorPrefs> & {
+      projectLevels?: unknown;
+    }
   >(PREFS_KEY, {});
   return {
     vGrid: raw.vGrid ?? DEFAULT_TAS_PREFS.vGrid,
@@ -152,7 +169,17 @@ export function loadTasPrefs(): TasEditorPrefs {
       raw.playSpeed >= 0 &&
       raw.playSpeed <= MAX_PLAY_SPEED
         ? raw.playSpeed
-        : DEFAULT_TAS_PREFS.playSpeed
+        : DEFAULT_TAS_PREFS.playSpeed,
+    gridStrength:
+      typeof raw.gridStrength === "number" && Number.isFinite(raw.gridStrength)
+        ? Math.max(0, Math.min(1, raw.gridStrength))
+        : DEFAULT_TAS_PREFS.gridStrength,
+    cellBlocks: raw.cellBlocks ?? DEFAULT_TAS_PREFS.cellBlocks,
+    // 不从老的 skipRestartAsk 迁移：它只管「要不要问重启」，而 skipPlayAsk 还会跳过会写
+    // BallanceTAS.cfg 的配置确认框 —— 让老用户自己再勾一次「记住选择」
+    skipPlayAsk: raw.skipPlayAsk ?? DEFAULT_TAS_PREFS.skipPlayAsk,
+    tasDirOverride:
+      typeof raw.tasDirOverride === "string" ? raw.tasDirOverride : ""
   };
 }
 

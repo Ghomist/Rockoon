@@ -52,6 +52,17 @@ pub fn exists(path: String) -> RcResultWith<bool> {
     Ok(exists)
 }
 
+/// 目录是否为空（不存在也算空，安装时会自动创建）；路径是文件、或读不到（没权限等）时报错。
+/// 不能用 `Path::exists()`：它把「读不到」也当成「不存在」，那样没权限的目录会被当成空目录装进去。
+#[command]
+pub fn is_dir_empty(path: String) -> RcResultWith<bool> {
+    let p = path::Path::new(&path);
+    if !p.try_exists()? {
+        return Ok(true);
+    }
+    Ok(fs::read_dir(p)?.next().is_none())
+}
+
 #[command]
 pub fn size(path: String) -> RcResultWith<u64> {
     let x = fs::metadata(&path)?;

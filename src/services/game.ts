@@ -41,6 +41,27 @@ const PATCH_ORDER: { flag: keyof PatchChoice; key: string }[] = [
   { flag: "bml", key: "bml" }
 ];
 
+/**
+ * 选安装目录：只允许空文件夹（装进已有文件的目录会和原有文件混在一起，
+ * 覆盖掉别的游戏或个人文件）。选到非空目录就提示并重新弹出选择框，取消返回 null。
+ */
+async function pickEmptyFolder(): Promise<string | null> {
+  for (;;) {
+    const folder = await browseDir({
+      directory: true,
+      title: t("game.pickTarget")
+    });
+    if (!folder) return null;
+    try {
+      if (await backend.isDirEmpty(folder)) return folder;
+      message.error(t("game.folderNotEmpty", { path: folder }));
+    } catch (e) {
+      console.warn("Check install folder failed:", e);
+      message.error(t("game.folderUnreadable", { path: folder }));
+    }
+  }
+}
+
 /** 占位任务 id：后端 id 要等 start 返回才拿到，先拿它登记任务（拿到后 update 替换） */
 let taskSeq = 0;
 
@@ -79,7 +100,7 @@ export function useVanillaInstall(): {
         id: `game-${++taskSeq}`,
         key: `game:${url}:${folder}`,
         kind: "game",
-        title: t("game.install"),
+        title: t("game.taskTitle"),
         target: folder,
         cancellable: true,
         retry: () => void run(folder, picked)
@@ -129,21 +150,36 @@ export function useVanillaInstall(): {
           await useProfilesStore.getState().load();
         }
 
-        // 顺带装勾选的补丁：失败不影响已经装好的游戏，只提示一次
+        // 顺带装勾选的补丁：失败不影响已经装好的游戏，也不影响后面的补丁（逐个 try），
+        // 最后只提示一次。例外：BML+ 依赖新 Player —— 勾了新 Player 但它没装上，就不装 BML+
         const installedPatches: string[] = [];
+        const failedFlags = new Set<keyof PatchChoice>();
+        let components: Awaited<ReturnType<typeof fetchPatches>> = [];
         try {
-          const components = await fetchPatches();
-          for (const { flag, key } of PATCH_ORDER) {
-            if (!picked[flag]) continue;
-            const component = components.find(c => c.key === key);
-            if (!component || !component.package_id) continue;
+          components = await fetchPatches();
+        } catch (patchError) {
+          console.warn("Fetching the patch list failed:", patchError);
+          PATCH_ORDER.forEach(
+            ({ flag }) => picked[flag] && failedFlags.add(flag)
+          );
+        }
+        for (const { flag, key } of PATCH_ORDER) {
+          if (!picked[flag] || failedFlags.has(flag)) continue;
+          if (flag === "bmlplus" && failedFlags.has("player")) {
+            failedFlags.add(flag);
+            continue;
+          }
+          const component = components.find(c => c.key === key);
+          if (!component || !component.package_id) continue;
+          try {
             if (await installPatchAsTask(component, target, null))
               installedPatches.push(`${component.name} ${component.latest}`);
+          } catch (patchError) {
+            console.warn(`Installing patch ${key} failed:`, patchError);
+            failedFlags.add(flag);
           }
-        } catch (patchError) {
-          console.warn("Patch install after game install failed:", patchError);
-          message.error(t("game.patchFailed"));
         }
+        if (failedFlags.size > 0) message.error(t("game.patchFailed"));
 
         message.success(
           installedPatches.length
@@ -171,10 +207,7 @@ export function useVanillaInstall(): {
     onChange: setChoice,
     onConfirm: async () => {
       setOptionsOpen(false);
-      const folder = await browseDir({
-        directory: true,
-        title: t("game.pickTarget")
-      });
+      const folder = await pickEmptyFolder();
       if (!folder) return;
       await run(folder, choice);
     },

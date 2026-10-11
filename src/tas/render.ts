@@ -12,8 +12,8 @@ import { collectRuns, frameView, type TasSelection } from "./editing";
 import {
   MAX_CELL_W,
   RUN_CELL_W,
-  formatTickLabel,
   paintableFrames,
+  rulerSteps,
   tickFrames,
   visibleFrames,
   xAtFrame,
@@ -118,6 +118,24 @@ export function tasPalette(dark: boolean): TasPalette {
       };
 }
 
+/**
+ * 网格线 / 分隔线按「深浅」重新取色（0 = 最淡、1 = 最深）：前景色叠一层透明度，
+ * 明暗主题下同一档位的观感一致。默认 0.5 比旧版的固定色明显一些。
+ */
+export function gridLinePalette(
+  dark: boolean,
+  strength: number
+): Pick<TasPalette, "hGrid" | "vGrid" | "bandLine"> {
+  const s = Math.max(0, Math.min(1, strength));
+  const ink = (alpha: number) =>
+    dark ? `rgba(255,255,255,${alpha.toFixed(3)})` : `rgba(0,0,0,${alpha.toFixed(3)})`;
+  return {
+    hGrid: ink(0.05 + 0.4 * s),
+    vGrid: ink(0.03 + 0.27 * s),
+    bandLine: ink(0.07 + 0.45 * s)
+  };
+}
+
 /** 每个按键一个颜色（胶囊填充）。明暗各一档，保证在交替背景上都够对比。 */
 const TRACK_COLORS: Record<TasKey, { light: string; dark: string }> = {
   up: { light: "#10b981", dark: "#34d399" },
@@ -202,6 +220,10 @@ export type SceneOptions = {
   hGrid: boolean;
   /** 「分区」：主刻度区间的交替底色（独立于纵线）。 */
   bands: boolean;
+  /** 网格线 / 分隔线深浅（0~1）。 */
+  gridStrength: number;
+  /** 「分格」：每一帧单独画一格（不合并成胶囊、不标帧数）。 */
+  cellBlocks: boolean;
   dark: boolean;
   ghost: Ghost | null;
   /** 填充模式的矩形预览。 */
@@ -225,12 +247,12 @@ const BADGE_GAP = 3;
  * 只画可见列；背景按 0.5 秒交替着色。
  */
 export function drawScene(ctx: CanvasRenderingContext2D, o: SceneOptions): void {
-  const p = tasPalette(o.dark);
+  const p = { ...tasPalette(o.dark), ...gridLinePalette(o.dark, o.gridStrength) };
   const { width, height, rowH, rulerH } = o;
   const rowsTop = rulerH;
   const rowsH = height - rowsTop;
   const rowY = (track: number) => rowsTop + track * rowH - o.vp.scrollY;
-  const limit = paintableFrames(o.tas.frameCount);
+  const limit = paintableFrames(o.tas.frameCount, o.frameMs);
   const { first, last } = visibleFrames(o.vp, width);
   const drawFrom = Math.max(0, first);
   const drawTo = Math.min(last, limit);
@@ -286,11 +308,15 @@ export function drawScene(ctx: CanvasRenderingContext2D, o: SceneOptions): void 
     }
   }
 
-  // 4) 胶囊：同轨道连续帧合并；块的开头标出这一段有多少帧
+  // 4) 胶囊：同轨道连续帧合并；块的开头标出这一段有多少帧。
+  //    「分格」视图：每一帧单独一格、格与格之间留缝（区块模式下格子不到 4px，仍按胶囊画）
   const pad = rowH >= 18 ? 3 : 1;
   const radius = 4;
-  // 块太窄 / 行太矮就不写
-  const showBlockLabel = !!o.blockLabel && !runMode && rowH >= 16;
+  const cells = o.cellBlocks && !runMode;
+  const cellGap = o.vp.cellW >= 10 ? 2 : 1;
+  const cellRadius = Math.min(3, (o.vp.cellW - cellGap) / 3);
+  // 块太窄 / 行太矮就不写；分格视图不写
+  const showBlockLabel = !!o.blockLabel && !runMode && !cells && rowH >= 16;
   for (let t = 0; t < o.order.length; t++) {
     const key = o.order[t];
     const y = rowY(t);
@@ -299,6 +325,15 @@ export function drawScene(ctx: CanvasRenderingContext2D, o: SceneOptions): void 
     if (runs.length === 0) continue;
     ctx.fillStyle = withAlpha(trackColor(key, o.dark), o.dark ? 0.9 : 0.92);
     for (const [a, b] of runs) {
+      if (cells) {
+        for (let f = a; f <= b; f++) {
+          const x = xAtFrame(o.vp, f);
+          if (x + o.vp.cellW < 0 || x > width) continue;
+          roundedRect(ctx, x + cellGap / 2, y + pad, o.vp.cellW - cellGap, rowH - pad * 2, cellRadius);
+          ctx.fill();
+        }
+        continue;
+      }
       const x = xAtFrame(o.vp, a);
       const w = Math.max(4, (b - a + 1) * o.vp.cellW - 1);
       roundedRect(ctx, x, y + pad, w, rowH - pad * 2, radius);
@@ -443,32 +478,33 @@ export function drawScene(ctx: CanvasRenderingContext2D, o: SceneOptions): void 
   ctx.fillRect(0, rowsTop - 1, width, 1);
   ctx.font = RULER_FONT;
   ctx.textBaseline = "middle";
-  // 主/次刻度都是**帧**：次刻度先画（短），主刻度带标签 `50 (0.208s)`
-  const { major, minor } = tickFrames(o.vp.cellW, o.frameMs);
+  // 刻度只标**帧号**（不再带时间）：放大到放得下时尽量密，最密每一帧都标
+  const { label: labelStep, minor } = rulerSteps(o.vp.cellW, limit);
   const rulerEnd = o.vp.scroll + width / o.vp.cellW;
   if (minor > 0) {
     ctx.fillStyle = p.rulerTickMinor;
     const startMinor = Math.floor(o.vp.scroll / minor) * minor;
     for (let f = startMinor; f <= rulerEnd; f += minor) {
+      if (f % labelStep === 0) continue;
       const x = Math.round(xAtFrame(o.vp, f));
       if (x < 0 || x > width) continue;
-      ctx.fillRect(x, rowsTop - 7, 1, 6);
+      ctx.fillRect(x, rowsTop - 6, 1, 5);
     }
   }
   ctx.fillStyle = p.rulerTick;
-  const startMajor = Math.floor(o.vp.scroll / major) * major;
-  for (let f = startMajor; f <= rulerEnd; f += major) {
+  const startLabel = Math.floor(o.vp.scroll / labelStep) * labelStep;
+  for (let f = startLabel; f <= rulerEnd; f += labelStep) {
     const x = Math.round(xAtFrame(o.vp, f));
-    if (x < -40 || x > width + 40) continue;
-    if (x >= 0) {
-      ctx.fillRect(x, rowsTop - 12, 1, 11);
-      const label = formatTickLabel(f, o.frameMs);
-      // 标签右边会越过画布边缘就整个不画（刻度线还在）——被裁掉一半反而比没有更难读
-      if (x + 4 + ctx.measureText(label).width <= width) {
-        ctx.fillStyle = p.rulerText;
-        ctx.fillText(label, x + 4, 9);
-        ctx.fillStyle = p.rulerTick;
-      }
+    if (x < 0 || x > width) continue;
+    // 0.5 秒分区的边界刻度长一点，和网格里的分区线对上
+    const tall = f % bandFrames === 0;
+    ctx.fillRect(x, rowsTop - (tall ? 12 : 9), 1, tall ? 11 : 8);
+    const text = String(f);
+    // 标签右边会越过画布边缘就整个不画（刻度线还在）——被裁掉一半反而比没有更难读
+    if (x + 3 + ctx.measureText(text).width <= width) {
+      ctx.fillStyle = p.rulerText;
+      ctx.fillText(text, x + 3, 9);
+      ctx.fillStyle = p.rulerTick;
     }
   }
 

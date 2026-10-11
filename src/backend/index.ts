@@ -67,6 +67,8 @@ const fs = {
     invoke<undefined>("open_in_explorer", { path }),
   open: (path: string) => invoke<undefined>("open", { path }),
   exists: (file: string) => invoke<boolean>("exists", { path: file }),
+  /** 目录是否为空（不存在也算空） */
+  isDirEmpty: (dir: string) => invoke<boolean>("is_dir_empty", { path: dir }),
   size: (file: string) => invoke<number>("size", { path: file }),
   list: (dir: string, exts: string[]) =>
     invoke<ManagedFile[]>("list", { path: dir, exts }),

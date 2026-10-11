@@ -55,6 +55,7 @@ Communication flow: `React Component → store/service → src/backend wrapper �
 - Ballance logic (`src-tauri/src/ballance/`): `options.rs` reads/writes `Database.tdb` (game options + scores), `tdb/` is a custom Virtools DB parser, `mod_config.rs` handles BML/BMLPlus INI configs, `brp.rs` validates/installs BRP resource packages.
 - **BRP 模组（`category: "mod"`）**：一个包里可以同时带 `.bmod`（老 BML）与 `.bmodp`（BML+）两份产物 —— 两种加载器各自只认自己的扩展名（BML+ 的 `ExploreMods` 只挑 `.zip`/`.bmodp`，老 BML 只挑 `.bmod`），对方的文件放着无害。安装时按实例**启用中**的加载器（`BuildingBlocks/BMLPlus.dll` / `BML.dll`，`.disable` 不算数）只装匹配的那一份；包里没匹配的就把现有的装上并置 `modVariantMismatch`（前端提示用户）；没有加载器时两份都装。目标目录与老类别一致：`ModLoader/Mods/`。`bmod`/`bmodp` 类别保留兼容。下载站侧规则见 `ballance-resource-hub/docs/mod-category.md`。
 - Serde structs must use `#[serde(rename_all = "camelCase")]` so Rust snake_case maps to the TS frontend.
+- **Commands without `async` run on the main thread** (the window / WebView event loop). Anything that waits — spawning a process and reading its output, sleeping, polling for a window — must be `#[command(async)]` (or `async fn`), otherwise the whole UI freezes while it runs. The TAS editor used to poll `check(pid)` every 400ms, which spawned `tasklist` (~330ms) on the main thread and made the editor stutter during playback. Prefer native Win32 calls (`OpenProcess`, Toolhelp snapshots) over spawning `tasklist`.
 - `tauri.conf.json` (not `package.json`) holds the **app version** for releases/updater — currently `2.1.0`; `package.json` version (`0.1.0`) is not the shipped version.
 
 ### C++ module (`src-bmodp/`)

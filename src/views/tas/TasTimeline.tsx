@@ -12,10 +12,8 @@ import {
   frameView,
   grabRun,
   hasKeyAt,
-  growToFit,
   moveBlock,
   normalizeSelection,
-  paintCell,
   snapDragToRun,
   type TasSelection
 } from "@/tas/editing";
@@ -35,8 +33,8 @@ import {
 import { t } from "@/i18n";
 import TasMinimap, { type TasMinimapHandle } from "./TasMinimap";
 
-/** 鼠标模式：选择（默认）/ 绘制 / 填充 / 录入。 */
-export type TasMouseMode = "select" | "draw" | "fill" | "record";
+/** 鼠标模式：选择（默认）/ 填充 / 录入 / 插删帧。 */
+export type TasMouseMode = "select" | "fill" | "record" | "frames";
 
 /** 轨道行高、顶部刻度尺高度。 */
 export const ROW_H = 26;
@@ -82,11 +80,15 @@ type Props = {
   hGrid: boolean;
   /** 「分区」：主刻度区间的交替底色（独立于纵线）。 */
   bands: boolean;
+  /** 网格线 / 分隔线深浅（0~1）。 */
+  gridStrength: number;
+  /** 「分格」视图：每一帧单独一格。 */
+  cellBlocks: boolean;
   /** 鼠标模式。 */
   mode: TasMouseMode;
   cursor: number;
   selection: TasSelection | null;
-  /** 锁定的轨道：绘制/擦除/覆盖/拖块/选区删除/粘贴全部跳过它。 */
+  /** 锁定的轨道：填充 / 录入覆盖 / 拖块 / 选区删除 / 粘贴全部跳过它（插删帧是整条时间轴的操作，不跳过）。 */
   locked: ReadonlySet<TasKey>;
   /** 录入模式：`Space` / `Esc` 被录入接管，不再当视图修饰键用。 */
   recording: boolean;
@@ -103,8 +105,10 @@ type Props = {
   onBeginOp: () => OpHandle;
   /** 数据被就地改了（渲染层自己重画；父组件用它标脏 / 记 lastTouched）。 */
   onMutated: (lastTouched: number) => void;
-  /** 选择模式下右键：把指针位置 + 命中的格交给父组件弹菜单（画/填充模式的右键仍是擦除/清除）。 */
+  /** 选择 / 录入模式下右键：把指针位置 + 命中的格交给父组件弹菜单（填充 / 插删帧模式的右键另有用途）。 */
   onMenu?: (at: { x: number; y: number; frame: number; track: number }) => void;
+  /** 插删帧模式松手：左键拖 = 在 f0 前插入 (f1-f0+1) 个空帧，右键拖 = 删掉 [f0, f1]。 */
+  onFrames?: (op: "insert" | "delete", f0: number, f1: number) => void;
 };
 
 type Cell = { frame: number; track: number };
@@ -120,15 +124,8 @@ type Drag =
   | { kind: "scrub" }
   | { kind: "region"; anchor: Cell }
   | { kind: "box"; anchor: Cell }
-  | {
-      kind: "paint";
-      value: boolean;
-      op: OpHandle;
-      changed: boolean;
-      last: Cell;
-      /** `Shift` 单行约束：限制在这一行（null = 不限制）。 */
-      rowLock: number | null;
-    }
+  /** 插删帧：拖出一段时间（盖满全部轨道），`insert` = 左键插入 / 右键删除。 */
+  | { kind: "frames"; insert: boolean; anchor: number }
   | {
       kind: "fill";
       value: boolean;
@@ -183,7 +180,8 @@ const TasTimeline = forwardRef<TasTimelineHandle, Props>(
       heightPx: 0,
       rowCount: props.order.length,
       rowH: ROW_H,
-      rulerH: RULER_H
+      rulerH: RULER_H,
+      frameMs: props.frameMs
     });
     const vpRef = useRef<Viewport>({
       cellW: props.defaultCellW,
@@ -240,7 +238,8 @@ const TasTimeline = forwardRef<TasTimelineHandle, Props>(
         heightPx: sizeRef.current.h,
         rowCount: propsRef.current.order.length,
         rowH: ROW_H,
-        rulerH: RULER_H
+        rulerH: RULER_H,
+        frameMs: propsRef.current.frameMs
       };
       return boundsRef.current;
     };
@@ -281,6 +280,8 @@ const TasTimeline = forwardRef<TasTimelineHandle, Props>(
         vGrid: p.vGrid,
         hGrid: p.hGrid,
         bands: p.bands,
+        gridStrength: p.gridStrength,
+        cellBlocks: p.cellBlocks,
         dark: p.dark,
         ghost: ghostRef.current,
         fill: fillRef.current
@@ -293,7 +294,7 @@ const TasTimeline = forwardRef<TasTimelineHandle, Props>(
       miniRef.current?.setViewport(
         vp.scroll,
         vp.scroll + w / vp.cellW,
-        paintableFrames(p.tas.frameCount)
+        paintableFrames(p.tas.frameCount, p.frameMs)
       );
     };
 
@@ -479,12 +480,33 @@ const TasTimeline = forwardRef<TasTimelineHandle, Props>(
         },
         fitAll: () => {
           const b = boundsRef.current;
-          zoomRange(0, paintableFrames(b.frameCount));
+          zoomRange(0, paintableFrames(b.frameCount, b.frameMs));
         }
       }),
       // eslint-disable-next-line react-hooks/exhaustive-deps
       []
     );
+
+    /**
+     * 放弃当前拖动：插删帧 / 填充 / 搬块都是松手才提交的，这里只丢掉预览、不进撤销栈。
+     * `Esc` 和系统取消指针（pointercancel：失焦、触控被系统接管…）共用 ——
+     * 被系统取消的拖动不能当成「松手」提交，插删帧模式下那等于凭空插 / 删一段帧。
+     */
+    const abortDrag = () => {
+      const drag = dragRef.current;
+      if (drag?.kind === "frames") {
+        fillRef.current = null;
+      } else if (drag?.kind === "fill") {
+        drag.op.discard();
+        fillRef.current = null;
+      } else if (drag?.kind === "move") {
+        drag.op.discard();
+        cursorOverrideRef.current = null;
+      }
+      ghostRef.current = null;
+      dragRef.current = null;
+      requestDraw();
+    };
 
     // ---------------------------------------------------------------- 键盘（视口相关）
 
@@ -533,21 +555,7 @@ const TasTimeline = forwardRef<TasTimelineHandle, Props>(
           case "Escape": {
             // 录入模式下 Esc 是录入键，不用于取消拖动/选区
             if (propsRef.current.recording) break;
-            // 取消拖动：数据已经改过的（涂改）要留下撤销记录，否则用户撤不掉
-            const drag = dragRef.current;
-            if (drag?.kind === "paint") {
-              if (drag.changed) drag.op.commit();
-              else drag.op.discard();
-              cursorOverrideRef.current = null;
-            } else if (drag?.kind === "fill") {
-              drag.op.discard();
-              fillRef.current = null;
-            } else if (drag?.kind === "move") {
-              drag.op.discard();
-            }
-            ghostRef.current = null;
-            dragRef.current = null;
-            requestDraw();
+            abortDrag();
             break;
           }
           default:
@@ -672,7 +680,7 @@ const TasTimeline = forwardRef<TasTimelineHandle, Props>(
         hit.track >= 0 &&
         hit.track < p.order.length &&
         hit.frame >= 0 &&
-        hit.frame < paintableFrames(p.tas.frameCount);
+        hit.frame < paintableFrames(p.tas.frameCount, p.frameMs);
       const next = inside ? { frame: hit.frame, track: hit.track } : null;
       const prev = hoverRef.current;
       const same =
@@ -691,10 +699,10 @@ const TasTimeline = forwardRef<TasTimelineHandle, Props>(
      * 画布的鼠标指针：按「正在拖什么 → 修饰键 → 悬停的格子 → 鼠标模式」决定。
      * 只在 rAF（悬停变了）、按下 / 松开、Space / Alt 变化、换模式时调，不在每个指针事件里调。
      *
-     * 拖动：平移 / 搬块 = grabbing，拖刻度尺 = ew-resize，填充 = cell，其余 = crosshair；
-     * 不拖：Space 按着 = grab，刻度尺 = ew-resize，锁定的轨道 = not-allowed，
+     * 拖动：平移 / 搬块 = grabbing，拖刻度尺 = ew-resize，填充 = cell，插删帧 = col-resize，其余 = crosshair；
+     * 不拖：Space 按着 = grab，刻度尺 = ew-resize，插删帧 = col-resize，锁定的轨道 = not-allowed，
      * Alt 悬停在一段按键上 = grab（可以拖走），选择模式悬停在按键上 = pointer，
-     * 绘制 / 录入 = crosshair，填充 = cell，空白处 = default。
+     * 录入 = crosshair，填充 = cell，空白处 = default。
      */
     const updateCursor = () => {
       const el = canvasRef.current;
@@ -710,11 +718,20 @@ const TasTimeline = forwardRef<TasTimelineHandle, Props>(
               ? "ew-resize"
               : drag.kind === "fill"
                 ? "cell"
-                : "crosshair";
+                : drag.kind === "frames"
+                  ? "col-resize"
+                  : "crosshair";
       } else if (spaceRef.current && !p.recording) {
         cursor = "grab";
       } else if (mouseRef.current.inside && hoverRulerRef.current) {
         cursor = "ew-resize";
+      } else if (
+        mouseRef.current.inside &&
+        hoverRef.current &&
+        p.mode === "frames"
+      ) {
+        // 插删帧作用于整条时间轴：锁定轨道也一起移，所以这里不显示 not-allowed
+        cursor = "col-resize";
       } else if (mouseRef.current.inside && hoverRef.current) {
         const cell = hoverRef.current;
         const key = p.order[cell.track];
@@ -743,20 +760,6 @@ const TasTimeline = forwardRef<TasTimelineHandle, Props>(
     const markMutated = (frame: number) => {
       miniDirtyRef.current = true;
       propsRef.current.onMutated(frame);
-    };
-
-    /** 涂一格（必要时把数据加长）。锁定轨道、越界返回 false。 */
-    const paintOne = (cell: Cell, value: boolean): boolean => {
-      const p = propsRef.current;
-      const key = p.order[cell.track];
-      if (!key || p.locked.has(key)) return false;
-      if (cell.frame < 0 || cell.frame >= paintableFrames(p.tas.frameCount))
-        return false;
-      if (value) growToFit(p.tas, cell.frame, p.frameMs);
-      const changed = paintCell(p.tas, cell.frame, key, value);
-      if (changed) markMutated(cell.frame);
-      cursorOverrideRef.current = cell.frame;
-      return changed;
     };
 
     /** 填充拖动：矩形 = 锚点行..当前行 × 锚点帧..当前帧（Shift = 只改起点那一行）。 */
@@ -829,7 +832,10 @@ const TasTimeline = forwardRef<TasTimelineHandle, Props>(
         p.onCursor(
           Math.max(
             0,
-            Math.min(paintableFrames(p.tas.frameCount) - 1, hit.frame)
+            Math.min(
+              paintableFrames(p.tas.frameCount, p.frameMs) - 1,
+              hit.frame
+            )
           )
         );
         capture(e);
@@ -871,6 +877,39 @@ const TasTimeline = forwardRef<TasTimelineHandle, Props>(
         };
         capture(e);
         requestDraw();
+        return;
+      }
+
+      // 插删帧：左键拖 = 插入、右键拖 = 删除，都是「一段时间」（纵向盖满全部轨道），松手才提交
+      if (p.mode === "frames") {
+        const f = Math.max(0, hit.frame);
+        dragRef.current = { kind: "frames", insert: e.button !== 2, anchor: f };
+        fillRef.current = {
+          f0: f,
+          f1: f,
+          t0: 0,
+          t1: p.order.length - 1,
+          value: e.button !== 2
+        };
+        capture(e);
+        requestDraw();
+        return;
+      }
+
+      // 录入模式右键 = 弹菜单（点在已有选区里就保留选区，菜单里的插入 / 删除帧按选区算）
+      if (p.mode === "record" && e.button === 2) {
+        const sel = p.selection;
+        const inSel = !!sel && hit.frame >= sel.f0 && hit.frame <= sel.f1;
+        if (!inSel) {
+          p.onCursor(hit.frame);
+          p.onSelection(null);
+        }
+        p.onMenu?.({
+          x: e.clientX,
+          y: e.clientY,
+          frame: hit.frame,
+          track: hit.track
+        });
         return;
       }
 
@@ -928,7 +967,7 @@ const TasTimeline = forwardRef<TasTimelineHandle, Props>(
         return;
       }
 
-      // `Shift` = 单行约束（绘制/填充模式内）：只有起点那一行会被改
+      // `Shift` = 单行约束（填充模式内）：只有起点那一行会被改
       const rowLock = e.shiftKey ? hit.track : null;
 
       // 填充模式：左/右拖出一个矩形，松手才提交（一次撤销单位）
@@ -947,32 +986,18 @@ const TasTimeline = forwardRef<TasTimelineHandle, Props>(
         return;
       }
 
-      // 绘制模式：左键 = 绘制、右键 = 擦除，语义固定，按住拖过去连续涂。
-      const value = e.button !== 2;
-      if (p.selection) p.onSelection(null); // 普通点击取消选区
-      const paintDrag: Extract<Drag, { kind: "paint" }> = {
-        kind: "paint",
-        value,
-        op: p.onBeginOp(),
-        changed: false,
-        last: { frame: hit.frame, track: hit.track },
-        rowLock
-      };
-      dragRef.current = paintDrag;
-      paintDrag.changed = paintOne(
-        { frame: hit.frame, track: hit.track },
-        value
-      );
-      capture(e);
-      requestDraw();
       void rect;
     };
 
-    /** 选择模式下右键弹菜单（指针位置 + 命中的格）。其它模式的右键保留原义：画 = 擦除、填充 = 清除。 */
+    /**
+     * 浏览器自己的右键菜单一律不要。选择 / 录入模式的菜单已经在 pointerdown 里弹过了；
+     * 这里只兜底键盘菜单键这类没有 pointerdown 的情况（填充 = 清除、插删帧 = 删除，右键另有用途）。
+     */
     const onContextMenu = (e: React.MouseEvent<HTMLCanvasElement>) => {
       const p = propsRef.current;
-      if (p.mode !== "select") return;
       e.preventDefault();
+      if (e.button === 2 || (p.mode !== "select" && p.mode !== "record"))
+        return;
       const hit = cellAt(e as unknown as React.PointerEvent<HTMLCanvasElement>);
       if (!hit) return;
       p.onMenu?.({
@@ -1011,7 +1036,11 @@ const TasTimeline = forwardRef<TasTimelineHandle, Props>(
           break;
         }
         case "scrub": {
-          const limit = paintableFrames(propsRef.current.tas.frameCount) - 1;
+          const limit =
+            paintableFrames(
+              propsRef.current.tas.frameCount,
+              propsRef.current.frameMs
+            ) - 1;
           propsRef.current.onCursor(Math.max(0, Math.min(limit, hit.frame)));
           break;
         }
@@ -1048,23 +1077,16 @@ const TasTimeline = forwardRef<TasTimelineHandle, Props>(
           });
           break;
         }
-        case "paint": {
-          // `Shift` 单行约束：鼠标纵向跨到别的轨道也不写那些轨道
-          const track = drag.rowLock ?? hit.track;
-          const from = drag.last;
-          if (track === from.track) {
-            // 拖动跨了很多格也要一格不漏地涂过去
-            const step = hit.frame >= from.frame ? 1 : -1;
-            for (let f = from.frame; ; f += step) {
-              if (paintOne({ frame: f, track }, drag.value))
-                drag.changed = true;
-              if (f === hit.frame) break;
-            }
-          } else if (paintOne({ frame: hit.frame, track }, drag.value)) {
-            drag.changed = true;
-          }
-          drag.last = { frame: hit.frame, track };
-          hoverRef.current = { frame: hit.frame, track };
+        case "frames": {
+          const p = propsRef.current;
+          const f = Math.max(0, hit.frame);
+          fillRef.current = {
+            f0: Math.min(drag.anchor, f),
+            f1: Math.max(drag.anchor, f),
+            t0: 0,
+            t1: p.order.length - 1,
+            value: drag.insert
+          };
           requestDraw();
           break;
         }
@@ -1115,12 +1137,17 @@ const TasTimeline = forwardRef<TasTimelineHandle, Props>(
         ghostRef.current = null;
         return;
       }
-      if (drag.kind === "paint") {
-        if (drag.changed) drag.op.commit();
-        else drag.op.discard();
-        if (cursorOverrideRef.current !== null) {
-          propsRef.current.onCursor(cursorOverrideRef.current);
-          cursorOverrideRef.current = null;
+      if (drag.kind === "frames") {
+        // 交给编辑器做（要动撤销栈、光标、选区）；数据长度会变，缩略图也要重算
+        const fl = fillRef.current;
+        fillRef.current = null;
+        if (fl) {
+          propsRef.current.onFrames?.(
+            drag.insert ? "insert" : "delete",
+            fl.f0,
+            fl.f1
+          );
+          miniDirtyRef.current = true;
         }
       } else if (drag.kind === "fill") {
         // 松手才提交：整个矩形算一次撤销单位
@@ -1311,7 +1338,15 @@ const TasTimeline = forwardRef<TasTimelineHandle, Props>(
               onPointerMove={onPointerMove}
               onPointerUp={endDrag}
               onContextMenu={onContextMenu}
-              onPointerCancel={endDrag}
+              onPointerCancel={e => {
+                try {
+                  e.currentTarget.releasePointerCapture(e.pointerId);
+                } catch {
+                  // 已经释放了
+                }
+                abortDrag();
+                updateCursor();
+              }}
               onPointerLeave={() => {
                 mouseRef.current.inside = false;
                 if (hoverRef.current) {

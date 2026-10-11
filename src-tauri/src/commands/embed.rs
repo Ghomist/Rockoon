@@ -69,10 +69,13 @@ fn unsupported() -> RcError {
     RcError::Other("game window embedding is only supported on Windows".into())
 }
 
+/// 这一组命令都是 `async`（跑在异步运行时的线程上，不占主线程）：attach 要等游戏建窗口，
+/// 最多 30 秒；没写 async 的 Tauri 命令跑在主线程，等的这段时间整个编辑器都会卡住。
+///
 /// 找到 pid 对应的游戏主窗口并摆到「发起 IPC 的那个窗口」的客户区 (x,y,w,h)。
 /// 找窗口每 50ms 重试一次，最多 30 秒（游戏启动 / 建窗口需要时间），超时报错。
 /// 返回 child_hwnd（i64）。
-#[tauri::command]
+#[tauri::command(async)]
 pub fn attach_game_window(
     window: tauri::Window,
     pid: u32,
@@ -93,7 +96,7 @@ pub fn attach_game_window(
 }
 
 /// 编辑器分栏变了 / 窗口被拖动：把游戏窗口重新摆到新的客户区 rect。
-#[tauri::command]
+#[tauri::command(async)]
 pub fn move_game_window(x: i32, y: i32, width: i32, height: i32) -> RcResult {
     #[cfg(target_os = "windows")]
     {
@@ -107,7 +110,7 @@ pub fn move_game_window(x: i32, y: i32, width: i32, height: i32) -> RcResult {
 }
 
 /// 解除：还原游戏窗口的样式 / owner / 原始位置。幂等（没嵌入时直接成功）。
-#[tauri::command]
+#[tauri::command(async)]
 pub fn detach_game_window() -> RcResult {
     #[cfg(target_os = "windows")]
     {
@@ -120,7 +123,7 @@ pub fn detach_game_window() -> RcResult {
 }
 
 /// 切换「可交互」：true = 鼠标键盘交给游戏（并把前台给它），false = 只看不碰（前台还给编辑器）。
-#[tauri::command]
+#[tauri::command(async)]
 pub fn set_game_window_interactive(interactive: bool) -> RcResult {
     #[cfg(target_os = "windows")]
     {
@@ -134,7 +137,7 @@ pub fn set_game_window_interactive(interactive: bool) -> RcResult {
 }
 
 /// 查询当前嵌入状态（有没有、pid、hwnd、焦点、客户区 rect）。
-#[tauri::command]
+#[tauri::command(async)]
 pub fn game_window_info() -> RcResultWith<GameWindowInfo> {
     #[cfg(target_os = "windows")]
     {

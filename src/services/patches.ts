@@ -3,6 +3,7 @@ import { join } from "@tauri-apps/api/path";
 
 import backend from "@/backend";
 import { hubFetch, hubUrl } from "@/services/hub";
+import { useAppStore } from "@/stores/app";
 import { useDownloadsStore } from "@/stores/downloads";
 import { usePrefStore } from "@/stores/pref";
 import { t } from "@/i18n";
@@ -44,7 +45,9 @@ function downloadUrl(
 ): string {
   if (!component.package_id) throw new Error("该补丁还没有可下载的版本");
   return fileVersion
-    ? hubUrl(`/packages/${component.package_id}/versions/${fileVersion}/download`)
+    ? hubUrl(
+        `/packages/${component.package_id}/versions/${fileVersion}/download`
+      )
     : hubUrl(`/packages/${component.package_id}/download`);
 }
 
@@ -87,13 +90,17 @@ let recordCache: { instancePath: string; record: PatchRecord } | null = null;
 
 async function readPatchRecord(instancePath: string): Promise<PatchRecord> {
   try {
-    const path = await join(await patchRecordDir(instancePath), PATCH_RECORD_FILE);
+    const path = await join(
+      await patchRecordDir(instancePath),
+      PATCH_RECORD_FILE
+    );
     if (!(await backend.exists(path))) {
       recordCache = { instancePath, record: {} };
       return {};
     }
     const parsed: unknown = JSON.parse(await backend.readTextFile(path));
-    const record = parsed && typeof parsed === "object" ? (parsed as PatchRecord) : {};
+    const record =
+      parsed && typeof parsed === "object" ? (parsed as PatchRecord) : {};
     recordCache = { instancePath, record };
     return record;
   } catch (e) {
@@ -159,7 +166,9 @@ export async function detectInstalled(
     if (!(await detectPlayer(instancePath))) return null;
     // 两种构建的本质是同一个补丁：记录里哪个 player key 有值都算数
     const record = await readPatchRecord(instancePath);
-    const tag = PLAYER_KEYS.map(key => record[key]?.tag).find(value => Boolean(value));
+    const tag = PLAYER_KEYS.map(key => record[key]?.tag).find(value =>
+      Boolean(value)
+    );
     return tag ?? installedPlayerVersion() ?? "";
   }
   const dir = await patchTargetDir(component, instancePath);
@@ -307,6 +316,17 @@ export async function installPatchAsTask(
   });
   if (duplicate) return false;
   await installPatch(component, instancePath, target, task.id);
+  // 装到的是当前游戏就重新识别一次：加载器类型 / 新 Player 是在 loadInstance 时
+  // 扫文件得出的，不重扫的话界面一直按装补丁之前的状态显示
+  // 重扫失败不能把「已经装好」报成失败（任务已经标成功了，调用方也会据此停掉后面的补丁）
+  const app = useAppStore.getState();
+  if (app.selectedInstanceData?.path === instancePath) {
+    try {
+      await app.loadInstance(instancePath);
+    } catch (e) {
+      console.warn("Rescan after patch install failed:", e);
+    }
+  }
   return true;
 }
 
@@ -380,10 +400,15 @@ export async function detectPlayer(instancePath: string): Promise<boolean> {
 }
 
 /** Player 在记录文件里的版本（记录文件异步读，这里只读缓存） */
-function playerRecordVersions(): Partial<Record<(typeof PLAYER_KEYS)[number], string>> {
+function playerRecordVersions(): Partial<
+  Record<(typeof PLAYER_KEYS)[number], string>
+> {
   const record = recordCache?.record ?? {};
   return Object.fromEntries(
-    PLAYER_KEYS.filter(key => record[key]?.tag).map(key => [key, record[key].tag])
+    PLAYER_KEYS.filter(key => record[key]?.tag).map(key => [
+      key,
+      record[key].tag
+    ])
   );
 }
 
@@ -391,7 +416,9 @@ function playerRecordVersions(): Partial<Record<(typeof PLAYER_KEYS)[number], st
 export function installedPlayerBuild():
   | (typeof PLAYER_KEYS)[number]
   | undefined {
-  const fromRecord = Object.keys(playerRecordVersions()) as (typeof PLAYER_KEYS)[number][];
+  const fromRecord = Object.keys(
+    playerRecordVersions()
+  ) as (typeof PLAYER_KEYS)[number][];
   if (fromRecord.length === 1) return fromRecord[0];
   if (fromRecord.length > 1) return undefined;
   // 记录文件里没有（老版本装的）→ 退回老配置
@@ -402,11 +429,15 @@ export function installedPlayerBuild():
 
 /** 新 Player 的版本号（不管当时装的是哪种构建） */
 export function installedPlayerVersion(): string | undefined {
-  const fromRecord = Object.values(playerRecordVersions()).find(value => Boolean(value));
+  const fromRecord = Object.values(playerRecordVersions()).find(value =>
+    Boolean(value)
+  );
   if (fromRecord) return fromRecord;
   // 记录文件里没有（老版本装的）→ 退回老配置
   const versions = usePrefStore.getState().patchVersions ?? {};
-  return versions[DEFAULT_PLAYER_KEY] ?? versions["player-msvc2022"] ?? undefined;
+  return (
+    versions[DEFAULT_PLAYER_KEY] ?? versions["player-msvc2022"] ?? undefined
+  );
 }
 
 /** 找出与它互斥、且当前确实装着的补丁（装之前要先处理掉这些） */

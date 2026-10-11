@@ -35,6 +35,7 @@ pub fn run() {
             commands::fs::open_in_explorer,
             commands::fs::open,
             commands::fs::exists,
+            commands::fs::is_dir_empty,
             commands::fs::size,
             commands::fs::list,
             commands::fs::list_dirs,

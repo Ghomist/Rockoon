@@ -45,17 +45,15 @@ function Combo({ keys }: { keys: string[] }) {
   );
 }
 
-type Hint = { keys: string[]; label: string };
-
 /** 说明条里的一条：几种按法（之间用「/」隔开，每种是一组同时按的键，用「+」连）+ 说明。 */
 type BarHint = { combos: string[][]; label: string };
 
 /** 每种鼠标模式的名字和切换键（和编辑面板里的四选一一致）。 */
 const MODE_META: Record<TasMouseMode, { labelKey: string; key: string }> = {
   select: { labelKey: "tas.modeSelect", key: "1" },
-  draw: { labelKey: "tas.modeDraw", key: "2" },
-  fill: { labelKey: "tas.modeFill", key: "3" },
-  record: { labelKey: "tas.modeRecord", key: "4" }
+  fill: { labelKey: "tas.modeFill", key: "2" },
+  record: { labelKey: "tas.modeRecord", key: "3" },
+  frames: { labelKey: "tas.modeFrames", key: "4" }
 };
 
 /** 说明条左半：当前鼠标模式下最常用的几条。 */
@@ -68,15 +66,7 @@ function modeHints(mode: TasMouseMode): BarHint[] {
     select: [
       { combos: [[kbd("click")]], label: h("selectClick") },
       { combos: [[kbd("drag")]], label: h("selectDrag") },
-      { combos: [["←"], ["→"]], label: h("selectFrame") },
-      { combos: [["↑"], ["↓"]], label: h("selectTrack") },
       { combos: [["Delete"]], label: h("selectDelete") },
-      move
-    ],
-    draw: [
-      { combos: [[kbd("left")]], label: h("drawPaint") },
-      { combos: [[kbd("right")]], label: h("drawErase") },
-      row,
       move
     ],
     fill: [
@@ -91,7 +81,13 @@ function modeHints(mode: TasMouseMode): BarHint[] {
         combos: [["↑←→↓"], ["Shift"], ["Space"], ["Q"], ["Enter"], ["Esc"]],
         label: h("recordKeys")
       },
-      { combos: [["Tab"], ["Shift", "Tab"]], label: h("recordStep") }
+      { combos: [["Tab"], ["Shift", "Tab"]], label: h("recordStep") },
+      { combos: [[kbd("right")]], label: h("menu") }
+    ],
+    frames: [
+      { combos: [[kbd("left"), kbd("drag")]], label: h("framesInsert") },
+      { combos: [[kbd("right"), kbd("drag")]], label: h("framesDelete") },
+      move
     ]
   };
   return byMode[mode];
@@ -132,47 +128,100 @@ function BarItem({ hint }: { hint: BarHint }) {
   );
 }
 
-/** 帮助模态里的完整快捷键表。 */
-function helpRows(): Hint[] {
+/**
+ * 帮助模态里的完整快捷键表。和说明条同一个约定：`combos` 是几种按法（之间显示「/」），
+ * 每种按法里是同时按的键（之间显示「+」）—— 不能把「几种按法」拼成一个组合键，
+ * 那样会显示成 `1 + 2 + 3 + 4`、`Ctrl + C + X + V`，照着按是按不出来的。
+ */
+function helpRows(): BarHint[] {
   const kbd = (key: string) => t(`tas.kbd.${key}`);
+  const r = (key: string) => t(`tas.helpRows.${key}`);
   return [
-    { keys: ["1", "2", "3", "4"], label: t("tas.helpRows.modes") },
-    { keys: [kbd("click")], label: t("tas.helpRows.pickRun") },
-    { keys: [kbd("drag")], label: t("tas.helpRows.boxSelect") },
-    { keys: [kbd("arrows")], label: t("tas.helpRows.moveRun") },
-    { keys: [kbd("left")], label: t("tas.helpRows.paint") },
-    { keys: [kbd("right")], label: t("tas.helpRows.erase") },
+    { combos: [["1"], ["2"], ["3"], ["4"]], label: r("modes") },
+    { combos: [["F5"]], label: r("playCursor") },
+    { combos: [["Ctrl", "F5"]], label: r("playStart") },
+    { combos: [["Shift", "F5"]], label: r("playStop") },
+    { combos: [[","], ["."]], label: r("playSpeed") },
+    { combos: [[kbd("click")]], label: r("pickRun") },
+    { combos: [[kbd("drag")]], label: r("boxSelect") },
+    { combos: [[kbd("right")]], label: r("menu") },
     {
-      keys: [kbd("left"), kbd("right"), kbd("drag")],
-      label: t("tas.helpRows.fill")
+      combos: [
+        [kbd("left"), kbd("drag")],
+        [kbd("right"), kbd("drag")]
+      ],
+      label: r("fill")
     },
-    { keys: [kbd("drag")], label: t("tas.helpRows.select") },
-    { keys: ["Shift", kbd("drag")], label: t("tas.helpRows.row") },
-    { keys: ["Alt", kbd("drag")], label: t("tas.helpRows.move") },
-    { keys: ["[", "]"], label: t("tas.helpRows.jumpRun") },
-    { keys: ["W", "S"], label: t("tas.helpRows.zoom") },
-    { keys: ["A", "D"], label: t("tas.helpRows.pan") },
-    { keys: [kbd("wheel")], label: t("tas.helpRows.wheel") },
+    { combos: [[kbd("drag")]], label: r("select") },
     {
-      keys: ["Space", kbd("middle"), kbd("drag")],
-      label: t("tas.helpRows.view")
+      combos: [["↑←→↓"], ["Shift"], ["Space"], ["Q"], ["Enter"], ["Esc"]],
+      label: r("recordKeys")
     },
-    { keys: ["Tab", "Shift", "Tab"], label: t("tas.helpRows.tab") },
-    { keys: ["Home", "End"], label: t("tas.helpRows.home") },
-    { keys: ["Delete", "Backspace"], label: t("tas.helpRows.clear") },
-    { keys: ["Ctrl", "Z"], label: t("tas.helpRows.undo") },
-    { keys: ["Ctrl", "C", "X", "V"], label: t("tas.helpRows.clip") },
-    { keys: ["Esc"], label: t("tas.helpRows.esc") },
-    { keys: [kbd("trackHeader")], label: t("tas.helpRows.reorder") },
-    { keys: [], label: t("tas.helpRows.lock") }
+    {
+      combos: [
+        [kbd("left"), kbd("drag")],
+        [kbd("right"), kbd("drag")]
+      ],
+      label: r("frames")
+    },
+    { combos: [["Shift", kbd("drag")]], label: r("row") },
+    { combos: [["Alt", kbd("drag")]], label: r("move") },
+    { combos: [["["], ["]"]], label: r("jumpRun") },
+    { combos: [["W"], ["S"], ["+"], ["-"]], label: r("zoom") },
+    { combos: [["A"], ["D"]], label: r("pan") },
+    { combos: [[kbd("wheel")]], label: r("wheel") },
+    {
+      combos: [
+        ["Space", kbd("drag")],
+        [kbd("middle"), kbd("drag")]
+      ],
+      label: r("view")
+    },
+    { combos: [["Tab"], ["Shift", "Tab"]], label: r("tab") },
+    { combos: [["Home"], ["End"]], label: r("home") },
+    { combos: [["Delete"], ["Backspace"]], label: r("clear") },
+    { combos: [["Ctrl", "Z"]], label: r("undo") },
+    {
+      combos: [
+        ["Ctrl", "Shift", "Z"],
+        ["Ctrl", "Y"]
+      ],
+      label: r("redo")
+    },
+    {
+      combos: [
+        ["Ctrl", "C"],
+        ["Ctrl", "X"],
+        ["Ctrl", "V"]
+      ],
+      label: r("clip")
+    },
+    {
+      combos: [
+        ["Ctrl", "S"],
+        ["Ctrl", "Shift", "S"]
+      ],
+      label: r("save")
+    },
+    { combos: [["Esc"]], label: r("esc") },
+    { combos: [[kbd("trackHeader")]], label: r("reorder") },
+    { combos: [], label: r("lock") }
   ];
 }
 
-function Row({ hint }: { hint: Hint }) {
+/** 帮助表里的一行：按法（可能好几种）+ 说明；按法列定宽，说明对齐。 */
+function Row({ hint }: { hint: BarHint }) {
   return (
-    <div className="flex items-start gap-2">
-      <Combo keys={hint.keys} />
-      <span className="text-xs leading-4">{hint.label}</span>
+    <div className="grid grid-cols-[minmax(0,14rem)_1fr] items-start gap-3">
+      <span className="flex flex-wrap items-center gap-1">
+        {hint.combos.map((combo, i) => (
+          <span key={i} className="flex items-center gap-1">
+            {i > 0 && <span className="text-xs text-muted-foreground">/</span>}
+            <Combo keys={combo} />
+          </span>
+        ))}
+      </span>
+      <span className="text-xs leading-5">{hint.label}</span>
     </div>
   );
 }

@@ -5,8 +5,6 @@
  * 算出来。scroll 用「帧」而不是「像素」当单位，缩放时锚点保持不动才直观。
  */
 
-import { GROW_MARGIN_FRAMES } from "./editing";
-
 export type Viewport = {
   /** 每帧像素宽（MIN_CELL_W ~ MAX_CELL_W）。 */
   cellW: number;
@@ -45,6 +43,8 @@ export type TimelineBounds = {
   rowCount: number;
   rowH: number;
   rulerH: number;
+  /** 全局帧时长（毫秒）：末尾留白按「秒」算，要换算成帧。 */
+  frameMs: number;
 };
 
 export function clampCellW(w: number): number {
@@ -61,9 +61,25 @@ export function xAtFrame(vp: Viewport, frame: number): number {
   return (frame - vp.scroll) * vp.cellW;
 }
 
-/** 可绘制的总帧数 = 数据帧数 + 右侧余量（画进余量里会自动加长数据）。 */
-export function paintableFrames(frameCount: number): number {
-  return frameCount + GROW_MARGIN_FRAMES;
+/** 数据末尾之后永远留出这么多秒的空白，随时可以往里加帧（画进去数据才加长）。 */
+export const TAIL_SECONDS = 2;
+
+/** 末尾留白的帧数（帧时长不合法时按 240 fps 算）。 */
+export function tailFrames(frameMs: number): number {
+  const ms = frameMs > 0 && Number.isFinite(frameMs) ? frameMs : 1000 / 240;
+  return Math.max(1, Math.ceil((TAIL_SECONDS * 1000) / ms));
+}
+
+/** 可编辑的总帧数 = 数据帧数 + 末尾留白（`TAIL_SECONDS` 秒）。 */
+export function paintableFrames(frameCount: number, frameMs: number): number {
+  return frameCount + tailFrames(frameMs);
+}
+
+/** 最小缩放 =「适应全长」（数据 + 末尾留白刚好铺满宽度）；内容很短时不超过 MAX_CELL_W。 */
+export function minCellW(b: TimelineBounds): number {
+  if (b.widthPx <= 0) return MIN_CELL_W;
+  const fit = b.widthPx / Math.max(1, paintableFrames(b.frameCount, b.frameMs));
+  return Math.min(MAX_CELL_W, Math.max(MIN_CELL_W, fit));
 }
 
 /** 可见帧区间（半开 `[first, last)`，已夹在 [0, paintable] 内）。 */
@@ -75,10 +91,11 @@ export function visibleFrames(vp: Viewport, widthPx: number): { first: number; l
 
 /** 把视口夹进合法范围：左侧不能为负、右侧要够得着余量末尾；纵向同理。 */
 export function clampViewport(vp: Viewport, b: TimelineBounds): Viewport {
-  const cellW = clampCellW(vp.cellW);
+  // 缩小不能超过「适应全长」：再小就只是在右边多出一片不能编辑的空白
+  const cellW = Math.min(MAX_CELL_W, Math.max(minCellW(b), vp.cellW));
   const span = b.widthPx / cellW;
-  // 内容比视口窄时贴左（scroll=0），否则最多滚到「余量末尾」
-  const maxScroll = Math.max(0, paintableFrames(b.frameCount) - span);
+  // 内容比视口窄时贴左（scroll=0），否则最多滚到「末尾留白」的尽头
+  const maxScroll = Math.max(0, paintableFrames(b.frameCount, b.frameMs) - span);
   const scroll = Math.min(maxScroll, Math.max(0, vp.scroll));
   const rowsH = b.rowCount * b.rowH;
   const maxY = Math.max(0, rowsH - (b.heightPx - b.rulerH));
@@ -156,6 +173,29 @@ export function tickFrames(cellW: number, frameMs: number): { major: number; min
       m => Number.isInteger(m) && m >= 1 && m * cellW >= MINOR_MIN_PX
     ) ?? 0;
   return { major, minor };
+}
+
+/** 刻度尺帧号标签的候选步长（「好看」的整数：1 / 2 / 5 / 10 / 20 / 25 / 50 …）。 */
+const LABEL_STEPS = (() => {
+  const out: number[] = [];
+  for (let p = 1; p <= 1e7; p *= 10) out.push(p, 2 * p, 2.5 * p, 5 * p);
+  return out.filter(n => Number.isInteger(n));
+})();
+
+/**
+ * 刻度尺上的帧号标签多久标一个：放得下就尽量密（放大到够宽时每一帧都标）。
+ * 标签宽度按「最大帧号的位数」估，保证最长的那个也不会和下一个挤在一起。
+ * `minor` = 标签之间的短刻度步长（整除 `label`，间距至少 6px；放不下 = 0）。
+ */
+export function rulerSteps(cellW: number, maxFrame: number): { label: number; minor: number } {
+  const digits = String(Math.max(1, Math.floor(maxFrame))).length;
+  const minPx = digits * 6.5 + 12;
+  const label = LABEL_STEPS.find(n => n * cellW >= minPx) ?? LABEL_STEPS[LABEL_STEPS.length - 1];
+  const minor =
+    [1, label / 10, label / 5, label / 2].find(
+      m => Number.isInteger(m) && m >= 1 && m < label && m * cellW >= 6
+    ) ?? 0;
+  return { label, minor };
 }
 
 /** 秒 → 标签里的时间：≥60s 用 `1:23.456`，否则 `12.345s`（固定 3 位小数）。 */

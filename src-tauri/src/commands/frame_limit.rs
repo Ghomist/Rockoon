@@ -22,7 +22,7 @@ pub struct FrameLimitInfo {
 }
 
 /// 设定游戏 pid 的目标帧率（`fps <= 0` = 不限速）。
-#[tauri::command]
+#[tauri::command(async)]
 pub fn set_game_frame_limit(pid: u32, fps: f32) -> RcResult {
     #[cfg(target_os = "windows")]
     {
@@ -40,7 +40,7 @@ pub fn set_game_frame_limit(pid: u32, fps: f32) -> RcResult {
 }
 
 /// 读游戏 pid 的目标帧率与实测帧率。
-#[tauri::command]
+#[tauri::command(async)]
 pub fn game_frame_limit(pid: u32) -> RcResultWith<FrameLimitInfo> {
     #[cfg(target_os = "windows")]
     {

@@ -17,12 +17,6 @@ import {
 /** 全部按键的掩码（判断「这一帧有没有按键」用）。 */
 export const ALL_KEYS_MASK = (1 << KEY_BITS.length) - 1;
 
-/**
- * 编辑到末尾时向右留出的余量（帧）。
- * 绘制到接近末尾就把数据加长这么多，免得画一帧就要重算一次长度。
- */
-export const GROW_MARGIN_FRAMES = 120;
-
 // ---------------------------------------------------------------- 读位：一次 DataView，避免每格 new
 
 /** 帧数据的 DataView。内层循环（渲染、扫描）每次 `new DataView` 太浪费，统一走这里。 */
@@ -372,13 +366,69 @@ export function ensureFrames(
   return true;
 }
 
-/** 编辑到 `frame` 之后自动加长：新长度 = max(现有, frame + 1 + 余量)。 */
+/**
+ * 编辑到数据末尾之后：刚好加长到 `frame + 1`。
+ * 末尾那段「随时可以往里加帧」的空白只是视图上的（`paintableFrames`），不写进数据。
+ */
 export function growToFit(
   tas: TasFile,
   frame: number,
   deltaMs: number
 ): boolean {
-  return ensureFrames(tas, frame + 1 + GROW_MARGIN_FRAMES, deltaMs);
+  return ensureFrames(tas, frame + 1, deltaMs);
+}
+
+/**
+ * 在 `at` 前插入 `count` 帧（所有轨道一起右移，锁定轨道也不例外 —— 这是对时间轴本身的操作）。
+ * 新帧的按键 = `template` 那一帧**插入前**的按键（不传 / 超出数据范围 = 空帧）。
+ * `at` 超出数据末尾时先补空帧到 `at`。返回是否真的插了。
+ */
+export function insertFrames(
+  tas: TasFile,
+  at: number,
+  count: number,
+  deltaMs: number,
+  template?: number
+): boolean {
+  if (count <= 0 || at < 0) return false;
+  // 先读模板帧：插入之后它可能已经挪到别处了
+  const keys =
+    template !== undefined && template >= 0 && template < tas.frameCount
+      ? keystatesAt(frameView(tas), template)
+      : 0;
+  ensureFrames(tas, at, deltaMs);
+  tas.insertFrames(at, count, deltaMs);
+  if (keys !== 0) {
+    const view = frameView(tas);
+    for (let f = at; f < at + count; f++)
+      view.setUint32(f * FRAME_SIZE + 4, keys, true);
+  }
+  return true;
+}
+
+/** 插入空帧（`insertFrames` 不带模板）。 */
+export function insertBlankFrames(
+  tas: TasFile,
+  at: number,
+  count: number,
+  deltaMs: number
+): boolean {
+  return insertFrames(tas, at, count, deltaMs);
+}
+
+/**
+ * 删掉 `[f0, f1]` 这些帧（后面的帧整体左移；超出数据末尾的部分忽略）。返回删了几帧。
+ * 至少留 1 帧（空文件写不出合法的 .tas）。
+ */
+export function deleteFrameRange(tas: TasFile, f0: number, f1: number): number {
+  const from = Math.max(0, f0);
+  const to = Math.min(f1, tas.frameCount - 1);
+  let count = to - from + 1;
+  if (count <= 0) return 0;
+  count = Math.min(count, tas.frameCount - 1);
+  if (count <= 0) return 0;
+  tas.removeFrames(from, count);
+  return count;
 }
 
 /** 显式裁掉尾部空帧（返回裁掉了几帧）。保存不会自动裁尾，只有这个命令会。 */

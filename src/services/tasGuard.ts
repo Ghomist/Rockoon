@@ -20,9 +20,9 @@ export const PLAYER_IMAGE = "Player.exe";
  * 只在**没有 Player.exe 在跑**时才动：游戏只在启动时读配置，但 BML+ 退出时可能把内存里的
  * 配置写回文件，游戏没退干净就改，会被它覆盖回去。暂时改不了就留着，下次再试
  * （停止游戏后、游戏自己退出后、编辑器打开时、正常启动游戏前都会试一次）。
- * 返回是否真的改回去了。
+ * 返回是否真的改回去了。`silent`：不弹「已改回」提示（TAS 编辑器里播放 / 停止很频繁，提示挡视野）。
  */
-export async function restoreTasConfig(): Promise<boolean> {
+export async function restoreTasConfig(silent = false): Promise<boolean> {
   const pending = loadPendingRestore();
   if (!pending) return false;
   const running = await backend
@@ -36,7 +36,7 @@ export async function restoreTasConfig(): Promise<boolean> {
       applyRestore(cfg, pending.entries)
     );
     clearPendingRestore();
-    message.info(t("tasGuard.restored"));
+    if (!silent) message.info(t("tasGuard.restored"));
     return true;
   } catch (e) {
     // 文件没了 / 读写失败：记录留着下次再试；正常启动前还有保底询问

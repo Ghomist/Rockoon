@@ -149,9 +149,6 @@ export async function importFromUrl(
   });
   // 同一个资源已经在装了：不重复下载
   if (duplicate) return "duplicate";
-  message.success(
-    title ? t("downloads.started", { title }) : t("downloads.startedUnknown")
-  );
 
   let id = task.id;
   const unlisten: (() => void)[] = [];

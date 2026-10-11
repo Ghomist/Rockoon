@@ -1,6 +1,8 @@
 import { create } from "zustand";
 
 import backend from "@/backend";
+import { t } from "@/i18n";
+import { message } from "@/utils/ui/feedback";
 
 /**
  * 下载任务中枢。
@@ -121,6 +123,12 @@ export const useDownloadsStore = create<DownloadsState>((set, get) => ({
     };
     samples.delete(task.id);
     set(state => ({ tasks: [...state.tasks, task] }));
+    // 所有下载入口统一在这里提示一次「开始下载」，入口自己不用再弹
+    message.success(
+      task.title
+        ? t("downloads.started", { title: task.title })
+        : t("downloads.startedUnknown")
+    );
     return { task, duplicate: false };
   },
 
