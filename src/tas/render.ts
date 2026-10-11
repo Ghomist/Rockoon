@@ -4,10 +4,20 @@
  * 约定：传入的 ctx 已经按 devicePixelRatio 缩放过（setTransform(dpr,…)），
  * 所以这里一律用 CSS 像素坐标写，不用管物理像素。
  *
+ * 竖版（`vertical`）：调用方把 ctx 设成**转置**变换 `setTransform(0, dpr, dpr, 0, 0, 0)`，
+ * 于是这里照旧按「横版逻辑坐标」画（x = 时间、y = 轨道），屏幕上时间就是从上往下、
+ * 轨道从左往右。只有文字不能跟着转置（会被镜像），由 `uprightText` 按屏幕坐标单独写。
+ *
  * 性能：每帧只扫可见列（`visibleFrames`），一次 `frameView()` 复用 DataView。
  */
 
-import { FRAME_SIZE, KEY_BITS, keyMask, type TasFile, type TasKey } from "./format";
+import {
+  FRAME_SIZE,
+  KEY_BITS,
+  keyMask,
+  type TasFile,
+  type TasKey
+} from "./format";
 import { collectRuns, frameView, type TasSelection } from "./editing";
 import {
   MAX_CELL_W,
@@ -128,7 +138,9 @@ export function gridLinePalette(
 ): Pick<TasPalette, "hGrid" | "vGrid" | "bandLine"> {
   const s = Math.max(0, Math.min(1, strength));
   const ink = (alpha: number) =>
-    dark ? `rgba(255,255,255,${alpha.toFixed(3)})` : `rgba(0,0,0,${alpha.toFixed(3)})`;
+    dark
+      ? `rgba(255,255,255,${alpha.toFixed(3)})`
+      : `rgba(0,0,0,${alpha.toFixed(3)})`;
   return {
     hGrid: ink(0.05 + 0.4 * s),
     vGrid: ink(0.03 + 0.27 * s),
@@ -178,6 +190,20 @@ function roundedRect(
   ctx.closePath();
 }
 
+/**
+ * 竖版写字：ctx 此时是转置变换，文字直接写会被镜像 —— 临时换回正常变换（同一个 dpr），
+ * `fn` 里按**屏幕** CSS 坐标写（屏幕 x = 逻辑 y，屏幕 y = 逻辑 x）。字体等状态照样继承。
+ */
+function uprightText(ctx: CanvasRenderingContext2D, fn: () => void): void {
+  const m = ctx.getTransform();
+  // 转置变换的缩放在 b 上；万一传进来的是普通变换就用 a
+  const dpr = Math.abs(m.b) || Math.abs(m.a) || 1;
+  ctx.save();
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  fn();
+  ctx.restore();
+}
+
 /** 半透明：把 #rrggbb 变成 rgba()。 */
 export function withAlpha(hex: string, alpha: number): string {
   const m = /^#([0-9a-f]{6})$/i.exec(hex);
@@ -198,7 +224,13 @@ export type Ghost = {
 };
 
 /** 填充模式的矩形预览（拖动中）。 */
-export type FillPreview = { f0: number; f1: number; t0: number; t1: number; value: boolean };
+export type FillPreview = {
+  f0: number;
+  f1: number;
+  t0: number;
+  t1: number;
+  value: boolean;
+};
 
 export type SceneOptions = {
   tas: TasFile;
@@ -228,6 +260,11 @@ export type SceneOptions = {
   ghost: Ghost | null;
   /** 填充模式的矩形预览。 */
   fill: FillPreview | null;
+  /**
+   * 竖版：ctx 已经是转置变换（见文件头），`width` / `height` 也按逻辑方向传
+   *（width = 时间方向的长度 = 画布高，height = 轨道方向 = 画布宽，rulerH = 刻度尺宽）。
+   */
+  vertical?: boolean;
 };
 
 const RULER_FONT = '11px ui-sans-serif, system-ui, "Segoe UI", sans-serif';
@@ -241,13 +278,21 @@ const BADGE_H = 15;
 const BADGE_PAD_X = 5;
 /** 徽标与光标竖线的间距。 */
 const BADGE_GAP = 3;
+/** 竖版：块顶端的帧数至少要有这么高（时间方向）的可见长度才写。 */
+const V_LABEL_MIN_LEN = 14;
 
 /**
  * 画一整帧画面：刻度尺（顶部固定）+ 轨道网格 + 胶囊 + 各种高亮。
  * 只画可见列；背景按 0.5 秒交替着色。
  */
-export function drawScene(ctx: CanvasRenderingContext2D, o: SceneOptions): void {
-  const p = { ...tasPalette(o.dark), ...gridLinePalette(o.dark, o.gridStrength) };
+export function drawScene(
+  ctx: CanvasRenderingContext2D,
+  o: SceneOptions
+): void {
+  const p = {
+    ...tasPalette(o.dark),
+    ...gridLinePalette(o.dark, o.gridStrength)
+  };
   const { width, height, rowH, rulerH } = o;
   const rowsTop = rulerH;
   const rowsH = height - rowsTop;
@@ -265,7 +310,12 @@ export function drawScene(ctx: CanvasRenderingContext2D, o: SceneOptions): void 
   ctx.fillRect(0, rowsTop, width, Math.max(0, rowsH));
   if (drawTo > drawFrom) {
     ctx.fillStyle = p.bandA;
-    ctx.fillRect(xAtFrame(o.vp, drawFrom), rowsTop, (drawTo - drawFrom) * o.vp.cellW, rowsH);
+    ctx.fillRect(
+      xAtFrame(o.vp, drawFrom),
+      rowsTop,
+      (drawTo - drawFrom) * o.vp.cellW,
+      rowsH
+    );
   }
 
   // 1) 「分区」：**每个主刻度区间**交替底色（独立开关，与纵线无关）
@@ -275,7 +325,10 @@ export function drawScene(ctx: CanvasRenderingContext2D, o: SceneOptions): void 
     for (let f = bandFrom; f < drawTo; f += bandFrames) {
       const idx = Math.round(f / bandFrames);
       const x0 = Math.max(0, xAtFrame(o.vp, f));
-      const x1 = Math.min(width, xAtFrame(o.vp, Math.min(f + bandFrames, drawTo)));
+      const x1 = Math.min(
+        width,
+        xAtFrame(o.vp, Math.min(f + bandFrames, drawTo))
+      );
       if (x1 <= x0) continue;
       if (idx % 2 === 1) {
         ctx.fillStyle = p.bandB;
@@ -316,7 +369,8 @@ export function drawScene(ctx: CanvasRenderingContext2D, o: SceneOptions): void 
   const cellGap = o.vp.cellW >= 10 ? 2 : 1;
   const cellRadius = Math.min(3, (o.vp.cellW - cellGap) / 3);
   // 块太窄 / 行太矮就不写；分格视图不写
-  const showBlockLabel = !!o.blockLabel && !runMode && !cells && rowH >= 16;
+  const showBlockLabel =
+    !!o.blockLabel && !runMode && !cells && (o.vertical || rowH >= 16);
   for (let t = 0; t < o.order.length; t++) {
     const key = o.order[t];
     const y = rowY(t);
@@ -329,7 +383,14 @@ export function drawScene(ctx: CanvasRenderingContext2D, o: SceneOptions): void 
         for (let f = a; f <= b; f++) {
           const x = xAtFrame(o.vp, f);
           if (x + o.vp.cellW < 0 || x > width) continue;
-          roundedRect(ctx, x + cellGap / 2, y + pad, o.vp.cellW - cellGap, rowH - pad * 2, cellRadius);
+          roundedRect(
+            ctx,
+            x + cellGap / 2,
+            y + pad,
+            o.vp.cellW - cellGap,
+            rowH - pad * 2,
+            cellRadius
+          );
           ctx.fill();
         }
         continue;
@@ -359,8 +420,36 @@ export function drawScene(ctx: CanvasRenderingContext2D, o: SceneOptions): void 
       const last = o.tas.frameCount - 1;
       let a0 = a;
       let b0 = Math.min(b, last);
-      while (a0 > 0 && (view.getUint32((a0 - 1) * FRAME_SIZE + 4, true) & mask) !== 0) a0--;
-      while (b0 < last && (view.getUint32((b0 + 1) * FRAME_SIZE + 4, true) & mask) !== 0) b0++;
+      while (
+        a0 > 0 &&
+        (view.getUint32((a0 - 1) * FRAME_SIZE + 4, true) & mask) !== 0
+      )
+        a0--;
+      while (
+        b0 < last &&
+        (view.getUint32((b0 + 1) * FRAME_SIZE + 4, true) & mask) !== 0
+      )
+        b0++;
+      if (o.vertical) {
+        // 竖版：块是一根竖条（宽 = 轨道宽），字横着写在可见部分的顶端；
+        // 「51 帧」放不下就只写数字，数字也放不下（或可见长度不够一行字）就不写
+        if (visibleW < V_LABEL_MIN_LEN) continue;
+        const room = rowH - pad * 2 - 6;
+        let vText = label(b0 - a0 + 1);
+        if (ctx.measureText(vText).width > room) vText = String(b0 - a0 + 1);
+        if (ctx.measureText(vText).width > room) continue;
+        uprightText(ctx, () => {
+          ctx.textAlign = "center";
+          ctx.textBaseline = "top";
+          const sx = y + rowH / 2;
+          const sy = xLeft + 3;
+          ctx.strokeStyle = "rgba(0,0,0,0.38)";
+          ctx.strokeText(vText, sx, sy);
+          ctx.fillStyle = "rgba(255,255,255,0.95)";
+          ctx.fillText(vText, sx, sy);
+        });
+        continue;
+      }
       const text = label(b0 - a0 + 1);
       // 文字（含左右各 5px 内缩）在**可见的那一段**里放不下就不写
       if (ctx.measureText(text).width + 10 > visibleW) continue;
@@ -384,7 +473,12 @@ export function drawScene(ctx: CanvasRenderingContext2D, o: SceneOptions): void 
     const y1 = rowY(sel.t1 + 1);
     if (x1 > x0) {
       ctx.fillStyle = p.selectionFill;
-      ctx.fillRect(x0, Math.max(rowsTop, y0), x1 - x0, Math.min(height, y1) - Math.max(rowsTop, y0));
+      ctx.fillRect(
+        x0,
+        Math.max(rowsTop, y0),
+        x1 - x0,
+        Math.min(height, y1) - Math.max(rowsTop, y0)
+      );
       ctx.strokeStyle = p.selectionLine;
       ctx.lineWidth = 1;
       ctx.strokeRect(
@@ -414,7 +508,12 @@ export function drawScene(ctx: CanvasRenderingContext2D, o: SceneOptions): void 
       ctx.fillRect(x0, y0, x1 - x0, y1 - y0);
       ctx.strokeStyle = fl.value ? p.fillSetLine : p.fillClearLine;
       ctx.lineWidth = 1.5;
-      ctx.strokeRect(x0 + 0.5, y0 + 0.5, Math.max(1, x1 - x0 - 1), Math.max(1, y1 - y0 - 1));
+      ctx.strokeRect(
+        x0 + 0.5,
+        y0 + 0.5,
+        Math.max(1, x1 - x0 - 1),
+        Math.max(1, y1 - y0 - 1)
+      );
     }
   }
 
@@ -466,7 +565,12 @@ export function drawScene(ctx: CanvasRenderingContext2D, o: SceneOptions): void 
   const cursorX = xAtFrame(o.vp, o.cursor);
   if (cursorX + o.vp.cellW > 0 && cursorX < width) {
     ctx.fillStyle = p.cursorFill;
-    ctx.fillRect(cursorX, rowsTop, Math.max(2, Math.min(o.vp.cellW, MAX_CELL_W)), rowsH);
+    ctx.fillRect(
+      cursorX,
+      rowsTop,
+      Math.max(2, Math.min(o.vp.cellW, MAX_CELL_W)),
+      rowsH
+    );
     ctx.fillStyle = p.cursorLine;
     ctx.fillRect(Math.round(cursorX), rowsTop, 1, rowsH);
   }
@@ -479,7 +583,7 @@ export function drawScene(ctx: CanvasRenderingContext2D, o: SceneOptions): void 
   ctx.font = RULER_FONT;
   ctx.textBaseline = "middle";
   // 刻度只标**帧号**（不再带时间）：放大到放得下时尽量密，最密每一帧都标
-  const { label: labelStep, minor } = rulerSteps(o.vp.cellW, limit);
+  const { label: labelStep, minor } = rulerSteps(o.vp.cellW, limit, o.vertical);
   const rulerEnd = o.vp.scroll + width / o.vp.cellW;
   if (minor > 0) {
     ctx.fillStyle = p.rulerTickMinor;
@@ -500,6 +604,19 @@ export function drawScene(ctx: CanvasRenderingContext2D, o: SceneOptions): void 
     const tall = f % bandFrames === 0;
     ctx.fillRect(x, rowsTop - (tall ? 12 : 9), 1, tall ? 11 : 8);
     const text = String(f);
+    if (o.vertical) {
+      // 竖版：标签横着写在刻度线下方、靠刻度尺右侧（刻度线在最右边那 12px）；
+      // 下边会越过画布就不画（同横版的理由）
+      if (x + 2 + 12 <= width) {
+        uprightText(ctx, () => {
+          ctx.fillStyle = p.rulerText;
+          ctx.textAlign = "right";
+          ctx.textBaseline = "top";
+          ctx.fillText(text, rowsTop - 14, x + 2);
+        });
+      }
+      continue;
+    }
     // 标签右边会越过画布边缘就整个不画（刻度线还在）——被裁掉一半反而比没有更难读
     if (x + 3 + ctx.measureText(text).width <= width) {
       ctx.fillStyle = p.rulerText;
@@ -516,22 +633,45 @@ export function drawScene(ctx: CanvasRenderingContext2D, o: SceneOptions): void 
     ctx.textAlign = "left";
     ctx.textBaseline = "middle";
     const badgeW = ctx.measureText(text).width + BADGE_PAD_X * 2;
-    // 默认挂在竖线右边；右边放不下就翻到左边，两头都放不下时再钳进画布
-    let bx = cursorX + BADGE_GAP;
-    if (bx + badgeW > width - 2) bx = cursorX - BADGE_GAP - badgeW;
-    bx = Math.max(2, Math.min(width - badgeW - 2, bx));
-    const by = Math.round((rowsTop - BADGE_H) / 2);
-    ctx.fillStyle = p.cursorBadge;
-    roundedRect(ctx, bx, by, badgeW, BADGE_H, BADGE_H / 2);
-    ctx.fill();
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = "rgba(0,0,0,0.4)";
-    ctx.strokeText(text, bx + BADGE_PAD_X, by + BADGE_H / 2);
-    ctx.fillStyle = p.cursorBadgeText;
-    ctx.fillText(text, bx + BADGE_PAD_X, by + BADGE_H / 2);
+    if (o.vertical) {
+      // 竖版：光标是一条横线，徽标挂在它下方（下面放不下就翻到上方），横向在刻度尺里居中
+      uprightText(ctx, () => {
+        let by = cursorX + BADGE_GAP;
+        if (by + BADGE_H > width - 2) by = cursorX - BADGE_GAP - BADGE_H;
+        by = Math.max(2, Math.min(width - BADGE_H - 2, by));
+        const bx = Math.max(2, Math.round((rowsTop - badgeW) / 2));
+        drawBadge(ctx, p, text, bx, by, badgeW);
+      });
+    } else {
+      // 默认挂在竖线右边；右边放不下就翻到左边，两头都放不下时再钳进画布
+      let bx = cursorX + BADGE_GAP;
+      if (bx + badgeW > width - 2) bx = cursorX - BADGE_GAP - badgeW;
+      bx = Math.max(2, Math.min(width - badgeW - 2, bx));
+      const by = Math.round((rowsTop - BADGE_H) / 2);
+      drawBadge(ctx, p, text, bx, by, badgeW);
+    }
     ctx.restore();
   }
   ctx.restore();
+}
+
+/** 「当前帧」徽标本体（胶囊底 + 描边白字）；ctx 的字体 / 对齐由调用方设好。 */
+function drawBadge(
+  ctx: CanvasRenderingContext2D,
+  p: TasPalette,
+  text: string,
+  bx: number,
+  by: number,
+  badgeW: number
+): void {
+  ctx.fillStyle = p.cursorBadge;
+  roundedRect(ctx, bx, by, badgeW, BADGE_H, BADGE_H / 2);
+  ctx.fill();
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = "rgba(0,0,0,0.4)";
+  ctx.strokeText(text, bx + BADGE_PAD_X, by + BADGE_H / 2);
+  ctx.fillStyle = p.cursorBadgeText;
+  ctx.fillText(text, bx + BADGE_PAD_X, by + BADGE_H / 2);
 }
 
 // ---------------------------------------------------------------- 缩略图
@@ -544,28 +684,40 @@ export type MinimapOptions = {
   width: number;
   height: number;
   dark: boolean;
+  /** 竖版：时间轴从上往下，`dots[y]` 是一行（width / height 仍是画布的真实宽高）。 */
+  vertical?: boolean;
 };
 
 /**
  * 缩略图：整条时间轴压成一条窄条，已绘制的帧用淡灰小点表示。
  * 采样在调用方（`dots` 的每个像素一列）做好，这里只负责画。
  */
-export function drawMinimap(ctx: CanvasRenderingContext2D, o: MinimapOptions): void {
+export function drawMinimap(
+  ctx: CanvasRenderingContext2D,
+  o: MinimapOptions
+): void {
   const p = tasPalette(o.dark);
   ctx.clearRect(0, 0, o.width, o.height);
   ctx.fillStyle = p.bandA;
   ctx.fillRect(0, 0, o.width, o.height);
   ctx.fillStyle = p.miniDot;
-  // 「小点」：每个像素列里画一小段居中短划，密的地方自然连成一条淡灰带
-  const dotH = Math.max(3, Math.round(o.height * 0.1));
-  const top = Math.round((o.height - dotH) / 2);
-  for (let x = 0; x < o.dots.length; x++) {
-    if (o.dots[x]) ctx.fillRect(x, top, 1, dotH);
+  // 「小点」：每个像素列里画一小段居中短划，密的地方自然连成一条淡灰带（竖版是每一行）
+  const across = o.vertical ? o.width : o.height;
+  const dotH = Math.max(3, Math.round(across * 0.1));
+  const top = Math.round((across - dotH) / 2);
+  for (let i = 0; i < o.dots.length; i++) {
+    if (!o.dots[i]) continue;
+    if (o.vertical) ctx.fillRect(top, i, dotH, 1);
+    else ctx.fillRect(i, top, 1, dotH);
   }
 }
 
-/** 每一像素列聚合「这段帧里有没有按键」。列数 = canvas 物理像素宽。 */
-export function aggregateMinimap(tas: TasFile, widthPx: number, totalFrames: number): Uint8Array {
+/** 每一像素列聚合「这段帧里有没有按键」。列数 = canvas 物理像素宽（竖版是高，按行聚合）。 */
+export function aggregateMinimap(
+  tas: TasFile,
+  widthPx: number,
+  totalFrames: number
+): Uint8Array {
   const dots = new Uint8Array(Math.max(1, Math.ceil(widthPx)));
   const view = frameView(tas);
   const frames = tas.frameCount;

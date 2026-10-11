@@ -94,12 +94,21 @@ function modeHints(mode: TasMouseMode): BarHint[] {
 }
 
 /** 说明条右半：任何模式都通用的视图 / 导航操作。 */
-function commonHints(): BarHint[] {
+function commonHints(vertical: boolean): BarHint[] {
   const kbd = (key: string) => t(`tas.kbd.${key}`);
   const h = (key: string) => t(`tas.hintBar.${key}`);
+  // 竖版：滚轮 = 上下滚动、Ctrl + 滚轮 = 缩放（时间是纵向的，跟普通页面一样滚）
+  const view: BarHint[] = vertical
+    ? [
+        { combos: [["Ctrl", kbd("wheel")], ["W"], ["S"]], label: h("zoom") },
+        { combos: [[kbd("wheel")], ["A"], ["D"]], label: h("panV") }
+      ]
+    : [
+        { combos: [[kbd("wheel")], ["W"], ["S"]], label: h("zoom") },
+        { combos: [["Shift", kbd("wheel")], ["A"], ["D"]], label: h("pan") }
+      ];
   return [
-    { combos: [[kbd("wheel")], ["W"], ["S"]], label: h("zoom") },
-    { combos: [["Shift", kbd("wheel")], ["A"], ["D"]], label: h("pan") },
+    ...view,
     {
       combos: [
         ["Space", kbd("drag")],
@@ -133,7 +142,7 @@ function BarItem({ hint }: { hint: BarHint }) {
  * 每种按法里是同时按的键（之间显示「+」）—— 不能把「几种按法」拼成一个组合键，
  * 那样会显示成 `1 + 2 + 3 + 4`、`Ctrl + C + X + V`，照着按是按不出来的。
  */
-function helpRows(): BarHint[] {
+function helpRows(vertical: boolean): BarHint[] {
   const kbd = (key: string) => t(`tas.kbd.${key}`);
   const r = (key: string) => t(`tas.helpRows.${key}`);
   return [
@@ -168,8 +177,10 @@ function helpRows(): BarHint[] {
     { combos: [["Alt", kbd("drag")]], label: r("move") },
     { combos: [["["], ["]"]], label: r("jumpRun") },
     { combos: [["W"], ["S"], ["+"], ["-"]], label: r("zoom") },
-    { combos: [["A"], ["D"]], label: r("pan") },
-    { combos: [[kbd("wheel")]], label: r("wheel") },
+    { combos: [["A"], ["D"]], label: r(vertical ? "panV" : "pan") },
+    vertical
+      ? { combos: [[kbd("wheel")], ["Ctrl", kbd("wheel")]], label: r("wheelV") }
+      : { combos: [[kbd("wheel")]], label: r("wheel") },
     {
       combos: [
         ["Space", kbd("drag")],
@@ -226,7 +237,7 @@ function Row({ hint }: { hint: BarHint }) {
   );
 }
 
-function HelpContent() {
+function HelpContent({ vertical }: { vertical: boolean }) {
   const notes = [
     t("tas.helpUnified"),
     t("tas.helpModes"),
@@ -242,7 +253,7 @@ function HelpContent() {
   return (
     <div className="max-h-[65vh] min-w-0 space-y-4 overflow-auto pr-1 text-left">
       <div className="space-y-2">
-        {helpRows().map((hint, i) => (
+        {helpRows(vertical).map((hint, i) => (
           <Row key={i} hint={hint} />
         ))}
       </div>
@@ -261,11 +272,11 @@ function HelpContent() {
 }
 
 /** 打开帮助模态。 */
-export function openTasHelp(): void {
+export function openTasHelp(vertical = false): void {
   dialog.create({
     title: t("tas.helpTitle"),
     className: "max-w-2xl",
-    content: () => <HelpContent />
+    content: () => <HelpContent vertical={vertical} />
   });
 }
 
@@ -273,7 +284,14 @@ export function openTasHelp(): void {
  * 编辑区底部固定的说明区：当前模式（名字 + 切换键）│ 这个模式最常用的几条 │ 通用的视图操作，
  * 右端是完整快捷键表。窄的时候自动折行。
  */
-export default function TasHintBar({ mode }: { mode: TasMouseMode }) {
+export default function TasHintBar({
+  mode,
+  vertical = false
+}: {
+  mode: TasMouseMode;
+  /** 竖版：滚轮的说明换成「滚轮 = 上下滚动、Ctrl + 滚轮 = 缩放」。 */
+  vertical?: boolean;
+}) {
   const meta = MODE_META[mode];
   return (
     <div className="flex shrink-0 items-start gap-3 border-t bg-muted/30 px-3 py-2">
@@ -289,7 +307,7 @@ export default function TasHintBar({ mode }: { mode: TasMouseMode }) {
           <BarItem key={`m${i}`} hint={hint} />
         ))}
         <span className="h-4 w-px shrink-0 bg-border" />
-        {commonHints().map((hint, i) => (
+        {commonHints(vertical).map((hint, i) => (
           <BarItem key={`c${i}`} hint={hint} />
         ))}
       </div>
@@ -298,7 +316,7 @@ export default function TasHintBar({ mode }: { mode: TasMouseMode }) {
         size="xs"
         className="shrink-0"
         title={t("tas.help")}
-        onClick={openTasHelp}
+        onClick={() => openTasHelp(vertical)}
       >
         <Keyboard />
         {t("tas.hintBar.allKeys")}

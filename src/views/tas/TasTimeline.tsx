@@ -31,6 +31,7 @@ import {
   type Viewport
 } from "@/tas/viewport";
 import { t } from "@/i18n";
+import { cn } from "@/lib/utils";
 import TasMinimap, { type TasMinimapHandle } from "./TasMinimap";
 
 /** 鼠标模式：选择（默认）/ 填充 / 录入 / 插删帧。 */
@@ -41,6 +42,19 @@ export const ROW_H = 26;
 export const RULER_H = 28;
 /** 轨道头宽度（布局用，canvas 不需要知道）。 */
 export const TRACK_HEADER_W = 132;
+
+/**
+ * 竖版：时间轴竖过来（时间从上往下、轨道从左往右）。刻度尺是左边一列（宽 `V_RULER_W`），
+ * 轨道头是顶上一行（高 `V_HEADER_H`）；每条轨道固定宽 `V_TRACK_W`。
+ */
+export const V_RULER_W = 56;
+export const V_HEADER_H = 52;
+export const V_TRACK_W = 48;
+/** 竖版缩略图（右侧竖条）占的宽度：条宽 44 + 左右内边距 12 + 左边框 1。 */
+export const V_MINIMAP_W = 57;
+/** 竖版时间轴列的宽度：刚好放下刻度尺 + 全部轨道 + 缩略图，不多占（多出来的宽度给左边的列表）。 */
+export const verticalTimelineWidth = (tracks: number) =>
+  V_RULER_W + tracks * V_TRACK_W + V_MINIMAP_W;
 
 /** 长按 W/S 的缩放速率：cellW 按 e^(rate·dt) 变化（0.8 ≈ 0.9 秒翻一倍）。 */
 /**
@@ -105,6 +119,11 @@ type Props = {
   onBeginOp: () => OpHandle;
   /** 数据被就地改了（渲染层自己重画；父组件用它标脏 / 记 lastTouched）。 */
   onMutated: (lastTouched: number) => void;
+  /**
+   * 竖版：时间从上往下、轨道从左往右（刻度尺在左、轨道头在顶、缩略图在右）。
+   * 运行中切换横竖请换 `key` 重新挂载 —— 尺寸监听和视口都按方向初始化。
+   */
+  vertical?: boolean;
   /** 选择 / 录入模式下右键：把指针位置 + 命中的格交给父组件弹菜单（填充 / 插删帧模式的右键另有用途）。 */
   onMenu?: (at: { x: number; y: number; frame: number; track: number }) => void;
   /** 插删帧模式松手：左键拖 = 在 f0 前插入 (f1-f0+1) 个空帧，右键拖 = 删掉 [f0, f1]。 */
@@ -173,14 +192,21 @@ const TasTimeline = forwardRef<TasTimelineHandle, Props>(
 
     /** 每次渲染刷新：长时间存活的回调（rAF、window 监听）统一读它，避免闭包过期。 */
     const propsRef = useRef(props);
+    /** 画布的屏幕尺寸（CSS px）。竖版下与视口的「逻辑宽高」是对调的，见 `logicalSize`。 */
     const sizeRef = useRef({ w: 0, h: 0 });
+    const vertical = !!props.vertical;
+    /** 刻度尺沿「轨道方向」的厚度：横版是顶上那条的高，竖版是左边那列的宽。 */
+    const rulerH = vertical ? V_RULER_W : RULER_H;
+    /** 轨道的厚度：横版是行高、竖版是列宽（都是固定值）。 */
+    const rowH = vertical ? V_TRACK_W : ROW_H;
+    const rowHRef = useRef(rowH);
     const boundsRef = useRef<TimelineBounds>({
       frameCount: props.tas.frameCount,
       widthPx: 0,
       heightPx: 0,
       rowCount: props.order.length,
-      rowH: ROW_H,
-      rulerH: RULER_H,
+      rowH,
+      rulerH,
       frameMs: props.frameMs
     });
     const vpRef = useRef<Viewport>({
@@ -231,14 +257,28 @@ const TasTimeline = forwardRef<TasTimelineHandle, Props>(
 
     // ---------------------------------------------------------------- 尺寸 / 边界
 
+    /**
+     * 视口按「横版逻辑坐标」算：w = 时间方向的长度、h = 轨道方向。竖版把屏幕宽高对调过来，
+     * 之后的缩放 / 平移 / 命中测试就与横版完全一样。
+     */
+    const logicalSize = () =>
+      vertical
+        ? { w: sizeRef.current.h, h: sizeRef.current.w }
+        : sizeRef.current;
+
+    /** 屏幕坐标（相对画布左上角）→ 逻辑坐标（x = 时间方向、y = 轨道方向）。 */
+    const toLogical = (sx: number, sy: number) =>
+      vertical ? { x: sy, y: sx } : { x: sx, y: sy };
+
     const refreshBounds = () => {
+      const size = logicalSize();
       boundsRef.current = {
         frameCount: propsRef.current.tas.frameCount,
-        widthPx: sizeRef.current.w,
-        heightPx: sizeRef.current.h,
+        widthPx: size.w,
+        heightPx: size.h,
         rowCount: propsRef.current.order.length,
-        rowH: ROW_H,
-        rulerH: RULER_H,
+        rowH: rowHRef.current,
+        rulerH,
         frameMs: propsRef.current.frameMs
       };
       return boundsRef.current;
@@ -260,19 +300,22 @@ const TasTimeline = forwardRef<TasTimelineHandle, Props>(
         canvas.style.width = `${w}px`;
         canvas.style.height = `${h}px`;
       }
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      // 竖版：转置变换，drawScene 照旧按横版逻辑坐标画（见 render.ts 文件头）
+      if (vertical) ctx.setTransform(0, dpr, dpr, 0, 0, 0);
+      else ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       const p = propsRef.current;
       const vp = vpRef.current;
+      const size = logicalSize();
       drawScene(ctx, {
         tas: p.tas,
         order: p.order,
         frameMs: p.frameMs,
         blockLabel: p.blockLabel,
         vp,
-        width: w,
-        height: h,
-        rowH: ROW_H,
-        rulerH: RULER_H,
+        width: size.w,
+        height: size.h,
+        rowH: rowHRef.current,
+        rulerH,
         cursor: cursorOverrideRef.current ?? p.cursor,
         selection: p.selection,
         locked: p.locked,
@@ -284,16 +327,19 @@ const TasTimeline = forwardRef<TasTimelineHandle, Props>(
         cellBlocks: p.cellBlocks,
         dark: p.dark,
         ghost: ghostRef.current,
-        fill: fillRef.current
+        fill: fillRef.current,
+        vertical
       });
-      // 轨道头纵向跟随（横向天然冻结：它是 canvas 之外的 DOM）
+      // 轨道头跟随轨道方向的滚动（时间方向天然冻结：它是 canvas 之外的 DOM）
       if (headerListRef.current) {
-        headerListRef.current.style.transform = `translateY(${-vp.scrollY}px)`;
+        headerListRef.current.style.transform = vertical
+          ? `translateX(${-vp.scrollY}px)`
+          : `translateY(${-vp.scrollY}px)`;
       }
       // 缩略图可视框
       miniRef.current?.setViewport(
         vp.scroll,
-        vp.scroll + w / vp.cellW,
+        vp.scroll + size.w / vp.cellW,
         paintableFrames(p.tas.frameCount, p.frameMs)
       );
     };
@@ -433,8 +479,9 @@ const TasTimeline = forwardRef<TasTimelineHandle, Props>(
 
     // ---------------------------------------------------------------- 视口操作
 
+    /** 缩放锚点（逻辑 x，即时间方向）：指针在画布里就用指针，否则用视口中间。 */
     const anchorX = () =>
-      mouseRef.current.inside ? mouseRef.current.x : sizeRef.current.w / 2;
+      mouseRef.current.inside ? mouseRef.current.x : logicalSize().w / 2;
 
     const applyZoom = (factor: number) => {
       targetRef.current = clampViewport(
@@ -612,25 +659,33 @@ const TasTimeline = forwardRef<TasTimelineHandle, Props>(
         e.preventDefault();
         const rect = el.getBoundingClientRect();
         const b = boundsRef.current;
-        const x = e.clientX - rect.left;
-        // 滚轮横向分量（或 Shift）= 左右平移；其余一律缩放，锚点 = 鼠标指针位置
-        if (e.shiftKey || Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
-          const dx =
-            Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+        const { x } = toLogical(e.clientX - rect.left, e.clientY - rect.top);
+        const pan = (px: number) => {
           targetRef.current = clampViewport(
             {
               ...targetRef.current,
-              scroll: targetRef.current.scroll + dx / targetRef.current.cellW
+              scroll: targetRef.current.scroll + px / targetRef.current.cellW
             },
             b
           );
-        } else {
+        };
+        const zoom = (dy: number) => {
           // 向上（deltaY < 0）放大、向下缩小；指针下的那一帧保持不动
           targetRef.current = clampViewport(
-            zoomAt(targetRef.current, Math.exp(-e.deltaY * 0.0022), x),
+            zoomAt(targetRef.current, Math.exp(-dy * 0.0022), x),
             b
           );
           propsRef.current.onCellWChange(targetRef.current.cellW);
+        };
+        if (vertical) {
+          // 竖版：时间是纵向的，滚轮默认上下滚动（同普通页面），Ctrl + 滚轮 = 缩放（锚点 = 指针）
+          if (e.ctrlKey) zoom(e.deltaY);
+          else pan(e.deltaY || e.deltaX);
+        } else if (e.shiftKey || Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
+          // 横版：滚轮横向分量（或 Shift）= 左右平移；其余一律缩放，锚点 = 鼠标指针位置
+          pan(Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY);
+        } else {
+          zoom(e.deltaY);
         }
         requestDraw();
       };
@@ -646,13 +701,12 @@ const TasTimeline = forwardRef<TasTimelineHandle, Props>(
       clientY: number,
       rect: { left: number; top: number }
     ): Cell & { inRuler: boolean } => {
-      const x = clientX - rect.left;
-      const y = clientY - rect.top;
+      const { x, y } = toLogical(clientX - rect.left, clientY - rect.top);
       const vp = vpRef.current;
       return {
         frame: Math.floor(frameAtX(vp, x)),
-        track: Math.floor((y - RULER_H + vp.scrollY) / ROW_H),
-        inRuler: y < RULER_H
+        track: Math.floor((y - rulerH + vp.scrollY) / rowHRef.current),
+        inRuler: y < rulerH
       };
     };
 
@@ -668,8 +722,7 @@ const TasTimeline = forwardRef<TasTimelineHandle, Props>(
       if (!el) return;
       const rect = el.getBoundingClientRect();
       mouseRef.current = {
-        x: clientX - rect.left,
-        y: clientY - rect.top,
+        ...toLogical(clientX - rect.left, clientY - rect.top),
         inside: true
       };
       const hit = cellAtXY(clientX, clientY, rect);
@@ -709,29 +762,32 @@ const TasTimeline = forwardRef<TasTimelineHandle, Props>(
       if (!el) return;
       const p = propsRef.current;
       const drag = dragRef.current;
+      // 竖版时间方向是纵向：拖刻度尺 / 插删帧的指针跟着转 90°
+      const scrubCursor = vertical ? "ns-resize" : "ew-resize";
+      const framesCursor = vertical ? "row-resize" : "col-resize";
       let cursor = "default";
       if (drag) {
         cursor =
           drag.kind === "pan" || drag.kind === "move"
             ? "grabbing"
             : drag.kind === "scrub"
-              ? "ew-resize"
+              ? scrubCursor
               : drag.kind === "fill"
                 ? "cell"
                 : drag.kind === "frames"
-                  ? "col-resize"
+                  ? framesCursor
                   : "crosshair";
       } else if (spaceRef.current && !p.recording) {
         cursor = "grab";
       } else if (mouseRef.current.inside && hoverRulerRef.current) {
-        cursor = "ew-resize";
+        cursor = scrubCursor;
       } else if (
         mouseRef.current.inside &&
         hoverRef.current &&
         p.mode === "frames"
       ) {
         // 插删帧作用于整条时间轴：锁定轨道也一起移，所以这里不显示 not-allowed
-        cursor = "col-resize";
+        cursor = framesCursor;
       } else if (mouseRef.current.inside && hoverRef.current) {
         const cell = hoverRef.current;
         const key = p.order[cell.track];
@@ -793,8 +849,7 @@ const TasTimeline = forwardRef<TasTimelineHandle, Props>(
     const applyOpacity = (e: React.PointerEvent<HTMLCanvasElement>) => {
       const rect = e.currentTarget.getBoundingClientRect();
       mouseRef.current = {
-        x: e.clientX - rect.left,
-        y: e.clientY - rect.top,
+        ...toLogical(e.clientX - rect.left, e.clientY - rect.top),
         inside: true
       };
       return rect;
@@ -1022,11 +1077,12 @@ const TasTimeline = forwardRef<TasTimelineHandle, Props>(
       switch (drag.kind) {
         case "pan": {
           const cellW = targetRef.current.cellW;
+          const d = toLogical(e.clientX - drag.startX, e.clientY - drag.startY);
           const next = clampViewport(
             {
               cellW,
-              scroll: drag.scroll - (e.clientX - drag.startX) / cellW,
-              scrollY: drag.scrollY - (e.clientY - drag.startY)
+              scroll: drag.scroll - d.x / cellW,
+              scrollY: drag.scrollY - d.y
             },
             boundsRef.current
           );
@@ -1235,9 +1291,10 @@ const TasTimeline = forwardRef<TasTimelineHandle, Props>(
       if (!drag || !list) return;
       const order = propsRef.current.order;
       const rect = list.getBoundingClientRect();
+      const along = vertical ? e.clientX - rect.left : e.clientY - rect.top;
       const target = Math.max(
         0,
-        Math.min(order.length - 1, Math.floor((e.clientY - rect.top) / ROW_H))
+        Math.min(order.length - 1, Math.floor(along / rowHRef.current))
       );
       if (target === drag.index) return;
       const next = [...order];
@@ -1259,6 +1316,157 @@ const TasTimeline = forwardRef<TasTimelineHandle, Props>(
     // ---------------------------------------------------------------- 渲染
 
     const p = props;
+
+    /** 一个轨道头：锁按钮 + 色点 + 键名（横版一行、竖版上下两行）。可拖动排序。 */
+    const trackHeader = (key: TasKey, index: number) => {
+      const locked = p.locked.has(key);
+      return (
+        <div
+          key={key}
+          title={t(`tas.trackNames.${key}`)}
+          onPointerDown={e => onHeaderDown(e, index)}
+          onPointerMove={onHeaderMove}
+          onPointerUp={onHeaderUp}
+          onPointerCancel={onHeaderUp}
+          className={cn(
+            "flex shrink-0 cursor-grab select-none hover:bg-accent active:cursor-grabbing",
+            vertical
+              ? "flex-col items-center justify-center gap-1 border-r px-0.5"
+              : "items-center gap-2 border-b px-2"
+          )}
+          style={vertical ? { width: rowH } : { height: ROW_H }}
+        >
+          {vertical && (
+            <span
+              className={cn(
+                "flex max-w-full min-w-0 items-center gap-1",
+                locked && "opacity-50"
+              )}
+            >
+              <span
+                className="size-2 shrink-0 rounded-full"
+                style={{ background: trackColor(key, p.dark) }}
+              />
+              <span className="truncate font-mono text-[11px]">
+                {KEY_META[key].short}
+              </span>
+            </span>
+          )}
+          <button
+            type="button"
+            aria-label={locked ? t("tas.unlockTrack") : t("tas.lockTrack")}
+            aria-pressed={locked}
+            title={locked ? t("tas.unlockTrack") : t("tas.lockTrack")}
+            // 轨道头本身是拖动排序的手柄，锁按钮不能把 pointerdown 让上去
+            onPointerDown={e => e.stopPropagation()}
+            onClick={e => {
+              e.stopPropagation();
+              p.onToggleLock(key);
+            }}
+            className="shrink-0 cursor-pointer rounded p-0.5 hover:bg-background/60"
+          >
+            {locked ? (
+              <Lock className="size-3 text-amber-500" />
+            ) : (
+              <Unlock className="size-3 text-muted-foreground/60" />
+            )}
+          </button>
+          {!vertical && (
+            <span
+              className={`flex min-w-0 items-center gap-2 ${
+                locked ? "opacity-50" : ""
+              }`}
+            >
+              <span
+                className="size-2.5 shrink-0 rounded-full"
+                style={{ background: trackColor(key, p.dark) }}
+              />
+              <span className="truncate font-mono text-xs">
+                {KEY_META[key].short}
+              </span>
+            </span>
+          )}
+        </div>
+      );
+    };
+
+    const canvas = (
+      <div
+        ref={wrapRef}
+        className="relative min-h-0 min-w-0 flex-1 overflow-hidden"
+      >
+        <canvas
+          ref={canvasRef}
+          className="block touch-none"
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={endDrag}
+          onContextMenu={onContextMenu}
+          onPointerCancel={e => {
+            try {
+              e.currentTarget.releasePointerCapture(e.pointerId);
+            } catch {
+              // 已经释放了
+            }
+            abortDrag();
+            updateCursor();
+          }}
+          onPointerLeave={() => {
+            mouseRef.current.inside = false;
+            if (hoverRef.current) {
+              hoverRef.current = null;
+              requestDraw();
+            }
+            updateCursor();
+          }}
+        />
+      </div>
+    );
+
+    const minimap = (
+      <TasMinimap
+        ref={miniRef}
+        tas={p.tas}
+        dark={p.dark}
+        version={p.version}
+        onPan={applyScroll}
+        onZoomRange={zoomRange}
+        vertical={vertical}
+        className={
+          vertical
+            ? "shrink-0 border-l px-1.5 py-2"
+            : "shrink-0 border-t px-2 py-1.5"
+        }
+      />
+    );
+
+    if (vertical) {
+      // 竖版：[轨道头一行（左边空出刻度尺宽）] / [画布（刻度尺是画布左边那一列）]，缩略图竖在最右
+      return (
+        <div className="flex min-h-0 min-w-0 flex-1">
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+            {/* 轨道头：时间方向冻结（canvas 之外的 DOM），横向由绘制循环 translateX 跟随 */}
+            <div
+              className="flex shrink-0 border-b"
+              style={{ height: V_HEADER_H }}
+            >
+              <div className="shrink-0 border-r" style={{ width: V_RULER_W }} />
+              <div className="min-w-0 flex-1 overflow-hidden">
+                <div
+                  ref={headerListRef}
+                  className="flex h-full will-change-transform"
+                >
+                  {p.order.map(trackHeader)}
+                </div>
+              </div>
+            </div>
+            {canvas}
+          </div>
+          {minimap}
+        </div>
+      );
+    }
+
     return (
       <div className="flex min-h-0 flex-1 flex-col">
         <div className="flex min-h-0 flex-1">
@@ -1270,105 +1478,17 @@ const TasTimeline = forwardRef<TasTimelineHandle, Props>(
             <div className="shrink-0 border-b" style={{ height: RULER_H }} />
             <div className="min-h-0 flex-1 overflow-hidden">
               <div ref={headerListRef} className="will-change-transform">
-                {p.order.map((key, index) => {
-                  const locked = p.locked.has(key);
-                  return (
-                    <div
-                      key={key}
-                      title={t(`tas.trackNames.${key}`)}
-                      onPointerDown={e => onHeaderDown(e, index)}
-                      onPointerMove={onHeaderMove}
-                      onPointerUp={onHeaderUp}
-                      onPointerCancel={onHeaderUp}
-                      className="flex cursor-grab items-center gap-2 border-b px-2 select-none hover:bg-accent active:cursor-grabbing"
-                      style={{ height: ROW_H }}
-                    >
-                      <button
-                        type="button"
-                        aria-label={
-                          locked ? t("tas.unlockTrack") : t("tas.lockTrack")
-                        }
-                        aria-pressed={locked}
-                        title={
-                          locked ? t("tas.unlockTrack") : t("tas.lockTrack")
-                        }
-                        // 轨道头本身是拖动排序的手柄，锁按钮不能把 pointerdown 让上去
-                        onPointerDown={e => e.stopPropagation()}
-                        onClick={e => {
-                          e.stopPropagation();
-                          p.onToggleLock(key);
-                        }}
-                        className="shrink-0 cursor-pointer rounded p-0.5 hover:bg-background/60"
-                      >
-                        {locked ? (
-                          <Lock className="size-3 text-amber-500" />
-                        ) : (
-                          <Unlock className="size-3 text-muted-foreground/60" />
-                        )}
-                      </button>
-                      <span
-                        className={`flex min-w-0 items-center gap-2 ${
-                          locked ? "opacity-50" : ""
-                        }`}
-                      >
-                        <span
-                          className="size-2.5 shrink-0 rounded-full"
-                          style={{ background: trackColor(key, p.dark) }}
-                        />
-                        <span className="truncate font-mono text-xs">
-                          {KEY_META[key].short}
-                        </span>
-                      </span>
-                    </div>
-                  );
-                })}
+                {p.order.map(trackHeader)}
               </div>
             </div>
           </div>
 
           {/* 网格（canvas） */}
-          <div
-            ref={wrapRef}
-            className="relative min-w-0 flex-1 overflow-hidden"
-          >
-            <canvas
-              ref={canvasRef}
-              className="block touch-none"
-              onPointerDown={onPointerDown}
-              onPointerMove={onPointerMove}
-              onPointerUp={endDrag}
-              onContextMenu={onContextMenu}
-              onPointerCancel={e => {
-                try {
-                  e.currentTarget.releasePointerCapture(e.pointerId);
-                } catch {
-                  // 已经释放了
-                }
-                abortDrag();
-                updateCursor();
-              }}
-              onPointerLeave={() => {
-                mouseRef.current.inside = false;
-                if (hoverRef.current) {
-                  hoverRef.current = null;
-                  requestDraw();
-                }
-                updateCursor();
-              }}
-            />
-          </div>
+          {canvas}
         </div>
 
         {/* 缩略图 */}
-        <TasMinimap
-          ref={miniRef}
-          tas={p.tas}
-          dark={p.dark}
-          version={p.version}
-          onPan={applyScroll}
-          onZoomRange={zoomRange}
-          className="shrink-0 border-t px-2 py-1.5"
-        />
+        {minimap}
       </div>
     );
   }

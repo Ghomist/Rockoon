@@ -83,7 +83,10 @@ export function minCellW(b: TimelineBounds): number {
 }
 
 /** 可见帧区间（半开 `[first, last)`，已夹在 [0, paintable] 内）。 */
-export function visibleFrames(vp: Viewport, widthPx: number): { first: number; last: number } {
+export function visibleFrames(
+  vp: Viewport,
+  widthPx: number
+): { first: number; last: number } {
   const first = Math.max(0, Math.floor(vp.scroll));
   const last = Math.max(first, Math.ceil(vp.scroll + widthPx / vp.cellW));
   return { first, last };
@@ -95,7 +98,10 @@ export function clampViewport(vp: Viewport, b: TimelineBounds): Viewport {
   const cellW = Math.min(MAX_CELL_W, Math.max(minCellW(b), vp.cellW));
   const span = b.widthPx / cellW;
   // 内容比视口窄时贴左（scroll=0），否则最多滚到「末尾留白」的尽头
-  const maxScroll = Math.max(0, paintableFrames(b.frameCount, b.frameMs) - span);
+  const maxScroll = Math.max(
+    0,
+    paintableFrames(b.frameCount, b.frameMs) - span
+  );
   const scroll = Math.min(maxScroll, Math.max(0, vp.scroll));
   const rowsH = b.rowCount * b.rowH;
   const maxY = Math.max(0, rowsH - (b.heightPx - b.rulerH));
@@ -104,14 +110,23 @@ export function clampViewport(vp: Viewport, b: TimelineBounds): Viewport {
 }
 
 /** 以 anchorX（指针位置）为锚点缩放：指针下的那一帧保持不动。 */
-export function zoomAt(vp: Viewport, factor: number, anchorX: number): Viewport {
+export function zoomAt(
+  vp: Viewport,
+  factor: number,
+  anchorX: number
+): Viewport {
   const anchorFrame = frameAtX(vp, anchorX);
   const cellW = clampCellW(vp.cellW * factor);
   return { cellW, scroll: anchorFrame - anchorX / cellW, scrollY: vp.scrollY };
 }
 
 /** 指数平滑：把 cur 往 target 拉，dtMs 为两帧间隔。 */
-export function smooth(cur: number, target: number, tau: number, dtMs: number): number {
+export function smooth(
+  cur: number,
+  target: number,
+  tau: number,
+  dtMs: number
+): number {
   const k = 1 - Math.exp(-dtMs / tau);
   const next = cur + (target - cur) * k;
   return Math.abs(target - next) < 1e-4 ? target : next;
@@ -125,7 +140,9 @@ export function smoothViewport(
   dtMs: number
 ): Viewport {
   return {
-    cellW: Math.exp(smooth(Math.log(cur.cellW), Math.log(target.cellW), tau, dtMs)),
+    cellW: Math.exp(
+      smooth(Math.log(cur.cellW), Math.log(target.cellW), tau, dtMs)
+    ),
     scroll: smooth(cur.scroll, target.scroll, tau, dtMs),
     scrollY: smooth(cur.scrollY, target.scrollY, tau, dtMs)
   };
@@ -160,7 +177,10 @@ const MAJOR_SCALES = [1, 2, 5, 10, 25, 50, 100, 250, 500, 1000];
  * 刻度尺密度：主刻度 = 0.5 秒（换算成帧），返回**帧步长**。
  * 帧时长变了结果会变，所以调用方必须把当前的 `frameMs` 传进来。
  */
-export function tickFrames(cellW: number, frameMs: number): { major: number; minor: number } {
+export function tickFrames(
+  cellW: number,
+  frameMs: number
+): { major: number; minor: number } {
   const base = frameMs > 0 ? (BAND_SECONDS * 1000) / frameMs : 50;
   let major = Math.max(1, Math.round(base));
   for (const k of MAJOR_SCALES) {
@@ -182,15 +202,25 @@ const LABEL_STEPS = (() => {
   return out.filter(n => Number.isInteger(n));
 })();
 
+/** 竖版刻度尺上相邻两个帧号标签（沿时间轴方向）至少隔这么远：一行 11px 字 + 留白。 */
+const VERTICAL_LABEL_PX = 20;
+
 /**
  * 刻度尺上的帧号标签多久标一个：放得下就尽量密（放大到够宽时每一帧都标）。
  * 标签宽度按「最大帧号的位数」估，保证最长的那个也不会和下一个挤在一起。
  * `minor` = 标签之间的短刻度步长（整除 `label`，间距至少 6px；放不下 = 0）。
  */
-export function rulerSteps(cellW: number, maxFrame: number): { label: number; minor: number } {
+export function rulerSteps(
+  cellW: number,
+  maxFrame: number,
+  vertical = false
+): { label: number; minor: number } {
   const digits = String(Math.max(1, Math.floor(maxFrame))).length;
-  const minPx = digits * 6.5 + 12;
-  const label = LABEL_STEPS.find(n => n * cellW >= minPx) ?? LABEL_STEPS[LABEL_STEPS.length - 1];
+  // 竖版的标签是横着写在刻度旁边的：沿时间轴方向只占一行字高，不看位数
+  const minPx = vertical ? VERTICAL_LABEL_PX : digits * 6.5 + 12;
+  const label =
+    LABEL_STEPS.find(n => n * cellW >= minPx) ??
+    LABEL_STEPS[LABEL_STEPS.length - 1];
   const minor =
     [1, label / 10, label / 5, label / 2].find(
       m => Number.isInteger(m) && m >= 1 && m < label && m * cellW >= 6

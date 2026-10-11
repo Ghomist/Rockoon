@@ -5,6 +5,7 @@ import {
 } from "@tauri-apps/plugin-dialog";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import {
+  Columns3,
   FileClock,
   Gamepad2,
   Loader2,
@@ -14,6 +15,7 @@ import {
   Play,
   Settings2,
   Redo2,
+  Rows3,
   FolderOpen,
   FolderSearch,
   RefreshCw,
@@ -130,6 +132,7 @@ import {
 import { trackColor } from "@/tas/render";
 import { formatFrameTime, paintableFrames } from "@/tas/viewport";
 import TasTimeline, {
+  verticalTimelineWidth,
   type OpHandle,
   type TasMouseMode,
   type TasTimelineHandle
@@ -246,6 +249,12 @@ const LIST_MIN_W = 180;
 const PANEL_W = 300;
 /** 下半区（时间轴 + 说明条）至少要留这么高。 */
 const TIMELINE_MIN_H = 200;
+/** 竖版：左栏（TAS 文件 / 地图上下叠）的最小宽度；窗口更宽时多出来的都给它。 */
+const V_LIST_W = 240;
+/** 竖版：游戏下方的功能区至少留这么高（含标题栏）；窗口太矮时游戏区域被剪掉一截并提示。 */
+const V_FUNC_MIN_H = 260;
+/** 竖版：时间轴列的宽度（刚好放下刻度尺 + 9 条轨道 + 缩略图）。 */
+const V_TIMELINE_W = verticalTimelineWidth(9);
 
 /** 关闭窗口时对游戏的处置：kill 一起关 / keep 留着跑 / cancel 不关了。 */
 type CloseChoice = "kill" | "keep" | "cancel";
@@ -339,7 +348,10 @@ export default function TasEditorWindow() {
   /** 列表目录是不是游戏的 TAS 目录（不是的话，里面的文件要另存到 TAS 目录才能一键播放）。 */
   const listingGameDir =
     !!gameTasDir && normPath(tasDir) === normPath(gameTasDir);
-  const [order, setOrder] = useState<TasKey[]>(initialPrefs.trackOrder);
+  /** 轨道顺序：横竖两套分开记（竖版默认 ↑ ↓ ← → Shift Space Q Esc Enter）。 */
+  const [order, setOrder] = useState<TasKey[]>(
+    initialPrefs.vertical ? initialPrefs.trackOrderV : initialPrefs.trackOrder
+  );
   const [cursor, setCursor] = useState(0);
   const [selection, setSelection] = useState<TasSelection | null>(null);
   /** 「当前帧」输入框：聚焦时以本地输入为准，失焦 / 提交时回到 cursor。 */
@@ -535,6 +547,24 @@ export default function TasEditorWindow() {
     window.clearTimeout(prefTimerRef.current);
     prefTimerRef.current = window.setTimeout(() => saveTasPrefs(next), 300);
   }, []);
+
+  /**
+   * 横版 ⇄ 竖版。轨道顺序换成那一版自己记的；选区按轨道下标存，顺序一换就对不上了，清掉。
+   * 时间轴会重新挂载（视口回原点），挂好后把光标所在帧滚回视野。
+   */
+  const toggleVertical = useCallback(() => {
+    const cur = prefsRef.current;
+    const nextVertical = !cur.vertical;
+    const nextOrder = nextVertical ? cur.trackOrderV : cur.trackOrder;
+    persistPrefs({ ...cur, vertical: nextVertical });
+    setOrder(nextOrder);
+    orderRef.current = nextOrder;
+    selectionRef.current = null;
+    selAnchorRef.current = null;
+    setSelection(null);
+    setMenu(null);
+    pendingRevealRef.current = cursorRef.current;
+  }, [persistPrefs]);
 
   /** 轨道锁：锁住的轨道完全不可编辑（所有写操作都跳过它）。 */
   const toggleLock = useCallback(
@@ -761,7 +791,8 @@ export default function TasEditorWindow() {
     if (frame === null) return;
     pendingRevealRef.current = null;
     timelineRef.current?.reveal(frame);
-  }, [doc]);
+    // 换横竖之后时间轴重新挂载（视口回原点），也走这里把光标滚回视野
+  }, [doc, prefs.vertical]);
 
   /** 保存；返回是否真的写盘成功（一键播放据此决定要不要继续）。 */
   const save = useCallback(
@@ -1836,10 +1867,19 @@ export default function TasEditorWindow() {
    * 上半区高度 = 游戏区域高度：**固定、不能拖**（拖高了游戏画面上下就有黑边，拖矮了画面被剪掉）。
    * 窗口太矮时给时间轴留出最小高度，游戏区域会被剪掉一截，下面会给提示。
    */
-  const topH = Math.max(0, Math.min(regionCssH, winSize.h - TIMELINE_MIN_H));
+  const topH = Math.max(
+    0,
+    Math.min(
+      regionCssH,
+      winSize.h - (prefs.vertical ? V_FUNC_MIN_H : TIMELINE_MIN_H)
+    )
+  );
   /** 窗口装不下这个区域时给个提示（不然游戏窗口会被剪掉一截）。 */
   const regionFits =
-    topH >= regionCssH && regionCssW + 2 * LIST_MIN_W + PANEL_W <= winSize.w;
+    topH >= regionCssH &&
+    (prefs.vertical
+      ? regionCssW + V_LIST_W + V_TIMELINE_W <= winSize.w
+      : regionCssW + 2 * LIST_MIN_W + PANEL_W <= winSize.w);
   /** 缩到最小时 14px/帧 的百分比只剩个位数，保留一位小数才看得出还在变。 */
   const zoomText = `${zoomPct >= 10 ? Math.round(zoomPct) : zoomPct.toFixed(1)}%`;
   const titleText = useMemo(() => {
@@ -1861,6 +1901,1008 @@ export default function TasEditorWindow() {
     return parts.join(" · ");
   }, [cursor, dirty, doc, selection, totalSeconds]);
 
+  /** 竖版布局（时间轴竖过来、贴窗口右边）；横版是原来的「上面三栏 + 下面时间轴」。 */
+  const vertical = prefs.vertical;
+  /** 工具栏分组（编辑 / 视图 / 帧）：横版挤在时间轴上方一行，竖版在游戏下方一组一行。 */
+  const groupClass = vertical
+    ? "flex min-w-0 flex-wrap items-center gap-1"
+    : "flex shrink-0 items-center gap-1";
+  const groupLabelClass = vertical
+    ? "w-9 shrink-0 text-[11px] font-medium text-muted-foreground"
+    : "hidden px-1 text-[11px] font-medium text-muted-foreground 2xl:inline";
+  /** 竖版里帧之间的网格线是横的、轨道分隔线是竖的：「纵线 / 横线」两个开关的文案对调。 */
+  const gridToggleText = (key: string, textKey: string) => {
+    if (!vertical) return textKey;
+    if (key === "vGrid") return textKey.replace("gridV", "gridH");
+    if (key === "hGrid") return textKey.replace("gridH", "gridV");
+    return textKey;
+  };
+
+  /** TAS 文件列表（目录 / 筛选 / 元数据）：横版和地图并排，竖版和地图上下叠。 */
+  const fileListPanel = (
+    <>
+      <div className="flex min-h-0 min-w-0 flex-1 basis-0 flex-col">
+        <div className="flex items-center justify-between gap-2 border-b px-3 py-2">
+          <span
+            className="truncate text-xs font-medium whitespace-nowrap text-muted-foreground"
+            title={t("tas.openRecent")}
+          >
+            {t("tas.openRecent")}
+          </span>
+          <div className="flex shrink-0 items-center">
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              title={t("tas.dirOpen")}
+              disabled={!tasDir}
+              onClick={() => void openTasDir()}
+            >
+              <FolderOpen className="size-3.5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              title={t("tas.dirPick")}
+              onClick={() => void pickTasDir()}
+            >
+              <FolderSearch className="size-3.5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              title={t("tas.reload")}
+              onClick={() => void refresh()}
+            >
+              <RefreshCw className="size-3.5" />
+            </Button>
+          </div>
+        </div>
+        {/* 当前列表目录：路径太长时保留结尾（目录名比盘符有用）；手动选过的可以一键恢复 */}
+        {tasDir && (
+          <div className="flex items-center gap-1 border-b px-3 py-1">
+            <span
+              className="min-w-0 flex-1 truncate text-left font-mono text-[10px] text-muted-foreground"
+              dir="rtl"
+              title={tasDir.replace(/\//g, "\\")}
+            >
+              {/* rtl 下用 LRM 包住，免得斜杠被挪到另一头 */}
+              {`\u200E${tasDir.replace(/\//g, "\\")}\u200E`}
+            </span>
+            {!listingGameDir && (
+              <Button
+                variant="ghost"
+                size="icon-xs"
+                className="shrink-0"
+                title={t("tas.dirReset")}
+                onClick={resetTasDir}
+              >
+                <RotateCcw className="size-3" />
+              </Button>
+            )}
+          </div>
+        )}
+        {/* 筛选：按文件名（不区分大小写） */}
+        <div className="border-b p-2">
+          <div className="relative">
+            <Search className="pointer-events-none absolute top-1/2 left-2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              type="search"
+              className="h-7 pl-7 text-xs"
+              placeholder={t("tas.fileFilter")}
+              aria-label={t("tas.fileFilter")}
+              value={fileFilter}
+              onChange={e => setFileFilter(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === "Escape") {
+                  setFileFilter("");
+                  e.currentTarget.blur();
+                }
+              }}
+            />
+          </div>
+        </div>
+        <div className="min-h-0 flex-1 overflow-auto p-1.5">
+          {!tasDir && (
+            <p className="px-1 py-2 text-xs text-muted-foreground">
+              {t("tas.noInstance")}
+            </p>
+          )}
+          {tasDir && files.length === 0 && (
+            <p className="px-1 py-2 text-xs text-muted-foreground">
+              {t("tas.noFiles")}
+            </p>
+          )}
+          {tasDir && files.length > 0 && visibleFiles.length === 0 && (
+            <p className="px-1 py-2 text-xs text-muted-foreground">
+              {t("tas.fileFilterNone")}
+            </p>
+          )}
+          {visibleFiles.map(file => {
+            const path = `${tasDir}/${file.name}`;
+            const active = doc?.path === path;
+            const key = metaKey(file);
+            const meta = fileMeta[key];
+            return (
+              <button
+                key={file.name}
+                type="button"
+                title={file.name}
+                onClick={() => void open(path, file.name)}
+                className={`flex w-full flex-col gap-0.5 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-accent ${
+                  active ? "bg-accent" : ""
+                }`}
+              >
+                <span
+                  className={`truncate text-xs ${active ? "font-medium" : ""}`}
+                >
+                  {file.name.replace(/\.tas$/i, "")}
+                </span>
+                <span className="truncate text-[10px] text-muted-foreground tabular-nums">
+                  {key in fileMeta
+                    ? meta
+                      ? t("tas.fileMeta", {
+                          frames: meta.frames.toLocaleString(),
+                          fps: Math.round(meta.fps * 100) / 100,
+                          time: formatFrameTime(meta.seconds)
+                        })
+                      : t("tas.fileMetaBroken")
+                    : t("tas.fileMetaLoading")}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </>
+  );
+
+  /** 地图列表（原版 1~13 关 + 自制图），点一下 = 当前项目一键播放要进的地图。 */
+  const mapListPanel = (
+    <>
+      <TasMapList
+        instancePath={instancePath ?? ""}
+        selected={playMap}
+        guessed={playMapGuessed}
+        disabled={!doc}
+        onSelect={map => {
+          if (projectName) setProjectMap(projectName, map);
+        }}
+      />
+    </>
+  );
+
+  /** 回放：播放 / 速度 / 分辨率 / 地图（游戏区域上面不放任何按钮：游戏窗口压在 HTML 上，点不到）。 */
+  const playbackSection = (
+    <>
+      {/* 回放：播放 / 速度 / 分辨率 / 地图（游戏区域上面不放任何按钮：游戏窗口压在 HTML 上，点不到） */}
+      <div
+        className={cn(
+          "flex shrink-0 flex-col gap-2 px-3 py-2.5",
+          vertical && "min-w-[260px] flex-1 basis-0"
+        )}
+      >
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-[11px] font-medium text-muted-foreground">
+            {t("tas.sectionPlayback")}
+          </span>
+          <span
+            className="flex min-w-0 items-center gap-1.5 truncate text-[11px] text-muted-foreground tabular-nums"
+            title={t("tas.speedMeasuredHint")}
+          >
+            <span
+              className={cn(
+                "size-1.5 shrink-0 rounded-full",
+                game.state === "running"
+                  ? "bg-emerald-500"
+                  : gameBusy
+                    ? "animate-pulse bg-amber-500"
+                    : "bg-muted-foreground/40"
+              )}
+            />
+            {game.state === "running"
+              ? measuredFps !== null
+                ? `${t("tas.gameStateRunning")} · ${t("tas.speedMeasured", { fps: Math.round(measuredFps) })}`
+                : t("tas.gameStateRunning")
+              : game.state === "launching"
+                ? t("tas.gameStateLaunching")
+                : game.state === "stopping"
+                  ? t("tas.gameStateStopping")
+                  : t("tas.gameStateIdle")}
+          </span>
+        </div>
+        {/* 按钮各占一行，快捷键键帽才放得下（两列并排时挤成一团）。
+                  游戏在跑时再点播放 = 改配置 + 重启（TAS 配置只在启动时读），会先问一句 */}
+        <div className="flex flex-col gap-1.5">
+          <Button
+            size="sm"
+            className="w-full"
+            disabled={!doc || busy || gameBusy}
+            title={`${t("tas.playFromCursorHint", {
+              frame: playFromFrame.toLocaleString()
+            })} (F5)`}
+            onClick={() => void playProject(false)}
+          >
+            {gameBusy ? <Loader2 className="animate-spin" /> : <Play />}
+            <span className="truncate">
+              {t("tas.gamePlay")}
+              <span className="ml-1.5 font-normal opacity-75 tabular-nums">
+                {t("tas.playFromFrameShort", {
+                  frame: playFromFrame.toLocaleString()
+                })}
+              </span>
+            </span>
+            <Kbd className="ml-auto bg-primary-foreground/20 text-primary-foreground">
+              F5
+            </Kbd>
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full"
+            disabled={!doc || busy || gameBusy}
+            title={`${t("tas.playFromStartHint")} (Ctrl+F5)`}
+            onClick={() => void playProject(true)}
+          >
+            <SkipBack />
+            {t("tas.playFromStart")}
+            <KbdGroup className="ml-auto">
+              <Kbd>Ctrl</Kbd>
+              <Kbd>F5</Kbd>
+            </KbdGroup>
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full"
+            disabled={game.state !== "running"}
+            title={`${t("tas.gameStop")} (Shift+F5)`}
+            onClick={() => void stopGame()}
+          >
+            <Square />
+            {t("tas.gameStop")}
+            <KbdGroup className="ml-auto">
+              <Kbd>Shift</Kbd>
+              <Kbd>F5</Kbd>
+            </KbdGroup>
+          </Button>
+          {game.state === "running" && (
+            <Toggle
+              variant="outline"
+              size="sm"
+              className="w-full"
+              pressed={interactive}
+              onPressedChange={() => void toggleInteractive()}
+              title={t("tas.gameInteractiveHint")}
+            >
+              <MousePointerClick />
+              {t("tas.gameInteractive")}
+            </Toggle>
+          )}
+        </div>
+
+        <Separator />
+
+        {/* 速度：标签 + 读数（点一下回到 1×）一行，滑条一行（两端标着快捷键 , / .）。
+                  滑条按档位走；拖动中每一档都即时推给游戏（RockoonIO 限速，下一帧生效） */}
+        <div className="flex flex-col gap-1.5">
+          <div className="flex items-center justify-between gap-2">
+            <Label
+              htmlFor="tas-speed"
+              className="text-xs font-normal text-muted-foreground"
+              title={t("tas.speedHint")}
+            >
+              {t("tas.speedShort")}
+            </Label>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 gap-1.5 px-1.5 tabular-nums"
+              title={t("tas.speedResetHint")}
+              onClick={() => setPlaySpeed(1)}
+            >
+              <span className="font-semibold">
+                {speedLabel(prefs.playSpeed)}
+              </span>
+              <span className="text-[10px] font-normal text-muted-foreground">
+                {targetFps > 0 ? `${Math.round(targetFps)} fps` : "∞"}
+              </span>
+            </Button>
+          </div>
+          <div className="flex items-center gap-2">
+            {/* Kbd 自带 pointer-events-none，title 挂在它身上永远不显示 —— 挂在外面的 span 上 */}
+            <span title={t("tas.speedSlower")} className="inline-flex">
+              <Kbd>,</Kbd>
+            </span>
+            <Slider
+              id="tas-speed"
+              className="min-w-0 flex-1"
+              min={0}
+              max={PLAY_SPEED_STOPS.length - 1}
+              step={1}
+              value={[speedStop]}
+              onValueChange={([i]) => setPlaySpeed(PLAY_SPEED_STOPS[i])}
+              aria-label={t("tas.speed")}
+              title={t("tas.speedHint")}
+            />
+            <span title={t("tas.speedFaster")} className="inline-flex">
+              <Kbd>.</Kbd>
+            </span>
+          </div>
+        </div>
+
+        <Separator />
+
+        {/* 标签 │ 控件 两列：分辨率 / 地图 */}
+        <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-2 text-xs">
+          <Label
+            htmlFor="tas-resolution"
+            className="text-xs font-normal text-muted-foreground"
+            title={t("tas.gameResolutionHint")}
+          >
+            {t("tas.gameResolution")}
+          </Label>
+          {/* 分辨率在启动时用 -w/-h 定死，游戏跑着时不能改 */}
+          <Select
+            value={`${prefs.gameWidth}x${prefs.gameHeight}`}
+            onValueChange={value => {
+              const [w, h] = value.split("x").map(Number);
+              persistPrefs({
+                ...prefsRef.current,
+                gameWidth: w,
+                gameHeight: h
+              });
+            }}
+            disabled={game.state !== "idle"}
+          >
+            <SelectTrigger
+              id="tas-resolution"
+              size="sm"
+              className="h-7 w-full text-xs"
+              title={t("tas.gameResolutionHint")}
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {GAME_RESOLUTIONS.map(([w, h]) => (
+                <SelectItem key={`${w}x${h}`} value={`${w}x${h}`}>
+                  {`${w} × ${h}`}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <span
+            className="text-muted-foreground"
+            title={t("tas.gameLevelHint")}
+          >
+            {t("tas.mapLabel")}
+          </span>
+          {/* 在右侧地图列表里选；这里只显示 */}
+          <span
+            className="flex min-w-0 items-center gap-1.5"
+            title={t("tas.gameLevelHint")}
+          >
+            <MapIcon className="size-3.5 shrink-0 text-muted-foreground" />
+            <span
+              className={cn(
+                "truncate",
+                playMap === null && "text-muted-foreground"
+              )}
+            >
+              {playMap !== null
+                ? mapDisplayName(playMap)
+                : doc
+                  ? t("tas.mapNone")
+                  : "—"}
+            </span>
+            {playMapGuessed && (
+              <Badge
+                variant="outline"
+                className="shrink-0 px-1 py-0 text-[10px] font-normal"
+                title={t("tas.mapGuessedHint")}
+              >
+                {t("tas.mapGuessed")}
+              </Badge>
+            )}
+          </span>
+        </div>
+        {!regionFits && (
+          <p
+            className="flex items-start gap-1.5 text-[11px] text-amber-600 dark:text-amber-500"
+            title={t("tas.gameTooSmallHint")}
+          >
+            <TriangleAlert className="mt-px size-3.5 shrink-0" />
+            {t("tas.gameTooSmall")}
+          </p>
+        )}
+      </div>
+    </>
+  );
+
+  /** 文件：保存 / 另存为 / 裁尾 + 改动状态。 */
+  const fileSection = (
+    <>
+      {/* 文件：保存 / 另存为 / 裁尾 + 改动状态 */}
+      <div
+        className={cn(
+          "flex shrink-0 flex-col gap-1.5 px-3 py-2.5",
+          vertical ? "border-b" : "border-t"
+        )}
+      >
+        <div className="flex items-center gap-1.5">
+          <Button
+            size="sm"
+            className="h-7"
+            disabled={!doc || !dirty || busy}
+            title="Ctrl+S"
+            onClick={() => void save(false)}
+          >
+            {busy ? <Loader2 className="animate-spin" /> : <Save />}
+            {t("tas.save")}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7"
+            disabled={!doc || busy}
+            title="Ctrl+Shift+S"
+            onClick={() => void save(true)}
+          >
+            {t("tas.saveAs")}
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className="ml-auto"
+            title={`${t("tas.trimTail")} — ${t("tas.trimTailHint")}`}
+            disabled={!doc}
+            onClick={trimTailCmd}
+          >
+            <Scissors />
+          </Button>
+        </div>
+        <p
+          className={cn(
+            "truncate text-[11px]",
+            dirty
+              ? "text-amber-600 dark:text-amber-500"
+              : "text-muted-foreground"
+          )}
+        >
+          {status || (doc ? (dirty ? t("tas.modified") : t("tas.clean")) : "—")}
+        </p>
+      </div>
+    </>
+  );
+
+  /** 游戏区域（宽高 = 分辨率 / dpr，1:1）：游戏窗口以「顶层窗口 + owner」摆在这块上面，见 embed.rs。 */
+  const gameArea = (
+    <>
+      {/* 游戏区域：物理像素尺寸 = 选定分辨率（CSS 尺寸再除以 dpr），游戏窗口被嵌在这个矩形里 */}
+      <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden">
+        <div
+          ref={regionRef}
+          className="relative flex shrink-0 items-center justify-center"
+          style={{ width: regionCssW, height: regionCssH }}
+        >
+          {game.state === "running" ? (
+            // 游戏窗口已经嵌进这块区域了。它盖在 HTML 上面，所以这行字只在
+            // 「游戏还没出画面」时才看得到：一直黑的话至少知道不是界面卡死了。
+            <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+              <span className="max-w-[80%] text-center text-xs text-neutral-400">
+                {t("tas.gameRunningHint")}
+              </span>
+            </div>
+          ) : (
+            <div className="flex max-w-[70%] flex-col items-center gap-3 text-center text-neutral-400">
+              {gameBusy ? (
+                <Loader2 className="size-8 animate-spin" />
+              ) : (
+                <Gamepad2 className="size-8 opacity-60" />
+              )}
+              <span className="text-xs">
+                {game.state === "launching"
+                  ? t("tas.gameLaunching")
+                  : game.state === "stopping"
+                    ? t("tas.gameStopping")
+                    : t("tas.gameAreaIdle")}
+              </span>
+              <span className="text-[11px] text-neutral-500 tabular-nums">
+                {`${prefs.gameWidth} × ${prefs.gameHeight}`}
+              </span>
+            </div>
+          )}
+        </div>
+      </div>
+    </>
+  );
+
+  /** 编辑：鼠标模式 + 撤销重做。 */
+  const editGroup = (
+    <>
+      {/* ── 编辑 ── */}
+      <div className={groupClass}>
+        <span className={groupLabelClass}>{t("tas.sectionEdit")}</span>
+        {/* 鼠标模式四选一：选择 / 填充 / 录入 / 插删帧（快捷键 1~4） */}
+        <ToggleGroup
+          type="single"
+          variant="outline"
+          size="sm"
+          className="h-7"
+          value={mode}
+          onValueChange={value => {
+            // 单选组再点一下当前项会传空串：保持当前模式
+            if (!value) return;
+            setMode(value as TasMouseMode);
+          }}
+          disabled={!doc}
+          aria-label={t("tas.mode")}
+        >
+          {MOUSE_MODES.map(m => (
+            <ToggleGroupItem
+              key={m.id}
+              value={m.id}
+              className="h-7 px-2.5 text-xs"
+              title={`${t(m.hintKey)} (${m.key})`}
+            >
+              <span className="text-[10px] opacity-50">{m.key}</span>
+              {t(m.labelKey)}
+            </ToggleGroupItem>
+          ))}
+        </ToggleGroup>
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          title={`${t("tas.undo")} (Ctrl+Z)`}
+          disabled={!undoState.canUndo}
+          onClick={undo}
+        >
+          <Undo2 />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          title={`${t("tas.redo")} (Ctrl+Shift+Z)`}
+          disabled={!undoState.canRedo}
+          onClick={redo}
+        >
+          <Redo2 />
+        </Button>
+      </div>
+    </>
+  );
+
+  /** 视图：网格开关 + 缩放 + 设置。 */
+  const viewGroup = (
+    <>
+      {/* ── 视图：纵线 / 横线 / 分区（互相独立）+ 缩放 ── */}
+      <div className={groupClass}>
+        <span className={groupLabelClass}>{t("tas.sectionView")}</span>
+        <ToggleGroup
+          type="multiple"
+          variant="outline"
+          size="sm"
+          className="h-7"
+          value={GRID_TOGGLES.filter(g => prefs[g.key]).map(g => g.key)}
+          onValueChange={values =>
+            persistPrefs({
+              ...prefsRef.current,
+              vGrid: values.includes("vGrid"),
+              hGrid: values.includes("hGrid"),
+              bands: values.includes("bands"),
+              cellBlocks: values.includes("cellBlocks")
+            })
+          }
+          disabled={!doc}
+        >
+          {GRID_TOGGLES.map(g => (
+            <ToggleGroupItem
+              key={g.key}
+              value={g.key}
+              className="h-7 px-2.5 text-xs"
+              title={t(gridToggleText(g.key, g.hintKey))}
+            >
+              {t(gridToggleText(g.key, g.labelKey))}
+            </ToggleGroupItem>
+          ))}
+        </ToggleGroup>
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          title={`${t("tas.zoomOut")} (S)`}
+          disabled={!doc}
+          onClick={() => timelineRef.current?.zoomStep(-1)}
+        >
+          <ZoomOut />
+        </Button>
+        <span className="w-11 text-center text-xs text-muted-foreground tabular-nums">
+          {zoomText}
+        </span>
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          title={`${t("tas.zoomIn")} (W)`}
+          disabled={!doc}
+          onClick={() => timelineRef.current?.zoomStep(1)}
+        >
+          <ZoomIn />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          title={t("tas.zoomFit")}
+          disabled={!doc}
+          onClick={() => timelineRef.current?.fitAll()}
+        >
+          <Maximize2 />
+        </Button>
+        {/* 不常改的设置：网格线深浅、重启前是否询问 */}
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="ghost" size="icon-sm" title={t("tas.settings")}>
+              <Settings2 />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent align="start" className="w-64 space-y-4">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs">{t("tas.gridStrength")}</Label>
+                <span className="text-xs text-muted-foreground tabular-nums">
+                  {Math.round(prefs.gridStrength * 100)}%
+                </span>
+              </div>
+              <Slider
+                min={0}
+                max={100}
+                step={5}
+                value={[Math.round(prefs.gridStrength * 100)]}
+                onValueChange={([v]) =>
+                  persistPrefs({
+                    ...prefsRef.current,
+                    gridStrength: v / 100
+                  })
+                }
+                aria-label={t("tas.gridStrength")}
+              />
+              <p className="text-[11px] text-muted-foreground">
+                {t("tas.gridStrengthHint")}
+              </p>
+            </div>
+            <div className="flex items-center justify-between gap-3">
+              <Label htmlFor="tas-restart-ask" className="text-xs">
+                {t("tas.restartAsk")}
+              </Label>
+              <Switch
+                id="tas-restart-ask"
+                checked={!prefs.skipPlayAsk}
+                onCheckedChange={v =>
+                  persistPrefs({
+                    ...prefsRef.current,
+                    skipPlayAsk: !v
+                  })
+                }
+              />
+            </div>
+          </PopoverContent>
+        </Popover>
+      </div>
+    </>
+  );
+
+  /** 帧：本帧按键 / 当前帧 / 按键时长 / 录像帧率。 */
+  const frameGroup = (
+    <>
+      {/* ── 帧（右对齐）：本帧按键 / 当前帧 / 按键时长 / 录像帧率 ── */}
+      <div
+        className={
+          vertical
+            ? "flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2"
+            : "ml-auto flex min-w-0 items-center gap-3"
+        }
+      >
+        {vertical && <span className={groupLabelClass}>{t("tas.frame")}</span>}
+        {/* 当前帧的按键一眼可见（录入模式尤其需要）；窗口窄时先被挤掉 */}
+        <div
+          className="flex min-w-0 items-center gap-1 overflow-hidden"
+          aria-label={t("tas.frameKeys")}
+          title={t("tas.frameKeys")}
+        >
+          {currentKeys.length === 0 ? (
+            <span className="truncate text-xs text-muted-foreground">
+              {t("tas.noKeys")}
+            </span>
+          ) : (
+            currentKeys.map(key => (
+              <Badge
+                key={key}
+                variant="outline"
+                className="shrink-0 gap-1 px-1.5 py-0 text-[11px]"
+              >
+                <span
+                  className="size-1.5 rounded-full"
+                  style={{ background: trackColor(key, dark) }}
+                />
+                {KEY_META[key].short}
+              </Badge>
+            ))
+          )}
+        </div>
+        {/* 当前帧：实时跟着光标走；输入帧号 + Enter / 失焦就跳过去；滚轮逐帧移动（Shift ×10） */}
+        <div className="flex shrink-0 items-center gap-1.5">
+          <Label
+            htmlFor="tas-frame"
+            className="text-xs font-normal text-muted-foreground"
+            title={t("tas.wheelHint")}
+          >
+            {t("tas.currentFrame")}
+          </Label>
+          <Input
+            id="tas-frame"
+            ref={frameInputRef}
+            type="text"
+            inputMode="numeric"
+            className="h-7 w-20 px-2 text-xs tabular-nums"
+            title={t("tas.wheelHint")}
+            disabled={!doc}
+            value={frameFocus ? frameText : String(cursor)}
+            onFocus={() => {
+              setFrameText(String(cursor));
+              setFrameFocus(true);
+            }}
+            onChange={e => setFrameText(e.target.value)}
+            onBlur={() => {
+              setFrameFocus(false);
+              const raw = frameText.trim();
+              const n = Number(raw);
+              const d = docRef.current;
+              if (raw === "" || !Number.isInteger(n) || !d) return; // 非法：恢复成当前值
+              moveCursor(Math.max(0, Math.min(d.tas.frameCount - 1, n)), false);
+            }}
+            onKeyDown={e => {
+              if (e.key === "Enter") e.currentTarget.blur();
+            }}
+          />
+        </div>
+        {/* 选择模式：选中一段按键后，这里直接显示/修改它的帧数；滚轮 ±1（Shift ±10） */}
+        <div className="flex shrink-0 items-center gap-1.5">
+          <Label
+            htmlFor="tas-run-length"
+            className="text-xs font-normal text-muted-foreground"
+            title={t("tas.runLengthHint")}
+          >
+            {t("tas.runLength")}
+          </Label>
+          <Input
+            id="tas-run-length"
+            ref={lenInputRef}
+            type="text"
+            inputMode="numeric"
+            className="h-7 w-16 px-2 text-xs tabular-nums"
+            title={t("tas.runLengthHint")}
+            disabled={!doc || !selection || selection.t0 !== selection.t1}
+            value={lenFocus ? lenText : String(selectionLength)}
+            onFocus={() => {
+              setLenText(String(selectionLength));
+              setLenFocus(true);
+            }}
+            onChange={e => applyRunLength(e.target.value)}
+            onBlur={() => setLenFocus(false)}
+            onKeyDown={e => {
+              if (e.key === "Enter") e.currentTarget.blur();
+            }}
+          />
+        </div>
+        {/* 帧率：全局统一，改它 = 把每一帧都写成 1000/fps 毫秒（不支持变速） */}
+        <div className="flex shrink-0 items-center gap-1.5">
+          <Label
+            htmlFor="tas-record-fps"
+            className="text-xs font-normal text-muted-foreground"
+            title={t("tas.recordFpsHint")}
+          >
+            {t("tas.recordFps")}
+          </Label>
+          <Input
+            id="tas-record-fps"
+            type="text"
+            inputMode="decimal"
+            className="h-7 w-16 px-2 text-xs tabular-nums"
+            title={t("tas.recordFpsHint")}
+            disabled={!doc}
+            value={fpsFocus ? fpsText : msToText(fps)}
+            onFocus={() => {
+              setFpsText(msToText(fps));
+              setFpsFocus(true);
+            }}
+            onChange={e => setFpsText(e.target.value)}
+            onBlur={() => {
+              setFpsFocus(false);
+              const raw = fpsText.trim();
+              const n = Number(raw);
+              if (raw !== "" && Number.isFinite(n) && n > 0)
+                applyFrameMs(1000 / n);
+            }}
+            onKeyDown={e => {
+              if (e.key === "Enter") e.currentTarget.blur();
+            }}
+          />
+        </div>
+      </div>
+    </>
+  );
+
+  /** 时间轴本体（没打开文件时是一句提示）。 */
+  const timelineBody = (
+    <>
+      {!doc ? (
+        <div className="flex min-h-0 min-w-0 flex-1 items-center justify-center p-8 text-center text-sm text-muted-foreground">
+          {t("tas.hint")}
+        </div>
+      ) : (
+        <TasTimeline
+          // 换横竖要重新挂载：尺寸监听、视口、轨道头都按方向初始化
+          key={vertical ? "v" : "h"}
+          ref={timelineRef}
+          vertical={vertical}
+          tas={doc.tas}
+          frameMs={frameMs}
+          blockLabel={(n: number) => t("tas.blockFrames", { n })}
+          order={order}
+          dark={dark}
+          vGrid={prefs.vGrid}
+          hGrid={prefs.hGrid}
+          bands={prefs.bands}
+          gridStrength={prefs.gridStrength}
+          cellBlocks={prefs.cellBlocks}
+          mode={mode}
+          onMenu={at => setMenu(at)}
+          onFrames={editFrames}
+          cursor={cursor}
+          selection={selection}
+          version={version}
+          defaultCellW={prefs.cellW}
+          onCellWChange={next => {
+            setCellW(next);
+            if (Math.abs(next - prefsRef.current.cellW) > 0.5) {
+              persistPrefs({ ...prefsRef.current, cellW: next });
+            }
+          }}
+          onCursor={f => {
+            cursorRef.current = f;
+            setCursor(f);
+          }}
+          onSelection={sel => {
+            // 来自时间轴的选区（单击/框选）不是打字造成的，取消待消费的标记，保证自动聚焦生效
+            lenTypingRef.current = false;
+            selectionRef.current = sel;
+            setSelection(sel);
+            // 选区被拖起来的那一刻定下锚点，之后一直用它
+            if (sel && selAnchorRef.current === null)
+              selAnchorRef.current = sel.f0;
+            if (!sel) selAnchorRef.current = null;
+          }}
+          onOrderChange={next => {
+            setOrder(next);
+            orderRef.current = next;
+            // 横竖两套轨道顺序分开记
+            persistPrefs(
+              prefsRef.current.vertical
+                ? { ...prefsRef.current, trackOrderV: next }
+                : { ...prefsRef.current, trackOrder: next }
+            );
+          }}
+          onBeginOp={beginOp}
+          onMutated={() => setDirty(true)}
+          locked={locked}
+          recording={mode === "record"}
+          onToggleLock={toggleLock}
+        />
+      )}
+    </>
+  );
+
+  /** 时间轴右键菜单（选择 / 录入模式弹）。 */
+  const contextMenu = (
+    <>
+      {/* 时间轴右键菜单（选择 / 录入模式弹） */}
+      <DropdownMenu
+        open={menu !== null}
+        onOpenChange={open => !open && setMenu(null)}
+      >
+        <DropdownMenuTrigger asChild>
+          <span
+            aria-hidden
+            className="pointer-events-none fixed z-50 size-0"
+            style={{ left: menu?.x ?? 0, top: menu?.y ?? 0 }}
+          />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent
+          align="start"
+          side="bottom"
+          sideOffset={4}
+          className="w-52"
+          onCloseAutoFocus={e => e.preventDefault()}
+        >
+          <DropdownMenuItem disabled={!menuHasRun} onSelect={selectRunAt}>
+            {t("tas.menu.selectRun")}
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onSelect={() => {
+              if (!menu) return;
+              const d = docRef.current;
+              const max = Math.max(0, (d?.tas.frameCount ?? 1) - 1);
+              moveCursor(Math.min(max, Math.max(0, menu.frame)), false);
+            }}
+          >
+            {t("tas.menu.jumpHere")}
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            disabled={!menuHasRun}
+            onSelect={() => copySelection(false)}
+          >
+            {t("tas.menu.copy")}
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            disabled={!menuHasRun}
+            onSelect={() => copySelection(true)}
+          >
+            {t("tas.menu.cut")}
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            disabled={!clipRef.current}
+            onSelect={() => pasteClipboard(false)}
+          >
+            {t("tas.menu.paste")}
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem disabled={!menuHasRun} onSelect={deleteSelection}>
+            {t("tas.menu.delete")}
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          {/* 插入 / 删除整帧：点在选区里按选区的帧数，否则按 1 帧 */}
+          <DropdownMenuItem
+            disabled={!menuFrames}
+            onSelect={() => {
+              if (!menuFrames) return;
+              const [a, b] = menuFrames;
+              editFrames("insert", a, b);
+            }}
+          >
+            {t("tas.menu.insertLeft", {
+              n: menuFrames ? menuFrames[1] - menuFrames[0] + 1 : 1
+            })}
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            disabled={!menuFrames}
+            onSelect={() => {
+              if (!menuFrames) return;
+              const [a, b] = menuFrames;
+              // 新帧按选区起始帧的按键填充
+              editFrames("insert", b + 1, b + 1 + (b - a), a);
+            }}
+          >
+            {t("tas.menu.insertRight", {
+              n: menuFrames ? menuFrames[1] - menuFrames[0] + 1 : 1
+            })}
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            disabled={
+              !menuFrames || !doc || menuFrames[0] >= doc.tas.frameCount
+            }
+            onSelect={() => {
+              if (!menuFrames) return;
+              editFrames("delete", menuFrames[0], menuFrames[1]);
+            }}
+          >
+            {t("tas.menu.deleteFrames", {
+              n: menuFrames ? menuFrames[1] - menuFrames[0] + 1 : 1
+            })}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </>
+  );
+
   return (
     <div className="flex h-full flex-col overflow-hidden bg-background text-foreground">
       {/* 标题栏（独立窗口：整条可拖拽 + 窗口按钮） */}
@@ -1880,6 +2922,27 @@ export default function TasEditorWindow() {
         >
           {titleText}
         </div>
+        {/* 横版 / 竖版切换（时间轴横着放在下面 / 竖着贴在右边） */}
+        <div className="flex items-center">
+          {/* 带文字：只有图标的话不好找；文字写的是「点了会切到哪一版」 */}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 gap-1.5 px-2 text-xs"
+            aria-label={t("tas.layoutToggle")}
+            title={
+              prefs.vertical
+                ? t("tas.layoutToHorizontal")
+                : t("tas.layoutToVertical")
+            }
+            onClick={toggleVertical}
+          >
+            {prefs.vertical ? <Rows3 /> : <Columns3 />}
+            {prefs.vertical
+              ? t("tas.layoutToHorizontalShort")
+              : t("tas.layoutToVerticalShort")}
+          </Button>
+        </div>
         <TitleBarControls />
       </div>
 
@@ -1889,966 +2952,114 @@ export default function TasEditorWindow() {
         </div>
       )}
 
-      <div className="flex min-h-0 flex-1 flex-col">
-        {/* 上半区：[TAS 文件 │ 地图]（吃剩余宽度）│ 功能面板（固定 PANEL_W）│ 游戏（按分辨率 1:1，贴右边） */}
-        <div
-          className="flex min-h-0 shrink-0 border-b"
-          style={{ height: topH }}
-        >
-          {/* 左：TAS 文件 │ 地图（原版 + 自制图）两栏平分 */}
-          <div className="flex min-h-0 min-w-0 flex-1">
-            <div className="flex min-h-0 min-w-0 flex-1 basis-0 flex-col">
-              <div className="flex items-center justify-between gap-2 border-b px-3 py-2">
-                <span
-                  className="truncate text-xs font-medium whitespace-nowrap text-muted-foreground"
-                  title={t("tas.openRecent")}
-                >
-                  {t("tas.openRecent")}
-                </span>
-                <div className="flex shrink-0 items-center">
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    title={t("tas.dirOpen")}
-                    disabled={!tasDir}
-                    onClick={() => void openTasDir()}
-                  >
-                    <FolderOpen className="size-3.5" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    title={t("tas.dirPick")}
-                    onClick={() => void pickTasDir()}
-                  >
-                    <FolderSearch className="size-3.5" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    title={t("tas.reload")}
-                    onClick={() => void refresh()}
-                  >
-                    <RefreshCw className="size-3.5" />
-                  </Button>
-                </div>
-              </div>
-              {/* 当前列表目录：路径太长时保留结尾（目录名比盘符有用）；手动选过的可以一键恢复 */}
-              {tasDir && (
-                <div className="flex items-center gap-1 border-b px-3 py-1">
-                  <span
-                    className="min-w-0 flex-1 truncate text-left font-mono text-[10px] text-muted-foreground"
-                    dir="rtl"
-                    title={tasDir.replace(/\//g, "\\")}
-                  >
-                    {/* rtl 下用 LRM 包住，免得斜杠被挪到另一头 */}
-                    {`\u200E${tasDir.replace(/\//g, "\\")}\u200E`}
-                  </span>
-                  {!listingGameDir && (
-                    <Button
-                      variant="ghost"
-                      size="icon-xs"
-                      className="shrink-0"
-                      title={t("tas.dirReset")}
-                      onClick={resetTasDir}
-                    >
-                      <RotateCcw className="size-3" />
-                    </Button>
-                  )}
-                </div>
-              )}
-              {/* 筛选：按文件名（不区分大小写） */}
-              <div className="border-b p-2">
-                <div className="relative">
-                  <Search className="pointer-events-none absolute top-1/2 left-2 size-3.5 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    type="search"
-                    className="h-7 pl-7 text-xs"
-                    placeholder={t("tas.fileFilter")}
-                    aria-label={t("tas.fileFilter")}
-                    value={fileFilter}
-                    onChange={e => setFileFilter(e.target.value)}
-                    onKeyDown={e => {
-                      if (e.key === "Escape") {
-                        setFileFilter("");
-                        e.currentTarget.blur();
-                      }
-                    }}
-                  />
-                </div>
-              </div>
-              <div className="min-h-0 flex-1 overflow-auto p-1.5">
-                {!tasDir && (
-                  <p className="px-1 py-2 text-xs text-muted-foreground">
-                    {t("tas.noInstance")}
-                  </p>
-                )}
-                {tasDir && files.length === 0 && (
-                  <p className="px-1 py-2 text-xs text-muted-foreground">
-                    {t("tas.noFiles")}
-                  </p>
-                )}
-                {tasDir && files.length > 0 && visibleFiles.length === 0 && (
-                  <p className="px-1 py-2 text-xs text-muted-foreground">
-                    {t("tas.fileFilterNone")}
-                  </p>
-                )}
-                {visibleFiles.map(file => {
-                  const path = `${tasDir}/${file.name}`;
-                  const active = doc?.path === path;
-                  const key = metaKey(file);
-                  const meta = fileMeta[key];
-                  return (
-                    <button
-                      key={file.name}
-                      type="button"
-                      title={file.name}
-                      onClick={() => void open(path, file.name)}
-                      className={`flex w-full flex-col gap-0.5 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-accent ${
-                        active ? "bg-accent" : ""
-                      }`}
-                    >
-                      <span
-                        className={`truncate text-xs ${active ? "font-medium" : ""}`}
-                      >
-                        {file.name.replace(/\.tas$/i, "")}
-                      </span>
-                      <span className="truncate text-[10px] text-muted-foreground tabular-nums">
-                        {key in fileMeta
-                          ? meta
-                            ? t("tas.fileMeta", {
-                                frames: meta.frames.toLocaleString(),
-                                fps: Math.round(meta.fps * 100) / 100,
-                                time: formatFrameTime(meta.seconds)
-                              })
-                            : t("tas.fileMetaBroken")
-                          : t("tas.fileMetaLoading")}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-            {/* 地图列表（原版 1~13 关 + 自制图），点一下 = 当前项目一键播放要进的地图 */}
-            <div className="flex min-h-0 min-w-0 flex-1 basis-0 flex-col border-l">
-              <TasMapList
-                instancePath={instancePath ?? ""}
-                selected={playMap}
-                guessed={playMapGuessed}
-                disabled={!doc}
-                onSelect={map => {
-                  if (projectName) setProjectMap(projectName, map);
-                }}
-              />
-            </div>
-          </div>
-
-          {/* 中：功能面板（回放 / 文件），固定宽度；夹在列表和游戏之间，离两边都近 */}
+      {/* 竖版：[TAS 文件 / 地图（上下叠，吃剩余宽度）] │ [游戏（1:1）/ 功能区 / 说明条] │ 时间轴（竖，刚好放下所有轨道，贴右边） */}
+      {vertical ? (
+        <div className="flex min-h-0 flex-1">
+          {/* 左：TAS 文件 / 地图 上下平分；窗口多出来的宽度都给这一栏 */}
           <div
-            className="flex min-h-0 shrink-0 flex-col overflow-y-auto border-l bg-muted/20"
-            style={{ width: PANEL_W }}
+            className="flex min-h-0 min-w-0 flex-1 flex-col border-r"
+            style={{ minWidth: V_LIST_W }}
           >
-            {/* 回放：播放 / 速度 / 分辨率 / 地图（游戏区域上面不放任何按钮：游戏窗口压在 HTML 上，点不到） */}
-            <div className="flex shrink-0 flex-col gap-2 px-3 py-2.5">
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-[11px] font-medium text-muted-foreground">
-                  {t("tas.sectionPlayback")}
-                </span>
-                <span
-                  className="flex min-w-0 items-center gap-1.5 truncate text-[11px] text-muted-foreground tabular-nums"
-                  title={t("tas.speedMeasuredHint")}
-                >
-                  <span
-                    className={cn(
-                      "size-1.5 shrink-0 rounded-full",
-                      game.state === "running"
-                        ? "bg-emerald-500"
-                        : gameBusy
-                          ? "animate-pulse bg-amber-500"
-                          : "bg-muted-foreground/40"
-                    )}
-                  />
-                  {game.state === "running"
-                    ? measuredFps !== null
-                      ? `${t("tas.gameStateRunning")} · ${t("tas.speedMeasured", { fps: Math.round(measuredFps) })}`
-                      : t("tas.gameStateRunning")
-                    : game.state === "launching"
-                      ? t("tas.gameStateLaunching")
-                      : game.state === "stopping"
-                        ? t("tas.gameStateStopping")
-                        : t("tas.gameStateIdle")}
-                </span>
-              </div>
-              {/* 按钮各占一行，快捷键键帽才放得下（两列并排时挤成一团）。
-                  游戏在跑时再点播放 = 改配置 + 重启（TAS 配置只在启动时读），会先问一句 */}
-              <div className="flex flex-col gap-1.5">
-                <Button
-                  size="sm"
-                  className="w-full"
-                  disabled={!doc || busy || gameBusy}
-                  title={`${t("tas.playFromCursorHint", {
-                    frame: playFromFrame.toLocaleString()
-                  })} (F5)`}
-                  onClick={() => void playProject(false)}
-                >
-                  {gameBusy ? <Loader2 className="animate-spin" /> : <Play />}
-                  <span className="truncate">
-                    {t("tas.gamePlay")}
-                    <span className="ml-1.5 font-normal opacity-75 tabular-nums">
-                      {t("tas.playFromFrameShort", {
-                        frame: playFromFrame.toLocaleString()
-                      })}
-                    </span>
-                  </span>
-                  <Kbd className="ml-auto bg-primary-foreground/20 text-primary-foreground">
-                    F5
-                  </Kbd>
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full"
-                  disabled={!doc || busy || gameBusy}
-                  title={`${t("tas.playFromStartHint")} (Ctrl+F5)`}
-                  onClick={() => void playProject(true)}
-                >
-                  <SkipBack />
-                  {t("tas.playFromStart")}
-                  <KbdGroup className="ml-auto">
-                    <Kbd>Ctrl</Kbd>
-                    <Kbd>F5</Kbd>
-                  </KbdGroup>
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full"
-                  disabled={game.state !== "running"}
-                  title={`${t("tas.gameStop")} (Shift+F5)`}
-                  onClick={() => void stopGame()}
-                >
-                  <Square />
-                  {t("tas.gameStop")}
-                  <KbdGroup className="ml-auto">
-                    <Kbd>Shift</Kbd>
-                    <Kbd>F5</Kbd>
-                  </KbdGroup>
-                </Button>
-                {game.state === "running" && (
-                  <Toggle
-                    variant="outline"
-                    size="sm"
-                    className="w-full"
-                    pressed={interactive}
-                    onPressedChange={() => void toggleInteractive()}
-                    title={t("tas.gameInteractiveHint")}
-                  >
-                    <MousePointerClick />
-                    {t("tas.gameInteractive")}
-                  </Toggle>
-                )}
-              </div>
-
-              <Separator />
-
-              {/* 速度：标签 + 读数（点一下回到 1×）一行，滑条一行（两端标着快捷键 , / .）。
-                  滑条按档位走；拖动中每一档都即时推给游戏（RockoonIO 限速，下一帧生效） */}
-              <div className="flex flex-col gap-1.5">
-                <div className="flex items-center justify-between gap-2">
-                  <Label
-                    htmlFor="tas-speed"
-                    className="text-xs font-normal text-muted-foreground"
-                    title={t("tas.speedHint")}
-                  >
-                    {t("tas.speedShort")}
-                  </Label>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 gap-1.5 px-1.5 tabular-nums"
-                    title={t("tas.speedResetHint")}
-                    onClick={() => setPlaySpeed(1)}
-                  >
-                    <span className="font-semibold">
-                      {speedLabel(prefs.playSpeed)}
-                    </span>
-                    <span className="text-[10px] font-normal text-muted-foreground">
-                      {targetFps > 0 ? `${Math.round(targetFps)} fps` : "∞"}
-                    </span>
-                  </Button>
-                </div>
-                <div className="flex items-center gap-2">
-                  {/* Kbd 自带 pointer-events-none，title 挂在它身上永远不显示 —— 挂在外面的 span 上 */}
-                  <span title={t("tas.speedSlower")} className="inline-flex">
-                    <Kbd>,</Kbd>
-                  </span>
-                  <Slider
-                    id="tas-speed"
-                    className="min-w-0 flex-1"
-                    min={0}
-                    max={PLAY_SPEED_STOPS.length - 1}
-                    step={1}
-                    value={[speedStop]}
-                    onValueChange={([i]) => setPlaySpeed(PLAY_SPEED_STOPS[i])}
-                    aria-label={t("tas.speed")}
-                    title={t("tas.speedHint")}
-                  />
-                  <span title={t("tas.speedFaster")} className="inline-flex">
-                    <Kbd>.</Kbd>
-                  </span>
-                </div>
-              </div>
-
-              <Separator />
-
-              {/* 标签 │ 控件 两列：分辨率 / 地图 */}
-              <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-2 text-xs">
-                <Label
-                  htmlFor="tas-resolution"
-                  className="text-xs font-normal text-muted-foreground"
-                  title={t("tas.gameResolutionHint")}
-                >
-                  {t("tas.gameResolution")}
-                </Label>
-                {/* 分辨率在启动时用 -w/-h 定死，游戏跑着时不能改 */}
-                <Select
-                  value={`${prefs.gameWidth}x${prefs.gameHeight}`}
-                  onValueChange={value => {
-                    const [w, h] = value.split("x").map(Number);
-                    persistPrefs({
-                      ...prefsRef.current,
-                      gameWidth: w,
-                      gameHeight: h
-                    });
-                  }}
-                  disabled={game.state !== "idle"}
-                >
-                  <SelectTrigger
-                    id="tas-resolution"
-                    size="sm"
-                    className="h-7 w-full text-xs"
-                    title={t("tas.gameResolutionHint")}
-                  >
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {GAME_RESOLUTIONS.map(([w, h]) => (
-                      <SelectItem key={`${w}x${h}`} value={`${w}x${h}`}>
-                        {`${w} × ${h}`}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-                <span
-                  className="text-muted-foreground"
-                  title={t("tas.gameLevelHint")}
-                >
-                  {t("tas.mapLabel")}
-                </span>
-                {/* 在右侧地图列表里选；这里只显示 */}
-                <span
-                  className="flex min-w-0 items-center gap-1.5"
-                  title={t("tas.gameLevelHint")}
-                >
-                  <MapIcon className="size-3.5 shrink-0 text-muted-foreground" />
-                  <span
-                    className={cn(
-                      "truncate",
-                      playMap === null && "text-muted-foreground"
-                    )}
-                  >
-                    {playMap !== null
-                      ? mapDisplayName(playMap)
-                      : doc
-                        ? t("tas.mapNone")
-                        : "—"}
-                  </span>
-                  {playMapGuessed && (
-                    <Badge
-                      variant="outline"
-                      className="shrink-0 px-1 py-0 text-[10px] font-normal"
-                      title={t("tas.mapGuessedHint")}
-                    >
-                      {t("tas.mapGuessed")}
-                    </Badge>
-                  )}
-                </span>
-              </div>
-              {!regionFits && (
-                <p
-                  className="flex items-start gap-1.5 text-[11px] text-amber-600 dark:text-amber-500"
-                  title={t("tas.gameTooSmallHint")}
-                >
-                  <TriangleAlert className="mt-px size-3.5 shrink-0" />
-                  {t("tas.gameTooSmall")}
-                </p>
-              )}
+            <div className="flex min-h-0 flex-1 basis-0 flex-col">
+              {fileListPanel}
             </div>
-
-            {/* 文件：保存 / 另存为 / 裁尾 + 改动状态 */}
-            <div className="flex shrink-0 flex-col gap-1.5 border-t px-3 py-2.5">
-              <div className="flex items-center gap-1.5">
-                <Button
-                  size="sm"
-                  className="h-7"
-                  disabled={!doc || !dirty || busy}
-                  title="Ctrl+S"
-                  onClick={() => void save(false)}
-                >
-                  {busy ? <Loader2 className="animate-spin" /> : <Save />}
-                  {t("tas.save")}
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-7"
-                  disabled={!doc || busy}
-                  title="Ctrl+Shift+S"
-                  onClick={() => void save(true)}
-                >
-                  {t("tas.saveAs")}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  className="ml-auto"
-                  title={`${t("tas.trimTail")} — ${t("tas.trimTailHint")}`}
-                  disabled={!doc}
-                  onClick={trimTailCmd}
-                >
-                  <Scissors />
-                </Button>
-              </div>
-              <p
-                className={cn(
-                  "truncate text-[11px]",
-                  dirty
-                    ? "text-amber-600 dark:text-amber-500"
-                    : "text-muted-foreground"
-                )}
-              >
-                {status ||
-                  (doc ? (dirty ? t("tas.modified") : t("tas.clean")) : "—")}
-              </p>
+            <div className="flex min-h-0 flex-1 basis-0 flex-col border-t">
+              {mapListPanel}
             </div>
           </div>
 
-          {/* 右：游戏视口（游戏窗口以「顶层窗口 + owner」摆在这块区域上，见 embed.rs）。宽度 = 分辨率，
-                贴着窗口右边。所有按钮都在左边的功能面板：游戏窗口压在 HTML 上面，这里放控件也点不到。 */}
+          {/* 中：游戏（上，宽 = 分辨率）+ 功能区（下：回放 │ 文件 / 编辑 / 视图 / 帧）+ 说明条 */}
           <div
-            className="flex min-h-0 shrink-0 flex-col border-l bg-neutral-950"
+            className="flex min-h-0 shrink-0 flex-col border-r"
             style={{ width: regionCssW }}
           >
-            {/* 游戏区域：物理像素尺寸 = 选定分辨率（CSS 尺寸再除以 dpr），游戏窗口被嵌在这个矩形里 */}
-            <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden">
-              <div
-                ref={regionRef}
-                className="relative flex shrink-0 items-center justify-center"
-                style={{ width: regionCssW, height: regionCssH }}
-              >
-                {game.state === "running" ? (
-                  // 游戏窗口已经嵌进这块区域了。它盖在 HTML 上面，所以这行字只在
-                  // 「游戏还没出画面」时才看得到：一直黑的话至少知道不是界面卡死了。
-                  <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                    <span className="max-w-[80%] text-center text-xs text-neutral-400">
-                      {t("tas.gameRunningHint")}
-                    </span>
-                  </div>
-                ) : (
-                  <div className="flex max-w-[70%] flex-col items-center gap-3 text-center text-neutral-400">
-                    {gameBusy ? (
-                      <Loader2 className="size-8 animate-spin" />
-                    ) : (
-                      <Gamepad2 className="size-8 opacity-60" />
-                    )}
-                    <span className="text-xs">
-                      {game.state === "launching"
-                        ? t("tas.gameLaunching")
-                        : game.state === "stopping"
-                          ? t("tas.gameStopping")
-                          : t("tas.gameAreaIdle")}
-                    </span>
-                    <span className="text-[11px] text-neutral-500 tabular-nums">
-                      {`${prefs.gameWidth} × ${prefs.gameHeight}`}
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* 下半区：时间轴 + 说明条 */}
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-          {/* 时间轴 header：左 = 编辑（鼠标模式 + 撤销重做）、视图（网格 + 缩放）；右 = 帧 */}
-          <div className="flex h-10 shrink-0 items-center gap-2 border-b bg-muted/30 px-2">
-            {/* ── 编辑 ── */}
-            <div className="flex shrink-0 items-center gap-1">
-              <span className="hidden px-1 text-[11px] font-medium text-muted-foreground 2xl:inline">
-                {t("tas.sectionEdit")}
-              </span>
-              {/* 鼠标模式四选一：选择 / 填充 / 录入 / 插删帧（快捷键 1~4） */}
-              <ToggleGroup
-                type="single"
-                variant="outline"
-                size="sm"
-                className="h-7"
-                value={mode}
-                onValueChange={value => {
-                  // 单选组再点一下当前项会传空串：保持当前模式
-                  if (!value) return;
-                  setMode(value as TasMouseMode);
-                }}
-                disabled={!doc}
-                aria-label={t("tas.mode")}
-              >
-                {MOUSE_MODES.map(m => (
-                  <ToggleGroupItem
-                    key={m.id}
-                    value={m.id}
-                    className="h-7 px-2.5 text-xs"
-                    title={`${t(m.hintKey)} (${m.key})`}
-                  >
-                    <span className="text-[10px] opacity-50">{m.key}</span>
-                    {t(m.labelKey)}
-                  </ToggleGroupItem>
-                ))}
-              </ToggleGroup>
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                title={`${t("tas.undo")} (Ctrl+Z)`}
-                disabled={!undoState.canUndo}
-                onClick={undo}
-              >
-                <Undo2 />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                title={`${t("tas.redo")} (Ctrl+Shift+Z)`}
-                disabled={!undoState.canRedo}
-                onClick={redo}
-              >
-                <Redo2 />
-              </Button>
-            </div>
-
-            <Separator orientation="vertical" className="!h-5" />
-
-            {/* ── 视图：纵线 / 横线 / 分区（互相独立）+ 缩放 ── */}
-            <div className="flex shrink-0 items-center gap-1">
-              <span className="hidden px-1 text-[11px] font-medium text-muted-foreground 2xl:inline">
-                {t("tas.sectionView")}
-              </span>
-              <ToggleGroup
-                type="multiple"
-                variant="outline"
-                size="sm"
-                className="h-7"
-                value={GRID_TOGGLES.filter(g => prefs[g.key]).map(g => g.key)}
-                onValueChange={values =>
-                  persistPrefs({
-                    ...prefsRef.current,
-                    vGrid: values.includes("vGrid"),
-                    hGrid: values.includes("hGrid"),
-                    bands: values.includes("bands"),
-                    cellBlocks: values.includes("cellBlocks")
-                  })
-                }
-                disabled={!doc}
-              >
-                {GRID_TOGGLES.map(g => (
-                  <ToggleGroupItem
-                    key={g.key}
-                    value={g.key}
-                    className="h-7 px-2.5 text-xs"
-                    title={t(g.hintKey)}
-                  >
-                    {t(g.labelKey)}
-                  </ToggleGroupItem>
-                ))}
-              </ToggleGroup>
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                title={`${t("tas.zoomOut")} (S)`}
-                disabled={!doc}
-                onClick={() => timelineRef.current?.zoomStep(-1)}
-              >
-                <ZoomOut />
-              </Button>
-              <span className="w-11 text-center text-xs text-muted-foreground tabular-nums">
-                {zoomText}
-              </span>
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                title={`${t("tas.zoomIn")} (W)`}
-                disabled={!doc}
-                onClick={() => timelineRef.current?.zoomStep(1)}
-              >
-                <ZoomIn />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                title={t("tas.zoomFit")}
-                disabled={!doc}
-                onClick={() => timelineRef.current?.fitAll()}
-              >
-                <Maximize2 />
-              </Button>
-              {/* 不常改的设置：网格线深浅、重启前是否询问 */}
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    title={t("tas.settings")}
-                  >
-                    <Settings2 />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent align="start" className="w-64 space-y-4">
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-xs">{t("tas.gridStrength")}</Label>
-                      <span className="text-xs text-muted-foreground tabular-nums">
-                        {Math.round(prefs.gridStrength * 100)}%
-                      </span>
-                    </div>
-                    <Slider
-                      min={0}
-                      max={100}
-                      step={5}
-                      value={[Math.round(prefs.gridStrength * 100)]}
-                      onValueChange={([v]) =>
-                        persistPrefs({
-                          ...prefsRef.current,
-                          gridStrength: v / 100
-                        })
-                      }
-                      aria-label={t("tas.gridStrength")}
-                    />
-                    <p className="text-[11px] text-muted-foreground">
-                      {t("tas.gridStrengthHint")}
-                    </p>
-                  </div>
-                  <div className="flex items-center justify-between gap-3">
-                    <Label htmlFor="tas-restart-ask" className="text-xs">
-                      {t("tas.restartAsk")}
-                    </Label>
-                    <Switch
-                      id="tas-restart-ask"
-                      checked={!prefs.skipPlayAsk}
-                      onCheckedChange={v =>
-                        persistPrefs({
-                          ...prefsRef.current,
-                          skipPlayAsk: !v
-                        })
-                      }
-                    />
-                  </div>
-                </PopoverContent>
-              </Popover>
-            </div>
-
-            {/* ── 帧（右对齐）：本帧按键 / 当前帧 / 按键时长 / 录像帧率 ── */}
-            <div className="ml-auto flex min-w-0 items-center gap-3">
-              {/* 当前帧的按键一眼可见（录入模式尤其需要）；窗口窄时先被挤掉 */}
-              <div
-                className="flex min-w-0 items-center gap-1 overflow-hidden"
-                aria-label={t("tas.frameKeys")}
-                title={t("tas.frameKeys")}
-              >
-                {currentKeys.length === 0 ? (
-                  <span className="truncate text-xs text-muted-foreground">
-                    {t("tas.noKeys")}
-                  </span>
-                ) : (
-                  currentKeys.map(key => (
-                    <Badge
-                      key={key}
-                      variant="outline"
-                      className="shrink-0 gap-1 px-1.5 py-0 text-[11px]"
-                    >
-                      <span
-                        className="size-1.5 rounded-full"
-                        style={{ background: trackColor(key, dark) }}
-                      />
-                      {KEY_META[key].short}
-                    </Badge>
-                  ))
-                )}
-              </div>
-              {/* 当前帧：实时跟着光标走；输入帧号 + Enter / 失焦就跳过去；滚轮逐帧移动（Shift ×10） */}
-              <div className="flex shrink-0 items-center gap-1.5">
-                <Label
-                  htmlFor="tas-frame"
-                  className="text-xs font-normal text-muted-foreground"
-                  title={t("tas.wheelHint")}
-                >
-                  {t("tas.currentFrame")}
-                </Label>
-                <Input
-                  id="tas-frame"
-                  ref={frameInputRef}
-                  type="text"
-                  inputMode="numeric"
-                  className="h-7 w-20 px-2 text-xs tabular-nums"
-                  title={t("tas.wheelHint")}
-                  disabled={!doc}
-                  value={frameFocus ? frameText : String(cursor)}
-                  onFocus={() => {
-                    setFrameText(String(cursor));
-                    setFrameFocus(true);
-                  }}
-                  onChange={e => setFrameText(e.target.value)}
-                  onBlur={() => {
-                    setFrameFocus(false);
-                    const raw = frameText.trim();
-                    const n = Number(raw);
-                    const d = docRef.current;
-                    if (raw === "" || !Number.isInteger(n) || !d) return; // 非法：恢复成当前值
-                    moveCursor(
-                      Math.max(0, Math.min(d.tas.frameCount - 1, n)),
-                      false
-                    );
-                  }}
-                  onKeyDown={e => {
-                    if (e.key === "Enter") e.currentTarget.blur();
-                  }}
-                />
-              </div>
-              {/* 选择模式：选中一段按键后，这里直接显示/修改它的帧数；滚轮 ±1（Shift ±10） */}
-              <div className="flex shrink-0 items-center gap-1.5">
-                <Label
-                  htmlFor="tas-run-length"
-                  className="text-xs font-normal text-muted-foreground"
-                  title={t("tas.runLengthHint")}
-                >
-                  {t("tas.runLength")}
-                </Label>
-                <Input
-                  id="tas-run-length"
-                  ref={lenInputRef}
-                  type="text"
-                  inputMode="numeric"
-                  className="h-7 w-16 px-2 text-xs tabular-nums"
-                  title={t("tas.runLengthHint")}
-                  disabled={!doc || !selection || selection.t0 !== selection.t1}
-                  value={lenFocus ? lenText : String(selectionLength)}
-                  onFocus={() => {
-                    setLenText(String(selectionLength));
-                    setLenFocus(true);
-                  }}
-                  onChange={e => applyRunLength(e.target.value)}
-                  onBlur={() => setLenFocus(false)}
-                  onKeyDown={e => {
-                    if (e.key === "Enter") e.currentTarget.blur();
-                  }}
-                />
-              </div>
-              {/* 帧率：全局统一，改它 = 把每一帧都写成 1000/fps 毫秒（不支持变速） */}
-              <div className="flex shrink-0 items-center gap-1.5">
-                <Label
-                  htmlFor="tas-record-fps"
-                  className="text-xs font-normal text-muted-foreground"
-                  title={t("tas.recordFpsHint")}
-                >
-                  {t("tas.recordFps")}
-                </Label>
-                <Input
-                  id="tas-record-fps"
-                  type="text"
-                  inputMode="decimal"
-                  className="h-7 w-16 px-2 text-xs tabular-nums"
-                  title={t("tas.recordFpsHint")}
-                  disabled={!doc}
-                  value={fpsFocus ? fpsText : msToText(fps)}
-                  onFocus={() => {
-                    setFpsText(msToText(fps));
-                    setFpsFocus(true);
-                  }}
-                  onChange={e => setFpsText(e.target.value)}
-                  onBlur={() => {
-                    setFpsFocus(false);
-                    const raw = fpsText.trim();
-                    const n = Number(raw);
-                    if (raw !== "" && Number.isFinite(n) && n > 0)
-                      applyFrameMs(1000 / n);
-                  }}
-                  onKeyDown={e => {
-                    if (e.key === "Enter") e.currentTarget.blur();
-                  }}
-                />
-              </div>
-            </div>
-          </div>
-
-          {!doc ? (
-            <div className="flex flex-1 items-center justify-center p-8 text-center text-sm text-muted-foreground">
-              {t("tas.hint")}
-            </div>
-          ) : (
-            <TasTimeline
-              ref={timelineRef}
-              tas={doc.tas}
-              frameMs={frameMs}
-              blockLabel={(n: number) => t("tas.blockFrames", { n })}
-              order={order}
-              dark={dark}
-              vGrid={prefs.vGrid}
-              hGrid={prefs.hGrid}
-              bands={prefs.bands}
-              gridStrength={prefs.gridStrength}
-              cellBlocks={prefs.cellBlocks}
-              mode={mode}
-              onMenu={at => setMenu(at)}
-              onFrames={editFrames}
-              cursor={cursor}
-              selection={selection}
-              version={version}
-              defaultCellW={prefs.cellW}
-              onCellWChange={next => {
-                setCellW(next);
-                if (Math.abs(next - prefsRef.current.cellW) > 0.5) {
-                  persistPrefs({ ...prefsRef.current, cellW: next });
-                }
-              }}
-              onCursor={f => {
-                cursorRef.current = f;
-                setCursor(f);
-              }}
-              onSelection={sel => {
-                // 来自时间轴的选区（单击/框选）不是打字造成的，取消待消费的标记，保证自动聚焦生效
-                lenTypingRef.current = false;
-                selectionRef.current = sel;
-                setSelection(sel);
-                // 选区被拖起来的那一刻定下锚点，之后一直用它
-                if (sel && selAnchorRef.current === null)
-                  selAnchorRef.current = sel.f0;
-                if (!sel) selAnchorRef.current = null;
-              }}
-              onOrderChange={next => {
-                setOrder(next);
-                orderRef.current = next;
-                persistPrefs({ ...prefsRef.current, trackOrder: next });
-              }}
-              onBeginOp={beginOp}
-              onMutated={() => setDirty(true)}
-              locked={locked}
-              recording={mode === "record"}
-              onToggleLock={toggleLock}
-            />
-          )}
-
-          {/* 时间轴右键菜单（选择 / 录入模式弹） */}
-          <DropdownMenu
-            open={menu !== null}
-            onOpenChange={open => !open && setMenu(null)}
-          >
-            <DropdownMenuTrigger asChild>
-              <span
-                aria-hidden
-                className="pointer-events-none fixed z-50 size-0"
-                style={{ left: menu?.x ?? 0, top: menu?.y ?? 0 }}
-              />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent
-              align="start"
-              side="bottom"
-              sideOffset={4}
-              className="w-52"
-              onCloseAutoFocus={e => e.preventDefault()}
+            <div
+              className="flex shrink-0 flex-col bg-neutral-950"
+              style={{ height: topH }}
             >
-              <DropdownMenuItem disabled={!menuHasRun} onSelect={selectRunAt}>
-                {t("tas.menu.selectRun")}
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onSelect={() => {
-                  if (!menu) return;
-                  const d = docRef.current;
-                  const max = Math.max(0, (d?.tas.frameCount ?? 1) - 1);
-                  moveCursor(Math.min(max, Math.max(0, menu.frame)), false);
-                }}
-              >
-                {t("tas.menu.jumpHere")}
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                disabled={!menuHasRun}
-                onSelect={() => copySelection(false)}
-              >
-                {t("tas.menu.copy")}
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                disabled={!menuHasRun}
-                onSelect={() => copySelection(true)}
-              >
-                {t("tas.menu.cut")}
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                disabled={!clipRef.current}
-                onSelect={() => pasteClipboard(false)}
-              >
-                {t("tas.menu.paste")}
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                disabled={!menuHasRun}
-                onSelect={deleteSelection}
-              >
-                {t("tas.menu.delete")}
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              {/* 插入 / 删除整帧：点在选区里按选区的帧数，否则按 1 帧 */}
-              <DropdownMenuItem
-                disabled={!menuFrames}
-                onSelect={() => {
-                  if (!menuFrames) return;
-                  const [a, b] = menuFrames;
-                  editFrames("insert", a, b);
-                }}
-              >
-                {t("tas.menu.insertLeft", {
-                  n: menuFrames ? menuFrames[1] - menuFrames[0] + 1 : 1
-                })}
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                disabled={!menuFrames}
-                onSelect={() => {
-                  if (!menuFrames) return;
-                  const [a, b] = menuFrames;
-                  // 新帧按选区起始帧的按键填充
-                  editFrames("insert", b + 1, b + 1 + (b - a), a);
-                }}
-              >
-                {t("tas.menu.insertRight", {
-                  n: menuFrames ? menuFrames[1] - menuFrames[0] + 1 : 1
-                })}
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                disabled={
-                  !menuFrames || !doc || menuFrames[0] >= doc.tas.frameCount
-                }
-                onSelect={() => {
-                  if (!menuFrames) return;
-                  editFrames("delete", menuFrames[0], menuFrames[1]);
-                }}
-              >
-                {t("tas.menu.deleteFrames", {
-                  n: menuFrames ? menuFrames[1] - menuFrames[0] + 1 : 1
-                })}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+              {gameArea}
+            </div>
+            <div className="flex min-h-0 flex-1 flex-col border-t">
+              <div className="min-h-0 flex-1 overflow-y-auto bg-muted/20">
+                {/* 回放 │ 文件 并排（窄的时候折行） */}
+                <div className="flex flex-wrap border-b">
+                  {playbackSection}
+                  <div className="flex min-w-[220px] flex-1 basis-0 flex-col border-l">
+                    {fileSection}
+                    {/* 时间轴工具：编辑 / 视图 / 帧，一组一行（窄了组内折行） */}
+                    <div className="flex flex-col gap-2.5 px-3 py-2.5">
+                      {editGroup}
+                      {viewGroup}
+                      {frameGroup}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              {/* 说明条放这里而不是时间轴底下：时间轴列很窄，放那儿要折成好几行 */}
+              <TasHintBar mode={mode} vertical />
+            </div>
+          </div>
 
-          <TasHintBar mode={mode} />
+          {/* 右：竖版时间轴，宽度刚好放下刻度尺 + 全部轨道 + 缩略图 */}
+          <div
+            className="flex min-h-0 shrink-0 flex-col"
+            style={{ width: V_TIMELINE_W }}
+          >
+            {timelineBody}
+            {contextMenu}
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="flex min-h-0 flex-1 flex-col">
+          {/* 上半区：[TAS 文件 │ 地图]（吃剩余宽度）│ 功能面板（固定 PANEL_W）│ 游戏（按分辨率 1:1，贴右边） */}
+          <div
+            className="flex min-h-0 shrink-0 border-b"
+            style={{ height: topH }}
+          >
+            {/* 左：TAS 文件 │ 地图（原版 + 自制图）两栏平分 */}
+            <div className="flex min-h-0 min-w-0 flex-1">
+              <div className="flex min-h-0 min-w-0 flex-1 basis-0 flex-col">
+                {fileListPanel}
+              </div>
+              <div className="flex min-h-0 min-w-0 flex-1 basis-0 flex-col border-l">
+                {mapListPanel}
+              </div>
+            </div>
+
+            {/* 中：功能面板（回放 / 文件），固定宽度；夹在列表和游戏之间，离两边都近 */}
+            <div
+              className="flex min-h-0 shrink-0 flex-col overflow-y-auto border-l bg-muted/20"
+              style={{ width: PANEL_W }}
+            >
+              {playbackSection}
+              {fileSection}
+            </div>
+
+            {/* 右：游戏视口。宽度 = 分辨率，贴着窗口右边。所有按钮都在左边的功能面板：
+                  游戏窗口压在 HTML 上面，这里放控件也点不到。 */}
+            <div
+              className="flex min-h-0 shrink-0 flex-col border-l bg-neutral-950"
+              style={{ width: regionCssW }}
+            >
+              {gameArea}
+            </div>
+          </div>
+
+          {/* 下半区：时间轴 + 说明条 */}
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+            {/* 时间轴 header：左 = 编辑（鼠标模式 + 撤销重做）、视图（网格 + 缩放）；右 = 帧 */}
+            <div className="flex h-10 shrink-0 items-center gap-2 border-b bg-muted/30 px-2">
+              {editGroup}
+              <Separator orientation="vertical" className="!h-5" />
+              {viewGroup}
+              {frameGroup}
+            </div>
+            {timelineBody}
+            {contextMenu}
+            <TasHintBar mode={mode} />
+          </div>
+        </div>
+      )}
 
       {/* 一键播放的确认框：改配置 / 重启游戏（同一个框，两种文案）。
           `z-[51]` 不能省：上一个框刚关、同一个 radix 实例又被重新打开时，

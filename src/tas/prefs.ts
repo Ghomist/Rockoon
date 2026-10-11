@@ -31,8 +31,12 @@ export type TasEditorPrefs = {
   bands: boolean;
   /** 每帧像素宽（0 表示还没缩放，按默认值）。 */
   cellW: number;
-  /** 轨道从上到下的顺序。 */
+  /** 轨道从上到下的顺序（横版）。 */
   trackOrder: TasKey[];
+  /** 竖版布局：时间轴竖过来（时间从上往下、轨道从左往右），整个窗口换一套排版。 */
+  vertical: boolean;
+  /** 竖版的轨道从左到右的顺序（和横版分开记，默认 ↑ ↓ ← → Shift Space Q Esc Enter）。 */
+  trackOrderV: TasKey[];
   /** 锁定的轨道（完全不可编辑）。 */
   locked: TasKey[];
   /** 右上游戏区域的分辨率（启动游戏时用 `-w/-h` 定死，之后区域就按它的大小画）。 */
@@ -86,6 +90,8 @@ export const DEFAULT_TAS_PREFS: TasEditorPrefs = {
   bands: true,
   cellW: DEFAULT_CELL_W,
   trackOrder: [...DEFAULT_TRACK_ORDER],
+  vertical: false,
+  trackOrderV: [...KEY_BITS],
   locked: [],
   gameWidth: 1024,
   gameHeight: 768,
@@ -98,19 +104,20 @@ export const DEFAULT_TAS_PREFS: TasEditorPrefs = {
 };
 
 /** 轨道顺序来自 localStorage，可能被手改坏：必须是 9 个键各一次，否则回退默认。 */
-function sanitizeOrder(value: unknown): TasKey[] {
-  if (!Array.isArray(value)) return [...DEFAULT_TRACK_ORDER];
+function sanitizeOrder(
+  value: unknown,
+  fallback: readonly TasKey[] = DEFAULT_TRACK_ORDER
+): TasKey[] {
+  if (!Array.isArray(value)) return [...fallback];
   const all = new Set<string>(KEY_BITS);
   const seen = new Set<string>();
   for (const item of value) {
     if (typeof item !== "string" || !all.has(item) || seen.has(item)) {
-      return [...DEFAULT_TRACK_ORDER];
+      return [...fallback];
     }
     seen.add(item);
   }
-  return seen.size === all.size
-    ? (value as TasKey[])
-    : [...DEFAULT_TRACK_ORDER];
+  return seen.size === all.size ? (value as TasKey[]) : [...fallback];
 }
 
 /** 锁定轨道来自 localStorage，可能被手改坏：只保留合法的键名并去重（锁不住全部轨道也行）。 */
@@ -153,6 +160,8 @@ export function loadTasPrefs(): TasEditorPrefs {
     bands: raw.bands ?? DEFAULT_TAS_PREFS.bands,
     cellW: raw.cellW ? clampCellW(raw.cellW) : DEFAULT_TAS_PREFS.cellW,
     trackOrder: sanitizeOrder(raw.trackOrder),
+    vertical: raw.vertical === true,
+    trackOrderV: sanitizeOrder(raw.trackOrderV, KEY_BITS),
     locked: sanitizeLocked(raw.locked),
     gameWidth: clampInt(raw.gameWidth, 320, 3840, DEFAULT_TAS_PREFS.gameWidth),
     gameHeight: clampInt(

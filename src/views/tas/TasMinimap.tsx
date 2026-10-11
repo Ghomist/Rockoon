@@ -7,10 +7,12 @@ import {
   useRef
 } from "react";
 import type { TasFile } from "@/tas/format";
+import { cn } from "@/lib/utils";
 import { aggregateMinimap, drawMinimap } from "@/tas/render";
 
-/** 缩略图条的最大宽度（规格书：1000px 左右，再宽就内部压缩采样）。 */
+/** 缩略图条的最大长度（规格书：1000px 左右，再宽就内部压缩采样）。 */
 const MAX_WIDTH = 1000;
+/** 缩略图条的厚度（横版 = 高，竖版 = 宽）。 */
 const HEIGHT = 44;
 /** 可视框边缘的抓取宽度（拖它 = 缩放）。 */
 const HANDLE_W = 7;
@@ -33,6 +35,8 @@ type Props = {
   onPan: (scrollFrames: number) => void;
   /** 拖边缘 → 缩放：让 `[first, first+span)` 正好填满视口。 */
   onZoomRange: (first: number, span: number) => void;
+  /** 竖版：缩略图是一根竖条（时间从上往下），放在时间轴右侧。 */
+  vertical?: boolean;
   className?: string;
 };
 
@@ -43,7 +47,7 @@ type DragMode = "pan" | "left" | "right";
  * 当前可视范围是一个淡灰方框 —— 框可以拖（跳转）、拖两边（缩放）。
  */
 const TasMinimap = forwardRef<TasMinimapHandle, Props>(function TasMinimap(
-  { tas, dark, version, onPan, onZoomRange, className },
+  { tas, dark, version, onPan, onZoomRange, vertical = false, className },
   ref
 ) {
   const hostRef = useRef<HTMLDivElement | null>(null);
@@ -51,6 +55,7 @@ const TasMinimap = forwardRef<TasMinimapHandle, Props>(function TasMinimap(
   const boxRef = useRef<HTMLDivElement | null>(null);
   /** 可视框几何（帧）。timeline 每帧写这里 + 直接改 DOM。 */
   const geoRef = useRef({ first: 0, last: 1, total: 1 });
+  /** 沿时间轴方向的长度（横版 = 宽，竖版 = 高）：CSS px / 物理 px。 */
   const sizeRef = useRef({ w: 0, pxW: 0 });
   const dragRef = useRef<{
     mode: DragMode;
@@ -64,21 +69,24 @@ const TasMinimap = forwardRef<TasMinimapHandle, Props>(function TasMinimap(
     const { w, pxW } = sizeRef.current;
     if (!canvas || pxW <= 0) return;
     const dpr = window.devicePixelRatio || 1;
-    canvas.width = Math.round(w * dpr);
-    canvas.height = Math.round(HEIGHT * dpr);
-    canvas.style.width = `${w}px`;
-    canvas.style.height = `${HEIGHT}px`;
+    const cssW = vertical ? HEIGHT : w;
+    const cssH = vertical ? w : HEIGHT;
+    canvas.width = Math.round(cssW * dpr);
+    canvas.height = Math.round(cssH * dpr);
+    canvas.style.width = `${cssW}px`;
+    canvas.style.height = `${cssH}px`;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
     const dots = aggregateMinimap(tas, pxW, geoRef.current.total);
     drawMinimap(ctx, {
       totalFrames: geoRef.current.total,
       dots,
-      width: pxW,
-      height: Math.round(HEIGHT * dpr),
-      dark
+      width: canvas.width,
+      height: canvas.height,
+      dark,
+      vertical
     });
-  }, [dark, tas]);
+  }, [dark, tas, vertical]);
 
   const place = useCallback(() => {
     const box = boxRef.current;
@@ -87,9 +95,18 @@ const TasMinimap = forwardRef<TasMinimapHandle, Props>(function TasMinimap(
     if (!box || w <= 0) return;
     const x = (first / total) * w;
     const width = Math.max(MIN_BOX_W, ((last - first) / total) * w);
-    box.style.transform = `translateX(${Math.max(0, Math.min(w - 4, x))}px)`;
-    box.style.width = `${Math.min(w - Math.max(0, x), width)}px`;
-  }, []);
+    const pos = Math.max(0, Math.min(w - 4, x));
+    const len = `${Math.min(w - Math.max(0, x), width)}px`;
+    if (vertical) {
+      box.style.transform = `translateY(${pos}px)`;
+      box.style.height = len;
+      box.style.width = "";
+    } else {
+      box.style.transform = `translateX(${pos}px)`;
+      box.style.width = len;
+      box.style.height = "";
+    }
+  }, [vertical]);
 
   useImperativeHandle(
     ref,
@@ -105,12 +122,13 @@ const TasMinimap = forwardRef<TasMinimapHandle, Props>(function TasMinimap(
     [place, paint]
   );
 
-  // 尺寸自适应：宽度取容器宽度与 1000px 的较小值
+  // 尺寸自适应：长度取容器长度（横版宽 / 竖版高）与 1000px 的较小值
   useLayoutEffect(() => {
     const host = hostRef.current;
     if (!host) return;
     const update = () => {
-      const w = Math.min(MAX_WIDTH, Math.max(120, host.clientWidth - 2));
+      const avail = vertical ? host.clientHeight : host.clientWidth;
+      const w = Math.min(MAX_WIDTH, Math.max(120, avail - 2));
       const dpr = window.devicePixelRatio || 1;
       sizeRef.current = { w, pxW: Math.round(w * dpr) };
       paint();
@@ -120,26 +138,32 @@ const TasMinimap = forwardRef<TasMinimapHandle, Props>(function TasMinimap(
     const observer = new ResizeObserver(update);
     observer.observe(host);
     return () => observer.disconnect();
-  }, [paint, place]);
+  }, [paint, place, vertical]);
 
   // 数据/主题变了：重画小点（位置由 timeline 驱动，这里不用管）
   useEffect(() => {
     paint();
   }, [paint, version]);
 
-  const frameAtX = (clientX: number) => {
+  /** 指针沿时间轴方向的坐标（横版 clientX，竖版 clientY）。 */
+  const along = (e: React.PointerEvent) => (vertical ? e.clientY : e.clientX);
+
+  const frameAtX = (client: number) => {
     const host = hostRef.current;
     const { w } = sizeRef.current;
     if (!host || w <= 0) return 0;
     const rect = host.getBoundingClientRect();
-    const x = Math.max(0, Math.min(w, clientX - rect.left));
+    const x = Math.max(
+      0,
+      Math.min(w, client - (vertical ? rect.top : rect.left))
+    );
     return (x / w) * geoRef.current.total;
   };
 
   const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     const role = (e.target as HTMLElement).dataset.role ?? "track";
     const { first, last } = geoRef.current;
-    const frame = frameAtX(e.clientX);
+    const frame = frameAtX(along(e));
     if (role === "track") {
       // 空白处点击：把视口中心挪过去
       onPan(frame - (last - first) / 2);
@@ -152,7 +176,7 @@ const TasMinimap = forwardRef<TasMinimapHandle, Props>(function TasMinimap(
     }
     dragRef.current = {
       mode: role === "left" ? "left" : role === "right" ? "right" : "pan",
-      startX: e.clientX,
+      startX: along(e),
       first,
       last
     };
@@ -165,12 +189,12 @@ const TasMinimap = forwardRef<TasMinimapHandle, Props>(function TasMinimap(
     const { w } = sizeRef.current;
     if (!host || w <= 0) return;
     const total = geoRef.current.total;
-    const deltaFrames = ((e.clientX - drag.startX) / w) * total;
+    const deltaFrames = ((along(e) - drag.startX) / w) * total;
     if (drag.mode === "pan") {
       onPan(drag.first + deltaFrames);
       return;
     }
-    const frame = frameAtX(e.clientX);
+    const frame = frameAtX(along(e));
     if (drag.mode === "left") {
       const first = Math.min(frame, drag.last - 2);
       onZoomRange(Math.max(0, first), drag.last - Math.max(0, first));
@@ -189,12 +213,23 @@ const TasMinimap = forwardRef<TasMinimapHandle, Props>(function TasMinimap(
     }
   };
 
+  // 竖版：可视框横向撑满、纵向由 place() 定位；两个抓手在上下边
+  const boxClass = vertical
+    ? "absolute right-0 left-0 cursor-grab rounded-sm border active:cursor-grabbing"
+    : "absolute top-0 bottom-0 cursor-grab rounded-sm border active:cursor-grabbing";
   return (
     <div className={className}>
       <div
         ref={hostRef}
-        className="relative cursor-pointer select-none"
-        style={{ height: HEIGHT, maxWidth: MAX_WIDTH }}
+        className={cn(
+          "relative cursor-pointer select-none",
+          vertical && "h-full"
+        )}
+        style={
+          vertical
+            ? { width: HEIGHT, maxHeight: MAX_WIDTH }
+            : { height: HEIGHT, maxWidth: MAX_WIDTH }
+        }
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={endDrag}
@@ -204,28 +239,49 @@ const TasMinimap = forwardRef<TasMinimapHandle, Props>(function TasMinimap(
         <div
           ref={boxRef}
           data-role="pan"
-          className="absolute top-0 bottom-0 cursor-grab rounded-sm border active:cursor-grabbing"
+          className={boxClass}
           style={{
             borderColor: "var(--color-muted-foreground)",
             backgroundColor:
               "color-mix(in oklab, var(--color-foreground) 8%, transparent)",
-            left: 0
+            ...(vertical ? { top: 0 } : { left: 0 })
           }}
         >
-          <div
-            data-role="left"
-            className="absolute top-0 bottom-0 cursor-col-resize"
-            style={{ left: 0, width: HANDLE_W }}
-          >
-            <div className="pointer-events-none absolute inset-y-1 left-1 w-0.5 rounded-full bg-current opacity-50" />
-          </div>
-          <div
-            data-role="right"
-            className="absolute top-0 bottom-0 cursor-col-resize"
-            style={{ right: 0, width: HANDLE_W }}
-          >
-            <div className="pointer-events-none absolute inset-y-1 right-1 w-0.5 rounded-full bg-current opacity-50" />
-          </div>
+          {vertical ? (
+            <>
+              <div
+                data-role="left"
+                className="absolute right-0 left-0 cursor-row-resize"
+                style={{ top: 0, height: HANDLE_W }}
+              >
+                <div className="pointer-events-none absolute inset-x-1 top-1 h-0.5 rounded-full bg-current opacity-50" />
+              </div>
+              <div
+                data-role="right"
+                className="absolute right-0 left-0 cursor-row-resize"
+                style={{ bottom: 0, height: HANDLE_W }}
+              >
+                <div className="pointer-events-none absolute inset-x-1 bottom-1 h-0.5 rounded-full bg-current opacity-50" />
+              </div>
+            </>
+          ) : (
+            <>
+              <div
+                data-role="left"
+                className="absolute top-0 bottom-0 cursor-col-resize"
+                style={{ left: 0, width: HANDLE_W }}
+              >
+                <div className="pointer-events-none absolute inset-y-1 left-1 w-0.5 rounded-full bg-current opacity-50" />
+              </div>
+              <div
+                data-role="right"
+                className="absolute top-0 bottom-0 cursor-col-resize"
+                style={{ right: 0, width: HANDLE_W }}
+              >
+                <div className="pointer-events-none absolute inset-y-1 right-1 w-0.5 rounded-full bg-current opacity-50" />
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>
