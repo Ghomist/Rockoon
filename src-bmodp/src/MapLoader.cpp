@@ -1,5 +1,7 @@
 #include "MapLoader.h"
 
+#include <BML/DataShare.h>
+
 #include <filesystem>
 #include <algorithm>
 #include <cstdlib>
@@ -112,6 +114,16 @@ MapLoader::Result MapLoader::Load(const std::wstring &mapPath, int levelNumber) 
     if (levelRow) {
         int levelRowVal = levelNumber - 1;
         WriteParam(levelRow, levelRowVal);
+    }
+
+    // 地图被暂存成 %TEMP%\BML\Maps\<hash>.nmo，BML+ 的 ObjectLoadHook 会优先用
+    // DataShare 里的 CustomMapName 作为 OnLoadObject 的文件名（加载完即移除），
+    // 不写的话其他 mod（如分段计时）拿到的地图名就是 7A03F7BD 这种 hash。
+    // 与 BMLMod::LoadMap 保持一致：默认 DataShare，UTF-8 原始路径，含结尾 '\0'。
+    if (BML_DataShare *dataShare = BML_GetDataShare(nullptr)) {
+        const std::string originalPath = WideToUtf8(mapPath);
+        BML_DataShare_Set(dataShare, "CustomMapName", originalPath.c_str(), originalPath.size() + 1);
+        BML_DataShare_Release(dataShare);
     }
 
     CKMessageManager *messageManager = m_Context->GetMessageManager();
