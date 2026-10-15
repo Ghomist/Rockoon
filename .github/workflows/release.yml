@@ -79,6 +79,27 @@ jobs:
         # If you don't have `beforeBuildCommand` configured you may want to build your frontend here too.
         run: pnpm install
 
+      # 发版约束：每次发新 release 前必须先写 release-notes/<版本>.md（新增/修改/删除，
+      # 格式见该目录 README）。这份文件同时是 GitHub release 正文和 latest.json 的
+      # `notes` —— 也就是启动器「发现新版本」弹窗里显示的更新内容，所以没写就不让发。
+      - name: 读更新日志
+        id: notes
+        shell: bash
+        run: |
+          VERSION=$(node -p "require('./src-tauri/tauri.conf.json').version")
+          FILE="release-notes/$VERSION.md"
+          if [ ! -s "$FILE" ]; then
+            echo "::error::缺少 $FILE —— 每次发版都要先写更新日志（模板见 release-notes/_TEMPLATE.md）"
+            exit 1
+          fi
+          echo "读到 $FILE："
+          cat "$FILE"
+          {
+            echo "body<<__ROCKOON_NOTES_EOF__"
+            cat "$FILE"
+            echo "__ROCKOON_NOTES_EOF__"
+          } >> "$GITHUB_OUTPUT"
+
       - uses: tauri-apps/tauri-action@v0
         id: tauri
         env:
@@ -92,7 +113,8 @@ jobs:
         with:
           tagName: rockoon-v__VERSION__ # the action automatically replaces \_\_VERSION\_\_ with the app version.
           releaseName: "Rockoon v__VERSION__"
-          # releaseBody: ""
+          # 正文 = release-notes/<版本>.md，tauri-action 会把它写进 latest.json 的 notes
+          releaseBody: ${{ steps.notes.outputs.body }}
           releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}

@@ -1,5 +1,6 @@
 import { check, type Update } from "@tauri-apps/plugin-updater";
 
+import { updateNotesContent } from "@/components/UpdateNotes";
 import { useDownloadsStore } from "@/stores/downloads";
 import { dialog, message } from "@/utils/ui/feedback";
 import { t } from "@/i18n";
@@ -12,6 +13,10 @@ import { t } from "@/i18n";
  *
  * 注意：tauri 的更新插件**没有取消接口**，这段下载中断不了 —— 所以任务登记成
  * cancellable: false（界面上不出现「取消」按钮），只能等它下完（或关掉启动器）。
+ *
+ * 更新日志（`update.body`）＝ release 里 latest.json 的 `notes` ＝ release 正文
+ * ＝ 仓库里的 `release-notes/<版本>.md`（发版流程强制要写，见 .github/workflows/release.yml）。
+ * 展示交给 components/UpdateNotes。
  */
 
 export async function checkForUpdate(): Promise<void> {
@@ -34,8 +39,9 @@ function showUpdateDialog(update: Update): void {
   // 点了「立即更新」就让确认框退场，改由「下载任务」页显示进度；只有用户放弃时才提示
   let started = false;
 
+  // 有更新日志就排版出来（components/UpdateNotes），没有就只问一句要不要更新
   const content = notes
-    ? `${t("updater.available", { version })}\n\n${t("updater.notes")}:\n${notes}`
+    ? updateNotesContent(version, notes)
     : t("updater.available", { version });
 
   dialog.info({

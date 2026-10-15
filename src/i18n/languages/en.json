@@ -796,6 +796,9 @@
     "updateNow": "Update Now",
     "later": "Later",
     "notes": "Release Notes",
+    "added": "Added",
+    "changed": "Changed",
+    "removed": "Removed",
     "error": "Update failed, please try again later",
     "dismiss": "You can check for updates in Settings"
   },
