@@ -98,14 +98,17 @@ function commonHints(vertical: boolean): BarHint[] {
   const kbd = (key: string) => t(`tas.kbd.${key}`);
   const h = (key: string) => t(`tas.hintBar.${key}`);
   // 竖版：滚轮 = 上下滚动、Ctrl + 滚轮 = 缩放（时间是纵向的，跟普通页面一样滚）
+  // 两种方向都一样：Shift + 滚轮 = 快速滚动
   const view: BarHint[] = vertical
     ? [
         { combos: [["Ctrl", kbd("wheel")], ["W"], ["S"]], label: h("zoom") },
-        { combos: [[kbd("wheel")], ["A"], ["D"]], label: h("panV") }
+        { combos: [[kbd("wheel")], ["A"], ["D"]], label: h("panV") },
+        { combos: [["Shift", kbd("wheel")]], label: h("panFast") }
       ]
     : [
         { combos: [[kbd("wheel")], ["W"], ["S"]], label: h("zoom") },
-        { combos: [["Shift", kbd("wheel")], ["A"], ["D"]], label: h("pan") }
+        { combos: [["A"], ["D"]], label: h("pan") },
+        { combos: [["Shift", kbd("wheel")]], label: h("panFast") }
       ];
   return [
     ...view,
@@ -181,6 +184,7 @@ function helpRows(vertical: boolean): BarHint[] {
     vertical
       ? { combos: [[kbd("wheel")], ["Ctrl", kbd("wheel")]], label: r("wheelV") }
       : { combos: [[kbd("wheel")]], label: r("wheel") },
+    { combos: [["Shift", kbd("wheel")]], label: r("panFast") },
     {
       combos: [
         ["Space", kbd("drag")],

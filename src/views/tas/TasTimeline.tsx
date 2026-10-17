@@ -66,6 +66,12 @@ export const verticalTimelineWidth = (tracks: number) =>
 const HOLD_ZOOM_PER_SEC = 2.4;
 /** 长按 A/D 的平移速率（每秒移动几个视口宽）。 */
 const HOLD_PAN_SPANS_PER_SEC = 0.9;
+/**
+ * 按住 Shift 滚轮 = 快速滚动：位移按普通滚动的这么多倍算（横版竖版都一样）。
+ * 横版本来 Shift + 滚轮就是平移，这里只是让它变快；竖版普通滚轮已经是滚动，
+ * 加上 Shift 就滚得更快一档。
+ */
+const WHEEL_FAST_SCROLL = 4;
 /** 长按缩放时回写 onCellWChange 的最小间隔（毫秒）。每帧都写会带着 React 树每帧重渲染。 */
 const CELL_W_REPORT_MS = 80;
 
@@ -677,13 +683,18 @@ const TasTimeline = forwardRef<TasTimelineHandle, Props>(
           );
           propsRef.current.onCellWChange(targetRef.current.cellW);
         };
+        // Shift = 快速滚动模式（普通滚动速度的 WHEEL_FAST_SCROLL 倍）
+        const speed = e.shiftKey ? WHEEL_FAST_SCROLL : 1;
         if (vertical) {
           // 竖版：时间是纵向的，滚轮默认上下滚动（同普通页面），Ctrl + 滚轮 = 缩放（锚点 = 指针）
           if (e.ctrlKey) zoom(e.deltaY);
-          else pan(e.deltaY || e.deltaX);
+          else pan((e.deltaY || e.deltaX) * speed);
         } else if (e.shiftKey || Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
           // 横版：滚轮横向分量（或 Shift）= 左右平移；其余一律缩放，锚点 = 鼠标指针位置
-          pan(Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY);
+          pan(
+            (Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY) *
+              speed
+          );
         } else {
           zoom(e.deltaY);
         }
