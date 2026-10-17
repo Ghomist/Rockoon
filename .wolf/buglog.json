@@ -1088,6 +1088,23 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-07-23T18:33:50.522Z"
+    },
+    {
+      "id": "bug-069",
+      "timestamp": "2026-10-13T22:55:00Z",
+      "error_message": "直接进入关卡时 segment 显示的关卡名是 7A03F7BD 这种 hex，而不是地图名",
+      "file": "src-bmodp/src/MapLoader.cpp",
+      "root_cause": "MapLoader 把地图暂存为 %TEMP%/BML/Maps/<FNV hash>.nmo，但没像 BMLMod::LoadMap 那样往默认 DataShare 写 CustomMapName；BML+ ObjectLoadHook 只能把 hash 文件名传给 OnLoadObject",
+      "fix": "Load() 里 BML_GetDataShare(nullptr) + BML_DataShare_Set(\"CustomMapName\", UTF-8 原始路径含\u0000) 后 Release",
+      "tags": [
+        "bmodp",
+        "maploader",
+        "datashare",
+        "bmlplus"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-10-13T22:55:00Z"
     }
   ]
 }

@@ -605,3 +605,20 @@
 | 02:32 | Edited src/backend/index.ts | 6→3 lines | ~41 |
 | 02:32 | Edited src/App.tsx | inline fix | ~20 |
 | 02:33 | Edited src/App.tsx | added 1 condition(s) | ~94 |
+| 15:17 | designqc: captured 0 screenshots (0KB, ~0 tok) | /?window=tas | ready for eval | ~0 |
+| 17:55 | 下载开始统一提示(downloads.begin)、安装新游戏限制空文件夹(is_dir_empty)、补丁装完重识别实例 | stores/downloads.ts, services/{game,patches,brp}.ts, backend/index.ts, commands/fs.rs, lib.rs, i18n | tsc+cargo check 通过 | ~3k |
+| 19:31 | TAS 编辑器竖版布局（偏好 vertical；时间轴转置渲染 + 三栏重排） | src/views/tas/*, src/tas/{render,viewport,prefs}.ts, docs/tas-editor.md | tsc 通过，无头 Edge 截图验证 | ~60k |
+| 19:40 | TAS 竖版：时间轴列收窄到刚好放下轨道（轨道固定 48px，左栏吃剩余宽度，说明条移到中栏）；竖版滚轮 = 上下滚动、Ctrl+滚轮 = 缩放 | TasTimeline/TasEditorWindow/TasHints, i18n, docs | tsc 通过，无头截图验证 | ~25k |
+
+## Session: 2026-10-13 22:52
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 22:54 | Edited src-bmodp/src/MapLoader.cpp | added 1 condition(s) | ~153 |
+| 00:00 | MapLoader 写 DataShare CustomMapName，修直接进图时地图名显示为 hash | src-bmodp/src/MapLoader.cpp | built ok | ~3k |
+| 22:54 | Session end: 1 writes across 1 files (MapLoader.cpp) | 0 reads | ~164 tok |
+
+## Session: 2026-10-17 23:18
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|

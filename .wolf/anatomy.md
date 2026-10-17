@@ -1,6 +1,6 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-07-23T18:33:50.507Z
+> Auto-maintained by OpenWolf. Last scanned: 2026-10-13T14:54:13.600Z
 > Files: 395 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ./
@@ -313,7 +313,7 @@
 
 ## src-bmodp/src/
 
-- `MapLoader.cpp` — include "MapLoader.h" (~3447 tok)
+- `MapLoader.cpp` — include "MapLoader.h" (~3459 tok)
 - `MapLoader.h` — Utility for loading custom maps (.nmo/.cmo) into Ballance. (~726 tok)
 - `RockoonIO.cpp` — include <windows.h> (~510 tok)
 - `RockoonIO.h` — include <BML/ExecuteBB.h> (~343 tok)

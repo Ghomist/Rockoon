@@ -2,16 +2,38 @@
   "version": 1,
   "created_at": "2026-07-12T07:29:28.815Z",
   "lifetime": {
-    "total_tokens_estimated": 0,
+    "total_tokens_estimated": 164,
     "total_reads": 0,
-    "total_writes": 0,
-    "total_sessions": 0,
+    "total_writes": 1,
+    "total_sessions": 2,
     "anatomy_hits": 0,
     "anatomy_misses": 0,
     "repeated_reads_blocked": 0,
     "estimated_savings_vs_bare_cli": 0
   },
-  "sessions": [],
+  "sessions": [
+    {
+      "id": "session-2026-10-13-2252",
+      "started": "2026-10-13T14:52:52.270Z",
+      "ended": "2026-10-13T14:54:57.426Z",
+      "reads": [],
+      "writes": [
+        {
+          "file": "D:/Codes/ballance-projects/rockoon/src-bmodp/src/MapLoader.cpp",
+          "tokens_estimated": 164,
+          "action": "edit"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 0,
+        "output_tokens_estimated": 164,
+        "reads_count": 0,
+        "writes_count": 1,
+        "repeated_reads_blocked": 0,
+        "anatomy_lookups": 0
+      }
+    }
+  ],
   "daemon_usage": [],
   "waste_flags": [],
   "optimization_report": {
