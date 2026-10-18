@@ -1,7 +1,12 @@
-import { useMemo } from "react";
+import { Fragment, useMemo } from "react";
 
 import { t } from "@/i18n";
-import { parseUpdateNotes } from "@/utils/update-notes";
+import {
+  parseInline,
+  parseUpdateNotes,
+  type NotesBlock,
+  type NotesInline
+} from "@/utils/update-notes";
 
 /** 标题 → i18n 键；认不出来就用原文（作者可能自己起了别的标题） */
 const TITLE_KEYS: Record<string, string> = {
@@ -22,11 +27,116 @@ function sectionTitle(raw: string): string {
   return key ? t(key) : raw;
 }
 
+/** 外链走系统的默认浏览器（和侧边栏的社区链接同一套）。 */
+function openExternal(url: string) {
+  void import("@tauri-apps/plugin-shell").then(m => m.open(url));
+}
+
+function Inline({ nodes }: { nodes: NotesInline[] }) {
+  return (
+    <>
+      {nodes.map((node, i) => {
+        switch (node.type) {
+          case "code":
+            return (
+              <code
+                key={i}
+                className="rounded bg-muted px-1 py-0.5 font-mono text-[0.85em]"
+              >
+                {node.text}
+              </code>
+            );
+          case "strong":
+            return (
+              <strong key={i} className="font-medium text-foreground">
+                <Inline nodes={node.children} />
+              </strong>
+            );
+          case "em":
+            return (
+              <em key={i}>
+                <Inline nodes={node.children} />
+              </em>
+            );
+          case "del":
+            return (
+              <del key={i} className="opacity-70">
+                <Inline nodes={node.children} />
+              </del>
+            );
+          case "link":
+            return (
+              <a
+                key={i}
+                href={node.href}
+                className="underline underline-offset-2 hover:text-foreground"
+                onClick={e => {
+                  e.preventDefault();
+                  openExternal(node.href);
+                }}
+              >
+                <Inline nodes={node.children} />
+              </a>
+            );
+          default:
+            return <Fragment key={i}>{node.text}</Fragment>;
+        }
+      })}
+    </>
+  );
+}
+
+function Block({ block }: { block: NotesBlock }) {
+  switch (block.type) {
+    case "heading":
+      return (
+        <p className="font-medium text-foreground">
+          <Inline nodes={parseInline(sectionTitle(block.text))} />
+        </p>
+      );
+    case "list": {
+      const items = block.items.map((item, i) => (
+        <li key={i} style={{ marginLeft: item.depth * 14 }}>
+          <Inline nodes={parseInline(item.text)} />
+        </li>
+      ));
+      const cls =
+        "space-y-0.5 pl-5 text-muted-foreground marker:text-muted-foreground/60";
+      return block.ordered ? (
+        <ol className={`list-decimal ${cls}`}>{items}</ol>
+      ) : (
+        <ul className={`list-disc ${cls}`}>{items}</ul>
+      );
+    }
+    case "code":
+      return (
+        <pre className="overflow-x-auto rounded-md bg-muted p-2 font-mono text-xs">
+          {block.text}
+        </pre>
+      );
+    case "quote":
+      return (
+        <p className="border-l-2 pl-2 text-muted-foreground">
+          <Inline nodes={parseInline(block.text)} />
+        </p>
+      );
+    case "hr":
+      return <hr className="border-border/60" />;
+    default:
+      return (
+        <p className="text-muted-foreground">
+          <Inline nodes={parseInline(block.text)} />
+        </p>
+      );
+  }
+}
+
 /**
  * 更新弹窗里的更新日志。
  *
- * 正文是 markdown 风格的短文（新增/修改/删除 三段），这里只做三段最基础的排版：
- * 标题加粗、条目成列表、太长时可以滚。故意不引 markdown 渲染器 —— 原文是我们自己写的。
+ * 正文是 markdown（格式见 `release-notes/README.md`），解析在
+ * `src/utils/update-notes.ts`，这里只负责把块 / 行内片段映射成样式。
+ * 解析成 React 节点而不是 HTML 字符串，所以不需要（也不能）用 dangerouslySetInnerHTML。
  */
 export function UpdateNotes({
   version,
@@ -35,7 +145,7 @@ export function UpdateNotes({
   version: string;
   notes: string;
 }) {
-  const sections = useMemo(() => parseUpdateNotes(notes), [notes]);
+  const blocks = useMemo(() => parseUpdateNotes(notes), [notes]);
 
   return (
     <div className="space-y-3 text-sm">
@@ -44,20 +154,9 @@ export function UpdateNotes({
         <p className="text-xs font-medium text-muted-foreground">
           {t("updater.notes")}
         </p>
-        <div className="max-h-64 space-y-3 overflow-y-auto pr-1">
-          {sections.map((section, i) => (
-            <div key={i} className="space-y-1">
-              {section.title && (
-                <p className="font-medium">{sectionTitle(section.title)}</p>
-              )}
-              {section.items.length > 0 && (
-                <ul className="list-disc space-y-0.5 pl-5 text-muted-foreground marker:text-muted-foreground/60">
-                  {section.items.map((item, j) => (
-                    <li key={j}>{item}</li>
-                  ))}
-                </ul>
-              )}
-            </div>
+        <div className="max-h-64 space-y-2 overflow-y-auto pr-1">
+          {blocks.map((block, i) => (
+            <Block key={i} block={block} />
           ))}
         </div>
       </div>
