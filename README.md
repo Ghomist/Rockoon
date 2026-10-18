@@ -71,9 +71,11 @@ macOS 上游戏通过 [Wine](https://www.winehq.org/) 运行（Apple 芯片需�
 
 - 首次启动游戏时会提示下载 Wine 运行环境（[Gcenx 的 macOS 构建](https://github.com/Gcenx/macOS_Wine_builds)，约 190 MB，装在启动器自己的数据目录里）；本机有 Ballance.app（Mac 打包版）时直接用它自带的 Wine 和前缀，不用另外下载。
 - 安装原版游戏、补丁、下载站资源与 Windows 版一致；设置页多了「Wine 运行环境」一节（重新安装 / 本地压缩包安装 / 指定已有 Wine / 重建前缀）。
+- 启动游戏经过一个小启动器 `BallanceLauncher.exe`（`src-launcher/`）：Apple 芯片上 Rosetta 2 偶尔让 Player 初始化 Direct3D 失败，启动器会等到游戏窗口出来，没起来就自动重试。
+- 自动修补原版输入管理器（`Managers/Dx5InputManager.dll`）的按键重复 bug：开机超过 24.8 天后输入名字会一个键出一串字，Mac 很少重启所以几乎必现（只改原版文件，留 `.orig` 备份）。
 - 暂不支持：TAS 编辑器、启动器自动更新。
 
-构建（额外需要 `brew install sevenzip`，用来从 Windows 安装包里取出预编译的 RockoonIO 模组）：
+构建（额外需要 `brew install sevenzip`，用来从 Windows 安装包里取出预编译的 RockoonIO 模组；改了 `src-launcher/launch.c` 的话用 `pnpm build:launcher` 重新编译，需要 [zig](https://ziglang.org/download/)）：
 
 ```shell
 pnpm install
