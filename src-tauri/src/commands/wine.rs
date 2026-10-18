@@ -159,15 +159,22 @@ mod imp {
     use std::process::{Command, Stdio};
     use std::sync::atomic::AtomicBool;
     use std::sync::{Arc, Mutex};
+    use tauri::path::BaseDirectory;
     use tauri::{AppHandle, Emitter, Manager};
 
-    /// 前缀里要写的注册表项。改了这张表要把 PREFIX_REVISION 加一，已有前缀才会补写。
+    /// 前缀里要写的注册表项。改了这张表要把 PREFIX_REVISION 加一，已有前缀才会补写；
+    /// Ballance.app 的启动器（ballance-mac/template/launcher.sh）写的是同一张表，两边要一起改。
     ///
     /// - EmulateModeset：Wine 在 Mac 上只报告显示器自身的分辨率（没有 1024×768 之类的 4:3 模式），
     ///   Player 找不到配置里的分辨率就进不了游戏；打开后 Wine 会模拟出标准分辨率列表。
-    const PREFIX_REGISTRY: &[(&str, &str, &str)] =
-        &[(r"HKCU\Software\Wine\X11 Driver", "EmulateModeset", "Y")];
-    const PREFIX_REVISION: u32 = 1;
+    /// - Left/RightOptionIsAlt：Wine 默认把 Option 留给 macOS 输入特殊字符，
+    ///   Player 的 Alt+F4（退出）、Alt+Enter（全屏）、Alt+C（设置）就都按不出来。
+    const PREFIX_REGISTRY: &[(&str, &str, &str)] = &[
+        (r"HKCU\Software\Wine\X11 Driver", "EmulateModeset", "Y"),
+        (r"HKCU\Software\Wine\Mac Driver", "LeftOptionIsAlt", "y"),
+        (r"HKCU\Software\Wine\Mac Driver", "RightOptionIsAlt", "y"),
+    ];
+    const PREFIX_REVISION: u32 = 2;
 
     /// Ballance.app（ballance-mac 打包的独立版，自带 Wine + 游戏）的 bundle id
     const BALLANCE_APP_ID: &str = "local.ballance-mac.Ballance";
@@ -188,7 +195,7 @@ mod imp {
         custom_path: Option<String>,
     }
 
-    #[derive(serde::Serialize, serde::Deserialize, PartialEq)]
+    #[derive(serde::Serialize, serde::Deserialize, PartialEq, Debug)]
     #[serde(rename_all = "camelCase")]
     struct PrefixMarker {
         wine_version: String,
@@ -207,7 +214,9 @@ mod imp {
     }
 
     fn home() -> PathBuf {
-        std::env::var_os("HOME").map(PathBuf::from).unwrap_or_default()
+        std::env::var_os("HOME")
+            .map(PathBuf::from)
+            .unwrap_or_default()
     }
 
     /// `root` 是 Ballance.app 自带的 Wine 时，返回 Ballance.app 的前缀。
@@ -342,16 +351,25 @@ mod imp {
         {
             return Some(marker);
         }
-        // Ballance.app 先建好的共用前缀：它的启动器写的注册表项就是 PREFIX_REGISTRY 第 1 版
-        // （改 PREFIX_REGISTRY 时要同步改 ballance-mac 的启动器）
-        let version = fs::read_to_string(prefix.join(BALLANCE_MARKER)).ok()?;
+        // Ballance.app 先建好的共用前缀：它的标记是 `11.18 r2` 这样的「Wine 版本 + 注册表修订号」
+        // （老版本启动器只写版本号，那是第 1 版）
+        parse_ballance_marker(&fs::read_to_string(prefix.join(BALLANCE_MARKER)).ok()?)
+    }
+
+    fn parse_ballance_marker(text: &str) -> Option<PrefixMarker> {
+        let mut parts = text.split_whitespace();
+        let wine_version = parts.next()?.to_string();
+        let revision = parts
+            .next()
+            .and_then(|r| r.strip_prefix('r')?.parse().ok())
+            .unwrap_or(1);
         Some(PrefixMarker {
-            wine_version: version.trim().to_string(),
-            revision: 1,
+            wine_version,
+            revision,
         })
     }
 
-    /// Ballance.app 的启动器记录「前缀用哪个 Wine 版本建的」的文件
+    /// Ballance.app 的启动器记录「前缀用哪个 Wine 版本、哪版注册表建的」的文件
     const BALLANCE_MARKER: &str = ".ballance-wine-version";
 
     fn expected_marker(root: &Path) -> PrefixMarker {
@@ -415,9 +433,24 @@ mod imp {
         cmd
     }
 
-    /// 用 Wine 跑 `exe` 的命令（process::execute 调用）。前缀没准备好就报错，
-    /// 前端会先调 `prepare_wine_prefix`（这里不做：初始化要 20 秒，execute 是同步命令）。
-    pub fn game_command(app: &AppHandle, exe: &str) -> RcResultWith<Command> {
+    /// 游戏启动器（src-launcher/launch.c，打包在资源目录里）：在 Wine 里拉起游戏，
+    /// 等游戏窗口出来才退出，期间游戏没起来就自动重试。
+    ///
+    /// 为什么需要：Apple 芯片上 32 位程序靠 Rosetta 2 跑，Wine 从 32 位切到 64 位的远跳转偶尔不生效，
+    /// Player 初始化 Direct3D 时撞上访问违例 —— 报 “No render driver found” 退出，或者主线程没了、
+    /// 进程吊着不退。冷启动时大约每两三次就会碰到一次，重来一次一般就好。
+    fn launcher_path(app: &AppHandle) -> Option<PathBuf> {
+        app.path()
+            .resolve("resources/wine/BallanceLauncher.exe", BaseDirectory::Resource)
+            .ok()
+            .filter(|p| p.is_file())
+    }
+
+    /// 用 Wine 跑 `exe` 的命令（process::execute 调用）。第二个值表示是不是经过了游戏启动器：
+    /// 是的话 Wine 进程会在游戏窗口出来后退出（退出码非 0 = 重试几次都没起来），
+    /// 否则 Wine 进程一直活到游戏退出。前缀没准备好就报错，前端会先调 `prepare_wine_prefix`
+    /// （这里不做：初始化要 20 秒）。
+    pub fn game_command(app: &AppHandle, exe: &str) -> RcResultWith<(Command, bool)> {
         let Some((root, _)) = resolve(app) else {
             return Err(RcError::Other("还没有安装 Wine 运行环境".into()));
         };
@@ -430,8 +463,18 @@ mod imp {
             return Err(RcError::Other("Wine 运行环境还没有初始化".into()));
         }
         let mut cmd = wine_command(app, &root, "wine", false);
-        cmd.arg(exe);
-        Ok(cmd)
+        match launcher_path(app) {
+            Some(launcher) => {
+                // 启动器在 Wine 里用 CreateProcess 拉游戏，要的是 Windows 路径
+                cmd.arg(launcher).arg(super::to_windows_path(exe));
+                Ok((cmd, true))
+            }
+            None => {
+                log::warn!("BallanceLauncher.exe is missing, starting the game directly");
+                cmd.arg(exe);
+                Ok((cmd, false))
+            }
+        }
     }
 
     fn run_logged(app: &AppHandle, root: &Path, program: &str, args: &[&str]) -> RcResult {
@@ -460,18 +503,24 @@ mod imp {
 
         fs::create_dir_all(&prefix)?;
         let fresh = !prefix.join("system.reg").is_file();
+        // 同一个 Wine、只是注册表表改了：补写注册表就行，不用再跑一遍 wineboot
+        let same_wine = read_marker(app, root)
+            .is_some_and(|marker| marker.wine_version == expected.wine_version);
         log::info!(
-            "{} wine prefix {} with wine {}",
+            "{} wine prefix {} with wine {} (registry r{})",
             if fresh { "Creating" } else { "Updating" },
             prefix.display(),
-            expected.wine_version
+            expected.wine_version,
+            PREFIX_REVISION
         );
-        run_logged(
-            app,
-            root,
-            "wine",
-            &["wineboot", if fresh { "--init" } else { "-u" }],
-        )?;
+        if fresh || !same_wine {
+            run_logged(
+                app,
+                root,
+                "wine",
+                &["wineboot", if fresh { "--init" } else { "-u" }],
+            )?;
+        }
         for (key, name, value) in PREFIX_REGISTRY {
             run_logged(
                 app,
@@ -496,7 +545,10 @@ mod imp {
         )?;
         // 共用 Ballance.app 的前缀时也替它记一笔，免得它下次启动再初始化一遍
         if bundled_prefix(root).is_some() {
-            fs::write(prefix.join(BALLANCE_MARKER), &expected.wine_version)?;
+            fs::write(
+                prefix.join(BALLANCE_MARKER),
+                format!("{} r{}\n", expected.wine_version, PREFIX_REVISION),
+            )?;
         }
         Ok(())
     }
@@ -725,6 +777,19 @@ mod imp {
     #[cfg(test)]
     mod tests {
         use super::*;
+
+        #[test]
+        fn reads_ballance_app_markers() {
+            let marker = |v: &str, r| {
+                Some(PrefixMarker {
+                    wine_version: v.into(),
+                    revision: r,
+                })
+            };
+            assert_eq!(parse_ballance_marker("11.18\n"), marker("11.18", 1));
+            assert_eq!(parse_ballance_marker("11.18 r2\n"), marker("11.18", 2));
+            assert_eq!(parse_ballance_marker(""), None);
+        }
 
         #[test]
         fn shares_prefix_only_with_ballance_app() {

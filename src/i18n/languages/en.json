@@ -1014,6 +1014,9 @@
     "installNow": "Install",
     "stillInstalling": "Wine is still installing; launch the game once it's done",
     "preparing": "Setting up Wine (about 20 s the first time)…",
-    "prepareFailed": "Failed to set up Wine: {reason}"
+    "prepareFailed": "Failed to set up Wine: {reason}",
+    "launching": "Starting the game… (on Mac this takes a few seconds while Wine brings it up)",
+    "launchingAlready": "The game is already starting, please wait",
+    "launchFailed": "Failed to start the game: {reason}"
   }
 }

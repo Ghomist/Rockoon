@@ -30,11 +30,11 @@ pub fn execute(
     // 其它平台：.exe 交给 Wine（commands/wine.rs），游戏里的 mod 只认 Windows 路径，
     // 所以环境变量里的绝对路径要先换成 Z:\ 形式
     #[cfg(not(target_os = "windows"))]
-    let mut cmd = {
-        let mut cmd = if bin.to_lowercase().ends_with(".exe") {
+    let (mut cmd, via_launcher) = {
+        let (mut cmd, via_launcher) = if bin.to_lowercase().ends_with(".exe") {
             crate::commands::wine::game_command(&app, &bin)?
         } else {
-            std::process::Command::new(&bin)
+            (std::process::Command::new(&bin), false)
         };
         if let Some(env_vars) = env {
             cmd.envs(
@@ -43,7 +43,7 @@ pub fn execute(
                     .map(|(k, v)| (k, crate::commands::wine::to_windows_path(&v))),
             );
         }
-        cmd
+        (cmd, via_launcher)
     };
     cmd.current_dir(&cwd);
     if let Some(args) = args {
@@ -51,6 +51,14 @@ pub fn execute(
     }
     #[cfg(not(target_os = "windows"))]
     let running_before = unix_proc::pids_running(&bin);
+    // Mac 很少重启，开机时间几乎总在原版输入管理器出 bug 的区间（见 ballance/input_fix.rs）：
+    // 启动游戏前给它打补丁。修不了也照常启动
+    #[cfg(not(target_os = "windows"))]
+    if let Some(root) = std::path::Path::new(&bin).parent().and_then(|p| p.parent()) {
+        if let Err(e) = crate::ballance::input_fix::fix_input_manager(root) {
+            log::warn!("Patching the input manager failed: {e}");
+        }
+    }
     let child = cmd.spawn()?;
 
     // TAS 回放对帧稳定很敏感，而编辑器（WebView2）会时不时抢 CPU（鼠标一动尤其明显）：
@@ -74,7 +82,9 @@ pub fn execute(
     #[cfg(target_os = "windows")]
     let pid = child.id();
     #[cfg(not(target_os = "windows"))]
-    let pid = if bin.to_lowercase().ends_with(".exe") {
+    let pid = if via_launcher {
+        unix_proc::wait_for_launcher(child, &bin, &running_before)?
+    } else if bin.to_lowercase().ends_with(".exe") {
         unix_proc::wait_for_wine_game(child, &bin, &running_before)?
     } else {
         unix_proc::reap(child)
@@ -187,33 +197,67 @@ mod unix_proc {
         pid
     }
 
-    /// `wine Player.exe` 起来的 `wine` 进程不是游戏本身：它另起一个进程跑游戏（命令行被 Wine
-    /// 改写成 `Z:\…\Bin\Player.exe`）然后自己就退出了。启动器要跟踪、结束的是后者，
-    /// 所以这里等到新的游戏进程出现，返回它的 pid。Wine 直接报错退出时把错误交给前端。
-    pub fn wait_for_wine_game(child: Child, exe: &str, before: &[u32]) -> RcResultWith<u32> {
-        const TIMEOUT: Duration = Duration::from_secs(20);
+    /// 启动后新出现的游戏进程（不在 `before` 里、也不是 `skip`）。优先认路径完全一致的
+    /// （多开别的游戏目录时不会认错），否则同名的新进程也行
+    fn find_new_game(exe: &str, before: &[u32], skip: u32) -> RcResultWith<Option<u32>> {
         let win_path = crate::commands::wine::to_windows_path(exe).to_lowercase();
         let image = image_name(exe);
+        let fresh: Vec<(u32, String)> = processes()?
+            .into_iter()
+            .filter(|(pid, command)| {
+                *pid != skip && !before.contains(pid) && runs_image(command, image)
+            })
+            .collect();
+        Ok(fresh
+            .iter()
+            .find(|(_, command)| command.to_lowercase().starts_with(&win_path))
+            .or(fresh.first())
+            .map(|(pid, _)| *pid))
+    }
+
+    /// 经过游戏启动器（BallanceLauncher.exe，见 commands/wine.rs）时：Wine 进程在游戏窗口出来后退出，
+    /// 期间游戏没起来它会自己重试。等它退出，再去找最后留下来的那个游戏进程。
+    pub fn wait_for_launcher(child: Child, exe: &str, before: &[u32]) -> RcResultWith<u32> {
+        // 启动器每次尝试最多等 30 秒窗口 + 5 秒确认，最多 8 次（出事的尝试一般 2 秒内就结束）
+        const TIMEOUT: Duration = Duration::from_secs(300);
+        let started = Instant::now();
+        let mut child = child;
+        loop {
+            if let Some(status) = child.try_wait()? {
+                if !status.success() {
+                    return Err(RcError::Other(
+                        "游戏启动失败（已自动重试 8 次），请再试一次；详见启动器日志目录里的 wine.log"
+                            .into(),
+                    ));
+                }
+                return find_new_game(exe, before, 0)?.ok_or_else(|| {
+                    RcError::Other("游戏启动后马上退出了，详见启动器日志目录里的 wine.log".into())
+                });
+            }
+            if started.elapsed() > TIMEOUT {
+                log::warn!("Timed out waiting for the launcher of {exe}");
+                let _ = child.kill();
+                reap(child);
+                return Err(RcError::Other("游戏启动超时".into()));
+            }
+            std::thread::sleep(Duration::from_millis(200));
+        }
+    }
+
+    /// 不经过游戏启动器时：`wine Player.exe` 起来的 `wine` 进程不是游戏本身 —— 游戏跑在 Wine
+    /// 另起的进程里（命令行被改写成 `Z:\…\Bin\Player.exe`），`wine` 只是在旁边等它退出。
+    /// 启动器要跟踪、结束的是游戏进程，所以这里等它出现，返回它的 pid。Wine 直接报错退出时把错误交给前端。
+    pub fn wait_for_wine_game(child: Child, exe: &str, before: &[u32]) -> RcResultWith<u32> {
+        const TIMEOUT: Duration = Duration::from_secs(20);
         let started = Instant::now();
         let mut child = child;
         let mut exit_status = None;
         loop {
-            let fresh: Vec<(u32, String)> = processes()?
-                .into_iter()
-                .filter(|(pid, command)| {
-                    *pid != child.id() && !before.contains(pid) && runs_image(command, image)
-                })
-                .collect();
-            // 优先认路径完全一致的（多开别的游戏目录时不会认错），否则同名的新进程也行
-            let found = fresh
-                .iter()
-                .find(|(_, command)| command.to_lowercase().starts_with(&win_path))
-                .or(fresh.first());
-            if let Some((pid, _)) = found {
+            if let Some(pid) = find_new_game(exe, before, child.id())? {
                 if exit_status.is_none() {
                     reap(child);
                 }
-                return Ok(*pid);
+                return Ok(pid);
             }
             if exit_status.is_none() {
                 exit_status = child.try_wait()?;

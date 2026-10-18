@@ -108,7 +108,9 @@ BMLPlus native module built via CMake + PowerShell (`build.ps1`), compiled 32-bi
 ## macOS
 
 - The game runs through Wine. `src-tauri/src/commands/wine.rs` owns the runtime (user-picked → launcher-installed in `<app data>/wine/runtime` → Ballance.app's bundled Wine → WineHQ apps) and one shared prefix; `process::execute` hands `.exe` files to it, converts absolute paths in env vars to `Z:\…`, and waits for the real game pid (the `wine` loader spawns the game and exits).
-- Frontend gate: `services/wine.ts` (`ensureWineReady` before every launch, `installWineAsTask` as a `wine` download task). Platform checks use `isMac` from `utils/platform.ts`.
+- Games start through `src-tauri/resources/wine/BallanceLauncher.exe` (source `src-launcher/launch.c`, rebuild with `pnpm build:launcher`, needs zig): under Rosetta 2 the 32→64-bit far jump in Wine's wow64cpu occasionally doesn't switch modes and Player's Direct3D init dies ("No render driver found" or a lingering process). The launcher waits for the game window (stable 5 s) and retries up to 8 times; `process::wait_for_launcher` waits for it, then picks the surviving Player.exe pid.
+- `ballance/input_fix.rs` patches the stock `Managers/Dx5InputManager.dll` before each macOS launch (key-repeat bug once uptime mod 49.7 days > 24.8 days; Macs rarely reboot). Only the known original hash is touched; `.orig` is kept. `ballance-mac/template/input-fix.sh` carries the same bytes.
+- Frontend gate: `services/wine.ts` (`ensureWineReady` before every launch, `installWineAsTask` as a `wine` download task); `services/launcher.ts` shows a "starting" toast and blocks double launches on macOS while `execute` waits. Platform checks use `isMac` from `utils/platform.ts`.
 - Not on macOS: TAS editor (Win32 window embedding + shared memory), self-update (no macOS artifacts in `latest.json`).
 - `tauri.macos.conf.json` swaps the custom title bar for native traffic lights and builds `app`/`dmg`; `RockoonIO.bmodp` comes prebuilt from the Windows release (`pnpm fetch:bmodp`, needs `brew install sevenzip`).
 - Build: `pnpm tauri build` (`CI=true` skips the Finder-scripted DMG layout, which needs Automation permission).

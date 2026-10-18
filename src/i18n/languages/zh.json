@@ -1014,6 +1014,9 @@
     "installNow": "下载安装",
     "stillInstalling": "Wine 还在安装中，装好后再启动游戏",
     "preparing": "正在初始化 Wine 环境（首次约 20 秒）…",
-    "prepareFailed": "Wine 环境初始化失败：{reason}"
+    "prepareFailed": "Wine 环境初始化失败：{reason}",
+    "launching": "正在启动游戏…（Mac 上要等 Wine 拉起游戏，几秒到二十来秒）",
+    "launchingAlready": "游戏正在启动，请稍候",
+    "launchFailed": "游戏启动失败：{reason}"
   }
 }
