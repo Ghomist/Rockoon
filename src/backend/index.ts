@@ -175,9 +175,14 @@ const game = {
 /** Wine 运行时（macOS 上跑游戏用，见 src-tauri/src/commands/wine.rs；Windows 上 required 为 false） */
 const wine = {
   status: () => invoke<WineStatus>("wine_status"),
-  /** 下载（url）或从本地压缩包（archive）安装，装完顺带初始化前缀；进度与结果走 game-install:* 事件 */
-  startInstall: (source: { url?: string; archive?: string; sha256?: string }) =>
-    invoke<string>("start_wine_install", source),
+  /**
+   * 安装：按顺序试 sources（下载失败或校验不过就换下一个），或用本地压缩包 archive；
+   * 装完顺带初始化前缀。进度与结果走 game-install:* 事件
+   */
+  startInstall: (source: {
+    sources?: { url: string; sha256?: string }[];
+    archive?: string;
+  }) => invoke<string>("start_wine_install", source),
   /** 确保前缀已初始化（第一次约 20 秒） */
   preparePrefix: () => invoke<WineStatus>("prepare_wine_prefix"),
   resetPrefix: () => invoke<WineStatus>("reset_wine_prefix"),

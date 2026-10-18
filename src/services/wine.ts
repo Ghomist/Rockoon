@@ -15,15 +15,28 @@ import { dialog, message } from "@/utils/ui/feedback";
  */
 
 /**
- * 默认安装的 Wine：Gcenx 的 macOS 构建（x86_64，Apple 芯片上经 Rosetta 2 运行；
+ * 默认安装的 Wine 11.18：Gcenx 的 macOS 构建（x86_64，Apple 芯片上经 Rosetta 2 运行；
  * 带新 WoW64，能跑 32 位程序）。WineHQ 的 Homebrew cask 已在 2026-09 被停用。
- * 换版本时三项一起改，并实际跑一遍游戏。
+ *
+ * 下载源按顺序试，一个下载失败或校验不过就换下一个：
+ * 1. ballance-mac-bundle 发布的精简包（去掉了用不到的 Gecko/Mono、带许可证，小一半多），
+ *    和 Ballance.app 里的是同一份；
+ * 2. Gcenx 的原版构建。
+ * 换版本时一起改，并实际跑一遍游戏。`size` 是第一个源的大小（进度与提示用）。
  */
 export const WINE_RUNTIME = {
   version: "11.18",
-  url: "https://github.com/Gcenx/macOS_Wine_builds/releases/download/11.18/wine-devel-11.18-osx64.tar.xz",
-  sha256: "aa0ea4c82e636ae7bca2076387cb0a5affa26509ad13f119ecd0d62bd7ba6f82",
-  size: 190974384
+  size: 78898056,
+  sources: [
+    {
+      url: "https://github.com/CHHC-L/ballance-mac-bundle/releases/download/v1.0.0/wine-runtime-11.18-osx64.tar.xz",
+      sha256: "3618799802c6f3dcd577d86e7504c4e84188942dad632308937ce08f62234008"
+    },
+    {
+      url: "https://github.com/Gcenx/macOS_Wine_builds/releases/download/11.18/wine-devel-11.18-osx64.tar.xz",
+      sha256: "aa0ea4c82e636ae7bca2076387cb0a5affa26509ad13f119ecd0d62bd7ba6f82"
+    }
+  ]
 } as const;
 
 const TASK_KEY = "wine:runtime";
@@ -78,9 +91,7 @@ export async function installWineAsTask(archive?: string): Promise<boolean> {
     );
 
     const backendId = await backend.wine.startInstall(
-      archive
-        ? { archive }
-        : { url: WINE_RUNTIME.url, sha256: WINE_RUNTIME.sha256 }
+      archive ? { archive } : { sources: [...WINE_RUNTIME.sources] }
     );
     // 任务 id 换成后端的，取消才能真的中断这次下载
     downloads().update(id, { id: backendId });
