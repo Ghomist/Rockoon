@@ -14,6 +14,7 @@ import Downloads from "@/views/Downloads";
 import Settings from "@/views/Settings";
 import { hubUrl } from "@/services/hub";
 import { openTasEditorWindow } from "@/services/tasWindow";
+import { isMac } from "@/utils/platform";
 
 export type MenuItem =
   | ({
@@ -130,7 +131,8 @@ export const getMenuItems = (
   },
   "-",
   // 实验功能：设置里打开才显示（默认关）。独立窗口：点一下开 TAS 编辑器，不切当前页面
-  ...(options.tasEditor
+  // macOS 上没有：编辑器要把游戏窗口嵌进来、要读写游戏的共享内存，这两样都是 Win32 专属
+  ...(options.tasEditor && !isMac
     ? ([
         {
           label: t("menu.tasEditor"),

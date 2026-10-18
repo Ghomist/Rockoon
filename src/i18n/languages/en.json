@@ -95,7 +95,8 @@
       "connecting": "Connecting",
       "downloading": "Downloading",
       "importing": "Installing",
-      "done": "Done"
+      "done": "Done",
+      "initializing": "Initializing"
     }
   },
   "menu": {
@@ -802,7 +803,8 @@
     "changed": "Changed",
     "removed": "Removed",
     "error": "Update failed, please try again later",
-    "dismiss": "You can check for updates in Settings"
+    "dismiss": "You can check for updates in Settings",
+    "unsupported": "Automatic updates are not available for the macOS build yet; please download new versions manually"
   },
   "gameData": {
     "levelLabel": "Level {i}",
@@ -951,5 +953,51 @@
     "keep": "Keep it on and launch",
     "disabled": "BallanceTAS auto-play on startup is now off",
     "restored": "Restored the BallanceTAS settings changed by TAS one-click play"
+  },
+  "wine": {
+    "title": "Wine runtime",
+    "taskTitle": "Wine runtime {version}",
+    "taskTitleLocal": "Wine runtime (local archive)",
+    "taskTarget": "Launcher data folder",
+    "installed": "Wine runtime is ready",
+    "failed": "Failed to install Wine",
+    "checking": "Checking Wine…",
+    "statusInstalled": "Ready: Wine {version} ({source})",
+    "statusMissing": "Wine is not installed. Ballance needs Wine to run on macOS",
+    "prefixReady": "prefix initialized",
+    "prefixPending": "prefix will be initialized on first launch",
+    "source": {
+      "managed": "installed by launcher",
+      "bundled": "bundled with Ballance.app",
+      "custom": "custom",
+      "detected": "auto-detected"
+    },
+    "install": "Download and install Wine",
+    "reinstall": "Reinstall Wine",
+    "installTip": "Downloads Wine {version} built by Gcenx from GitHub (about {size}) into the launcher's own data folder; your system is not touched",
+    "installLocal": "Install from a local archive",
+    "installLocalTip": "If GitHub is slow, download wine-devel-*-osx64.tar.xz in a browser first, then pick it here",
+    "pickArchive": "Choose a Wine archive (.tar.xz)",
+    "useCustom": "Use an existing Wine",
+    "useCustomTip": "Pick an app that ships Wine (Wine Devel.app, Ballance.app, …) or a Wine's bin/wine",
+    "pickCustom": "Choose Wine (.app or bin/wine)",
+    "customSet": "Now using the selected Wine",
+    "customCleared": "Switched back to the default Wine",
+    "customMissing": "The selected Wine is missing: {path}",
+    "useDefault": "Use default Wine",
+    "resetPrefix": "Recreate Wine prefix",
+    "resetPrefixTip": "Try this if the game won't start or renders wrong. The prefix only holds Wine's system files and registry; game files and saves are untouched",
+    "resetPrefixConfirm": "This deletes and recreates the Wine prefix (about 20 s). Game files and saves are untouched. Continue?",
+    "resetPrefixDone": "Wine prefix recreated",
+    "openConfig": "Open Wine settings",
+    "openConfigTip": "Opens winecfg for Wine's own audio/display settings (usually not needed)",
+    "rosettaTitle": "Rosetta 2 required",
+    "rosettaContent": "Wine is an Intel app, so Apple silicon Macs need Rosetta 2. Open Terminal and run: softwareupdate --install-rosetta --agree-to-license",
+    "missingTitle": "Wine runtime required",
+    "missingContent": "Ballance is a Windows game and runs on Mac through Wine. Download and install it now? (about 190 MB, stored in the launcher's data folder) Click Launch again once it's done.\n\nIf you have Ballance.app (the Mac package), put it in Applications and its bundled Wine will be used instead—no download needed.",
+    "installNow": "Install",
+    "stillInstalling": "Wine is still installing; launch the game once it's done",
+    "preparing": "Setting up Wine (about 20 s the first time)…",
+    "prepareFailed": "Failed to set up Wine: {reason}"
   }
 }

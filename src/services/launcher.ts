@@ -1,4 +1,5 @@
 import backend from "@/backend";
+import { ensureWineReady } from "@/services/wine";
 import { useAppStore } from "@/stores/app";
 import { usePrefStore } from "@/stores/pref";
 import { join } from "@tauri-apps/api/path";
@@ -16,6 +17,8 @@ export async function launchInstance(options?: {
 }): Promise<number | undefined> {
   const instance = useAppStore.getState().selectedInstanceData;
   if (!instance) return undefined;
+  // macOS 上游戏跑在 Wine 里：Wine 没装 / 前缀没初始化就先处理（Windows 上直接放行）
+  if (!(await ensureWineReady())) return undefined;
   const cwd = await join(instance.path, "Bin");
   const bin = await join(cwd, "Player.exe");
   const pid = await backend.execute(
@@ -42,6 +45,7 @@ export async function launchInstance(options?: {
 export async function launchMap(mapAbsolutePath: string): Promise<void> {
   const instance = useAppStore.getState().selectedInstanceData;
   if (!instance) return;
+  if (!(await ensureWineReady())) return;
   const cwd = await join(instance.path, "Bin");
   const bin = await join(cwd, "Player.exe");
   const pid = await backend.execute(cwd, bin, {

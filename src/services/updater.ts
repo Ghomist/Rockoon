@@ -4,6 +4,7 @@ import { updateNotesContent } from "@/components/UpdateNotes";
 import { useDownloadsStore } from "@/stores/downloads";
 import { dialog, message } from "@/utils/ui/feedback";
 import { t } from "@/i18n";
+import { isMac } from "@/utils/platform";
 
 /**
  * 启动器自更新（下载 + 安装新版本）。
@@ -20,6 +21,11 @@ import { t } from "@/i18n";
  */
 
 export async function checkForUpdate(): Promise<void> {
+  // 更新源（latest.json）里只有 Windows 安装包：macOS 移植版需要手动更新
+  if (isMac) {
+    message.info(t("updater.unsupported"));
+    return;
+  }
   try {
     const update = await check({ timeout: 15 * 1000 });
     if (update) {

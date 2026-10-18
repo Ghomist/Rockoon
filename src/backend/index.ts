@@ -172,6 +172,21 @@ const game = {
     invoke<undefined>("cancel_game_install", { id })
 };
 
+/** Wine 运行时（macOS 上跑游戏用，见 src-tauri/src/commands/wine.rs；Windows 上 required 为 false） */
+const wine = {
+  status: () => invoke<WineStatus>("wine_status"),
+  /** 下载（url）或从本地压缩包（archive）安装，装完顺带初始化前缀；进度与结果走 game-install:* 事件 */
+  startInstall: (source: { url?: string; archive?: string; sha256?: string }) =>
+    invoke<string>("start_wine_install", source),
+  /** 确保前缀已初始化（第一次约 20 秒） */
+  preparePrefix: () => invoke<WineStatus>("prepare_wine_prefix"),
+  resetPrefix: () => invoke<WineStatus>("reset_wine_prefix"),
+  /** 指定已有的 Wine（.app / Wine 根目录 / bin/wine），传 null 恢复默认 */
+  setCustom: (path: string | null) =>
+    invoke<WineStatus>("set_custom_wine", { path }),
+  openConfig: () => invoke<undefined>("open_wine_config")
+};
+
 const patches = {
   /**
    * 从下载站下载补丁包（BML / BML+ / 新 Player）并解压到目标文件夹。
@@ -188,5 +203,6 @@ export default {
   ...process,
   ...embed,
   ...game,
-  patches
+  patches,
+  wine
 };

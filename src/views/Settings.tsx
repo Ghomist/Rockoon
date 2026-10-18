@@ -11,6 +11,8 @@ import { useVanillaInstall } from "@/services/game";
 import { useT } from "@/i18n";
 import { dialog, message } from "@/utils/ui/feedback";
 import storage from "@/utils/storage";
+import { isMac } from "@/utils/platform";
+import WineSettings from "@/views/components/WineSettings";
 import NFormWrapper, {
   type Field,
   type Schema,
@@ -246,6 +248,17 @@ export default function Settings() {
 
       <PatchOptionsDialog {...gameOptions} />
 
+      {/* macOS：游戏跑在 Wine 里，这里管理 Wine 运行时与前缀 */}
+      {isMac && (
+        <section className="flex flex-col gap-2.5">
+          <h2 className="flex items-center gap-2 text-lg font-semibold">
+            <span className="size-1.5 rounded-full bg-primary" />
+            {t("wine.title")}
+          </h2>
+          <WineSettings />
+        </section>
+      )}
+
       <section className="flex flex-col gap-2.5">
         <h2 className="flex items-center gap-2 text-lg font-semibold">
           <span className="size-1.5 rounded-full bg-primary" />
@@ -262,13 +275,16 @@ export default function Settings() {
         <NFormWrapper schema={ingameSchema} />
       </section>
 
-      <section className="flex flex-col gap-2.5">
-        <h2 className="flex items-center gap-2 text-lg font-semibold">
-          <span className="size-1.5 rounded-full bg-primary" />
-          {t("settings.labs")}
-        </h2>
-        <NFormWrapper schema={labsSchema} />
-      </section>
+      {/* 实验功能目前只有 TAS 编辑器，它依赖 Win32（窗口嵌入、共享内存），macOS 上不显示 */}
+      {!isMac && (
+        <section className="flex flex-col gap-2.5">
+          <h2 className="flex items-center gap-2 text-lg font-semibold">
+            <span className="size-1.5 rounded-full bg-primary" />
+            {t("settings.labs")}
+          </h2>
+          <NFormWrapper schema={labsSchema} />
+        </section>
+      )}
 
       <section className="flex flex-col gap-2.5">
         <h2 className="flex items-center gap-2 text-lg font-semibold">

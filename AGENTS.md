@@ -1,6 +1,6 @@
 # AGENTS.md
 
-High-signal notes for AI coding sessions in this repo. Rockoon is a Ballance game launcher: **React 18 + TypeScript** frontend, Tauri 2.0 (Rust) backend, and a C++ BMLPlus native module. Windows-only. Deeper architecture notes live in `CLAUDE.md`.
+High-signal notes for AI coding sessions in this repo. Rockoon is a Ballance game launcher: **React 18 + TypeScript** frontend, Tauri 2.0 (Rust) backend, and a C++ BMLPlus native module. Windows first, plus an experimental macOS port via Wine (see `CLAUDE.md` → macOS). Deeper architecture notes live in `CLAUDE.md`.
 
 > **Frontend is React, not Vue.** The codebase was migrated from Vue 3 to React; `src/` contains **no `.vue` files** and type-checking uses `tsc`, not `vue-tsc`. Any remaining mention of Vue / Pinia / Naive UI / shadcn-vue anywhere in this repo (including `.wolf/` logs) is stale — trust the code.
 
@@ -136,7 +136,7 @@ BMLPlus plugin (`RockoonIO.bmodp`) built via CMake + `build.ps1`. Sources in `sr
   用无头 Edge 抓 DOM 看 `play()` 结果与 `csp-violation` 事件。
 - **CSP 会连内联脚本一起拦**：`default-src 'self'` 下 `securitypolicyviolation` 之外的
   内联 `<script>` 不执行 —— 写临时验证页时要外链 JS，否则页面看起来「没反应」。
-- **Windows-only**: macOS/Linux are commented out in `.github/workflows/release.yml`.
+- **Windows first**: macOS/Linux are commented out in `.github/workflows/release.yml`; the macOS port builds locally (`CLAUDE.md` → macOS).
 - **Hot reload**: Vite ignores `src-tauri/**` (`vite.config.ts`). Rust changes require restarting `pnpm tauri dev`.
 - **Vite port 1420 is strict** (`strictPort: true`) — if taken, dev fails rather than incrementing.
 - **Release flow**: pushing to the `release` branch (or manual dispatch) triggers `release.yml`, which builds via `tauri-apps/tauri-action` with `submodules: recursive`, signs with `TAURI_SIGNING_PRIVATE_KEY` secret, and publishes a GitHub release tagged `rockoon-v<version>`. The updater pulls `latest.json` from that release. **Every release must ship `release-notes/<version>.md`** (Added/Changed/Removed sections, template in `release-notes/_TEMPLATE.md`) — the workflow fails before building without it. That file becomes the GitHub release body *and* the `notes` in `latest.json`, i.e. the changelog shown in the in-app update dialog (`src/components/UpdateNotes.tsx`).

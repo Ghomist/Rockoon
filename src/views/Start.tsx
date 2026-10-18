@@ -92,7 +92,8 @@ export default function Start() {
     }
     // BallanceTAS 还开着「启动时自动播放」（TAS 编辑器留下的）就先问一句
     if (!(await confirmTasAutoplayOff(selectedInstanceData.path))) return;
-    await launchInstance();
+    // 没拿到 pid = 这次没启动（例如 macOS 上 Wine 还没装好），已经有别的提示了
+    if ((await launchInstance()) === undefined) return;
     message.success(t("home.launching"));
   };
 
