@@ -16,10 +16,15 @@ import { message } from "@/utils/ui/feedback";
  * 返回给调用方（duplicate=true），不会重复下载。
  */
 
-export type DownloadKind = "brp" | "game" | "patch" | "update";
+export type DownloadKind = "brp" | "game" | "patch" | "update" | "wine";
 export type DownloadStatus = "running" | "success" | "error" | "cancelled";
 /** 下载阶段，与后端事件里的阶段一一对应 */
-export type DownloadPhase = "connecting" | "downloading" | "importing" | "done";
+export type DownloadPhase =
+  | "connecting"
+  | "downloading"
+  | "importing"
+  | "initializing"
+  | "done";
 
 export interface DownloadTask {
   /** 后端任务 id（自更新没有后端任务，用生成的 id） */
@@ -211,7 +216,11 @@ export const useDownloadsStore = create<DownloadsState>((set, get) => ({
     try {
       // 自更新走 tauri 更新插件，插件没有取消接口 —— 只能等它下完
       if (task.kind === "brp") await backend.cancelBrpImport(id);
-      else if (task.kind === "game" || task.kind === "patch")
+      else if (
+        task.kind === "game" ||
+        task.kind === "patch" ||
+        task.kind === "wine"
+      )
         await backend.cancelInstall(id);
     } finally {
       get().markCancelled(id);

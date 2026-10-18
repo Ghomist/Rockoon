@@ -1,12 +1,14 @@
 use crate::common::exception::{RcResult, RcResultWith};
-#[cfg(not(target_os = "windows"))]
-use crate::common::exception::RcError;
 use std::collections::HashMap;
-use std::{os::windows::process::CommandExt, path::PathBuf};
-use tauri::command;
+#[cfg(target_os = "windows")]
+use std::os::windows::process::CommandExt;
+use std::path::PathBuf;
+use tauri::{command, AppHandle};
 
-#[command]
+// async：macOS 上要等 Wine 把游戏进程拉起来才知道 pid（见 unix_proc::wait_for_wine_game）
+#[command(async)]
 pub fn execute(
+    app: AppHandle,
     cwd: String,
     bin: String,
     env: Option<HashMap<String, String>>,
@@ -15,15 +17,41 @@ pub fn execute(
     // 要不要把游戏进程提到「高」优先级（TAS 回放用）
     high_priority: Option<bool>,
 ) -> RcResultWith<u32> {
-    let mut cmd = std::process::Command::new(&bin);
+    #[cfg(target_os = "windows")]
+    let mut cmd = {
+        let _ = &app;
+        let mut cmd = std::process::Command::new(&bin);
+        cmd.creation_flags(0x08000000);
+        if let Some(env_vars) = env {
+            cmd.envs(env_vars);
+        }
+        cmd
+    };
+    // 其它平台：.exe 交给 Wine（commands/wine.rs），游戏里的 mod 只认 Windows 路径，
+    // 所以环境变量里的绝对路径要先换成 Z:\ 形式
+    #[cfg(not(target_os = "windows"))]
+    let mut cmd = {
+        let mut cmd = if bin.to_lowercase().ends_with(".exe") {
+            crate::commands::wine::game_command(&app, &bin)?
+        } else {
+            std::process::Command::new(&bin)
+        };
+        if let Some(env_vars) = env {
+            cmd.envs(
+                env_vars
+                    .into_iter()
+                    .map(|(k, v)| (k, crate::commands::wine::to_windows_path(&v))),
+            );
+        }
+        cmd
+    };
     cmd.current_dir(&cwd);
-    if let Some(env_vars) = env {
-        cmd.envs(env_vars);
-    }
     if let Some(args) = args {
         cmd.args(args);
     }
-    let child = cmd.creation_flags(0x08000000).spawn()?;
+    #[cfg(not(target_os = "windows"))]
+    let running_before = unix_proc::pids_running(&bin);
+    let child = cmd.spawn()?;
 
     // TAS 回放对帧稳定很敏感，而编辑器（WebView2）会时不时抢 CPU（鼠标一动尤其明显）：
     // 需要时把游戏提到 HIGH_PRIORITY_CLASS，让它的渲染/回放线程不至于被编辑器挤掉帧。
@@ -43,13 +71,22 @@ pub fn execute(
     #[cfg(not(target_os = "windows"))]
     let _ = high_priority;
 
+    #[cfg(target_os = "windows")]
+    let pid = child.id();
+    #[cfg(not(target_os = "windows"))]
+    let pid = if bin.to_lowercase().ends_with(".exe") {
+        unix_proc::wait_for_wine_game(child, &bin, &running_before)?
+    } else {
+        unix_proc::reap(child)
+    };
+
     log::info!(
         "Started {} (pid: {})",
         PathBuf::from(cwd).join(bin).display(),
-        child.id()
+        pid
     );
 
-    Ok(child.id())
+    Ok(pid)
 }
 
 // TODO: should check if the process is spawned by the launcher
@@ -70,7 +107,7 @@ pub fn kill(pid: u32) -> RcResult {
 pub fn kill(pid: u32) -> RcResult {
     std::process::Command::new("kill")
         .args(["-9", &pid.to_string()])
-        .spawn()?;
+        .status()?;
 
     log::info!("Killed process {}", pid);
 
@@ -89,11 +126,145 @@ pub fn kill(pid: u32) -> RcResult {
 pub fn find_processes(image: String) -> RcResultWith<Vec<u32>> {
     Ok(win_proc::pids_by_image(&image))
 }
+/// 其它平台用 `ps`。游戏跑在 Wine 里，Wine 会把进程命令行改写成 Windows 路径
+/// （`Z:\…\Bin\Player.exe`），所以按命令行里的可执行文件名匹配。
 #[cfg(not(target_os = "windows"))]
 #[command(async)]
 pub fn find_processes(image: String) -> RcResultWith<Vec<u32>> {
-    let _ = image;
-    Ok(Vec::new())
+    Ok(unix_proc::processes()?
+        .into_iter()
+        .filter(|(_, command)| unix_proc::runs_image(command, &image))
+        .map(|(pid, _)| pid)
+        .collect())
+}
+
+#[cfg(not(target_os = "windows"))]
+mod unix_proc {
+    use crate::common::exception::{RcError, RcResultWith};
+    use std::process::Child;
+    use std::time::{Duration, Instant};
+
+    /// 正在跑的进程（pid, 命令行），不含僵尸进程
+    pub fn processes() -> RcResultWith<Vec<(u32, String)>> {
+        let output = std::process::Command::new("ps")
+            .args(["-axo", "pid=,stat=,command="])
+            .output()?;
+        let text = String::from_utf8_lossy(&output.stdout);
+        Ok(text
+            .lines()
+            .filter_map(|line| {
+                // 列之间是不定长的空格补齐
+                let (pid, rest) = line.trim_start().split_once(char::is_whitespace)?;
+                let (stat, command) = rest.trim_start().split_once(char::is_whitespace)?;
+                let pid = pid.parse().ok()?;
+                (!stat.starts_with('Z')).then(|| (pid, command.trim_start().to_string()))
+            })
+            .collect())
+    }
+
+    /// 和 `exe` 同名、正在跑的进程（启动前记一份，好认出哪个是新起的）
+    pub fn pids_running(exe: &str) -> Vec<u32> {
+        let image = image_name(exe);
+        processes()
+            .unwrap_or_default()
+            .into_iter()
+            .filter(|(_, command)| runs_image(command, image))
+            .map(|(pid, _)| pid)
+            .collect()
+    }
+
+    fn image_name(exe: &str) -> &str {
+        exe.rsplit(['/', '\\']).next().unwrap_or(exe)
+    }
+
+    /// 后台 wait 掉子进程（不然它退出后一直是僵尸，`ps` 还查得到），返回它的 pid
+    pub fn reap(child: Child) -> u32 {
+        let pid = child.id();
+        std::thread::spawn(move || {
+            let mut child = child;
+            let _ = child.wait();
+        });
+        pid
+    }
+
+    /// `wine Player.exe` 起来的 `wine` 进程不是游戏本身：它另起一个进程跑游戏（命令行被 Wine
+    /// 改写成 `Z:\…\Bin\Player.exe`）然后自己就退出了。启动器要跟踪、结束的是后者，
+    /// 所以这里等到新的游戏进程出现，返回它的 pid。Wine 直接报错退出时把错误交给前端。
+    pub fn wait_for_wine_game(child: Child, exe: &str, before: &[u32]) -> RcResultWith<u32> {
+        const TIMEOUT: Duration = Duration::from_secs(20);
+        let win_path = crate::commands::wine::to_windows_path(exe).to_lowercase();
+        let image = image_name(exe);
+        let started = Instant::now();
+        let mut child = child;
+        let mut exit_status = None;
+        loop {
+            let fresh: Vec<(u32, String)> = processes()?
+                .into_iter()
+                .filter(|(pid, command)| {
+                    *pid != child.id() && !before.contains(pid) && runs_image(command, image)
+                })
+                .collect();
+            // 优先认路径完全一致的（多开别的游戏目录时不会认错），否则同名的新进程也行
+            let found = fresh
+                .iter()
+                .find(|(_, command)| command.to_lowercase().starts_with(&win_path))
+                .or(fresh.first());
+            if let Some((pid, _)) = found {
+                if exit_status.is_none() {
+                    reap(child);
+                }
+                return Ok(*pid);
+            }
+            if exit_status.is_none() {
+                exit_status = child.try_wait()?;
+            }
+            if let Some(status) = exit_status {
+                // wine 退出了还没等到游戏进程：退出码非 0 就是启动失败；
+                // 是 0 的话游戏可能还在起，再等等
+                if !status.success() {
+                    return Err(RcError::Other(format!(
+                        "游戏启动失败（Wine 退出：{status}），详见启动器日志目录里的 wine.log"
+                    )));
+                }
+            }
+            if started.elapsed() > TIMEOUT {
+                log::warn!("Timed out waiting for the game process of {exe}");
+                return Ok(match exit_status {
+                    None => reap(child),
+                    Some(_) => child.id(),
+                });
+            }
+            std::thread::sleep(Duration::from_millis(100));
+        }
+    }
+
+    /// 命令行里有没有以 `image` 结尾的可执行文件（不区分大小写；`/` 和 `\` 都算路径分隔符）
+    pub fn runs_image(command: &str, image: &str) -> bool {
+        let command = command.to_lowercase();
+        let image = image.to_lowercase();
+        command.match_indices(&image).any(|(i, _)| {
+            let before = command[..i].chars().last();
+            let after = command[i + image.len()..].chars().next();
+            matches!(before, None | Some('/') | Some('\\')) && after.is_none_or(char::is_whitespace)
+        })
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use super::runs_image;
+
+        #[test]
+        fn matches_wine_rewritten_command_lines() {
+            let player = |command: &str| runs_image(command, "Player.exe");
+            assert!(player(r"Z:\Users\me\Games\Ballance\Bin\Player.exe "));
+            assert!(player(r"Z:\Users\me\My Games\Bin\PLAYER.EXE -w 1024"));
+            // Wine 还没改写命令行时（刚 spawn）是 wine 加上 unix 路径
+            assert!(player("/opt/wine/bin/wine /Users/me/Bin/Player.exe"));
+            assert!(!player(r"C:\windows\system32\winedevice.exe"));
+            assert!(!player(r"Z:\Bin\NewPlayer.exe"));
+            assert!(!player(r"Z:\Bin\Player.exe.bak"));
+        }
+    }
 }
 
 /// pid 对应的进程还活着、而且是 Ballance 的 Player（映像名含 `Player`）吗。
@@ -196,14 +367,13 @@ mod win_proc {
 #[command(async)]
 pub fn check(pid: u32) -> RcResultWith<bool> {
     let output = std::process::Command::new("ps")
-        .args(["-p", &pid.to_string()])
+        .args(["-o", "stat=,command=", "-p", &pid.to_string()])
         .output()?;
-    if !output.status.success() {
-        return Err(RcError::Other("Check process failed".into()));
-    }
-
+    // pid 不存在时 ps 的退出码非 0：游戏已经退了，不是出错
     let output = String::from_utf8_lossy(&output.stdout);
-    let exists = output.contains("Player");
+    let line = output.trim();
+    // 僵尸进程（stat 以 Z 开头）也算已退出
+    let exists = !line.is_empty() && !line.starts_with('Z') && line.contains("Player");
 
     log::debug!("Checked process {}: {}", pid, exists);
 

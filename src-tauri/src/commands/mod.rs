@@ -7,3 +7,4 @@ pub mod fs;
 pub mod game;
 pub mod process;
 pub mod vanilla;
+pub mod wine;

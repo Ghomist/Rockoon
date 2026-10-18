@@ -8,6 +8,7 @@
     "build": "pnpm build:ui && pnpm build:bmodp",
     "build:ui": "tsc --noEmit && vite build",
     "build:bmodp": "cd src-bmodp && powershell -ExecutionPolicy Bypass -File build.ps1 && cd ..",
+    "fetch:bmodp": "node scripts/fetch-bmodp.mjs",
     "preview": "vite preview",
     "tauri": "cross-env RUST_LOG=info tauri",
     "lint:eslint": "eslint --cache --max-warnings 0 \"{src,mock,build}/**/*.{js,ts,tsx}\" --fix",

@@ -65,6 +65,21 @@ pnpm build:bmodp  # 仅构建 C++ BMLPlus 模块
 pnpm lint  # 运行 eslint + prettier + stylelint
 ```
 
+## macOS（实验性）
+
+macOS 上游戏通过 [Wine](https://www.winehq.org/) 运行（Apple 芯片需要 Rosetta 2）：
+
+- 首次启动游戏时会提示下载 Wine 运行环境（[Gcenx 的 macOS 构建](https://github.com/Gcenx/macOS_Wine_builds)，约 190 MB，装在启动器自己的数据目录里）；本机有 Ballance.app（Mac 打包版）时直接用它自带的 Wine 和前缀，不用另外下载。
+- 安装原版游戏、补丁、下载站资源与 Windows 版一致；设置页多了「Wine 运行环境」一节（重新安装 / 本地压缩包安装 / 指定已有 Wine / 重建前缀）。
+- 暂不支持：TAS 编辑器、启动器自动更新。
+
+构建（额外需要 `brew install sevenzip`，用来从 Windows 安装包里取出预编译的 RockoonIO 模组）：
+
+```shell
+pnpm install
+CI=true pnpm tauri build   # 产物在 src-tauri/target/release/bundle/{macos,dmg}
+```
+
 ## 技术栈
 
 - **前端**: Vue 3 + TypeScript + Naive UI + Pinia + Vue I18n + Vue Router
