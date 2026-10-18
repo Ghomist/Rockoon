@@ -65,23 +65,31 @@ pub fn wine_status(app: AppHandle) -> RcResultWith<WineStatus> {
     }
 }
 
-/// 下载（`url`）或从本地压缩包（`archive`）安装 Wine 运行时，装完顺带初始化前缀。
-/// `sha256` 给了就校验。立即返回任务 id，进度和结果走 `game-install:*` 事件。
+/// 一个 Wine 下载源；`sha256` 给了就校验
+#[derive(serde::Deserialize, Clone, Debug)]
+#[cfg_attr(target_os = "windows", allow(dead_code))]
+pub struct WineSource {
+    pub url: String,
+    pub sha256: Option<String>,
+}
+
+/// 安装 Wine 运行时：按顺序试 `sources`（一个下载失败或校验不过就换下一个），
+/// 或者用本地压缩包 `archive`；装完顺带初始化前缀。
+/// 立即返回任务 id，进度和结果走 `game-install:*` 事件。
 #[command(async)]
 pub fn start_wine_install(
     app: AppHandle,
-    url: Option<String>,
+    sources: Option<Vec<WineSource>>,
     archive: Option<String>,
-    sha256: Option<String>,
 ) -> RcResultWith<String> {
     #[cfg(target_os = "windows")]
     {
-        let _ = (app, url, archive, sha256);
+        let _ = (app, sources, archive);
         Err(RcError::Other("Windows 不需要 Wine".into()))
     }
     #[cfg(not(target_os = "windows"))]
     {
-        imp::start_install(app, url, archive, sha256)
+        imp::start_install(app, sources.unwrap_or_default(), archive)
     }
 }
 
@@ -149,7 +157,7 @@ pub fn open_wine_config(app: AppHandle) -> RcResult {
 
 #[cfg(not(target_os = "windows"))]
 mod imp {
-    use super::WineStatus;
+    use super::{WineSource, WineStatus};
     use crate::commands::game::{download_to, emit_progress, fail, succeed, unique_id, CANCEL_MAP};
     use crate::common::exception::{RcError, RcResult, RcResultWith};
     use sha2::{Digest, Sha256};
@@ -163,7 +171,7 @@ mod imp {
     use tauri::{AppHandle, Emitter, Manager};
 
     /// 前缀里要写的注册表项。改了这张表要把 PREFIX_REVISION 加一，已有前缀才会补写；
-    /// Ballance.app 的启动器（ballance-mac/template/launcher.sh）写的是同一张表，两边要一起改。
+    /// Ballance.app 的启动器（CHHC-L/ballance-mac-bundle 的 template/launcher.sh）写的是同一张表，两边要一起改。
     ///
     /// - EmulateModeset：Wine 在 Mac 上只报告显示器自身的分辨率（没有 1024×768 之类的 4:3 模式），
     ///   Player 找不到配置里的分辨率就进不了游戏；打开后 Wine 会模拟出标准分辨率列表。
@@ -176,8 +184,8 @@ mod imp {
     ];
     const PREFIX_REVISION: u32 = 2;
 
-    /// Ballance.app（ballance-mac 打包的独立版，自带 Wine + 游戏）的 bundle id
-    const BALLANCE_APP_ID: &str = "local.ballance-mac.Ballance";
+    /// Ballance.app（https://github.com/CHHC-L/ballance-mac-bundle 打包的独立版，自带 Wine + 游戏）的 bundle id
+    const BALLANCE_APP_ID: &str = "io.github.chhc-l.ballance";
 
     /// 自动查找的其它现成 Wine（相对 / 或 ~ 的路径）
     const DETECT_CANDIDATES: &[&str] = &[
@@ -441,7 +449,10 @@ mod imp {
     /// 进程吊着不退。冷启动时大约每两三次就会碰到一次，重来一次一般就好。
     fn launcher_path(app: &AppHandle) -> Option<PathBuf> {
         app.path()
-            .resolve("resources/wine/BallanceLauncher.exe", BaseDirectory::Resource)
+            .resolve(
+                "resources/wine/BallanceLauncher.exe",
+                BaseDirectory::Resource,
+            )
             .ok()
             .filter(|p| p.is_file())
     }
@@ -605,11 +616,10 @@ mod imp {
 
     pub fn start_install(
         app: AppHandle,
-        url: Option<String>,
+        sources: Vec<WineSource>,
         archive: Option<String>,
-        sha256: Option<String>,
     ) -> RcResultWith<String> {
-        if url.is_none() && archive.is_none() {
+        if sources.is_empty() && archive.is_none() {
             return Err(RcError::Other("没有指定 Wine 的下载地址或压缩包".into()));
         }
         let id = unique_id();
@@ -618,7 +628,7 @@ mod imp {
 
         let id2 = id.clone();
         std::thread::spawn(move || {
-            let result = install(&app, &id2, url, archive, sha256, &flag);
+            let result = install(&app, &id2, sources, archive, &flag);
             CANCEL_MAP.lock().unwrap().remove(&id2);
             let _ = app.emit("game-install:complete", result);
         });
@@ -659,12 +669,23 @@ mod imp {
             .find_map(|p| find_wine_root(&p, depth - 1))
     }
 
+    /// `want` 给了就校验 sha256
+    fn verify(path: &Path, want: Option<&str>) -> Result<(), String> {
+        let Some(want) = want.filter(|s| !s.is_empty()) else {
+            return Ok(());
+        };
+        match sha256_file(path) {
+            Ok(got) if got.eq_ignore_ascii_case(want) => Ok(()),
+            Ok(got) => Err(format!("文件校验失败（sha256 {got}），请重新下载")),
+            Err(e) => Err(format!("读取压缩包失败：{e}")),
+        }
+    }
+
     fn install(
         app: &AppHandle,
         id: &str,
-        url: Option<String>,
+        sources: Vec<WineSource>,
         archive: Option<String>,
-        sha256: Option<String>,
         cancel: &Arc<AtomicBool>,
     ) -> crate::commands::game::CompletePayload {
         let dir = data_dir(app);
@@ -674,36 +695,51 @@ mod imp {
 
         // ── 下载（或用本地压缩包） ──────────────────────────────
         let downloaded_tmp = dir.join(format!(".download-{id}.tar.xz"));
-        let (archive_path, size) = match (&archive, &url) {
-            (Some(local), _) => {
-                let path = PathBuf::from(local);
-                let size = fs::metadata(&path).map(|m| m.len()).unwrap_or(0);
-                (path, size)
+        let (archive_path, size) = if let Some(local) = &archive {
+            let path = PathBuf::from(local);
+            let size = fs::metadata(&path).map(|m| m.len()).unwrap_or(0);
+            (path, size)
+        } else {
+            // 按顺序试下载源：第一个是 ballance-mac-bundle 发布的精简包，后面是原版构建兜底
+            let mut downloaded = None;
+            let mut last_error = fail(id, "没有指定 Wine 的下载地址或压缩包");
+            for source in &sources {
+                match download_to(app, id, &source.url, &downloaded_tmp, cancel) {
+                    Ok(n) => {
+                        emit_progress(app, id, "importing", 100, n, n);
+                        match verify(&downloaded_tmp, source.sha256.as_deref()) {
+                            Ok(()) => {
+                                downloaded = Some(n);
+                                break;
+                            }
+                            Err(msg) => {
+                                log::warn!("Wine download {} rejected: {msg}", source.url);
+                                let _ = fs::remove_file(&downloaded_tmp);
+                                last_error = fail(id, msg);
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        if cancel.load(std::sync::atomic::Ordering::Relaxed) {
+                            return e;
+                        }
+                        log::warn!(
+                            "Wine download {} failed, trying the next source",
+                            source.url
+                        );
+                        last_error = e;
+                    }
+                }
             }
-            (None, Some(url)) => match download_to(app, id, url, &downloaded_tmp, cancel) {
-                Ok(n) => (downloaded_tmp.clone(), n),
-                Err(e) => return e,
-            },
-            (None, None) => return fail(id, "没有指定 Wine 的下载地址或压缩包"),
+            match downloaded {
+                Some(n) => (downloaded_tmp.clone(), n),
+                None => return last_error,
+            }
         };
         let cleanup_download = || {
             let _ = fs::remove_file(&downloaded_tmp);
         };
-
         emit_progress(app, id, "importing", 100, size, size);
-        if let Some(want) = sha256.filter(|s| !s.is_empty()) {
-            match sha256_file(&archive_path) {
-                Ok(got) if got.eq_ignore_ascii_case(&want) => {}
-                Ok(got) => {
-                    cleanup_download();
-                    return fail(id, format!("文件校验失败（sha256 {got}），请重新下载"));
-                }
-                Err(e) => {
-                    cleanup_download();
-                    return fail(id, format!("读取压缩包失败：{e}"));
-                }
-            }
-        }
 
         // ── 解压到临时目录，确认能跑之后再换进来 ─────────────────
         let staging = dir.join(format!(".staging-{id}"));

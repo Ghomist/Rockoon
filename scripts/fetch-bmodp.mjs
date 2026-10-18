@@ -35,7 +35,10 @@ async function release(tag) {
   const url = tag
     ? `https://api.github.com/repos/${REPO}/releases/tags/${tag}`
     : `https://api.github.com/repos/${REPO}/releases/latest`;
-  const res = await fetch(url, { headers: { Accept: "application/vnd.github+json" } });
+  // CI 里带上 token：runner 共用出口 IP，匿名调用很容易撞上每小时 60 次的限额
+  const headers = { Accept: "application/vnd.github+json" };
+  if (process.env.GITHUB_TOKEN) headers.Authorization = `Bearer ${process.env.GITHUB_TOKEN}`;
+  const res = await fetch(url, { headers });
   return res.ok ? res.json() : null;
 }
 

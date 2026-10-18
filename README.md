@@ -69,7 +69,7 @@ pnpm lint  # 运行 eslint + prettier + stylelint
 
 macOS 上游戏通过 [Wine](https://www.winehq.org/) 运行（Apple 芯片需要 Rosetta 2）：
 
-- 首次启动游戏时会提示下载 Wine 运行环境（[Gcenx 的 macOS 构建](https://github.com/Gcenx/macOS_Wine_builds)，约 190 MB，装在启动器自己的数据目录里）；本机有 Ballance.app（Mac 打包版）时直接用它自带的 Wine 和前缀，不用另外下载。
+- 首次启动游戏时会提示下载 Wine 运行环境（[ballance-mac-bundle](https://github.com/CHHC-L/ballance-mac-bundle) 发布的精简包，约 80 MB，下不了再换 [Gcenx 的原版构建](https://github.com/Gcenx/macOS_Wine_builds)；装在启动器自己的数据目录里）；本机有 [Ballance.app](https://github.com/CHHC-L/ballance-mac-bundle/releases/latest)（Mac 完整安装包）时直接用它自带的 Wine 和前缀，不用另外下载。
 - 安装原版游戏、补丁、下载站资源与 Windows 版一致；设置页多了「Wine 运行环境」一节（重新安装 / 本地压缩包安装 / 指定已有 Wine / 重建前缀）。
 - 启动游戏经过一个小启动器 `BallanceLauncher.exe`（`src-launcher/`）：Apple 芯片上 Rosetta 2 偶尔让 Player 初始化 Direct3D 失败，启动器会等到游戏窗口出来，没起来就自动重试。
 - 自动修补原版输入管理器（`Managers/Dx5InputManager.dll`）的按键重复 bug：开机超过 24.8 天后输入名字会一个键出一串字，Mac 很少重启所以几乎必现（只改原版文件，留 `.orig` 备份）。
