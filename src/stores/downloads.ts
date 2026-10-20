@@ -61,6 +61,8 @@ export interface BeginDownloadInput {
   total?: number;
   cancellable?: boolean;
   retry?: () => void;
+  /** 不弹「开始下载」提示（不联网的任务，例如 macOS 上解压启动器自带的 Wine） */
+  silent?: boolean;
 }
 
 interface DownloadsState {
@@ -129,11 +131,12 @@ export const useDownloadsStore = create<DownloadsState>((set, get) => ({
     samples.delete(task.id);
     set(state => ({ tasks: [...state.tasks, task] }));
     // 所有下载入口统一在这里提示一次「开始下载」，入口自己不用再弹
-    message.success(
-      task.title
-        ? t("downloads.started", { title: task.title })
-        : t("downloads.startedUnknown")
-    );
+    if (!input.silent)
+      message.success(
+        task.title
+          ? t("downloads.started", { title: task.title })
+          : t("downloads.startedUnknown")
+      );
     return { task, duplicate: false };
   },
 
@@ -216,11 +219,7 @@ export const useDownloadsStore = create<DownloadsState>((set, get) => ({
     try {
       // 自更新走 tauri 更新插件，插件没有取消接口 —— 只能等它下完
       if (task.kind === "brp") await backend.cancelBrpImport(id);
-      else if (
-        task.kind === "game" ||
-        task.kind === "patch" ||
-        task.kind === "wine"
-      )
+      else if (task.kind === "game" || task.kind === "patch")
         await backend.cancelInstall(id);
     } finally {
       get().markCancelled(id);

@@ -1,14 +1,11 @@
 //! Wine 运行时（macOS / Linux）：Ballance 是 32 位 Windows 游戏，其它平台靠 Wine 跑。
 //!
-//! - 运行时：优先用用户指定的（`<app data>/wine/config.json`），其次是启动器自己装的
-//!   （`<app data>/wine/runtime`，下载 Gcenx 的 macOS 构建），再次是 Ballance.app 自带的
-//!   （放在哪都行，Spotlight 按 bundle id 找），最后是 WineHQ 的 Wine Devel/Staging/Stable.app。
-//!   本机已经有 Ballance.app 时前端就不会提示下载。
-//! - 前缀：`<app data>/wine/prefix`，所有游戏实例共用；用的是 Ballance.app 的 Wine 时
-//!   直接共用 Ballance.app 的前缀。第一次用（或换了 Wine）时跑 wineboot，再写入游戏需要的
-//!   注册表项（见 PREFIX_REGISTRY），记录在 `.rockoon-prefix.json`。
-//! - 安装：与原版游戏安装同一套做法 —— 起线程下载 + 解压 + 初始化前缀，进度与结果走
-//!   `game-install:*` 事件，取消也用 `cancel_game_install`（取消表按任务 id 共享）。
+//! - 运行时：Wine 随启动器一起打包 —— 构建时 `scripts/fetch-wine.mjs` 把 Gcenx 的 macOS 构建
+//!   精简后压成 `resources-macos/wine/wine-runtime.tar.xz`（附 `runtime.json` 记版本与 sha256），
+//!   第一次用时解到 `<app data>/wine/runtime`。运行时不联网；启动器升级带了新的 Wine 就重新解一次。
+//!   用户也可以指定一个已有的 Wine（`<app data>/wine/config.json`），指定了就优先用它。
+//! - 前缀：`<app data>/wine/prefix`，所有游戏实例共用。第一次用（或换了 Wine）时跑 wineboot，
+//!   再写入游戏需要的注册表项（见 PREFIX_REGISTRY），记录在 `.rockoon-prefix.json`。
 //!
 //! Windows 上这些命令都还在（前端统一调用），但 `wine_status().required` 为 false，其余是空实现。
 
@@ -21,14 +18,15 @@ use tauri::{command, AppHandle};
 pub struct WineStatus {
     /// 这个平台要不要 Wine（Windows 上为 false，其余字段无意义）
     pub required: bool,
-    /// 找到能用的 Wine 了吗
+    /// 找到能用的 Wine 了吗（启动器自带的还没解出来、或者是旧版本时为 false）
     pub installed: bool,
-    /// 运行时来源：`custom`（用户指定）、`managed`（启动器装的）、`bundled`（Ballance.app 自带的）、
-    /// `detected`（自动找到的其它 Wine）
+    /// 运行时来源：`builtin`（启动器自带的）、`custom`（用户指定）
     pub source: Option<String>,
     /// Wine 根目录（里面有 bin/wine）
     pub path: Option<String>,
     pub version: Option<String>,
+    /// 启动器自带的 Wine 版本（构建时没打包 Wine 为空）
+    pub bundled_version: Option<String>,
     /// 前缀已经用当前 Wine 初始化好了吗（没好的话启动前要先 `prepare_wine_prefix`）
     pub prefix_ready: bool,
     pub prefix: Option<String>,
@@ -65,31 +63,33 @@ pub fn wine_status(app: AppHandle) -> RcResultWith<WineStatus> {
     }
 }
 
-/// 一个 Wine 下载源；`sha256` 给了就校验
-#[derive(serde::Deserialize, Clone, Debug)]
-#[cfg_attr(target_os = "windows", allow(dead_code))]
-pub struct WineSource {
-    pub url: String,
-    pub sha256: Option<String>,
-}
-
-/// 安装 Wine 运行时：按顺序试 `sources`（一个下载失败或校验不过就换下一个），
-/// 或者用本地压缩包 `archive`；装完顺带初始化前缀。
-/// 立即返回任务 id，进度和结果走 `game-install:*` 事件。
+/// 把启动器自带的 Wine 解到数据目录（已经是这个版本就跳过；`reinstall` 为 true 时重新解），
+/// 再初始化前缀。不联网，第一次大约半分钟。阶段变化发 `wine-install:phase` 事件
+/// （`importing` 解压、`initializing` 初始化前缀）。
 #[command(async)]
-pub fn start_wine_install(
-    app: AppHandle,
-    sources: Option<Vec<WineSource>>,
-    archive: Option<String>,
-) -> RcResultWith<String> {
+pub fn install_wine(app: AppHandle, reinstall: Option<bool>) -> RcResultWith<WineStatus> {
     #[cfg(target_os = "windows")]
     {
-        let _ = (app, sources, archive);
+        let _ = (app, reinstall);
         Err(RcError::Other("Windows 不需要 Wine".into()))
     }
     #[cfg(not(target_os = "windows"))]
     {
-        imp::start_install(app, sources.unwrap_or_default(), archive)
+        imp::install(&app, reinstall.unwrap_or(false))?;
+        Ok(imp::status(&app))
+    }
+}
+
+/// 安装 Rosetta 2（Apple 芯片上跑 Wine 要用）：弹系统的管理员密码框，从 Apple 下载安装
+#[command(async)]
+pub fn install_rosetta() -> RcResult {
+    #[cfg(target_os = "windows")]
+    {
+        Err(RcError::Other("Windows 不需要 Rosetta".into()))
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        imp::install_rosetta()
     }
 }
 
@@ -157,21 +157,16 @@ pub fn open_wine_config(app: AppHandle) -> RcResult {
 
 #[cfg(not(target_os = "windows"))]
 mod imp {
-    use super::{WineSource, WineStatus};
-    use crate::commands::game::{download_to, emit_progress, fail, succeed, unique_id, CANCEL_MAP};
+    use super::WineStatus;
     use crate::common::exception::{RcError, RcResult, RcResultWith};
-    use sha2::{Digest, Sha256};
     use std::fs;
-    use std::io::Read;
     use std::path::{Path, PathBuf};
     use std::process::{Command, Stdio};
-    use std::sync::atomic::AtomicBool;
-    use std::sync::{Arc, Mutex};
+    use std::sync::Mutex;
     use tauri::path::BaseDirectory;
     use tauri::{AppHandle, Emitter, Manager};
 
-    /// 前缀里要写的注册表项。改了这张表要把 PREFIX_REVISION 加一，已有前缀才会补写；
-    /// Ballance.app 的启动器（CHHC-L/ballance-mac-bundle 的 template/launcher.sh）写的是同一张表，两边要一起改。
+    /// 前缀里要写的注册表项。改了这张表要把 PREFIX_REVISION 加一，已有前缀才会补写。
     ///
     /// - EmulateModeset：Wine 在 Mac 上只报告显示器自身的分辨率（没有 1024×768 之类的 4:3 模式），
     ///   Player 找不到配置里的分辨率就进不了游戏；打开后 Wine 会模拟出标准分辨率列表。
@@ -184,18 +179,16 @@ mod imp {
     ];
     const PREFIX_REVISION: u32 = 2;
 
-    /// Ballance.app（https://github.com/CHHC-L/ballance-mac-bundle 打包的独立版，自带 Wine + 游戏）的 bundle id
-    const BALLANCE_APP_ID: &str = "io.github.chhc-l.ballance";
-
-    /// 自动查找的其它现成 Wine（相对 / 或 ~ 的路径）
-    const DETECT_CANDIDATES: &[&str] = &[
-        "Applications/Wine Devel.app/Contents/Resources/wine",
-        "Applications/Wine Staging.app/Contents/Resources/wine",
-        "Applications/Wine Stable.app/Contents/Resources/wine",
-    ];
+    /// 打包在资源目录里的 Wine（scripts/fetch-wine.mjs 生成）
+    const BUNDLED_ARCHIVE: &str = "resources-macos/wine/wine-runtime.tar.xz";
+    const BUNDLED_MANIFEST: &str = "resources-macos/wine/runtime.json";
+    /// 解出来的 Wine 里记「是从哪个压缩包解的」，和 BUNDLED_MANIFEST 对不上就要重新解
+    const RUNTIME_MARKER: &str = ".rockoon-runtime.json";
 
     /// 首次初始化 / 补写注册表不能并发跑（安装任务与启动游戏可能同时要前缀）
     static PREFIX_LOCK: Mutex<()> = Mutex::new(());
+    /// 解压也不能并发（装原版游戏时会顺带解，用户可能同时点了启动）
+    static INSTALL_LOCK: Mutex<()> = Mutex::new(());
 
     #[derive(serde::Serialize, serde::Deserialize, Default)]
     #[serde(rename_all = "camelCase")]
@@ -210,6 +203,13 @@ mod imp {
         revision: u32,
     }
 
+    /// `runtime.json`：自带的 Wine 是哪个版本、压缩包的 sha256
+    #[derive(serde::Serialize, serde::Deserialize, PartialEq, Debug)]
+    struct RuntimeManifest {
+        version: String,
+        sha256: String,
+    }
+
     fn data_dir(app: &AppHandle) -> PathBuf {
         app.path()
             .app_data_dir()
@@ -217,61 +217,47 @@ mod imp {
             .join("wine")
     }
 
-    fn managed_root(app: &AppHandle) -> PathBuf {
+    fn builtin_root(app: &AppHandle) -> PathBuf {
         data_dir(app).join("runtime")
     }
 
-    fn home() -> PathBuf {
-        std::env::var_os("HOME")
-            .map(PathBuf::from)
-            .unwrap_or_default()
+    fn prefix_dir(app: &AppHandle) -> PathBuf {
+        data_dir(app).join("prefix")
     }
 
-    /// `root` 是 Ballance.app 自带的 Wine 时，返回 Ballance.app 的前缀。
-    /// 用它的 Wine 就连前缀一起共用（目录约定见 Ballance.app 的 Contents/MacOS/Ballance），
-    /// 这样一台 Mac 上只有一套 Wine 环境。
-    fn bundled_prefix(root: &Path) -> Option<PathBuf> {
-        if !root.parent()?.join("bundle.env").is_file() {
-            return None;
+    fn resource(app: &AppHandle, rel: &str) -> Option<PathBuf> {
+        app.path()
+            .resolve(rel, BaseDirectory::Resource)
+            .ok()
+            .filter(|p| p.is_file())
+    }
+
+    fn read_json<T: serde::de::DeserializeOwned>(path: &Path) -> Option<T> {
+        fs::read_to_string(path)
+            .ok()
+            .and_then(|s| serde_json::from_str(&s).ok())
+    }
+
+    /// 启动器自带的 Wine：压缩包和它的说明（构建时没跑 fetch-wine 就没有）
+    fn bundled(app: &AppHandle) -> Option<(PathBuf, RuntimeManifest)> {
+        let archive = resource(app, BUNDLED_ARCHIVE)?;
+        let manifest = read_json(&resource(app, BUNDLED_MANIFEST)?)?;
+        Some((archive, manifest))
+    }
+
+    /// 解出来的自带 Wine 能用、而且就是这个版本启动器带的那份
+    fn builtin_current(app: &AppHandle) -> bool {
+        let root = builtin_root(app);
+        if !root.join("bin/wine").is_file() {
+            return false;
         }
-        let data = std::env::var_os("BALLANCE_DATA")
-            .map(PathBuf::from)
-            .unwrap_or_else(|| home().join("Library/Application Support/Ballance"));
-        Some(data.join("prefix"))
-    }
-
-    fn prefix_dir(app: &AppHandle, root: &Path) -> PathBuf {
-        bundled_prefix(root).unwrap_or_else(|| data_dir(app).join("prefix"))
-    }
-
-    /// 找 Ballance.app 自带的 Wine：先看「应用程序」，不在那儿（还在下载目录、或者挪了位置）就问 Spotlight
-    fn find_bundled() -> Option<PathBuf> {
-        let fixed = [
-            PathBuf::from("/Applications/Ballance.app"),
-            home().join("Applications/Ballance.app"),
-        ];
-        let spotlight = || {
-            Command::new("/usr/bin/mdfind")
-                .arg(format!("kMDItemCFBundleIdentifier == '{BALLANCE_APP_ID}'"))
-                .stdin(Stdio::null())
-                .stderr(Stdio::null())
-                .output()
-                .map(|out| {
-                    String::from_utf8_lossy(&out.stdout)
-                        .lines()
-                        .map(PathBuf::from)
-                        .collect::<Vec<_>>()
-                })
-                .unwrap_or_default()
-        };
-        let usable = |app: &PathBuf| {
-            let root = app.join("Contents/Resources/wine");
-            root.join("bin/wine").is_file().then_some(root)
-        };
-        fixed
-            .iter()
-            .find_map(usable)
-            .or_else(|| spotlight().iter().find_map(usable))
+        match bundled(app) {
+            Some((_, manifest)) => {
+                read_json::<RuntimeManifest>(&root.join(RUNTIME_MARKER)) == Some(manifest)
+            }
+            // 没打包 Wine 的开发构建：之前解好的就接着用
+            None => true,
+        }
     }
 
     fn log_path(app: &AppHandle) -> PathBuf {
@@ -281,10 +267,7 @@ mod imp {
     }
 
     fn read_config(app: &AppHandle) -> WineConfig {
-        fs::read_to_string(data_dir(app).join("config.json"))
-            .ok()
-            .and_then(|s| serde_json::from_str(&s).ok())
-            .unwrap_or_default()
+        read_json(&data_dir(app).join("config.json")).unwrap_or_default()
     }
 
     /// 用户给的路径可能是 .app、Wine 根目录或 bin/wine 本身，统一成「里面有 bin/wine 的目录」
@@ -301,28 +284,13 @@ mod imp {
             .find(|root| root.join("bin/wine").is_file())
     }
 
-    /// 当前用哪个 Wine：用户指定 → 启动器装的 → Ballance.app 自带的 → 其它自动找到的
+    /// 当前用哪个 Wine：用户指定的 → 启动器自带的（已经解出来、版本对得上）
     pub fn resolve(app: &AppHandle) -> Option<(PathBuf, &'static str)> {
         if let Some(custom) = read_config(app).custom_path {
             // 指定的 Wine 不见了就别悄悄换成别的，让用户知道
             return normalize_root(Path::new(&custom)).map(|root| (root, "custom"));
         }
-        let managed = managed_root(app);
-        if managed.join("bin/wine").is_file() {
-            return Some((managed, "managed"));
-        }
-        if let Some(root) = find_bundled() {
-            return Some((root, "bundled"));
-        }
-        for rel in DETECT_CANDIDATES {
-            for base in [PathBuf::from("/"), home()] {
-                let root = base.join(rel);
-                if root.join("bin/wine").is_file() {
-                    return Some((root, "detected"));
-                }
-            }
-        }
-        None
+        builtin_current(app).then(|| (builtin_root(app), "builtin"))
     }
 
     /// `wine --version` 输出 `wine-11.18`（staging 版还带 ` (Staging)`）
@@ -351,34 +319,9 @@ mod imp {
             .unwrap_or(false)
     }
 
-    fn read_marker(app: &AppHandle, root: &Path) -> Option<PrefixMarker> {
-        let prefix = prefix_dir(app, root);
-        if let Some(marker) = fs::read_to_string(prefix.join(".rockoon-prefix.json"))
-            .ok()
-            .and_then(|s| serde_json::from_str(&s).ok())
-        {
-            return Some(marker);
-        }
-        // Ballance.app 先建好的共用前缀：它的标记是 `11.18 r2` 这样的「Wine 版本 + 注册表修订号」
-        // （老版本启动器只写版本号，那是第 1 版）
-        parse_ballance_marker(&fs::read_to_string(prefix.join(BALLANCE_MARKER)).ok()?)
+    fn read_marker(app: &AppHandle) -> Option<PrefixMarker> {
+        read_json(&prefix_dir(app).join(".rockoon-prefix.json"))
     }
-
-    fn parse_ballance_marker(text: &str) -> Option<PrefixMarker> {
-        let mut parts = text.split_whitespace();
-        let wine_version = parts.next()?.to_string();
-        let revision = parts
-            .next()
-            .and_then(|r| r.strip_prefix('r')?.parse().ok())
-            .unwrap_or(1);
-        Some(PrefixMarker {
-            wine_version,
-            revision,
-        })
-    }
-
-    /// Ballance.app 的启动器记录「前缀用哪个 Wine 版本、哪版注册表建的」的文件
-    const BALLANCE_MARKER: &str = ".ballance-wine-version";
 
     fn expected_marker(root: &Path) -> PrefixMarker {
         PrefixMarker {
@@ -390,23 +333,21 @@ mod imp {
     pub fn status(app: &AppHandle) -> WineStatus {
         let resolved = resolve(app);
         let version = resolved.as_ref().and_then(|(root, _)| wine_version(root));
-        let prefix = resolved.as_ref().map(|(root, _)| prefix_dir(app, root));
-        let prefix_ready = match (&resolved, &version, &prefix) {
-            (Some((root, _)), Some(v), Some(prefix)) => {
-                read_marker(app, root).is_some_and(|marker| {
-                    marker.wine_version == *v && marker.revision == PREFIX_REVISION
-                }) && prefix.join("system.reg").is_file()
-            }
-            _ => false,
-        };
+        let prefix = prefix_dir(app);
+        let prefix_ready = version.as_ref().is_some_and(|v| {
+            read_marker(app).is_some_and(|marker| {
+                marker.wine_version == *v && marker.revision == PREFIX_REVISION
+            }) && prefix.join("system.reg").is_file()
+        });
         WineStatus {
             required: true,
             installed: resolved.is_some() && version.is_some(),
             source: resolved.as_ref().map(|(_, s)| s.to_string()),
             path: resolved.map(|(root, _)| root.to_string_lossy().to_string()),
             version,
+            bundled_version: bundled(app).map(|(_, manifest)| manifest.version),
             prefix_ready,
-            prefix: prefix.map(|p| p.to_string_lossy().to_string()),
+            prefix: Some(prefix.to_string_lossy().to_string()),
             rosetta: rosetta_ok(),
             custom_path: read_config(app).custom_path,
         }
@@ -415,7 +356,7 @@ mod imp {
     /// 带好前缀与通用环境变量的 Wine 命令，输出写进 wine.log
     fn wine_command(app: &AppHandle, root: &Path, program: &str, append_log: bool) -> Command {
         let mut cmd = Command::new(root.join("bin").join(program));
-        cmd.env("WINEPREFIX", prefix_dir(app, root))
+        cmd.env("WINEPREFIX", prefix_dir(app))
             // 外面设了 WINEDEBUG（调试）就用外面的
             .env(
                 "WINEDEBUG",
@@ -448,13 +389,7 @@ mod imp {
     /// Player 初始化 Direct3D 时撞上访问违例 —— 报 “No render driver found” 退出，或者主线程没了、
     /// 进程吊着不退。冷启动时大约每两三次就会碰到一次，重来一次一般就好。
     fn launcher_path(app: &AppHandle) -> Option<PathBuf> {
-        app.path()
-            .resolve(
-                "resources/wine/BallanceLauncher.exe",
-                BaseDirectory::Resource,
-            )
-            .ok()
-            .filter(|p| p.is_file())
+        resource(app, "resources-macos/wine/BallanceLauncher.exe")
     }
 
     /// 用 Wine 跑 `exe` 的命令（process::execute 调用）。第二个值表示是不是经过了游戏启动器：
@@ -466,11 +401,9 @@ mod imp {
             return Err(RcError::Other("还没有安装 Wine 运行环境".into()));
         };
         if !rosetta_ok() {
-            return Err(RcError::Other(
-                "需要 Rosetta 2：请在终端运行 softwareupdate --install-rosetta".into(),
-            ));
+            return Err(RcError::Other("需要先安装 Rosetta 2".into()));
         }
-        if read_marker(app, &root) != Some(expected_marker(&root)) {
+        if read_marker(app) != Some(expected_marker(&root)) {
             return Err(RcError::Other("Wine 运行环境还没有初始化".into()));
         }
         let mut cmd = wine_command(app, &root, "wine", false);
@@ -506,17 +439,16 @@ mod imp {
                 root.join("bin/wine").display()
             )));
         }
-        let prefix = prefix_dir(app, root);
-        if read_marker(app, root).as_ref() == Some(&expected) && prefix.join("system.reg").is_file()
-        {
+        let prefix = prefix_dir(app);
+        let marker = read_marker(app);
+        if marker.as_ref() == Some(&expected) && prefix.join("system.reg").is_file() {
             return Ok(());
         }
 
         fs::create_dir_all(&prefix)?;
         let fresh = !prefix.join("system.reg").is_file();
         // 同一个 Wine、只是注册表表改了：补写注册表就行，不用再跑一遍 wineboot
-        let same_wine = read_marker(app, root)
-            .is_some_and(|marker| marker.wine_version == expected.wine_version);
+        let same_wine = marker.is_some_and(|m| m.wine_version == expected.wine_version);
         log::info!(
             "{} wine prefix {} with wine {} (registry r{})",
             if fresh { "Creating" } else { "Updating" },
@@ -554,13 +486,6 @@ mod imp {
             prefix.join(".rockoon-prefix.json"),
             serde_json::to_string_pretty(&expected).unwrap_or_default(),
         )?;
-        // 共用 Ballance.app 的前缀时也替它记一笔，免得它下次启动再初始化一遍
-        if bundled_prefix(root).is_some() {
-            fs::write(
-                prefix.join(BALLANCE_MARKER),
-                format!("{} r{}\n", expected.wine_version, PREFIX_REVISION),
-            )?;
-        }
         Ok(())
     }
 
@@ -575,7 +500,7 @@ mod imp {
             .map(|(root, _)| root)
             .ok_or_else(|| RcError::Other("还没有安装 Wine 运行环境".into()))?;
         kill_wineserver(app);
-        let prefix = prefix_dir(app, &root);
+        let prefix = prefix_dir(app);
         if prefix.exists() {
             fs::remove_dir_all(&prefix)?;
         }
@@ -614,43 +539,7 @@ mod imp {
         Ok(())
     }
 
-    pub fn start_install(
-        app: AppHandle,
-        sources: Vec<WineSource>,
-        archive: Option<String>,
-    ) -> RcResultWith<String> {
-        if sources.is_empty() && archive.is_none() {
-            return Err(RcError::Other("没有指定 Wine 的下载地址或压缩包".into()));
-        }
-        let id = unique_id();
-        let flag = Arc::new(AtomicBool::new(false));
-        CANCEL_MAP.lock().unwrap().insert(id.clone(), flag.clone());
-
-        let id2 = id.clone();
-        std::thread::spawn(move || {
-            let result = install(&app, &id2, sources, archive, &flag);
-            CANCEL_MAP.lock().unwrap().remove(&id2);
-            let _ = app.emit("game-install:complete", result);
-        });
-        Ok(id)
-    }
-
-    fn sha256_file(path: &Path) -> std::io::Result<String> {
-        let mut file = fs::File::open(path)?;
-        let mut hasher = Sha256::new();
-        let mut buf = vec![0u8; 1 << 20];
-        loop {
-            let n = file.read(&mut buf)?;
-            if n == 0 {
-                break;
-            }
-            hasher.update(&buf[..n]);
-        }
-        Ok(format!("{:x}", hasher.finalize()))
-    }
-
-    /// 压缩包解开后找 Wine 根目录：Gcenx 的包是 `Wine Devel.app/Contents/Resources/wine`，
-    /// 别的包可能直接是 `wine-xx/bin/wine`
+    /// 压缩包解开后找 Wine 根目录：fetch-wine 打的包是 `wine/bin/wine`
     fn find_wine_root(dir: &Path, depth: u32) -> Option<PathBuf> {
         if dir.join("bin/wine").is_file() {
             return Some(dir.to_path_buf());
@@ -669,145 +558,96 @@ mod imp {
             .find_map(|p| find_wine_root(&p, depth - 1))
     }
 
-    /// `want` 给了就校验 sha256
-    fn verify(path: &Path, want: Option<&str>) -> Result<(), String> {
-        let Some(want) = want.filter(|s| !s.is_empty()) else {
-            return Ok(());
-        };
-        match sha256_file(path) {
-            Ok(got) if got.eq_ignore_ascii_case(want) => Ok(()),
-            Ok(got) => Err(format!("文件校验失败（sha256 {got}），请重新下载")),
-            Err(e) => Err(format!("读取压缩包失败：{e}")),
+    /// 把自带的 Wine 解到 `<app data>/wine/runtime`（先解到临时目录，确认能跑再换进来），然后初始化前缀
+    pub fn install(app: &AppHandle, reinstall: bool) -> RcResult {
+        let _guard = INSTALL_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        let (archive, manifest) = bundled(app).ok_or_else(|| {
+            RcError::Other(
+                "这个启动器没有附带 Wine（构建时要先跑 pnpm fetch:wine），可以在设置里指定一个已有的 Wine"
+                    .into(),
+            )
+        })?;
+        let target = builtin_root(app);
+        if reinstall || !builtin_current(app) {
+            let _ = app.emit("wine-install:phase", "importing");
+            let dir = data_dir(app);
+            let staging = dir.join(".staging");
+            let _ = fs::remove_dir_all(&staging);
+            fs::create_dir_all(&staging)?;
+            let cleanup = |e: RcError| {
+                let _ = fs::remove_dir_all(&staging);
+                e
+            };
+            let out = Command::new("/usr/bin/tar")
+                .arg("-xf")
+                .arg(&archive)
+                .arg("-C")
+                .arg(&staging)
+                .stdin(Stdio::null())
+                .output()
+                .map_err(|e| cleanup(RcError::Other(format!("解压 Wine 失败：{e}"))))?;
+            if !out.status.success() {
+                return Err(cleanup(RcError::Other(format!(
+                    "解压 Wine 失败：{}",
+                    String::from_utf8_lossy(&out.stderr).trim()
+                ))));
+            }
+            let found = find_wine_root(&staging, 2)
+                .ok_or_else(|| cleanup(RcError::Other("压缩包里没有找到 Wine（bin/wine）".into())))?;
+            if wine_version(&found).is_none() {
+                return Err(cleanup(RcError::Other(
+                    "Wine 在本机上运行不了（Apple 芯片需要 Rosetta 2）".into(),
+                )));
+            }
+            // 换掉旧的：先停掉可能还在跑的 wineserver
+            if target.exists() {
+                if target.join("bin/wineserver").is_file() {
+                    let _ = run_logged(app, &target, "wineserver", &["-k"]);
+                }
+                fs::remove_dir_all(&target)
+                    .map_err(|e| cleanup(RcError::Other(format!("无法替换旧的 Wine：{e}"))))?;
+            }
+            fs::rename(&found, &target)
+                .map_err(|e| cleanup(RcError::Other(format!("安装 Wine 失败：{e}"))))?;
+            let _ = fs::remove_dir_all(&staging);
+            fs::write(
+                target.join(RUNTIME_MARKER),
+                serde_json::to_string_pretty(&manifest).unwrap_or_default(),
+            )?;
+            log::info!("Installed bundled wine {} into {}", manifest.version, target.display());
         }
+
+        // 用户另外指定了 Wine 的话，前缀按那个 Wine 初始化（启动游戏时用的也是它）
+        let _ = app.emit("wine-install:phase", "initializing");
+        let root = resolve(app).map(|(root, _)| root).unwrap_or(target);
+        ensure_prefix(app, &root)
+            .map_err(|e| RcError::Other(format!("Wine 已安装，但前缀初始化失败：{e}")))
     }
 
-    fn install(
-        app: &AppHandle,
-        id: &str,
-        sources: Vec<WineSource>,
-        archive: Option<String>,
-        cancel: &Arc<AtomicBool>,
-    ) -> crate::commands::game::CompletePayload {
-        let dir = data_dir(app);
-        if let Err(e) = fs::create_dir_all(&dir) {
-            return fail(id, format!("无法创建目录：{e}"));
+    /// `softwareupdate --install-rosetta` 要管理员权限：借 osascript 弹系统的密码框
+    pub fn install_rosetta() -> RcResult {
+        if rosetta_ok() {
+            return Ok(());
         }
-
-        // ── 下载（或用本地压缩包） ──────────────────────────────
-        let downloaded_tmp = dir.join(format!(".download-{id}.tar.xz"));
-        let (archive_path, size) = if let Some(local) = &archive {
-            let path = PathBuf::from(local);
-            let size = fs::metadata(&path).map(|m| m.len()).unwrap_or(0);
-            (path, size)
-        } else {
-            // 按顺序试下载源：第一个是 ballance-mac-bundle 发布的精简包，后面是原版构建兜底
-            let mut downloaded = None;
-            let mut last_error = fail(id, "没有指定 Wine 的下载地址或压缩包");
-            for source in &sources {
-                match download_to(app, id, &source.url, &downloaded_tmp, cancel) {
-                    Ok(n) => {
-                        emit_progress(app, id, "importing", 100, n, n);
-                        match verify(&downloaded_tmp, source.sha256.as_deref()) {
-                            Ok(()) => {
-                                downloaded = Some(n);
-                                break;
-                            }
-                            Err(msg) => {
-                                log::warn!("Wine download {} rejected: {msg}", source.url);
-                                let _ = fs::remove_file(&downloaded_tmp);
-                                last_error = fail(id, msg);
-                            }
-                        }
-                    }
-                    Err(e) => {
-                        if cancel.load(std::sync::atomic::Ordering::Relaxed) {
-                            return e;
-                        }
-                        log::warn!(
-                            "Wine download {} failed, trying the next source",
-                            source.url
-                        );
-                        last_error = e;
-                    }
-                }
-            }
-            match downloaded {
-                Some(n) => (downloaded_tmp.clone(), n),
-                None => return last_error,
-            }
-        };
-        let cleanup_download = || {
-            let _ = fs::remove_file(&downloaded_tmp);
-        };
-        emit_progress(app, id, "importing", 100, size, size);
-
-        // ── 解压到临时目录，确认能跑之后再换进来 ─────────────────
-        let staging = dir.join(format!(".staging-{id}"));
-        let _ = fs::remove_dir_all(&staging);
-        if let Err(e) = fs::create_dir_all(&staging) {
-            cleanup_download();
-            return fail(id, format!("无法创建临时目录：{e}"));
-        }
-        let extracted = Command::new("tar")
-            .arg("-xf")
-            .arg(&archive_path)
-            .arg("-C")
-            .arg(&staging)
+        let out = Command::new("/usr/bin/osascript")
+            .args([
+                "-e",
+                r#"do shell script "/usr/sbin/softwareupdate --install-rosetta --agree-to-license" with administrator privileges"#,
+            ])
             .stdin(Stdio::null())
-            .output();
-        cleanup_download();
-        let fail_cleanup = |msg: String| {
-            let _ = fs::remove_dir_all(&staging);
-            fail(id, msg)
-        };
-        match extracted {
-            Ok(out) if out.status.success() => {}
-            Ok(out) => {
-                return fail_cleanup(format!(
-                    "解压失败：{}",
-                    String::from_utf8_lossy(&out.stderr).trim()
-                ))
-            }
-            Err(e) => return fail_cleanup(format!("解压失败：{e}")),
+            .output()?;
+        if rosetta_ok() {
+            return Ok(());
         }
-        if cancel.load(std::sync::atomic::Ordering::Relaxed) {
-            return fail_cleanup("已取消".into());
+        let stderr = String::from_utf8_lossy(&out.stderr);
+        // 密码框点了取消：osascript 报 -128
+        if stderr.contains("-128") {
+            return Err(RcError::Other("已取消".into()));
         }
-        let Some(found) = find_wine_root(&staging, 4) else {
-            return fail_cleanup("压缩包里没有找到 Wine（bin/wine）".into());
-        };
-        if wine_version(&found).is_none() {
-            return fail_cleanup("这个 Wine 在本机上运行不了（Apple 芯片需要 Rosetta 2）".into());
-        }
-        // Gecko（IE 内核）和 Mono（.NET）游戏都用不到，去掉能省 300 MB
-        for unused in ["share/wine/gecko", "share/wine/mono"] {
-            let _ = fs::remove_dir_all(found.join(unused));
-        }
-
-        // 换掉旧的运行时：先停掉可能还在跑的 wineserver
-        let target = managed_root(app);
-        if target.exists() {
-            if let Some((root, "managed")) = resolve(app) {
-                let _ = run_logged(app, &root, "wineserver", &["-k"]);
-            }
-            if let Err(e) = fs::remove_dir_all(&target) {
-                return fail_cleanup(format!("无法替换旧的 Wine：{e}"));
-            }
-        }
-        if let Err(e) = fs::rename(&found, &target) {
-            return fail_cleanup(format!("安装 Wine 失败：{e}"));
-        }
-        let _ = fs::remove_dir_all(&staging);
-
-        // ── 初始化前缀 ─────────────────────────────────────────
-        // 用户另外指定了 Wine 的话，前缀按那个 Wine 初始化（启动游戏时用的也是它）
-        emit_progress(app, id, "initializing", 100, size, size);
-        let root = resolve(app).map(|(root, _)| root).unwrap_or(target.clone());
-        if let Err(e) = ensure_prefix(app, &root) {
-            return fail(id, format!("Wine 已安装，但前缀初始化失败：{e}"));
-        }
-
-        succeed(app, id, size, &target)
+        Err(RcError::Other(format!(
+            "{}（也可以在「终端」里运行 softwareupdate --install-rosetta --agree-to-license）",
+            stderr.trim()
+        )))
     }
 
     #[cfg(test)]
@@ -815,39 +655,17 @@ mod imp {
         use super::*;
 
         #[test]
-        fn reads_ballance_app_markers() {
-            let marker = |v: &str, r| {
-                Some(PrefixMarker {
-                    wine_version: v.into(),
-                    revision: r,
-                })
-            };
-            assert_eq!(parse_ballance_marker("11.18\n"), marker("11.18", 1));
-            assert_eq!(parse_ballance_marker("11.18 r2\n"), marker("11.18", 2));
-            assert_eq!(parse_ballance_marker(""), None);
-        }
-
-        #[test]
-        fn shares_prefix_only_with_ballance_app() {
-            let dir = std::env::temp_dir().join("rockoon-wine-test-bundled");
-            let _ = fs::remove_dir_all(&dir);
-            let res = dir.join("Ballance.app/Contents/Resources");
-            fs::create_dir_all(res.join("wine/bin")).unwrap();
-            assert_eq!(bundled_prefix(&res.join("wine")), None);
-            fs::write(res.join("bundle.env"), b"WINE_VERSION=11.18\n").unwrap();
-            let prefix = bundled_prefix(&res.join("wine")).unwrap();
-            assert!(prefix.ends_with("Ballance/prefix"));
-            let _ = fs::remove_dir_all(&dir);
-        }
-
-        #[test]
-        fn finds_root_inside_app_bundle_layout() {
+        fn finds_root_in_archive_and_custom_layouts() {
             let dir = std::env::temp_dir().join("rockoon-wine-test-layout");
             let _ = fs::remove_dir_all(&dir);
+            let packed = dir.join("staging/wine");
+            fs::create_dir_all(packed.join("bin")).unwrap();
+            fs::write(packed.join("bin/wine"), b"").unwrap();
+            assert_eq!(find_wine_root(&dir.join("staging"), 2), Some(packed.clone()));
+
             let root = dir.join("Wine Devel.app/Contents/Resources/wine");
             fs::create_dir_all(root.join("bin")).unwrap();
             fs::write(root.join("bin/wine"), b"").unwrap();
-            assert_eq!(find_wine_root(&dir, 4), Some(root.clone()));
             assert_eq!(
                 normalize_root(&dir.join("Wine Devel.app")),
                 Some(root.clone())

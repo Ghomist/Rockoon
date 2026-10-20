@@ -8,3 +8,7 @@
 
 # ignore resources (generate by src-bmodp build script)
 resources/builtin-mods/RockoonIO.bmodp
+
+# macOS 构建时生成的 Wine 运行时（scripts/fetch-wine.mjs）
+resources-macos/wine/wine-runtime.tar.xz
+resources-macos/wine/runtime.json

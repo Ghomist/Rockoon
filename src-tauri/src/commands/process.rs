@@ -1,14 +1,12 @@
 use crate::common::exception::{RcResult, RcResultWith};
 use std::collections::HashMap;
 #[cfg(target_os = "windows")]
-use std::os::windows::process::CommandExt;
-use std::path::PathBuf;
-use tauri::{command, AppHandle};
+use std::{os::windows::process::CommandExt, path::PathBuf};
+use tauri::command;
 
-// async：macOS 上要等 Wine 把游戏进程拉起来才知道 pid（见 unix_proc::wait_for_wine_game）
-#[command(async)]
+#[cfg(target_os = "windows")]
+#[command]
 pub fn execute(
-    app: AppHandle,
     cwd: String,
     bin: String,
     env: Option<HashMap<String, String>>,
@@ -17,49 +15,15 @@ pub fn execute(
     // 要不要把游戏进程提到「高」优先级（TAS 回放用）
     high_priority: Option<bool>,
 ) -> RcResultWith<u32> {
-    #[cfg(target_os = "windows")]
-    let mut cmd = {
-        let _ = &app;
-        let mut cmd = std::process::Command::new(&bin);
-        cmd.creation_flags(0x08000000);
-        if let Some(env_vars) = env {
-            cmd.envs(env_vars);
-        }
-        cmd
-    };
-    // 其它平台：.exe 交给 Wine（commands/wine.rs），游戏里的 mod 只认 Windows 路径，
-    // 所以环境变量里的绝对路径要先换成 Z:\ 形式
-    #[cfg(not(target_os = "windows"))]
-    let (mut cmd, via_launcher) = {
-        let (mut cmd, via_launcher) = if bin.to_lowercase().ends_with(".exe") {
-            crate::commands::wine::game_command(&app, &bin)?
-        } else {
-            (std::process::Command::new(&bin), false)
-        };
-        if let Some(env_vars) = env {
-            cmd.envs(
-                env_vars
-                    .into_iter()
-                    .map(|(k, v)| (k, crate::commands::wine::to_windows_path(&v))),
-            );
-        }
-        (cmd, via_launcher)
-    };
+    let mut cmd = std::process::Command::new(&bin);
     cmd.current_dir(&cwd);
+    if let Some(env_vars) = env {
+        cmd.envs(env_vars);
+    }
     if let Some(args) = args {
         cmd.args(args);
     }
-    #[cfg(not(target_os = "windows"))]
-    let running_before = unix_proc::pids_running(&bin);
-    // Mac 很少重启，开机时间几乎总在原版输入管理器出 bug 的区间（见 ballance/input_fix.rs）：
-    // 启动游戏前给它打补丁。修不了也照常启动
-    #[cfg(not(target_os = "windows"))]
-    if let Some(root) = std::path::Path::new(&bin).parent().and_then(|p| p.parent()) {
-        if let Err(e) = crate::ballance::input_fix::fix_input_manager(root) {
-            log::warn!("Patching the input manager failed: {e}");
-        }
-    }
-    let child = cmd.spawn()?;
+    let child = cmd.creation_flags(0x08000000).spawn()?;
 
     // TAS 回放对帧稳定很敏感，而编辑器（WebView2）会时不时抢 CPU（鼠标一动尤其明显）：
     // 需要时把游戏提到 HIGH_PRIORITY_CLASS，让它的渲染/回放线程不至于被编辑器挤掉帧。
@@ -79,12 +43,59 @@ pub fn execute(
     #[cfg(not(target_os = "windows"))]
     let _ = high_priority;
 
-    #[cfg(target_os = "windows")]
-    let pid = child.id();
-    #[cfg(not(target_os = "windows"))]
+    log::info!(
+        "Started {} (pid: {})",
+        PathBuf::from(cwd).join(bin).display(),
+        child.id()
+    );
+
+    Ok(child.id())
+}
+
+/// 其它平台（macOS）：`.exe` 交给 Wine（commands/wine.rs）。async 是因为要等 Wine 把游戏进程拉起来
+/// 才知道 pid（见 unix_proc::wait_for_launcher）。高优先级只有 TAS 编辑器用，这里不支持。
+#[cfg(not(target_os = "windows"))]
+#[command(async)]
+pub fn execute(
+    app: tauri::AppHandle,
+    cwd: String,
+    bin: String,
+    env: Option<HashMap<String, String>>,
+    args: Option<Vec<String>>,
+    high_priority: Option<bool>,
+) -> RcResultWith<u32> {
+    let _ = high_priority;
+    let is_exe = bin.to_lowercase().ends_with(".exe");
+    let (mut cmd, via_launcher) = if is_exe {
+        crate::commands::wine::game_command(&app, &bin)?
+    } else {
+        (std::process::Command::new(&bin), false)
+    };
+    // 游戏里的 mod 只认 Windows 路径：环境变量里的绝对路径先换成 Z:\ 形式
+    if let Some(env_vars) = env {
+        cmd.envs(
+            env_vars
+                .into_iter()
+                .map(|(k, v)| (k, crate::commands::wine::to_windows_path(&v))),
+        );
+    }
+    cmd.current_dir(&cwd);
+    if let Some(args) = args {
+        cmd.args(args);
+    }
+    let running_before = unix_proc::pids_running(&bin);
+    // Mac 很少重启，开机时间几乎总在原版输入管理器出 bug 的区间（见 ballance/input_fix.rs）：
+    // 启动游戏前给它打补丁。修不了也照常启动
+    if let Some(root) = std::path::Path::new(&bin).parent().and_then(|p| p.parent()) {
+        if let Err(e) = crate::ballance::input_fix::fix_input_manager(root) {
+            log::warn!("Patching the input manager failed: {e}");
+        }
+    }
+    let child = cmd.spawn()?;
+
     let pid = if via_launcher {
         unix_proc::wait_for_launcher(child, &bin, &running_before)?
-    } else if bin.to_lowercase().ends_with(".exe") {
+    } else if is_exe {
         unix_proc::wait_for_wine_game(child, &bin, &running_before)?
     } else {
         unix_proc::reap(child)
@@ -92,7 +103,7 @@ pub fn execute(
 
     log::info!(
         "Started {} (pid: {})",
-        PathBuf::from(cwd).join(bin).display(),
+        std::path::PathBuf::from(cwd).join(bin).display(),
         pid
     );
 

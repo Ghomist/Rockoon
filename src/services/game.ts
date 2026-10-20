@@ -93,7 +93,7 @@ export function useVanillaInstall(): {
   const run = async (folder: string, picked: PatchChoice) => {
     setBusy(true);
     let id = "";
-    // macOS 上没有 Wine 玩不了：和游戏一起下（另一个下载任务，Windows 上什么都不做）
+    // macOS：顺带把启动器自带的 Wine 解出来（另一个任务，不用联网；Windows 上什么都不做）
     void installWineIfMissing();
     try {
       // 先把下载站域名探一次（被运营商拦 .top 时自动切别名），再把 URL 交给 Rust 下载器

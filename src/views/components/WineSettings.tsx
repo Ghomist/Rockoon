@@ -4,10 +4,9 @@ import { CircleAlert, CircleCheck, Loader2 } from "lucide-react";
 
 import backend from "@/backend";
 import { useT } from "@/i18n";
-import { installWineAsTask, WINE_RUNTIME } from "@/services/wine";
+import { installRosetta, installWineAsTask } from "@/services/wine";
 import { useDownloadsStore } from "@/stores/downloads";
 import { dialog, message } from "@/utils/ui/feedback";
-import { formatBytes } from "@/utils/format";
 import NFormWrapper, {
   type Schema,
   type SchemaItem
@@ -54,16 +53,6 @@ export default function WineSettings() {
     }
   };
 
-  const onInstallLocal = async () => {
-    const file = await browse({
-      multiple: false,
-      directory: false,
-      title: t("wine.pickArchive"),
-      filters: [{ name: "Wine", extensions: ["xz", "gz", "bz2", "tar"] }]
-    });
-    if (typeof file === "string") void installWineAsTask(file);
-  };
-
   const onPickCustom = async () => {
     // .app 在文件选择框里是「文件」；也可以直接选 bin/wine
     const picked = await browse({
@@ -88,22 +77,30 @@ export default function WineSettings() {
   };
 
   const schema: (Schema & SchemaItem)[] = [
-    {
-      type: "button",
-      label:
-        status?.source === "managed" ? t("wine.reinstall") : t("wine.install"),
-      tip: t("wine.installTip", {
-        version: WINE_RUNTIME.version,
-        size: formatBytes(WINE_RUNTIME.size)
-      }),
-      onClick: () => void installWineAsTask()
-    },
-    {
-      type: "button",
-      label: t("wine.installLocal"),
-      tip: t("wine.installLocalTip"),
-      onClick: () => void onInstallLocal()
-    },
+    ...(status && !status.rosetta
+      ? ([
+          {
+            type: "button",
+            label: t("wine.rosettaInstall"),
+            tip: t("wine.rosettaContent"),
+            onClick: () =>
+              void run(async () => (await installRosetta(), undefined))
+          }
+        ] as (Schema & SchemaItem)[])
+      : []),
+    ...(status?.bundledVersion
+      ? ([
+          {
+            type: "button",
+            label:
+              status.source === "builtin"
+                ? t("wine.reinstall")
+                : t("wine.install"),
+            tip: t("wine.reinstallTip", { version: status.bundledVersion }),
+            onClick: () => void installWineAsTask(true)
+          }
+        ] as (Schema & SchemaItem)[])
+      : []),
     {
       type: "button",
       label: t("wine.useCustom"),
@@ -158,11 +155,15 @@ export default function WineSettings() {
               : status.installed
                 ? t("wine.statusInstalled", {
                     version: status.version ?? "?",
-                    source: t(`wine.source.${status.source ?? "managed"}`)
+                    source: t(`wine.source.${status.source ?? "builtin"}`)
                   })
                 : status.customPath
                   ? t("wine.customMissing", { path: status.customPath })
-                  : t("wine.statusMissing")}
+                  : status.bundledVersion
+                    ? t("wine.statusPending", {
+                        version: status.bundledVersion
+                      })
+                    : t("wine.notBundled")}
         </p>
         {status?.installed && (
           <p className="break-all text-xs text-muted-foreground">
