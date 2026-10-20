@@ -1,7 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "build": {
-    "beforeBuildCommand": "pnpm build:ui && pnpm fetch:bmodp"
+    "beforeDevCommand": "pnpm fetch:bmodp && pnpm fetch:wine && pnpm dev",
+    "beforeBuildCommand": "pnpm build:ui && pnpm fetch:bmodp && pnpm fetch:wine"
   },
   "app": {
     "windows": [
@@ -23,6 +24,7 @@
   },
   "bundle": {
     "targets": ["app", "dmg"],
+    "resources": ["resources/**/*", "resources-macos/**/*"],
     "createUpdaterArtifacts": false,
     "macOS": {
       "minimumSystemVersion": "11.0"

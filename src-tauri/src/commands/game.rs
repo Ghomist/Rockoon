@@ -14,10 +14,10 @@ use std::sync::{Arc, LazyLock, Mutex};
 use tauri::{command, AppHandle, Emitter};
 use zip::ZipArchive;
 
-pub(crate) static CANCEL_MAP: LazyLock<Mutex<HashMap<String, Arc<AtomicBool>>>> =
+static CANCEL_MAP: LazyLock<Mutex<HashMap<String, Arc<AtomicBool>>>> =
     LazyLock::new(|| Mutex::new(HashMap::new()));
 
-pub(crate) fn unique_id() -> String {
+fn unique_id() -> String {
     use std::time::{SystemTime, UNIX_EPOCH};
     let nanos = SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -41,7 +41,7 @@ struct ProgressPayload {
 }
 
 #[derive(Clone, serde::Serialize)]
-pub(crate) struct CompletePayload {
+struct CompletePayload {
     #[serde(rename = "id")]
     id: String,
     #[serde(rename = "success")]
@@ -120,7 +120,7 @@ pub fn cancel_game_install(id: String) -> RcResult {
     Ok(())
 }
 
-pub(crate) fn emit_progress(app: &AppHandle, id: &str, phase: &str, percent: u64, downloaded: u64, total: u64) {
+fn emit_progress(app: &AppHandle, id: &str, phase: &str, percent: u64, downloaded: u64, total: u64) {
     let _ = app.emit(
         "game-install:progress",
         ProgressPayload {
@@ -133,7 +133,7 @@ pub(crate) fn emit_progress(app: &AppHandle, id: &str, phase: &str, percent: u64
     );
 }
 
-pub(crate) fn fail(id: &str, msg: impl Into<String>) -> CompletePayload {
+fn fail(id: &str, msg: impl Into<String>) -> CompletePayload {
     CompletePayload {
         id: id.to_string(),
         success: false,
@@ -160,70 +160,19 @@ fn download_and_extract(
     tmp.push(format!("rockoon-game-{id}.zip"));
 
     // ── 下载 ────────────────────────────────────────────────
-    let downloaded = match download_to(app, id, url, &tmp, cancel) {
-        Ok(n) => n,
-        Err(e) => return e,
-    };
-
-    // ── 解压 ────────────────────────────────────────────────
-    emit_progress(app, id, "importing", 100, downloaded, downloaded);
-    if let Err(e) = extract_zip(&tmp, &target, strip_top_level) {
-        let _ = std::fs::remove_file(&tmp);
-        return fail(id, format!("解压失败：{e}"));
-    }
-    let _ = std::fs::remove_file(&tmp);
-
-    // 装原版游戏时确认一下确实是游戏（省得把空包/坏包当成安装成功）；
-    // 补丁不做这个检查（补丁包里本来就没有 Bin/Player.exe）。
-    if require_player {
-        let player = target.join("Bin").join("Player.exe");
-        if !player.exists() {
-            return fail(id, "解压后没找到 Bin/Player.exe，可能不是原版游戏包");
-        }
-    }
-
-    succeed(app, id, downloaded, &target)
-}
-
-/// 发「完成」进度并返回成功结果
-pub(crate) fn succeed(
-    app: &AppHandle,
-    id: &str,
-    downloaded: u64,
-    target: &Path,
-) -> CompletePayload {
-    emit_progress(app, id, "done", 100, downloaded, downloaded);
-    CompletePayload {
-        id: id.to_string(),
-        success: true,
-        error: None,
-        target: Some(target.to_string_lossy().to_string()),
-    }
-}
-
-/// 下载 `url` 到 `dest`，边下边发 `downloading` 进度（`game-install:progress`），返回下载的字节数。
-/// 失败或取消时已经删掉 `dest`，Err 里是可以直接发给前端的结果。
-/// Wine 运行时的安装（commands/wine.rs）也走这里。
-pub(crate) fn download_to(
-    app: &AppHandle,
-    id: &str,
-    url: &str,
-    dest: &Path,
-    cancel: &Arc<AtomicBool>,
-) -> Result<u64, CompletePayload> {
     emit_progress(app, id, "connecting", 0, 0, 0);
     let response = match ureq::get(url).call() {
         Ok(r) => r,
-        Err(e) => return Err(fail(id, format!("连接下载站失败：{e}"))),
+        Err(e) => return fail(id, format!("连接下载站失败：{e}")),
     };
     let total = response
         .header("Content-Length")
         .and_then(|s| s.parse::<u64>().ok())
         .unwrap_or(0);
     let mut reader = response.into_reader();
-    let mut file = match std::fs::File::create(dest) {
+    let mut file = match std::fs::File::create(&tmp) {
         Ok(f) => f,
-        Err(e) => return Err(fail(id, format!("无法创建临时文件：{e}"))),
+        Err(e) => return fail(id, format!("无法创建临时文件：{e}")),
     };
 
     let mut buf = [0u8; 64 * 1024];
@@ -235,20 +184,20 @@ pub(crate) fn download_to(
             Ok(0) => break,
             Ok(n) => n,
             Err(e) => {
-                let _ = std::fs::remove_file(dest);
-                return Err(fail(id, format!("下载中断：{e}")));
+                let _ = std::fs::remove_file(&tmp);
+                return fail(id, format!("下载中断：{e}"));
             }
         };
         if file.write_all(&buf[..n]).is_err() {
-            let _ = std::fs::remove_file(dest);
-            return Err(fail(id, "写入临时文件失败"));
+            let _ = std::fs::remove_file(&tmp);
+            return fail(id, "写入临时文件失败");
         }
         downloaded += n as u64;
 
         if cancel.load(Ordering::Relaxed) {
             drop(file);
-            let _ = std::fs::remove_file(dest);
-            return Err(fail(id, "已取消"));
+            let _ = std::fs::remove_file(&tmp);
+            return fail(id, "已取消");
         }
 
         if last_emit.elapsed().as_millis() >= 100 {
@@ -264,11 +213,44 @@ pub(crate) fn download_to(
     drop(file);
 
     if total > 0 && downloaded < total {
-        let _ = std::fs::remove_file(dest);
-        return Err(fail(id, format!("下载不完整：{downloaded}/{total} 字节")));
+        let _ = std::fs::remove_file(&tmp);
+        return fail(id, format!("下载不完整：{downloaded}/{total} 字节"));
     }
 
-    Ok(downloaded)
+    // ── 解压 ────────────────────────────────────────────────
+    emit_progress(app, id, "importing", 100, downloaded, total);
+    if let Err(e) = extract_zip(&tmp, &target, strip_top_level) {
+        let _ = std::fs::remove_file(&tmp);
+        return fail(id, format!("解压失败：{e}"));
+    }
+    let _ = std::fs::remove_file(&tmp);
+
+    // 装原版游戏时确认一下确实是游戏（省得把空包/坏包当成安装成功）；
+    // 补丁不做这个检查（补丁包里本来就没有 Bin/Player.exe）。
+    if require_player {
+        let player = target.join("Bin").join("Player.exe");
+        if !player.exists() {
+            return fail(id, "解压后没找到 Bin/Player.exe，可能不是原版游戏包");
+        }
+    }
+
+    let _ = app.emit(
+        "game-install:progress",
+        ProgressPayload {
+            id: id.to_string(),
+            phase: "done".to_string(),
+            percent: 100,
+            downloaded,
+            total: downloaded,
+        },
+    );
+
+    CompletePayload {
+        id: id.to_string(),
+        success: true,
+        error: None,
+        target: Some(target.to_string_lossy().to_string()),
+    }
 }
 
 /// 解压到 target。逐个条目规范化路径，挡掉 zip-slip（`..` 与绝对路径）。

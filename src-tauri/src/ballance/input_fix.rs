@@ -12,9 +12,6 @@
 //! 只用相对跳转、跳到函数间的 NOP 填充里，不引入新的重定位。
 //! 只认原版文件（sha256 对得上才改），改之前留一份 `.orig`。
 
-// 目前只在其它平台启动游戏前调用（commands/process.rs）
-#![cfg_attr(target_os = "windows", allow(dead_code))]
-
 use crate::common::exception::RcResultWith;
 use sha2::{Digest, Sha256};
 use std::path::Path;
