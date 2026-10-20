@@ -11,7 +11,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Rockoon is a Ballance game launcher (All-in-One) built with Tauri 2.0 (Rust) + **React 18 + TypeScript** frontend and a C++ BMLPlus native module. It manages game instances, configurations, maps, mods, and imports community resource packages (BRP) from the resource hub. Windows-only.
+Rockoon is a Ballance game launcher (All-in-One) built with Tauri 2.0 (Rust) + **React 18 + TypeScript** frontend and a C++ BMLPlus native module. It manages game instances, configurations, maps, mods, and imports community resource packages (BRP) from the resource hub. Windows first; there is an experimental macOS port that runs the game through Wine (see "macOS" below).
 
 > The frontend was migrated from Vue 3 to React: there are no `.vue` files left and the build type-checks with `tsc`, not `vue-tsc`. Older notes mentioning Vue / Pinia / Naive UI / shadcn-vue are obsolete.
 
@@ -98,12 +98,24 @@ BMLPlus native module built via CMake + PowerShell (`build.ps1`), compiled 32-bi
 ## Important Gotchas
 
 - **Package manager**: Must use `pnpm`
-- **Platform**: Windows only (macOS/Linux builds disabled in `release.yml`; C++ is 32-bit)
+- **Platform**: Windows is the shipped target (macOS/Linux builds disabled in `release.yml`; C++ is 32-bit). macOS builds locally — see below.
 - **Hot reload**: Rust changes require restarting `pnpm tauri dev` (Vite ignores `src-tauri/`)
 - **Vite port**: Fixed at 1420 (`strictPort: true`) — dev fails instead of picking another port
 - **Logging**: all `console.*` calls are hooked and forwarded to Rust; set `RUST_LOG` for Rust-side level
 - **TypeScript**: `strict` + `noUnusedLocals`/`noUnusedParameters` — unused imports break `pnpm build:ui`
 - **Tooling dirs** `.wolf/`, `.omo/`: OpenWolf session logs (`memory.md`, `buglog.json`) are auto-generated edit trails, not an authoritative description of the code or of real bugs
+
+## macOS
+
+- The game runs through Wine. `src-tauri/src/commands/wine.rs` owns the runtime and one shared prefix (`<app data>/wine/prefix`). Wine ships inside the macOS build: `scripts/fetch-wine.mjs` (run by `tauri.macos.conf.json`'s before-commands) downloads Gcenx's build, drops Gecko/Mono, adds the LGPL texts (`scripts/wine/`) and writes `src-tauri/resources-macos/wine/wine-runtime.tar.xz` + `runtime.json` (gitignored). On first use `install_wine` extracts it into `<app data>/wine/runtime` (marker `.rockoon-runtime.json`; a newer bundled archive gets re-extracted) — no network at runtime. A user-picked Wine (`set_custom_wine`) takes precedence.
+- `process::execute` has a separate non-Windows variant (the Windows one is untouched): it hands `.exe` files to Wine, converts absolute paths in env vars to `Z:\…`, and waits for the real game pid (the `wine` loader spawns the game and exits).
+- Games start through `src-tauri/resources-macos/wine/BallanceLauncher.exe` (source `src-launcher/launch.c`, rebuild with `pnpm build:launcher`, needs zig): under Rosetta 2 the 32→64-bit far jump in Wine's wow64cpu occasionally doesn't switch modes and Player's Direct3D init dies ("No render driver found" or a lingering process). The launcher waits for the game window (stable 5 s) and retries up to 8 times; `process::wait_for_launcher` waits for it, then picks the surviving Player.exe pid.
+- `ballance/input_fix.rs` (non-Windows only) patches the stock `Managers/Dx5InputManager.dll` before each macOS launch (key-repeat bug once uptime mod 49.7 days > 24.8 days; Macs rarely reboot). Only the known original hash is touched; `.orig` is kept.
+- Frontend gate: `services/wine.ts` (`ensureWineReady` before every launch: offers a one-click Rosetta 2 install, extracts the bundled Wine as a `wine` task if needed, initializes the prefix); `services/launcher.ts` shows a "starting" toast and blocks double launches on macOS while `execute` waits. Platform checks use `isMac` from `utils/platform.ts`.
+- Keep macOS-only payload out of `src-tauri/resources/` (the Windows bundle globs it); `resources-macos/` is only listed in `tauri.macos.conf.json`.
+- Not on macOS: TAS editor (Win32 window embedding + shared memory), self-update (no macOS artifacts in `latest.json`).
+- `tauri.macos.conf.json` swaps the custom title bar for native traffic lights and builds `app`/`dmg`; `RockoonIO.bmodp` comes prebuilt from the Windows release (`pnpm fetch:bmodp`, needs `brew install sevenzip`).
+- Build: `pnpm tauri build --target universal-apple-darwin` (needs both Rust targets; `CI=true` skips the Finder-scripted DMG layout, which needs Automation permission).
 
 ## Code Style
 

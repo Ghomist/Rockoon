@@ -3,6 +3,7 @@ import {
   ArrowUpCircle,
   CheckCircle2,
   Gamepad2,
+  GlassWater,
   Package,
   Wrench,
   X,
@@ -35,14 +36,16 @@ const KIND_ICON: Record<DownloadKind, typeof Package> = {
   brp: Package,
   game: Gamepad2,
   patch: Wrench,
-  update: ArrowUpCircle
+  update: ArrowUpCircle,
+  wine: GlassWater
 };
 
 const KIND_TINT: Record<DownloadKind, string> = {
   brp: "bg-primary/10 text-primary",
   game: "bg-emerald-500/12 text-emerald-600 dark:text-emerald-400",
   patch: "bg-violet-500/12 text-violet-600 dark:text-violet-400",
-  update: "bg-amber-500/12 text-amber-600 dark:text-amber-400"
+  update: "bg-amber-500/12 text-amber-600 dark:text-amber-400",
+  wine: "bg-rose-500/12 text-rose-600 dark:text-rose-400"
 };
 
 const STATUS_CLASS: Record<DownloadStatus, string> = {

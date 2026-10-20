@@ -95,7 +95,8 @@
       "connecting": "Connecting",
       "downloading": "Downloading",
       "importing": "Installing",
-      "done": "Done"
+      "done": "Done",
+      "initializing": "Initializing"
     }
   },
   "menu": {
@@ -802,7 +803,8 @@
     "changed": "Changed",
     "removed": "Removed",
     "error": "Update failed, please try again later",
-    "dismiss": "You can check for updates in Settings"
+    "dismiss": "You can check for updates in Settings",
+    "unsupported": "Automatic updates are not available for the macOS build yet; please download new versions manually"
   },
   "gameData": {
     "levelLabel": "Level {i}",
@@ -951,5 +953,51 @@
     "keep": "Keep it on and launch",
     "disabled": "BallanceTAS auto-play on startup is now off",
     "restored": "Restored the BallanceTAS settings changed by TAS one-click play"
+  },
+  "wine": {
+    "title": "Wine runtime",
+    "taskTitle": "Wine runtime",
+    "taskTarget": "Launcher data folder",
+    "installed": "Wine runtime is ready",
+    "failed": "Failed to install Wine",
+    "checking": "Checking Wine…",
+    "statusInstalled": "Ready: Wine {version} ({source})",
+    "statusPending": "Wine {version} ships with the launcher and is set up automatically on first launch (no download)",
+    "notBundled": "This launcher was built without Wine (run pnpm fetch:wine before building); you can pick an existing Wine below",
+    "prefixReady": "prefix initialized",
+    "prefixPending": "prefix will be initialized on first launch",
+    "source": {
+      "builtin": "bundled with the launcher",
+      "custom": "custom"
+    },
+    "install": "Install bundled Wine",
+    "reinstall": "Reinstall bundled Wine",
+    "reinstallTip": "Extracts the bundled Wine {version} into the launcher's data folder again (about 400 MB, no download). Try this if Wine's files are damaged or the game won't start",
+    "installing": "Setting up Wine (about 30 s the first time)…",
+    "useCustom": "Use an existing Wine",
+    "useCustomTip": "Pick an app that ships Wine (Wine Devel.app, …) or a Wine's bin/wine",
+    "pickCustom": "Choose Wine (.app or bin/wine)",
+    "customSet": "Now using the selected Wine",
+    "customCleared": "Switched back to the default Wine",
+    "customMissing": "The selected Wine is missing: {path}",
+    "useDefault": "Use default Wine",
+    "resetPrefix": "Recreate Wine prefix",
+    "resetPrefixTip": "Try this if the game won't start or renders wrong. The prefix only holds Wine's system files and registry; game files and saves are untouched",
+    "resetPrefixConfirm": "This deletes and recreates the Wine prefix (about 20 s). Game files and saves are untouched. Continue?",
+    "resetPrefixDone": "Wine prefix recreated",
+    "openConfig": "Open Wine settings",
+    "openConfigTip": "Opens winecfg for Wine's own audio/display settings (usually not needed)",
+    "rosettaTitle": "Rosetta 2 required",
+    "rosettaContent": "Wine is an Intel app, so Apple silicon Macs need Rosetta 2 (an Apple component; asks for an administrator password and takes about a minute to download from Apple). Click Launch again once it's installed.",
+    "rosettaInstall": "Install Rosetta 2",
+    "rosettaInstalling": "Installing Rosetta 2…",
+    "rosettaInstalled": "Rosetta 2 is installed; you can launch the game now",
+    "rosettaFailed": "Failed to install Rosetta 2: {reason}",
+    "stillInstalling": "Wine is still installing; launch the game once it's done",
+    "preparing": "Setting up Wine (about 20 s the first time)…",
+    "prepareFailed": "Failed to set up Wine: {reason}",
+    "launching": "Starting the game… (on Mac this takes a few seconds while Wine brings it up)",
+    "launchingAlready": "The game is already starting, please wait",
+    "launchFailed": "Failed to start the game: {reason}"
   }
 }

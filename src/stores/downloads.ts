@@ -16,10 +16,15 @@ import { message } from "@/utils/ui/feedback";
  * 返回给调用方（duplicate=true），不会重复下载。
  */
 
-export type DownloadKind = "brp" | "game" | "patch" | "update";
+export type DownloadKind = "brp" | "game" | "patch" | "update" | "wine";
 export type DownloadStatus = "running" | "success" | "error" | "cancelled";
 /** 下载阶段，与后端事件里的阶段一一对应 */
-export type DownloadPhase = "connecting" | "downloading" | "importing" | "done";
+export type DownloadPhase =
+  | "connecting"
+  | "downloading"
+  | "importing"
+  | "initializing"
+  | "done";
 
 export interface DownloadTask {
   /** 后端任务 id（自更新没有后端任务，用生成的 id） */
@@ -56,6 +61,8 @@ export interface BeginDownloadInput {
   total?: number;
   cancellable?: boolean;
   retry?: () => void;
+  /** 不弹「开始下载」提示（不联网的任务，例如 macOS 上解压启动器自带的 Wine） */
+  silent?: boolean;
 }
 
 interface DownloadsState {
@@ -124,11 +131,12 @@ export const useDownloadsStore = create<DownloadsState>((set, get) => ({
     samples.delete(task.id);
     set(state => ({ tasks: [...state.tasks, task] }));
     // 所有下载入口统一在这里提示一次「开始下载」，入口自己不用再弹
-    message.success(
-      task.title
-        ? t("downloads.started", { title: task.title })
-        : t("downloads.startedUnknown")
-    );
+    if (!input.silent)
+      message.success(
+        task.title
+          ? t("downloads.started", { title: task.title })
+          : t("downloads.startedUnknown")
+      );
     return { task, duplicate: false };
   },
 

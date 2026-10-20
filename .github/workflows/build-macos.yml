@@ -1,0 +1,56 @@
+name: "Build (macOS)"
+
+# macOS 移植版：只构建、不发布（产物在这次运行的 Artifacts 里）。
+# Windows 版的发布流程见 release.yml。
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - macos-port
+
+jobs:
+  build:
+    runs-on: macos-latest # Apple 芯片
+    steps:
+      # C++ 模组在 macOS 上编不了（32 位 MSVC），构建时从 Windows 安装包里取（scripts/fetch-bmodp.mjs），
+      # 所以不需要子模块
+      - uses: actions/checkout@v4
+
+      - name: setup pnpm
+        uses: pnpm/action-setup@v4
+      - name: setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: "pnpm"
+
+      # 一个包同时支持 Apple 芯片与 Intel（下载站只放一个 macOS 版）
+      - name: install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: "./src-tauri -> target"
+          cache-on-failure: true
+
+      # fetch-bmodp 要用 7-Zip 解 NSIS 安装包
+      - name: install 7-Zip
+        run: brew install sevenzip
+
+      - name: install frontend dependencies
+        run: pnpm install
+
+      # CI=true（Actions 默认就有）让 tauri 跳过 Finder 摆 DMG 窗口那一步。
+      # 构建前会跑 fetch:bmodp 与 fetch:wine（tauri.macos.conf.json）：Wine 打进包里，玩家那边不用再下载
+      - name: build
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: pnpm tauri build --target universal-apple-darwin
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rockoon-macos
+          path: src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg

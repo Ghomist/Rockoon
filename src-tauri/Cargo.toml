@@ -51,6 +51,10 @@ windows-sys = { version = "0.61", features = [
     "Win32_System_Threading",
 ] }
 
+[target.'cfg(not(windows))'.dependencies]
+# 认原版 Dx5InputManager.dll（macOS，ballance/input_fix.rs）
+sha2 = "0.10"
+
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-positioner = "2"
 tauri-plugin-single-instance = { version = "2", features = ["deep-link"] }

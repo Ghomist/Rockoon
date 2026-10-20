@@ -11,6 +11,7 @@ import { usePrefStore } from "@/stores/pref";
 import { switchLanguage, useI18nStore } from "@/i18n";
 import { checkForUpdate } from "@/services/updater";
 import { registerLoggers } from "@/utils/logger";
+import { isMac } from "@/utils/platform";
 
 // Register console hooks → forward to Rust log stream.
 registerLoggers();
@@ -62,8 +63,8 @@ if (!isTasWindow) {
     });
   }
 
-  // Background update check.
-  setTimeout(checkForUpdate, 3000);
+  // Background update check.（上游只发布 Windows 版：macOS 移植版没有更新源，不自动检查）
+  if (!isMac) setTimeout(checkForUpdate, 3000);
 }
 
 console.info("Rockoon UI initialized");
