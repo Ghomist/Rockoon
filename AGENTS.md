@@ -92,6 +92,29 @@ BMLPlus plugin (`RockoonIO.bmodp`) built via CMake + `build.ps1`. Sources in `sr
   新 Player，按这个顺序装），失败不推翻已装好的游戏，只提示去补丁页重试。
 - 手动装的补丁没有版本记录：界面显示「已安装（版本未知）」，更新按钮仍可用。
 
+## 原版素材校验（3D Entities）
+
+启动器内置了一份原版游戏的文件哈希和文件本身，用来发现「关卡 / 组件被换掉」并一键恢复。
+
+- **清单** `src-tauri/resources/vanilla/manifest.json`（359 个文件的 sha256，编译时
+  `include_str!` 嵌进二进制，运行时不依赖它还在）；**内置包**
+  `src-tauri/resources/vanilla/vanilla-core.zip`（原版游戏去掉 Textures/ 与 Sounds/，
+  约 10.7MB，材质/天空/音效仍走下载站）。
+- **重新生成**：`powershell -File tools/gen-vanilla-assets.ps1 -SourceDir <解压好的原版游戏>`
+  （下载 `https://dl.ballance.top/game/download` 解压到一个空目录即可）。换了原版包才需要重跑，
+  两个产物一起提交；改完跑 `cargo test --lib vanilla`（校验清单项数、内置包与清单哈希一致、
+  modified/missing 判定）。
+- **校验范围只有** `3D Entities/**/*.nmo`（扩展名大小写不敏感，原版 `.nmo`/`.NMO` 混用）：
+  13 个关卡 + 组件共 51 个文件。Bin、材质、音效不在范围内。
+- **启动时校验**：`src/services/launcher.ts` 的 `passVanillaCheck()` 在 `launchInstance()` 里跑
+  （`launchMap()` 不校验 —— 玩家就是故意去玩自定义地图的）。不一致就弹
+  `src/components/VanillaGuard.tsx`（挂在 `MainLayout` 里，因为它要用 router 跳补丁页）：
+  「仍然启动 / 去补丁页恢复 / 取消」。**没挂这个对话框的窗口（TAS 编辑器）会跳过校验**，
+  否则 `await` 永远等不到人点按钮，启动就卡死了。
+- **一键恢复**：补丁页顶部的「原版游戏素材」卡片 → `backend.vanilla.restoreLevels()` →
+  Rust `restore_vanilla_levels`。只覆盖清单里的 nmo，已经是原版的跳过，`3D Entities`
+  里多出来的文件（别人装的自定义关卡等）**不动**。
+
 ## Downloads (所有下载都走一条路)
 
 - 中枢：`src/stores/downloads.ts`；界面：`src/views/Downloads.tsx`（菜单项在「启动器设置」上面）。

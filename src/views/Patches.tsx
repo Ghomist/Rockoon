@@ -1,7 +1,7 @@
 import { useCallback, useState } from "react";
 import { Download, Loader2, RefreshCw, RotateCcw } from "lucide-react";
 
-import backend from "@/backend";
+import backend, { type VanillaFileState } from "@/backend";
 import { useT } from "@/i18n";
 import { hubUrl } from "@/services/hub";
 import {
@@ -69,6 +69,10 @@ export default function Patches() {
     items: PatchComponent[];
     target: PatchInstallTarget;
   } | null>(null);
+  /** 原版素材（3D Entities 下的 nmo）与原版不一致的文件；null = 还没校验出来 */
+  const [vanilla, setVanilla] = useState<VanillaFileState[] | null>(null);
+  const [vanillaBusy, setVanillaBusy] = useState(false);
+  const [vanillaConfirm, setVanillaConfirm] = useState(false);
 
   const refresh = useCallback(async (instancePath: string) => {
     try {
@@ -87,7 +91,40 @@ export default function Patches() {
     }
   }, []);
 
-  const instance = useWaitForSelectedInstance(data => refresh(data.path));
+  /** 校验原版素材：被替换 / 缺失的文件列表（校验本身失败就不显示结论） */
+  const checkVanilla = useCallback(async (instancePath: string) => {
+    try {
+      setVanilla(await backend.vanilla.verifyLevels(instancePath));
+    } catch (e) {
+      console.warn("Vanilla level check failed:", e);
+      setVanilla(null);
+    }
+  }, []);
+
+  const instance = useWaitForSelectedInstance(data => {
+    void refresh(data.path);
+    void checkVanilla(data.path);
+  });
+
+  /** 用启动器内置的原版包把这些 nmo 换回去 */
+  const restoreVanilla = async () => {
+    if (!instance) return;
+    setVanillaConfirm(false);
+    setVanillaBusy(true);
+    try {
+      const { restored } = await backend.vanilla.restoreLevels(instance.path);
+      message.success(
+        restored
+          ? t("vanilla.restored", { count: restored })
+          : t("vanilla.alreadyVanilla")
+      );
+      await checkVanilla(instance.path);
+    } catch (e) {
+      message.error(e instanceof Error ? e.message : String(e));
+    } finally {
+      setVanillaBusy(false);
+    }
+  };
 
   /** 打开版本列表；Player 会把两种构建的版本合在一起展示 */
   const openPicker = async (
@@ -231,7 +268,11 @@ export default function Patches() {
           variant="ghost"
           size="sm"
           disabled={!instance || loading}
-          onClick={() => instance && void refresh(instance.path)}
+          onClick={() => {
+            if (!instance) return;
+            void refresh(instance.path);
+            void checkVanilla(instance.path);
+          }}
         >
           <RefreshCw className="mr-1 h-4 w-4" />
           {t("patches.refresh")}
@@ -248,6 +289,65 @@ export default function Patches() {
       {!loading && error && (
         <div className="px-4 py-6 text-sm text-destructive">
           {t("patches.loadFailed", { error })}
+        </div>
+      )}
+
+      {/* 原版素材：被换过的 3D Entities 文件可以一键恢复。
+          不依赖下载站 —— 补丁清单拉失败（offline / 域名被拦）时这个卡片照样能用 */}
+      {!loading && instance && (
+        <div className="flex flex-col gap-2 px-4 py-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-sm font-medium">{t("vanilla.title")}</span>
+            {vanilla && (
+              <Badge
+                variant={vanilla.length ? "outline" : "secondary"}
+                className={
+                  vanilla.length
+                    ? "border-amber-500/50 text-amber-600 dark:text-amber-400"
+                    : ""
+                }
+              >
+                {vanilla.length
+                  ? t("vanilla.modified", { count: vanilla.length })
+                  : t("vanilla.intact")}
+              </Badge>
+            )}
+            {vanillaBusy && <Loader2 className="h-4 w-4 animate-spin" />}
+          </div>
+
+          <p className="text-xs text-muted-foreground">
+            {t("vanilla.subtitle")}
+          </p>
+
+          {vanilla && vanilla.length > 0 && (
+            <ul className="max-h-40 overflow-auto rounded-md border bg-muted/40 px-3 py-2 font-mono text-xs">
+              {vanilla.map(file => (
+                <li key={file.path} className="truncate">
+                  {file.path}
+                </li>
+              ))}
+            </ul>
+          )}
+
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={vanillaBusy}
+              onClick={() => void checkVanilla(instance.path)}
+            >
+              <RefreshCw className="mr-1 h-4 w-4" />
+              {t("vanilla.recheck")}
+            </Button>
+            <Button
+              size="sm"
+              disabled={vanillaBusy || !vanilla?.length}
+              onClick={() => setVanillaConfirm(true)}
+            >
+              <RotateCcw className="mr-1 h-4 w-4" />
+              {t("vanilla.restore")}
+            </Button>
+          </div>
         </div>
       )}
 
@@ -511,6 +611,24 @@ export default function Patches() {
             <AlertDialogCancel>{t("patches.conflictCancel")}</AlertDialogCancel>
             <AlertDialogAction onClick={() => void confirmConflict()}>
               {t("patches.conflictConfirm")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* 恢复原版素材：会用内置的原版文件覆盖列表里的文件 */}
+      <AlertDialog open={vanillaConfirm} onOpenChange={setVanillaConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("vanilla.restoreTitle")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("vanilla.restoreBody", { count: vanilla?.length ?? 0 })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("common.dialog.cancel")}</AlertDialogCancel>
+            <AlertDialogAction onClick={() => void restoreVanilla()}>
+              {t("vanilla.restore")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

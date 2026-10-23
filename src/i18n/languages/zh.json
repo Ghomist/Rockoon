@@ -951,5 +951,21 @@
     "keep": "保持开启并启动",
     "disabled": "已关闭 BallanceTAS 的启动时自动播放",
     "restored": "已把 TAS 一键播放改过的 BallanceTAS 设置改回原样"
+  },
+  "vanilla": {
+    "title": "原版游戏素材",
+    "subtitle": "3D Entities（关卡与关卡组件）。启动器里内置了一份原版文件，被替换的可以一键恢复。",
+    "intact": "与原版一致",
+    "modified": "{count} 个文件被替换或缺失",
+    "recheck": "重新校验",
+    "restore": "恢复原版",
+    "restoreTitle": "恢复 3D Entities 的原版文件？",
+    "restoreBody": "会用启动器内置的原版文件覆盖这 {count} 个被替换或缺失的文件；原版里没有的文件不会动。",
+    "restored": "已恢复 {count} 个原版文件",
+    "alreadyVanilla": "这些文件已经是原版了",
+    "warnTitle": "游戏文件被修改过",
+    "warnBody": "3D Entities 里有 {count} 个原版文件被替换或缺失，游戏可能已经不是原版关卡了。",
+    "warnLaunch": "仍然启动",
+    "warnRestore": "去补丁页恢复"
   }
 }

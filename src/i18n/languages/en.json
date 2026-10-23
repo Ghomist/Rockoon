@@ -951,5 +951,21 @@
     "keep": "Keep it on and launch",
     "disabled": "BallanceTAS auto-play on startup is now off",
     "restored": "Restored the BallanceTAS settings changed by TAS one-click play"
+  },
+  "vanilla": {
+    "title": "Original game files",
+    "subtitle": "3D Entities (levels and level parts). The launcher ships a copy of the original files, so anything that was replaced can be put back.",
+    "intact": "Matches the original",
+    "modified": "{count} files replaced or missing",
+    "recheck": "Check again",
+    "restore": "Restore original",
+    "restoreTitle": "Restore the original 3D Entities files?",
+    "restoreBody": "The original files bundled with the launcher will overwrite these {count} replaced or missing files. Files that don't belong to the original game are left alone.",
+    "restored": "Restored {count} original files",
+    "alreadyVanilla": "These files are already the original ones",
+    "warnTitle": "Game files have been modified",
+    "warnBody": "{count} original files under 3D Entities are replaced or missing, so the game may not be running the original levels.",
+    "warnLaunch": "Launch anyway",
+    "warnRestore": "Restore in Patches"
   }
 }

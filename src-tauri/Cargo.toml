@@ -28,6 +28,8 @@ tauri = { version = "2", features = [
 image = { version = "0.25", default-features = false, features = ["png", "tga"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+# 原版 3D Entities 素材校验（commands/vanilla.rs）
+sha2 = "0.10"
 tauri-plugin-shell = "^2"
 tauri-plugin-dialog = "^2"
 tauri-plugin-upload = "^2"

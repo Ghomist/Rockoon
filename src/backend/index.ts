@@ -33,6 +33,19 @@ export type SkyboxAnalysisResult = {
   directions: string[];
 };
 
+/** 原版素材校验的一项：`reason` 为 `modified` 表示内容被换过，`missing` 表示文件不在 */
+export type VanillaFileState = {
+  path: string;
+  reason: "modified" | "missing";
+};
+
+export type VanillaRestoreResult = {
+  /** 真正覆盖过的文件数 */
+  restored: number;
+  /** 已经是原版（或内置包里没找到）而没动的文件数 */
+  skipped: number;
+};
+
 const common = {
   log: (level: LogLevel, msg: string) => invoke("log", { level, msg }),
   hideWindow: () => invoke("hide_window"),
@@ -181,6 +194,16 @@ const patches = {
     invoke<string>("start_patch_install", { url, targetDir, stripTopLevel })
 };
 
+/** 原版素材（3D Entities 下的 nmo）：启动前校验，不一致时可以用内置包恢复 */
+const vanilla = {
+  /** 比对内置清单的 sha256，返回不一致的文件（空数组 = 原版） */
+  verifyLevels: (instancePath: string) =>
+    invoke<VanillaFileState[]>("verify_vanilla_levels", { instancePath }),
+  /** 用内置的原版包覆盖这些 nmo（已经是原版的跳过，多出来的文件不动） */
+  restoreLevels: (instancePath: string) =>
+    invoke<VanillaRestoreResult>("restore_vanilla_levels", { instancePath })
+};
+
 export default {
   ...common,
   ...ballance,
@@ -188,5 +211,6 @@ export default {
   ...process,
   ...embed,
   ...game,
-  patches
+  patches,
+  vanilla
 };

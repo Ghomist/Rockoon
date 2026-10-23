@@ -16,6 +16,7 @@ import AppSidebar from "@/components/AppSidebar";
 import GlobalDialogHost from "@/components/GlobalDialogHost";
 import PatchUpdateWatcher from "@/components/PatchUpdateWatcher";
 import TitleBarControls from "@/components/TitleBarControls";
+import VanillaGuard from "@/components/VanillaGuard";
 import { AnimatedGridPattern } from "@/components/ui/animated-grid-pattern";
 import { Particles } from "@/components/ui/particles";
 import { Meteors } from "@/components/ui/meteors";
@@ -451,6 +452,7 @@ function MainLayout() {
           <AppRoutes />
         </main>
         <PatchUpdateWatcher />
+        <VanillaGuard />
       </div>
     </div>
   );

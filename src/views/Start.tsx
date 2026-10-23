@@ -92,7 +92,9 @@ export default function Start() {
     }
     // BallanceTAS 还开着「启动时自动播放」（TAS 编辑器留下的）就先问一句
     if (!(await confirmTasAutoplayOff(selectedInstanceData.path))) return;
-    await launchInstance();
+    const pid = await launchInstance();
+    // 用户在「原版素材被改过」的提示里选了不启动时不报「正在启动」
+    if (pid === undefined) return;
     message.success(t("home.launching"));
   };
 

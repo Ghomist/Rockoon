@@ -70,6 +70,8 @@ pub fn run() {
             commands::game::start_game_install,
             commands::game::start_patch_install,
             commands::game::cancel_game_install,
+            commands::vanilla::verify_vanilla_levels,
+            commands::vanilla::restore_vanilla_levels,
             commands::ballance::read_options,
             commands::ballance::save_options,
             commands::ballance::read_launch_config,

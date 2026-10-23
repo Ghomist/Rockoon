@@ -1,7 +1,25 @@
-import backend from "@/backend";
+import backend, { type VanillaFileState } from "@/backend";
+import { askVanillaModified } from "@/components/VanillaGuard";
 import { useAppStore } from "@/stores/app";
 import { usePrefStore } from "@/stores/pref";
 import { join } from "@tauri-apps/api/path";
+
+/**
+ * 启动前校验 `3D Entities` 里的原版 nmo：被换过 / 缺失就弹窗问用户。
+ * 返回 true = 可以继续启动。校验本身失败（读不了目录等）不拦启动。
+ */
+async function passVanillaCheck(instancePath: string): Promise<boolean> {
+  let mismatched: VanillaFileState[];
+  try {
+    mismatched = await backend.vanilla.verifyLevels(instancePath);
+  } catch (e) {
+    console.warn("Vanilla level check failed:", e);
+    return true;
+  }
+  if (mismatched.length === 0) return true;
+  // “去补丁页恢复”由对话框自己跳转，这里只管发不启动
+  return (await askVanillaModified(mismatched.map(f => f.path))) === "launch";
+}
 
 /** Launch the Ballance Player.exe for the selected instance. */
 export async function launchInstance(options?: {
@@ -16,6 +34,8 @@ export async function launchInstance(options?: {
 }): Promise<number | undefined> {
   const instance = useAppStore.getState().selectedInstanceData;
   if (!instance) return undefined;
+  // 原版关卡 / 组件被换过就提醒一下：不再是原版游戏了，玩家容易懵
+  if (!(await passVanillaCheck(instance.path))) return undefined;
   const cwd = await join(instance.path, "Bin");
   const bin = await join(cwd, "Player.exe");
   const pid = await backend.execute(
