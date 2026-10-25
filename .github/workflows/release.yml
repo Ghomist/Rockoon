@@ -1,4 +1,4 @@
-name: "Publish (Windows only)"
+name: "Publish"
 
 on:
   workflow_dispatch:
@@ -7,34 +7,16 @@ on:
       - release
 
 jobs:
-  publish-tauri:
+  # Windows 版：真正发 release 的 job（建 tag / 写正文 / 上传 latest.json）。
+  # macOS 版排在它后面，等这个 job 把 release 建出来再把 dmg 补进去。
+  publish-windows:
     permissions:
       contents: write
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          ## Currently supported Windows only
-          #   - platform: "macos-latest" # for Arm based macs (M1 and above).
-          #     args: "--target aarch64-apple-darwin"
-          #   - platform: "macos-latest" # for Intel based macs.
-          #     args: "--target x86_64-apple-darwin"
-          #   - platform: "ubuntu-22.04"
-          #     args: ""
-          - platform: "windows-latest"
-            args: ""
-
-    runs-on: ${{ matrix.platform }}
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
-
-      - name: install dependencies (ubuntu only)
-        if: matrix.platform == 'ubuntu-22.04' # This must match the platform value defined above.
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
 
       - name: setup pnpm
         uses: pnpm/action-setup@v4
@@ -45,12 +27,9 @@ jobs:
           cache: "pnpm"
 
       - name: install Rust stable
-        uses: dtolnay/rust-toolchain@stable # Set this to dtolnay/rust-toolchain@nightly
-        with:
-          # Those targets are only used on macos runners so it's in an `if` to slightly speed up windows and linux builds.
-          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+        uses: dtolnay/rust-toolchain@stable
 
-      # GitHub 的 windows/ubuntu/macos runner 都预装了 cmake（原本用 actions-setup-cmake 要花 26 秒下载）
+      # GitHub 的 windows runner 预装了 cmake（原本用 actions-setup-cmake 要花 26 秒下载）
 
       - name: Cache BMLPlus SDK and bmodp build
         uses: actions/cache@v4
@@ -117,7 +96,6 @@ jobs:
           releaseBody: ${{ steps.notes.outputs.body }}
           releaseDraft: false
           prerelease: false
-          args: ${{ matrix.args }}
 
       # 发布完成后通知下载站去 GitHub 拉一次最新 release。
       # 下载站（dl.ballance.top）既是主下载入口，也是 rockoon 的更新源镜像；
@@ -145,4 +123,100 @@ jobs:
             sleep 30
           done
           echo "重试 10 次仍未同步到 $VERSION（GitHub release 可能还没公开）" >&2
+          exit 1
+
+  # macOS 版：Windows 那份 release 建好之后，把 dmg 补进同一个 release。
+  # 不走 tauri-action —— 它会在每个 job 各生成一份 latest.json 互相覆盖；
+  # 而 macOS 的 bundle 是 createUpdaterArtifacts: false（见 tauri.macos.conf.json），
+  # 本来就不产出更新包，latest.json 应当只由 Windows job 维护。
+  #
+  # 必须在 publish-windows 之后跑（needs）：fetch-bmodp 要从**同版本**的 Windows
+  # 安装包里抠 RockoonIO.bmodp，release 不存在时它会退回上一次的 latest 版本。
+  publish-macos:
+    needs: publish-windows
+    permissions:
+      contents: write
+    runs-on: macos-latest # Apple 芯片
+    steps:
+      # C++ 模组在 macOS 上编不了（32 位 MSVC），构建时从 Windows 安装包里取（scripts/fetch-bmodp.mjs），
+      # 所以不需要子模块
+      - uses: actions/checkout@v4
+
+      - name: setup pnpm
+        uses: pnpm/action-setup@v4
+      - name: setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: "pnpm"
+
+      # 一个包同时支持 Apple 芯片与 Intel（下载站只放一个 macOS 版）
+      - name: install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: "./src-tauri -> target"
+          cache-on-failure: true
+
+      # fetch-bmodp 要用 7-Zip 解 NSIS 安装包
+      - name: install 7-Zip
+        run: brew install sevenzip
+
+      # Wine 原包约 190 MB，版本钉在 scripts/fetch-wine.mjs 里，脚本不变就不用再下
+      - name: Cache Wine tarball
+        uses: actions/cache@v4
+        with:
+          path: node_modules/.cache/rockoon-wine
+          key: wine-${{ runner.os }}-${{ hashFiles('scripts/fetch-wine.mjs') }}
+
+      - name: install frontend dependencies
+        run: pnpm install
+
+      # CI=true（Actions 默认就有）让 tauri 跳过 Finder 摆 DMG 窗口那一步。
+      # 构建前会跑 fetch:bmodp 与 fetch:wine（tauri.macos.conf.json）：
+      # 前者从本版本的 Windows 安装包里取 RockoonIO.bmodp，后者把 Wine 打进包里。
+      - name: build
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: pnpm tauri build --target universal-apple-darwin
+
+      # 手动跑 workflow 时也能直接从 Artifacts 拿 dmg
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rockoon-macos
+          path: src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg
+
+      - name: 上传 dmg 到 release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          VERSION=$(node -p "require('./src-tauri/tauri.conf.json').version")
+          DMG=$(ls src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg)
+          echo "上传 $DMG 到 rockoon-v$VERSION"
+          gh release upload "rockoon-v$VERSION" "$DMG" --clobber
+          gh release view "rockoon-v$VERSION" --json assets --jq '.assets[].name'
+
+      # Windows job 那次同步只看到安装包；dmg 是后补的，再拉一次让下载站和 GitHub 对齐
+      - name: Sync download site
+        continue-on-error: true
+        shell: bash
+        run: |
+          VERSION=$(node -p "require('./src-tauri/tauri.conf.json').version")
+          for i in $(seq 1 5); do
+            BODY=$(curl -fsS -X POST "https://dl.ballance.top/rockoon/sync?force=true" \
+              -H "User-Agent: rockoon-release-hook" \
+              --retry 3 --retry-delay 10 --max-time 60 || echo "")
+            echo "第 $i 次同步响应：$BODY"
+            if echo "$BODY" | grep -q "\"version\":\"$VERSION\""; then
+              echo "下载站已同步到 $VERSION"
+              exit 0
+            fi
+            sleep 20
+          done
+          echo "重试 5 次仍未同步到 $VERSION（不影响发布）" >&2
           exit 1

@@ -98,7 +98,7 @@ BMLPlus native module built via CMake + PowerShell (`build.ps1`), compiled 32-bi
 ## Important Gotchas
 
 - **Package manager**: Must use `pnpm`
-- **Platform**: Windows is the shipped target (macOS/Linux builds disabled in `release.yml`; C++ is 32-bit). macOS builds locally — see below.
+- **Platform**: Windows is the primary target (C++ is 32-bit, MSVC). macOS ships from the same `release.yml` (`publish-macos` job builds the universal dmg and attaches it to the Windows release) — see below.
 - **Hot reload**: Rust changes require restarting `pnpm tauri dev` (Vite ignores `src-tauri/`)
 - **Vite port**: Fixed at 1420 (`strictPort: true`) — dev fails instead of picking another port
 - **Logging**: all `console.*` calls are hooked and forwarded to Rust; set `RUST_LOG` for Rust-side level
@@ -113,8 +113,8 @@ BMLPlus native module built via CMake + PowerShell (`build.ps1`), compiled 32-bi
 - `ballance/input_fix.rs` (non-Windows only) patches the stock `Managers/Dx5InputManager.dll` before each macOS launch (key-repeat bug once uptime mod 49.7 days > 24.8 days; Macs rarely reboot). Only the known original hash is touched; `.orig` is kept.
 - Frontend gate: `services/wine.ts` (`ensureWineReady` before every launch: offers a one-click Rosetta 2 install, extracts the bundled Wine as a `wine` task if needed, initializes the prefix); `services/launcher.ts` shows a "starting" toast and blocks double launches on macOS while `execute` waits. Platform checks use `isMac` from `utils/platform.ts`.
 - Keep macOS-only payload out of `src-tauri/resources/` (the Windows bundle globs it); `resources-macos/` is only listed in `tauri.macos.conf.json`.
-- Not on macOS: TAS editor (Win32 window embedding + shared memory), self-update (no macOS artifacts in `latest.json`).
-- `tauri.macos.conf.json` swaps the custom title bar for native traffic lights and builds `app`/`dmg`; `RockoonIO.bmodp` comes prebuilt from the Windows release (`pnpm fetch:bmodp`, needs `brew install sevenzip`).
+- Not on macOS: TAS editor (Win32 window embedding + shared memory), self-update (no macOS artifacts in `latest.json`, so `publish-macos` must not touch it).
+- `tauri.macos.conf.json` swaps the custom title bar for native traffic lights and builds `app`/`dmg`; `RockoonIO.bmodp` comes prebuilt from the Windows release (`pnpm fetch:bmodp`, needs `brew install sevenzip`). That release must already exist for the version being built, which is why `publish-macos` has `needs: publish-windows`.
 - Build: `pnpm tauri build --target universal-apple-darwin` (needs both Rust targets; `CI=true` skips the Finder-scripted DMG layout, which needs Automation permission).
 
 ## Code Style
