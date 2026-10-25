@@ -222,7 +222,8 @@ jobs:
           gh release download "rockoon-v$VERSION" --pattern latest.json --dir "$RUNNER_TEMP" --clobber
           node -e '
             const fs = require("fs");
-            const [, , file, sig, url] = process.argv;
+            // 注意：node -e 时 process.argv[1] 才是第一个参数（argv[0] 是 node 自己）
+            const [, file, sig, url] = process.argv;
             const json = JSON.parse(fs.readFileSync(file, "utf8"));
             const entry = { signature: sig, url };
             json.platforms = json.platforms || {};
