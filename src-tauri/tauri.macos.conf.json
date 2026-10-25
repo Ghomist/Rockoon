@@ -1,0 +1,33 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "build": {
+    "beforeDevCommand": "pnpm fetch:bmodp && pnpm fetch:wine && pnpm dev",
+    "beforeBuildCommand": "pnpm build:ui && pnpm fetch:bmodp && pnpm fetch:wine"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "Rockoon",
+        "decorations": true,
+        "titleBarStyle": "Overlay",
+        "hiddenTitle": true,
+        "trafficLightPosition": { "x": 18, "y": 26 },
+        "transparent": false,
+        "shadow": true,
+        "width": 1200,
+        "height": 750,
+        "minWidth": 1000,
+        "minHeight": 600
+      }
+    ]
+  },
+  "bundle": {
+    "targets": ["app", "dmg"],
+    "resources": ["resources/**/*", "resources-macos/**/*"],
+    "createUpdaterArtifacts": false,
+    "macOS": {
+      "minimumSystemVersion": "11.0"
+    }
+  }
+}

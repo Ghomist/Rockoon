@@ -29,3 +29,23 @@ type VanillaGameInfo = {
   updated_at?: string;
   url?: string;
 };
+
+/** Wine 运行时状态（src-tauri/src/commands/wine.rs 的 WineStatus） */
+type WineStatus = {
+  /** 这个平台要不要 Wine（Windows 上为 false，其余字段无意义） */
+  required: boolean;
+  /** 自带的 Wine 还没解出来（或是旧版本）时为 false */
+  installed: boolean;
+  /** builtin = 启动器自带的；custom = 用户指定 */
+  source?: "builtin" | "custom";
+  path?: string;
+  version?: string;
+  /** 启动器自带的 Wine 版本（构建时没打包 Wine 为空） */
+  bundledVersion?: string;
+  /** 前缀已经用当前 Wine 初始化好了（没好的话启动前要先 preparePrefix） */
+  prefixReady: boolean;
+  prefix?: string;
+  /** Apple 芯片上 Rosetta 2 是否可用 */
+  rosetta: boolean;
+  customPath?: string;
+};

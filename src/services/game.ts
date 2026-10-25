@@ -10,6 +10,7 @@ import { useDownloadsStore } from "@/stores/downloads";
 import { usePrefStore } from "@/stores/pref";
 import { useProfilesStore } from "@/stores/profiles";
 import { fetchPatches, installPatchAsTask } from "@/services/patches";
+import { installWineIfMissing } from "@/services/wine";
 import { message } from "@/utils/ui/feedback";
 
 /** 装原版游戏时顺带装的补丁（用户可在弹窗里改） */
@@ -92,6 +93,8 @@ export function useVanillaInstall(): {
   const run = async (folder: string, picked: PatchChoice) => {
     setBusy(true);
     let id = "";
+    // macOS：顺带把启动器自带的 Wine 解出来（另一个任务，不用联网；Windows 上什么都不做）
+    void installWineIfMissing();
     try {
       // 先把下载站域名探一次（被运营商拦 .top 时自动切别名），再把 URL 交给 Rust 下载器
       await hubReady();

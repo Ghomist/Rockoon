@@ -185,6 +185,26 @@ const game = {
     invoke<undefined>("cancel_game_install", { id })
 };
 
+/** Wine 运行时（macOS 上跑游戏用，见 src-tauri/src/commands/wine.rs；Windows 上 required 为 false） */
+const wine = {
+  status: () => invoke<WineStatus>("wine_status"),
+  /**
+   * 把启动器自带的 Wine 解到数据目录并初始化前缀（已是这个版本就只检查前缀；reinstall 强制重新解）。
+   * 阶段变化走 wine-install:phase 事件
+   */
+  install: (reinstall?: boolean) =>
+    invoke<WineStatus>("install_wine", { reinstall }),
+  /** 安装 Rosetta 2（弹系统的管理员密码框） */
+  installRosetta: () => invoke<undefined>("install_rosetta"),
+  /** 确保前缀已初始化（第一次约 20 秒） */
+  preparePrefix: () => invoke<WineStatus>("prepare_wine_prefix"),
+  resetPrefix: () => invoke<WineStatus>("reset_wine_prefix"),
+  /** 指定已有的 Wine（.app / Wine 根目录 / bin/wine），传 null 恢复默认 */
+  setCustom: (path: string | null) =>
+    invoke<WineStatus>("set_custom_wine", { path }),
+  openConfig: () => invoke<undefined>("open_wine_config")
+};
+
 const patches = {
   /**
    * 从下载站下载补丁包（BML / BML+ / 新 Player）并解压到目标文件夹。
@@ -212,5 +232,6 @@ export default {
   ...embed,
   ...game,
   patches,
-  vanilla
+  vanilla,
+  wine
 };

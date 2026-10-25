@@ -31,6 +31,8 @@ import { useAppStore } from "@/stores/app";
 import { usePrefStore } from "@/stores/pref";
 import { useProfilesStore } from "@/stores/profiles";
 import { dialog, message } from "@/utils/ui/feedback";
+import { isMac } from "@/utils/platform";
+import { cn } from "@/lib/utils";
 import { checkRunningInstance } from "@/services/launcher";
 import { importFromFile, importFromUrl } from "@/services/brp";
 import { askSkyTarget } from "@/services/sky";
@@ -316,10 +318,14 @@ function MainLayout() {
   return (
     <div className="flex h-screen flex-col bg-background text-foreground">
       {/* 自定义标题栏（decorations: false）：除了窗口按钮与配置下拉，剩下地方都可按住拖拽。
-          注意 items-stretch：窗口按钮靠它撑满整条 header，hover 底色才不会只有一条。 */}
+          注意 items-stretch：窗口按钮靠它撑满整条 header，hover 底色才不会只有一条。
+          macOS 用系统的红绿灯（tauri.macos.conf.json 里的 Overlay 标题栏），左边让出位置、不画自己的窗口按钮。 */}
       <header
         data-tauri-drag-region
-        className="flex h-13 shrink-0 items-stretch gap-4 border-b bg-background pr-2 pl-4"
+        className={cn(
+          "flex h-13 shrink-0 items-stretch gap-4 border-b bg-background pr-2",
+          isMac ? "pl-21" : "pl-4"
+        )}
       >
         <div data-tauri-drag-region className="flex items-center gap-2">
           <img
@@ -395,7 +401,7 @@ function MainLayout() {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <TitleBarControls />
+          {!isMac && <TitleBarControls />}
         </div>
       </header>
 

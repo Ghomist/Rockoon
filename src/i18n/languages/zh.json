@@ -95,7 +95,8 @@
       "connecting": "连接中",
       "downloading": "下载中",
       "importing": "安装中",
-      "done": "完成"
+      "done": "完成",
+      "initializing": "初始化中"
     }
   },
   "menu": {
@@ -917,7 +918,8 @@
     "changed": "修改",
     "removed": "删除",
     "error": "更新失败，请稍后重试",
-    "dismiss": "你可以在设置中检查更新"
+    "dismiss": "你可以在设置中检查更新",
+    "unsupported": "macOS 版暂不支持自动更新，请到 Rockoon 的发布页手动下载新版"
   },
   "gameData": {
     "levelLabel": "第 {i} 关",
@@ -967,5 +969,51 @@
     "warnBody": "3D Entities 里有 {count} 个原版文件被替换或缺失，游戏可能已经不是原版关卡了。",
     "warnLaunch": "仍然启动",
     "warnRestore": "去补丁页恢复"
+  },
+  "wine": {
+    "title": "Wine 运行环境",
+    "taskTitle": "Wine 运行环境",
+    "taskTarget": "启动器数据目录",
+    "installed": "Wine 运行环境已就绪",
+    "failed": "Wine 安装失败",
+    "checking": "正在检查 Wine…",
+    "statusInstalled": "已就绪：Wine {version}（{source}）",
+    "statusPending": "启动器自带 Wine {version}，第一次启动游戏时会自动装好（不用联网）",
+    "notBundled": "这个启动器没有附带 Wine（构建时要先运行 pnpm fetch:wine），可以在下面指定一个已有的 Wine",
+    "prefixReady": "前缀已初始化",
+    "prefixPending": "前缀将在首次启动游戏时初始化",
+    "source": {
+      "builtin": "启动器自带",
+      "custom": "手动指定"
+    },
+    "install": "安装自带的 Wine",
+    "reinstall": "重新安装自带的 Wine",
+    "reinstallTip": "把启动器自带的 Wine {version} 重新解到启动器数据目录（约 400 MB，不用联网）。Wine 文件损坏、游戏打不开时可以试试",
+    "installing": "正在准备 Wine 运行环境（首次约半分钟）…",
+    "useCustom": "使用已有的 Wine",
+    "useCustomTip": "选择 Wine Devel.app 之类自带 Wine 的应用，或者某个 Wine 的 bin/wine",
+    "pickCustom": "选择 Wine（.app 或 bin/wine）",
+    "customSet": "已改用指定的 Wine",
+    "customCleared": "已恢复默认的 Wine",
+    "customMissing": "指定的 Wine 找不到了：{path}",
+    "useDefault": "恢复默认 Wine",
+    "resetPrefix": "重建 Wine 前缀",
+    "resetPrefixTip": "游戏打不开或显示异常时可以试试。前缀里只有 Wine 的系统文件与注册表，游戏文件、存档不受影响",
+    "resetPrefixConfirm": "将删除并重新创建 Wine 前缀（约 20 秒），游戏文件与存档不受影响。继续吗？",
+    "resetPrefixDone": "Wine 前缀已重建",
+    "openConfig": "打开 Wine 设置",
+    "openConfigTip": "打开 winecfg，调整音频、显示等 Wine 自身的设置（一般不需要）",
+    "rosettaTitle": "需要 Rosetta 2",
+    "rosettaContent": "Wine 是 Intel 程序，Apple 芯片的 Mac 需要先安装 Rosetta 2（苹果官方组件，要输入管理员密码，从苹果下载约 1 分钟）。装好后再点一次启动即可。",
+    "rosettaInstall": "安装 Rosetta 2",
+    "rosettaInstalling": "正在安装 Rosetta 2…",
+    "rosettaInstalled": "Rosetta 2 已安装，可以启动游戏了",
+    "rosettaFailed": "Rosetta 2 安装失败：{reason}",
+    "stillInstalling": "Wine 还在安装中，装好后再启动游戏",
+    "preparing": "正在初始化 Wine 环境（首次约 20 秒）…",
+    "prepareFailed": "Wine 环境初始化失败：{reason}",
+    "launching": "正在启动游戏…（Mac 上要等 Wine 拉起游戏，几秒到二十来秒）",
+    "launchingAlready": "游戏正在启动，请稍候",
+    "launchFailed": "游戏启动失败：{reason}"
   }
 }

@@ -46,6 +46,46 @@ pub fn open(path: String) -> RcResult {
     Ok(())
 }
 
+/// macOS：文件夹直接在 Finder 里打开，文件则在 Finder 里选中
+#[command]
+#[cfg(target_os = "macos")]
+pub fn open_in_explorer(path: String) -> RcResult {
+    let is_dir = path::Path::new(&path).is_dir();
+    let mut cmd = process::Command::new("open");
+    if !is_dir {
+        cmd.arg("-R");
+    }
+    cmd.arg(&path).status()?;
+    Ok(())
+}
+
+#[command]
+#[cfg(target_os = "macos")]
+pub fn open(path: String) -> RcResult {
+    process::Command::new("open").arg(&path).status()?;
+    Ok(())
+}
+
+#[command]
+#[cfg(not(any(target_os = "windows", target_os = "macos")))]
+pub fn open_in_explorer(path: String) -> RcResult {
+    let path_ref = path::Path::new(&path);
+    let dir = if path_ref.is_dir() {
+        path_ref
+    } else {
+        path_ref.parent().unwrap_or(path_ref)
+    };
+    process::Command::new("xdg-open").arg(dir).status()?;
+    Ok(())
+}
+
+#[command]
+#[cfg(not(any(target_os = "windows", target_os = "macos")))]
+pub fn open(path: String) -> RcResult {
+    process::Command::new("xdg-open").arg(&path).status()?;
+    Ok(())
+}
+
 #[command]
 pub fn exists(path: String) -> RcResultWith<bool> {
     let exists = path::Path::new(&path).exists();
