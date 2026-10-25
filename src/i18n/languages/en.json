@@ -804,7 +804,7 @@
     "removed": "Removed",
     "error": "Update failed, please try again later",
     "dismiss": "You can check for updates in Settings",
-    "unsupported": "Automatic updates are not available for the macOS build yet; please download new versions manually"
+    "restarting": "Update installed — restarting the launcher…"
   },
   "gameData": {
     "levelLabel": "Level {i}",

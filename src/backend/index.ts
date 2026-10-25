@@ -51,7 +51,9 @@ const common = {
   hideWindow: () => invoke("hide_window"),
   showWindow: () => invoke("show_window"),
   toggleWindow: () => invoke("toggle_window"),
-  openDevtools: () => invoke("open_devtools")
+  openDevtools: () => invoke("open_devtools"),
+  /** 重启启动器（macOS 自更新装完用；这个命令不会返回，进程直接被换掉） */
+  restartApp: () => invoke("restart_app")
 };
 
 const ballance = {

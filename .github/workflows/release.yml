@@ -125,10 +125,9 @@ jobs:
           echo "重试 10 次仍未同步到 $VERSION（GitHub release 可能还没公开）" >&2
           exit 1
 
-  # macOS 版：Windows 那份 release 建好之后，把 dmg 补进同一个 release。
+  # macOS 版：Windows 那份 release 建好之后，把 dmg 和自更新包补进同一个 release。
   # 不走 tauri-action —— 它会在每个 job 各生成一份 latest.json 互相覆盖；
-  # 而 macOS 的 bundle 是 createUpdaterArtifacts: false（见 tauri.macos.conf.json），
-  # 本来就不产出更新包，latest.json 应当只由 Windows job 维护。
+  # macOS 的更新包由本 job 手动签名上传，darwin 条目由本 job 合并进那份 latest.json。
   #
   # 必须在 publish-windows 之后跑（needs）：fetch-bmodp 要从**同版本**的 Windows
   # 安装包里抠 RockoonIO.bmodp，release 不存在时它会退回上一次的 latest 版本。
@@ -182,23 +181,59 @@ jobs:
       - name: build
         env:
           GITHUB_TOKEN: ${{ github.token }}
+          # macOS 的更新包（.app.tar.gz）也要签名：客户端的校验公钥就是 tauri.conf.json 里那个
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
         run: pnpm tauri build --target universal-apple-darwin
 
       # 手动跑 workflow 时也能直接从 Artifacts 拿 dmg
       - uses: actions/upload-artifact@v4
         with:
           name: rockoon-macos
-          path: src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg
+          path: |
+            src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg
+            src-tauri/target/universal-apple-darwin/release/bundle/macos/*.app.tar.gz
 
-      - name: 上传 dmg 到 release
+      # 1) 先传更新包（.app.tar.gz + .sig）+ dmg，2) 再把 darwin 条目合并进 latest.json。
+      # 顺序不能反：清单先于资产出现的话，客户端会去下一个不存在的包。
+      - name: 上传 dmg / 更新包到 release
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           VERSION=$(node -p "require('./src-tauri/tauri.conf.json').version")
           DMG=$(ls src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg)
-          echo "上传 $DMG 到 rockoon-v$VERSION"
-          gh release upload "rockoon-v$VERSION" "$DMG" --clobber
+          TARBALL=$(ls src-tauri/target/universal-apple-darwin/release/bundle/macos/*.app.tar.gz)
+          echo "上传 $DMG 与 $TARBALL 到 rockoon-v$VERSION"
+          gh release upload "rockoon-v$VERSION" "$DMG" "$TARBALL" "$TARBALL.sig" --clobber
+
+      # latest.json 是 Windows job 生成的（tauri-action 只会写当前平台）。
+      # macOS 自更新要在这里把 darwin 条目加进去：通用包在 Apple 芯片上跑就查 darwin-aarch64，
+      # 在 Intel 上跑就查 darwin-x86_64 —— 两个键指向同一个通用包。
+      # （不能改成让 tauri-action 在 mac 上再生成一份 latest.json：两份会互相覆盖，
+      #   而且 mac 的 bundle 类型没有 windows-*_nsis 之类的键，只能补不能替。）
+      - name: 合并 darwin 条目进 latest.json
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          VERSION=$(node -p "require('./src-tauri/tauri.conf.json').version")
+          TARBALL=$(ls src-tauri/target/universal-apple-darwin/release/bundle/macos/*.app.tar.gz)
+          gh release download "rockoon-v$VERSION" --pattern latest.json --dir "$RUNNER_TEMP" --clobber
+          node -e '
+            const fs = require("fs");
+            const [, , file, sig, url] = process.argv;
+            const json = JSON.parse(fs.readFileSync(file, "utf8"));
+            const entry = { signature: sig, url };
+            json.platforms = json.platforms || {};
+            json.platforms["darwin-aarch64"] = entry;
+            json.platforms["darwin-x86_64"] = entry;
+            // notes / pub_date 保持 Windows job 写的那份不动
+            fs.writeFileSync(file, JSON.stringify(json, null, 2) + "\n");
+            console.log("platforms:", Object.keys(json.platforms).join(", "));
+          ' "$RUNNER_TEMP/latest.json" "$(cat "$TARBALL.sig")" \
+            "https://github.com/${{ github.repository }}/releases/download/rockoon-v$VERSION/$(basename "$TARBALL")"
+          gh release upload "rockoon-v$VERSION" "$RUNNER_TEMP/latest.json" --clobber
           gh release view "rockoon-v$VERSION" --json assets --jq '.assets[].name'
 
       # Windows job 那次同步只看到安装包；dmg 是后补的，再拉一次让下载站和 GitHub 对齐

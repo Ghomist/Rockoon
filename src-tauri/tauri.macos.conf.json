@@ -25,7 +25,7 @@
   "bundle": {
     "targets": ["app", "dmg"],
     "resources": ["resources/**/*", "resources-macos/**/*"],
-    "createUpdaterArtifacts": false,
+    "createUpdaterArtifacts": true,
     "macOS": {
       "minimumSystemVersion": "11.0"
     }

@@ -1,6 +1,6 @@
 use crate::common::exception::RcResult;
 use log::{log, log_enabled, Level};
-use tauri::{command, Runtime, WebviewWindow, Window};
+use tauri::{command, AppHandle, Runtime, WebviewWindow, Window};
 
 #[command]
 pub fn log(level: String, msg: String) -> RcResult {
@@ -69,4 +69,14 @@ pub fn toggle_window<R: Runtime>(window: Window<R>) -> RcResult {
 pub fn open_devtools<R: Runtime>(window: WebviewWindow<R>) -> RcResult {
     window.open_devtools();
     Ok(())
+}
+
+/// 重启启动器自己。
+///
+/// macOS 上自更新装完了必须自己重启：更新插件只负责把 .app 换掉（rename 新包到位），
+/// 不会重启进程 —— 还在跑的还是旧的可执行文件。Windows 那边不用（NSIS 会自己关掉旧进程再起新的）。
+#[command]
+pub fn restart_app<R: Runtime>(app: AppHandle<R>) -> RcResult {
+    // 这个函数不会返回：进程被替换掉了
+    app.restart()
 }

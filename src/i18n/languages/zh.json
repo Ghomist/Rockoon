@@ -919,7 +919,7 @@
     "removed": "删除",
     "error": "更新失败，请稍后重试",
     "dismiss": "你可以在设置中检查更新",
-    "unsupported": "macOS 版暂不支持自动更新，请到 Rockoon 的发布页手动下载新版"
+    "restarting": "更新已装好，正在重启启动器…"
   },
   "gameData": {
     "levelLabel": "第 {i} 关",
