@@ -121,11 +121,12 @@ const getInstanceData = async (
 
   const bml = await checkFiles(baseFolder, "bml");
   const bmlp = await checkFiles(baseFolder, "bmlp");
-  instance.modLoaderType = bml ? "bml" : bmlp ? "bmlp" : "none";
-  instance.modLoaderEnabled =
-    bml?.has("BuildingBlocks/BML.dll") ??
-    bmlp?.has("BuildingBlocks/BMLPlus.dll") ??
-    false;
+  // 两种加载器可能同时在（如 BML 已 .disable、BML+ 在用）：启用中的那个优先
+  const bmlOn = !!bml?.has("BuildingBlocks/BML.dll");
+  const bmlpOn = !!bmlp?.has("BuildingBlocks/BMLPlus.dll");
+  instance.modLoaderType =
+    bmlpOn || (!bmlOn && bmlp) ? "bmlp" : bml ? "bml" : "none";
+  instance.modLoaderEnabled = bmlOn || bmlpOn;
 
   const newPlayer = await checkFiles(baseFolder, "newPlayer");
   instance.playerType = newPlayer ? "new" : "original";

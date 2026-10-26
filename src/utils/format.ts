@@ -53,6 +53,17 @@ export const formatTime = (ms: number) => {
   )}`;
 };
 
+/** 相对时间：刚刚 / N 分钟前 / N 小时前 / N 天前，超过一周显示具体日期 */
+export const formatRelativeTime = (ts: number, lang: string) => {
+  const sec = Math.max(0, Math.round((Date.now() - ts) / 1000));
+  const rtf = new Intl.RelativeTimeFormat(lang, { numeric: "auto" });
+  if (sec < 60) return rtf.format(0, "second");
+  if (sec < 3600) return rtf.format(-Math.floor(sec / 60), "minute");
+  if (sec < 86400) return rtf.format(-Math.floor(sec / 3600), "hour");
+  if (sec < 7 * 86400) return rtf.format(-Math.floor(sec / 86400), "day");
+  return new Date(ts).toLocaleDateString(lang);
+};
+
 /** 格式化游玩时间（秒转小时+分钟+秒） */
 export const formatPlaytime = (seconds: number) => {
   const hours = Math.floor(seconds / 3600);

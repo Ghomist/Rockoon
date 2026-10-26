@@ -9,14 +9,11 @@ import {
   Settings2
 } from "lucide-react";
 import { getVersion } from "@tauri-apps/api/app";
-import { open as browseDir } from "@tauri-apps/plugin-dialog";
 import backend from "@/backend";
-import { useAppStore } from "@/stores/app";
 import { usePrefStore } from "@/stores/pref";
-import { useProfilesStore } from "@/stores/profiles";
 import { checkForUpdate } from "@/services/updater";
 import PatchOptionsDialog from "@/components/PatchOptionsDialog";
-import { useVanillaInstall } from "@/services/game";
+import { changeInstanceFolder, useVanillaInstall } from "@/services/game";
 import { useT } from "@/i18n";
 import { dialog, message } from "@/utils/ui/feedback";
 import storage from "@/utils/storage";
@@ -70,8 +67,6 @@ const prefField = <K extends keyof PrefFields>(
 export default function Settings() {
   const t = useT();
   const pref = usePrefFields();
-  const app = useAppStore();
-  const profiles = useProfilesStore();
   const [appVersion, setAppVersion] = useState("");
 
   useEffect(() => {
@@ -90,27 +85,11 @@ export default function Settings() {
   const { start: installGame, optionsDialog: gameOptions } =
     useVanillaInstall();
 
-  const onChangeInstancePath = async () => {
-    const folder = await browseDir({
-      directory: true,
-      title: t("onboarding.browse.title")
-    });
-    if (!folder) return;
-    const ok = await app.loadInstance(folder);
-    if (!ok) {
-      message.error(t("onboarding.invalid"));
-      return;
-    }
-    usePrefStore.setState({ instancePath: folder });
-    await profiles.load();
-    message.success(t("settings.instance.changed"));
-  };
-
   const instanceSchema: (Schema & SchemaItem)[] = [
     {
       type: "button",
       label: t("settings.instance.change"),
-      onClick: onChangeInstancePath
+      onClick: () => void changeInstanceFolder()
     },
     {
       type: "button",

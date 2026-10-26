@@ -63,6 +63,22 @@ async function pickEmptyFolder(): Promise<string | null> {
   }
 }
 
+/** 「更改游戏目录」：选一个已有的 Ballance 目录设为当前实例（设置页与首页共用） */
+export async function changeInstanceFolder(): Promise<void> {
+  const folder = await browseDir({
+    directory: true,
+    title: t("onboarding.browse.title")
+  });
+  if (!folder) return;
+  if (!(await useAppStore.getState().loadInstance(folder))) {
+    message.error(t("onboarding.invalid"));
+    return;
+  }
+  usePrefStore.setState({ instancePath: folder });
+  await useProfilesStore.getState().load();
+  message.success(t("settings.instance.changed"));
+}
+
 /** 占位任务 id：后端 id 要等 start 返回才拿到，先拿它登记任务（拿到后 update 替换） */
 let taskSeq = 0;
 

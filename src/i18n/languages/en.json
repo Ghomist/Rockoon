@@ -560,7 +560,7 @@
       "bmlp": "BMLPlus"
     },
     "loaderDisabled": "Disabled",
-    "lastPlayer": "Last player: {name}",
+    "lastPlayed": "Last played {time}",
     "manage": "Manage",
     "community": "Community & help"
   },

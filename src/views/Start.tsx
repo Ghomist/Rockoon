@@ -4,13 +4,15 @@ import {
   ArrowUpRight,
   ChevronRight,
   Clock,
+  Download,
   FolderOpen,
+  FolderSync,
+  History,
   Map as MapIcon,
   Play,
   Puzzle,
   Square,
-  Trophy,
-  User
+  Trophy
 } from "lucide-react";
 import { useAppStore } from "@/stores/app";
 import { usePrefStore } from "@/stores/pref";
@@ -19,7 +21,9 @@ import {
   killInstance,
   checkRunningInstance
 } from "@/services/launcher";
-import { formatPlaytime, formatTime } from "@/utils/format";
+import { formatPlaytime, formatRelativeTime, formatTime } from "@/utils/format";
+import { changeInstanceFolder, useVanillaInstall } from "@/services/game";
+import PatchOptionsDialog from "@/components/PatchOptionsDialog";
 import { useT } from "@/i18n";
 import { confirmTasAutoplayOff } from "@/services/tasGuard";
 import backend from "@/backend";
@@ -71,6 +75,11 @@ export default function Start() {
   // 导入资源包、切换配置都会 triggerRefresh，地图 / 模组数要跟着重数
   const refreshKey = useAppStore(s => s.refreshKey);
   const playtime = usePrefStore(s => s.playtime);
+  const lastPlayedAt = usePrefStore(s => s.lastPlayedAt);
+  const language = usePrefStore(s => s.language);
+  // 与设置页「安装新游戏」同一套流程
+  const { start: installGame, optionsDialog: gameOptions } =
+    useVanillaInstall();
   const session = useSessionSeconds();
 
   const [mapCount, setMapCount] = useState<number>();
@@ -122,7 +131,6 @@ export default function Start() {
   if (!instance) return null;
 
   const running = !!runningInstancePid;
-  const lastPlayer = instance.options.lastPlayer;
 
   const quickLinks = [
     {
@@ -183,15 +191,36 @@ export default function Start() {
                 {t("home.tagline")}
               </h1>
             </div>
-            <button
-              type="button"
-              onClick={() => void backend.openInExplorer(instance.path)}
-              className="group flex max-w-full cursor-pointer items-center gap-1.5 self-start rounded-md text-xs text-muted-foreground transition-colors hover:text-foreground"
-              title={t("common.action.openFolder")}
-            >
-              <FolderOpen className="size-3.5 shrink-0" />
-              <span className="truncate font-mono">{instance.path}</span>
-            </button>
+            <div className="flex max-w-full items-center gap-1 self-start">
+              <button
+                type="button"
+                onClick={() => void changeInstanceFolder()}
+                className="flex min-w-0 cursor-pointer items-center gap-1.5 rounded-md text-xs text-muted-foreground transition-colors hover:text-foreground"
+                title={t("settings.instance.change")}
+              >
+                <FolderSync className="size-3.5 shrink-0" />
+                <span className="truncate font-mono">{instance.path}</span>
+              </button>
+              <Button
+                variant="ghost"
+                size="icon-xs"
+                className="text-muted-foreground"
+                title={t("common.action.openFolder")}
+                onClick={() => void backend.openInExplorer(instance.path)}
+              >
+                <FolderOpen />
+              </Button>
+              <Button
+                variant="ghost"
+                size="xs"
+                className="shrink-0 text-muted-foreground"
+                title={t("settings.instance.installGameTip")}
+                onClick={installGame}
+              >
+                <Download />
+                {t("settings.instance.installGame")}
+              </Button>
+            </div>
           </div>
 
           <div className="flex shrink-0 flex-col items-stretch gap-2 md:items-end">
@@ -241,9 +270,13 @@ export default function Start() {
           label={t("home.totalPlaytime")}
           value={formatPlaytime(playtime)}
           footer={
-            lastPlayer ? t("home.lastPlayer", { name: lastPlayer }) : undefined
+            lastPlayedAt
+              ? t("home.lastPlayed", {
+                  time: formatRelativeTime(lastPlayedAt, language)
+                })
+              : undefined
           }
-          footerIcon={<User className="size-3" />}
+          footerIcon={<History className="size-3" />}
         />
         <Stat
           icon={<Trophy />}
@@ -328,6 +361,7 @@ export default function Start() {
           })}
         </div>
       </section>
+      <PatchOptionsDialog {...gameOptions} />
     </div>
   );
 }

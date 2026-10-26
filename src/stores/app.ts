@@ -41,7 +41,8 @@ export const useAppStore = create<AppState>()(
       );
       if (elapsedSeconds > 0) {
         usePrefStore.setState(prev => ({
-          playtime: prev.playtime + elapsedSeconds
+          playtime: prev.playtime + elapsedSeconds,
+          lastPlayedAt: Date.now()
         }));
         set({ runningInstanceTimestamp: Date.now() });
       }

@@ -492,7 +492,7 @@
       "bmlp": "BMLPlus"
     },
     "loaderDisabled": "已停用",
-    "lastPlayer": "上次玩家：{name}",
+    "lastPlayed": "上次游玩：{time}",
     "manage": "管理",
     "community": "社区与帮助"
   },

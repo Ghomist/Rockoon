@@ -33,6 +33,9 @@ type PreferenceStore = {
   /** 总游玩时间（单位：秒），单一实例全局累计 */
   playtime: number;
 
+  /** 上次游玩时间（毫秒时间戳，游戏运行中持续刷新）；没玩过为空 */
+  lastPlayedAt?: number;
+
   /** 启动后隐藏启动器窗口 */
   hideWinWhenLaunch: boolean;
 
