@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { ImageOff, Loader2 } from "lucide-react";
+import { ImageOff, Loader2, Palette } from "lucide-react";
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { join } from "@tauri-apps/api/path";
 import backend from "@/backend";
@@ -9,6 +9,7 @@ import { message } from "@/utils/ui/feedback";
 import { importResources } from "@/services/resourceImport";
 import ListViewPage from "./components/ListViewPage";
 import ResourceToolbar from "./components/ResourceToolbar";
+import { EmptyState } from "./components/ResourceRow";
 import {
   Dialog,
   DialogContent,
@@ -141,11 +142,9 @@ export default function ResourcesTextures() {
           <Loader2 className="size-6 animate-spin text-muted-foreground" />
         </div>
       ) : files.length === 0 ? (
-        <div className="py-16 text-center text-sm text-muted-foreground">
-          {t("textures.empty")}
-        </div>
+        <EmptyState icon={<Palette />} title={t("textures.empty")} />
       ) : (
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(128px,1fr))] gap-2 p-3">
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(128px,1fr))] gap-3 p-4">
           {files.map(file => {
             const src = getDisplayUrl(file);
             return (

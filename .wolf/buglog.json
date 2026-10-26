@@ -1105,6 +1105,116 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-10-13T22:55:00Z"
+    },
+    {
+      "id": "bug-070",
+      "timestamp": "2026-10-26T21:30:00+08:00",
+      "error_message": "非默认主题色启动时先闪一帧天空蓝",
+      "file": "src/utils/theme.ts",
+      "root_cause": "data-accent 在 useEffect（绘制后）才挂到 <html>",
+      "fix": "useAccent 改用 useLayoutEffect",
+      "tags": [
+        "theme",
+        "accent",
+        "flash"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-10-26T21:30:00+08:00"
+    },
+    {
+      "id": "bug-071",
+      "timestamp": "2026-10-26T21:30:00+08:00",
+      "error_message": "首页地图/模组数量在导入资源包、切换配置后不更新",
+      "file": "src/views/Start.tsx",
+      "root_cause": "计数 effect 只依赖 instance.path，没订阅 refreshKey",
+      "fix": "依赖里加 useAppStore.refreshKey",
+      "tags": [
+        "start",
+        "refresh",
+        "stale"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-10-26T21:30:00+08:00"
+    },
+    {
+      "id": "bug-072",
+      "timestamp": "2026-10-26T21:30:00+08:00",
+      "error_message": "「解锁所有关卡」禁用判断写死 12",
+      "file": "src/views/GameData.tsx",
+      "root_cause": "unlocked === 12 与 levelLock 实际长度无关",
+      "fix": "改成 levelLock.every(Boolean)",
+      "tags": [
+        "gamedata",
+        "levelLock"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-10-26T21:30:00+08:00"
+    },
+    {
+      "id": "bug-073",
+      "timestamp": "2026-10-26T21:30:00+08:00",
+      "error_message": "App.tsx 里 popstate 记路由的代码从不生效",
+      "file": "src/App.tsx",
+      "root_cause": "应用用 MemoryRouter，window.location.pathname 不随路由变",
+      "fix": "删掉死代码，路由持久化只靠 location.pathname effect",
+      "tags": [
+        "router",
+        "dead-code",
+        "MemoryRouter"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-10-26T21:30:00+08:00"
+    },
+    {
+      "id": "bug-074",
+      "timestamp": "2026-10-26T14:14:51.487Z",
+      "error_message": "Null/undefined access in ",
+      "file": "src/utils/theme.ts",
+      "root_cause": "Property access on potentially null/undefined value",
+      "fix": "Added null safety (optional chaining or null check)",
+      "tags": [
+        "auto-detected",
+        "null-safety",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-10-26T14:14:51.487Z"
+    },
+    {
+      "id": "bug-075",
+      "timestamp": "2026-10-26T14:30:00Z",
+      "error_message": "同时切换明暗和主题色时，过渡中间帧新旧颜色混杂（部分卡片仍是旧色）",
+      "file": "src/utils/theme.ts",
+      "root_cause": "useAccent 和明暗各自调用 document.startViewTransition，同一帧两个过渡互相打断",
+      "fix": "加 runInTransition：同一帧内的主题改动排进同一个 View Transition 回调",
+      "tags": [
+        "view-transition",
+        "theme",
+        "animation"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-10-26T14:30:00Z"
+    },
+    {
+      "id": "bug-076",
+      "timestamp": "2026-10-26T14:30:00Z",
+      "error_message": "tsc: 'isDark' is declared but its value is never read (App.tsx)",
+      "file": "src/App.tsx",
+      "root_cause": "AppBackground 不再需要 isDark 参数后，App 里第二处 useDarkMode() 调用变成未使用",
+      "fix": "删掉多余的 useDarkMode() 调用；usePrimaryRgb 改为 MutationObserver 自己感知明暗/主题色",
+      "tags": [
+        "typescript",
+        "unused"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-10-26T14:30:00Z"
     }
   ]
 }

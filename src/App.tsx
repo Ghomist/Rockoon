@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ChevronDown, Check, Plus, Pencil, Trash2 } from "lucide-react";
+import { ChevronDown, Check, Layers, Plus, Pencil, Trash2 } from "lucide-react";
 import { Toaster } from "@/components/ui/sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,10 +17,7 @@ import GlobalDialogHost from "@/components/GlobalDialogHost";
 import PatchUpdateWatcher from "@/components/PatchUpdateWatcher";
 import TitleBarControls from "@/components/TitleBarControls";
 import VanillaGuard from "@/components/VanillaGuard";
-import { AnimatedGridPattern } from "@/components/ui/animated-grid-pattern";
-import { Particles } from "@/components/ui/particles";
-import { Meteors } from "@/components/ui/meteors";
-import { HexagonPattern } from "@/components/ui/hexagon-pattern";
+import AppBackground from "@/components/AppBackground";
 import { WordRotate } from "@/components/ui/word-rotate";
 
 import Onboarding from "@/views/Onboarding";
@@ -33,6 +30,7 @@ import { useProfilesStore } from "@/stores/profiles";
 import { dialog, message } from "@/utils/ui/feedback";
 import { isMac } from "@/utils/platform";
 import { cn } from "@/lib/utils";
+import { useAccent, useThemeEffect } from "@/utils/theme";
 import { checkRunningInstance } from "@/services/launcher";
 import { importFromFile, importFromUrl } from "@/services/brp";
 import { askSkyTarget } from "@/services/sky";
@@ -91,11 +89,12 @@ const promptName = (
 
 export default function App() {
   const isDark = useDarkMode();
+  useAccent();
 
-  // Apply .dark class on <html>.
-  useEffect(() => {
+  // Apply .dark class on <html>（切换时整页淡入淡出）
+  useThemeEffect(() => {
     document.documentElement.classList.toggle("dark", isDark);
-  }, [isDark]);
+  }, isDark);
 
   const hasInstance = useAppStore(s => !!s.selectedInstanceData);
 
@@ -154,8 +153,6 @@ function MainLayout() {
     },
     []
   );
-  const backgroundType = usePrefStore(s => s.backgroundType);
-  const isDark = useDarkMode();
   const translate = useT();
 
   // Header rotate text — reads i18n header.rotateText.1..N dynamically.
@@ -302,19 +299,6 @@ function MainLayout() {
   const currentProfileName = currentProfile?.name ?? t("common.none");
   const deleteDisabled = profiles.length <= 1;
 
-  // Persist route on every render cycle (cheap; only saves pref).
-  // Better: subscribe to location changes.
-  useEffect(() => {
-    const handler = () => {
-      const path = window.location.pathname;
-      if (path && path !== "/") {
-        usePrefStore.setState({ route: path });
-      }
-    };
-    window.addEventListener("popstate", handler);
-    return () => window.removeEventListener("popstate", handler);
-  }, []);
-
   return (
     <div className="flex h-screen flex-col bg-background text-foreground">
       {/* 自定义标题栏（decorations: false）：除了窗口按钮与配置下拉，剩下地方都可按住拖拽。
@@ -323,22 +307,24 @@ function MainLayout() {
       <header
         data-tauri-drag-region
         className={cn(
-          "flex h-13 shrink-0 items-stretch gap-4 border-b bg-background pr-2",
-          isMac ? "pl-21" : "pl-4"
+          "relative z-20 flex h-12 shrink-0 items-stretch gap-4 border-b bg-sidebar/85 pr-2 backdrop-blur-sm",
+          isMac ? "pl-21" : "pl-3.5"
         )}
       >
-        <div data-tauri-drag-region className="flex items-center gap-2">
-          <img
-            src="/logo.png"
-            alt="Rockoon"
-            className="pointer-events-none size-5 rounded-sm"
-            draggable={false}
-          />
-          <span className="pointer-events-none text-base font-semibold tracking-tight select-none">
+        <div data-tauri-drag-region className="flex items-center gap-2.5">
+          <span className="pointer-events-none flex size-7 items-center justify-center rounded-lg border bg-background shadow-xs">
+            <img
+              src="/logo.png"
+              alt="Rockoon"
+              className="size-5 dark:invert"
+              draggable={false}
+            />
+          </span>
+          <span className="pointer-events-none text-[15px] font-semibold tracking-tight select-none">
             Rockoon
           </span>
           {appVersion && (
-            <span className="pointer-events-none text-xs text-muted-foreground select-none">
+            <span className="pointer-events-none rounded-full border px-1.5 py-px font-mono text-[10px] text-muted-foreground select-none">
               v{appVersion}
             </span>
           )}
@@ -349,37 +335,45 @@ function MainLayout() {
         >
           {rotateWords.length > 0 && (
             <WordRotate
-              className="pointer-events-none text-sm text-muted-foreground select-none"
+              className="pointer-events-none text-[13px] text-muted-foreground/80 select-none"
               duration={4000}
               words={rotateWords}
             />
           )}
         </div>
         <div data-tauri-drag-region className="flex items-center gap-2">
-          <span className="pointer-events-none hidden text-sm text-muted-foreground sm:inline">
-            {t("profile.currentLabel")}
-          </span>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm">
-                {currentProfileName}
-                <ChevronDown className="ml-1 size-4 opacity-70" />
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 gap-1.5 rounded-full bg-background/60 pr-2 pl-2.5 font-normal"
+              >
+                <Layers className="size-3.5 text-primary" />
+                <span className="text-muted-foreground">
+                  {t("profile.currentLabel")}
+                </span>
+                <span className="max-w-32 truncate font-medium">
+                  {currentProfileName}
+                </span>
+                <ChevronDown className="size-3.5 opacity-60" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="min-w-45">
-              <DropdownMenuLabel>{t("profile.currentLabel")}</DropdownMenuLabel>
-              <DropdownMenuSeparator />
+            <DropdownMenuContent align="end" className="min-w-52">
+              <DropdownMenuLabel className="text-xs text-muted-foreground">
+                {t("profile.currentLabel")}
+              </DropdownMenuLabel>
               {profiles.map(p => (
                 <DropdownMenuItem
                   key={p.id}
                   onClick={() => onSwitchProfile(p.id)}
                 >
                   {p.id === currentProfile?.id ? (
-                    <Check className="size-4" />
+                    <Check className="size-4 text-primary" />
                   ) : (
                     <span className="size-4" />
                   )}
-                  {p.name}
+                  <span className="truncate">{p.name}</span>
                 </DropdownMenuItem>
               ))}
               <DropdownMenuSeparator />
@@ -392,6 +386,7 @@ function MainLayout() {
                 {t("profile.rename")}
               </DropdownMenuItem>
               <DropdownMenuItem
+                variant="destructive"
                 disabled={deleteDisabled}
                 onClick={onDeleteProfile}
               >
@@ -401,6 +396,9 @@ function MainLayout() {
             </DropdownMenuContent>
           </DropdownMenu>
 
+          {!isMac && (
+            <span className="pointer-events-none mx-1 h-5 w-px bg-border" />
+          )}
           {!isMac && <TitleBarControls />}
         </div>
       </header>
@@ -413,45 +411,7 @@ function MainLayout() {
           aria-hidden="true"
           className="pointer-events-none absolute inset-0 overflow-hidden"
         >
-          {(() => {
-            switch (backgroundType) {
-              case "particles":
-                return (
-                  <Particles
-                    className="absolute inset-0"
-                    quantity={120}
-                    color={isDark ? "#ffffff" : "#000000"}
-                    ease={80}
-                    refresh={false}
-                  />
-                );
-              case "meteors":
-                return <Meteors number={16} />;
-              case "hexagon":
-                return (
-                  <HexagonPattern
-                    radius={36}
-                    gap={6}
-                    flickerCols={24}
-                    flickerRows={16}
-                    flickerDensity={0.08}
-                    flickerInterval={1200}
-                    fillOpacity={0.06}
-                    className="inset-y-[-10%] h-[120%] w-full skew-y-6 [mask-image:radial-gradient(900px_circle_at_center,white,transparent)]"
-                  />
-                );
-              default:
-                return (
-                  <AnimatedGridPattern
-                    numSquares={40}
-                    maxOpacity={0.08}
-                    duration={3}
-                    repeatDelay={1}
-                    className="absolute inset-y-[-30%] h-[160%] w-full skew-y-12 [mask-image:radial-gradient(500px_circle_at_center,white,transparent)]"
-                  />
-                );
-            }
-          })()}
+          <AppBackground />
         </div>
         <AppSidebar collapsed={collapsed} onCollapsedChange={setCollapsed} />
         <main className="relative flex-1 overflow-auto">

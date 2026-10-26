@@ -1,4 +1,13 @@
 import { useEffect, useState } from "react";
+import {
+  Bug,
+  FlaskConical,
+  FolderCog,
+  Gamepad2,
+  GlassWater,
+  Palette,
+  Settings2
+} from "lucide-react";
 import { getVersion } from "@tauri-apps/api/app";
 import { open as browseDir } from "@tauri-apps/plugin-dialog";
 import backend from "@/backend";
@@ -13,6 +22,9 @@ import { dialog, message } from "@/utils/ui/feedback";
 import storage from "@/utils/storage";
 import { isMac } from "@/utils/platform";
 import WineSettings from "@/views/components/WineSettings";
+import FormSection from "@/views/components/FormSection";
+import PageHeader from "@/views/components/PageHeader";
+import AccentPicker from "@/views/components/AccentPicker";
 import NFormWrapper, {
   type Field,
   type Schema,
@@ -129,15 +141,28 @@ export default function Settings() {
       ]
     },
     {
+      type: "custom",
+      label: t("settings.accent.title"),
+      render: () => <AccentPicker />
+    },
+    {
       type: "select",
       label: t("settings.background.title"),
+      tip: t("settings.background.tip"),
       field: prefField(pref, "backgroundType"),
-      options: [
-        { value: "grid", label: t("settings.background.grid") },
-        { value: "particles", label: t("settings.background.particles") },
-        { value: "meteors", label: t("settings.background.meteors") },
-        { value: "hexagon", label: t("settings.background.hexagon") }
-      ]
+      options: (
+        [
+          "isometric",
+          "rolling",
+          "balls",
+          "aurora",
+          "hexagon",
+          "grid",
+          "particles",
+          "meteors",
+          "none"
+        ] as const
+      ).map(value => ({ value, label: t(`settings.background.${value}`) }))
     },
     {
       type: "switch",
@@ -234,65 +259,50 @@ export default function Settings() {
   ];
 
   return (
-    <div className="flex flex-col gap-6 p-7">
-      <section className="flex flex-col gap-2.5">
-        <h2 className="flex items-center gap-2 text-lg font-semibold">
-          <span className="size-1.5 rounded-full bg-primary" />
-          {t("settings.instance.title")}
-        </h2>
-        <p className="text-sm text-muted-foreground break-all">
-          {pref.instancePath || t("common.none")}
-        </p>
-        <NFormWrapper schema={instanceSchema} />
-      </section>
+    <div className="flex min-h-full flex-col">
+      <PageHeader
+        icon={Settings2}
+        title={t("menu.settings")}
+        subtitle={appVersion ? `Rockoon v${appVersion}` : undefined}
+        className="sticky top-0 z-10"
+      />
+      <div className="stagger mx-auto flex w-full max-w-3xl flex-col gap-4 p-5 lg:p-6">
+        <FormSection
+          icon={FolderCog}
+          title={t("settings.instance.title")}
+          description={pref.instancePath || t("common.none")}
+        >
+          <NFormWrapper schema={instanceSchema} />
+        </FormSection>
 
-      <PatchOptionsDialog {...gameOptions} />
+        <PatchOptionsDialog {...gameOptions} />
 
-      {/* macOS：游戏跑在 Wine 里，这里管理 Wine 运行时与前缀 */}
-      {isMac && (
-        <section className="flex flex-col gap-2.5">
-          <h2 className="flex items-center gap-2 text-lg font-semibold">
-            <span className="size-1.5 rounded-full bg-primary" />
-            {t("wine.title")}
-          </h2>
-          <WineSettings />
-        </section>
-      )}
+        {/* macOS：游戏跑在 Wine 里，这里管理 Wine 运行时与前缀 */}
+        {isMac && (
+          <FormSection icon={GlassWater} title={t("wine.title")}>
+            <WineSettings />
+          </FormSection>
+        )}
 
-      <section className="flex flex-col gap-2.5">
-        <h2 className="flex items-center gap-2 text-lg font-semibold">
-          <span className="size-1.5 rounded-full bg-primary" />
-          {t("settings.basic")}
-        </h2>
-        <NFormWrapper schema={basicSchema} />
-      </section>
+        <FormSection icon={Palette} title={t("settings.basic")}>
+          <NFormWrapper schema={basicSchema} />
+        </FormSection>
 
-      <section className="flex flex-col gap-2.5">
-        <h2 className="flex items-center gap-2 text-lg font-semibold">
-          <span className="size-1.5 rounded-full bg-primary" />
-          {t("settings.ingame")}
-        </h2>
-        <NFormWrapper schema={ingameSchema} />
-      </section>
+        <FormSection icon={Gamepad2} title={t("settings.ingame")}>
+          <NFormWrapper schema={ingameSchema} />
+        </FormSection>
 
-      {/* 实验功能目前只有 TAS 编辑器，它依赖 Win32（窗口嵌入、共享内存），macOS 上不显示 */}
-      {!isMac && (
-        <section className="flex flex-col gap-2.5">
-          <h2 className="flex items-center gap-2 text-lg font-semibold">
-            <span className="size-1.5 rounded-full bg-primary" />
-            {t("settings.labs")}
-          </h2>
-          <NFormWrapper schema={labsSchema} />
-        </section>
-      )}
+        {/* 实验功能目前只有 TAS 编辑器，它依赖 Win32（窗口嵌入、共享内存），macOS 上不显示 */}
+        {!isMac && (
+          <FormSection icon={FlaskConical} title={t("settings.labs")}>
+            <NFormWrapper schema={labsSchema} />
+          </FormSection>
+        )}
 
-      <section className="flex flex-col gap-2.5">
-        <h2 className="flex items-center gap-2 text-lg font-semibold">
-          <span className="size-1.5 rounded-full bg-primary" />
-          {t("settings.debug")}
-        </h2>
-        <NFormWrapper schema={debugSchema} />
-      </section>
+        <FormSection icon={Bug} title={t("settings.debug")}>
+          <NFormWrapper schema={debugSchema} />
+        </FormSection>
+      </div>
     </div>
   );
 }

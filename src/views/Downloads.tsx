@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 
 import ListViewPage from "@/views/components/ListViewPage";
+import { EmptyState } from "@/views/components/ResourceRow";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -95,7 +96,7 @@ function TaskRow({ task }: { task: DownloadTask }) {
   const running = task.status === "running";
 
   return (
-    <div className="flex items-start gap-3 px-4 py-3">
+    <div className="flex items-start gap-3 px-5 py-3">
       <span
         className={cn(
           "mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg",
@@ -139,7 +140,11 @@ function TaskRow({ task }: { task: DownloadTask }) {
 
       <div className="flex shrink-0 items-center gap-1.5 pt-0.5">
         {running && task.cancellable && (
-          <Button variant="outline" size="sm" onClick={() => void cancel(task.id)}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => void cancel(task.id)}
+          >
             {t("downloads.cancel")}
           </Button>
         )}
@@ -179,15 +184,9 @@ export default function Downloads() {
   return (
     <ListViewPage
       title={
-        <span className="flex items-center gap-2">
-          <ArrowDownToLine className="size-4" />
-          {t("downloads.title")}
-          {running.length > 0 && (
-            <span className="text-xs font-normal text-muted-foreground">
-              {t("downloads.runningCount", { count: running.length })}
-            </span>
-          )}
-        </span>
+        running.length > 0
+          ? t("downloads.runningCount", { count: running.length })
+          : ""
       }
       actions={
         finished.length > 0 && (
@@ -198,13 +197,11 @@ export default function Downloads() {
       }
     >
       {ordered.length === 0 ? (
-        <div className="flex flex-col items-center justify-center gap-2 px-6 py-24 text-center">
-          <ArrowDownToLine className="size-8 text-muted-foreground/50" />
-          <p className="text-sm font-medium">{t("downloads.empty")}</p>
-          <p className="max-w-md text-xs text-muted-foreground">
-            {t("downloads.emptyHint")}
-          </p>
-        </div>
+        <EmptyState
+          icon={<ArrowDownToLine />}
+          title={t("downloads.empty")}
+          hint={t("downloads.emptyHint")}
+        />
       ) : (
         ordered.map(task => <TaskRow key={task.id} task={task} />)
       )}

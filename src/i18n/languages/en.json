@@ -121,7 +121,12 @@
     "mappingManual": "Mapping",
     "forum": "Forum",
     "downloadSite": "Downloads",
-    "github": "GitHub"
+    "github": "GitHub",
+    "section": {
+      "game": "Game",
+      "resources": "Resources",
+      "app": "More"
+    }
   },
   "tas": {
     "dirMissing": "Folder not found: {dir}",
@@ -472,7 +477,13 @@
       "grid": "Flickering grid",
       "particles": "Particles",
       "meteors": "Meteors",
-      "hexagon": "Hexagons"
+      "hexagon": "Hexagons",
+      "tip": "Backgrounds follow the accent color",
+      "none": "None",
+      "aurora": "Sky glow",
+      "isometric": "Isometric blocks",
+      "rolling": "Rolling on rails",
+      "balls": "Three balls"
     },
     "clearStorage": {
       "button": "Clear all data",
@@ -501,7 +512,18 @@
     "levelNote1": "tutorial text at start",
     "levelNote12": "dark scene with lightning",
     "levelNote13": "starts with the stone ball",
-    "ingameMotdContent": "In-game welcome message"
+    "ingameMotdContent": "In-game welcome message",
+    "accent": {
+      "title": "Accent color",
+      "sky": "Sky",
+      "indigo": "Deep sea",
+      "violet": "Dusk",
+      "rose": "Blossom",
+      "amber": "Wood ball",
+      "emerald": "Moss",
+      "teal": "Ice lake",
+      "slate": "Stone ball"
+    }
   },
   "home": {
     "launch": "Start Game",
@@ -521,7 +543,26 @@
     "mappingManualDesc": "Learn how to create custom maps",
     "forumDesc": "Discuss with community members",
     "downloadSiteDesc": "Download community maps and mods",
-    "githubDesc": "Rockoon source repository"
+    "githubDesc": "Rockoon source repository",
+    "tagline": "Ready to roll?",
+    "running": "Running",
+    "ready": "Ready",
+    "session": "Session {time}",
+    "levelsUnlocked": "Levels unlocked",
+    "instance": "Game folder",
+    "player": {
+      "original": "Original Player",
+      "new": "New Player"
+    },
+    "loader": {
+      "none": "No mod loader",
+      "bml": "BML",
+      "bmlp": "BMLPlus"
+    },
+    "loaderDisabled": "Disabled",
+    "lastPlayer": "Last player: {name}",
+    "manage": "Manage",
+    "community": "Community & help"
   },
   "common": {
     "loading": "Loading…",
@@ -581,7 +622,8 @@
       "title": "Please select the Ballance root directory"
     },
     "invalid": "This is not a valid Ballance game directory, or key files are corrupted!",
-    "success": "Setup complete!"
+    "success": "Setup complete!",
+    "or": "or"
   },
   "modConfigs": {
     "summary": "{total} config files · showing {files}",
@@ -827,7 +869,10 @@
       "unlockAllSuccess": "All levels unlocked",
       "levelLocked": "Level {level} locked",
       "levelUnlocked": "Level {level} unlocked"
-    }
+    },
+    "unlockedCount": "{n} / 12 unlocked",
+    "topScore": "Top score",
+    "noScore": "No record"
   },
   "resources": {
     "search": {
@@ -1015,5 +1060,12 @@
     "launching": "Starting the game… (on Mac this takes a few seconds while Wine brings it up)",
     "launchingAlready": "The game is already starting, please wait",
     "launchFailed": "Failed to start the game: {reason}"
+  },
+  "sidebar": {
+    "running": "Game running",
+    "idle": "Game not running",
+    "collapse": "Collapse sidebar",
+    "expand": "Expand sidebar",
+    "links": "Community & help"
   }
 }

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Image as ImageIcon, Loader2 } from "lucide-react";
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { join } from "@tauri-apps/api/path";
 import backend from "@/backend";
@@ -9,8 +9,8 @@ import { message } from "@/utils/ui/feedback";
 import { importResources } from "@/services/resourceImport";
 import ListViewPage from "./components/ListViewPage";
 import ResourceToolbar from "./components/ResourceToolbar";
+import { EmptyState } from "./components/ResourceRow";
 import SkyboxPreview, { type SkyboxLevel } from "./components/SkyboxPreview";
-import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -161,37 +161,34 @@ export default function ResourcesSkys() {
             <Loader2 className="size-6 animate-spin text-muted-foreground" />
           </div>
         ) : skyboxLevels.length === 0 ? (
-          <div className="py-16 text-center text-sm text-muted-foreground">
-            {t("skys.empty")}
-          </div>
+          <EmptyState icon={<ImageIcon />} title={t("skys.empty")} />
         ) : (
-          <div className="flex flex-wrap justify-around gap-4 p-4">
+          <div className="stagger grid grid-cols-[repeat(auto-fill,minmax(168px,1fr))] gap-3 p-4">
             {skyboxLevels.map(level => {
               const thumb = getThumbnailUrl(level);
               return (
-                <Card
+                <button
                   key={level.level}
-                  className="w-[200px] cursor-pointer transition-transform hover:-translate-y-0.5"
+                  type="button"
+                  className="group flex flex-col overflow-hidden rounded-xl border bg-card text-left shadow-xs transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   onClick={() => {
                     setSelectedLevel(level);
                     setShowPreview(true);
                   }}
                 >
-                  <CardContent className="flex flex-col items-center gap-2 py-3">
+                  <div className="flex aspect-square w-full items-center justify-center overflow-hidden bg-muted">
                     {thumb && (
-                      <div className="flex aspect-square w-full items-center justify-center overflow-hidden rounded bg-muted">
-                        <img
-                          src={thumb}
-                          alt={`Level ${level.level}`}
-                          className="h-full w-full object-contain"
-                        />
-                      </div>
+                      <img
+                        src={thumb}
+                        alt={`Level ${level.level}`}
+                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      />
                     )}
-                    <p className="text-center text-sm">
-                      {t("skys.levelName", { level: level.level })}
-                    </p>
-                  </CardContent>
-                </Card>
+                  </div>
+                  <p className="px-3 py-2 text-sm font-medium">
+                    {t("skys.levelName", { level: level.level })}
+                  </p>
+                </button>
               );
             })}
           </div>

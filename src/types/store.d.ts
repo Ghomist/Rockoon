@@ -16,7 +16,16 @@ type Message = {
   message: string;
 };
 
-type ThemeId = "blue" | "red" | "green" | "pink" | "gray" | "custom";
+/** 主题色预设，见 styles.css 的 [data-accent] */
+type AccentId =
+  | "sky"
+  | "indigo"
+  | "violet"
+  | "rose"
+  | "amber"
+  | "emerald"
+  | "teal"
+  | "slate";
 type PreferenceStore = {
   /** 唯一实例（Ballance 安装目录）路径 */
   instancePath?: string;
@@ -46,7 +55,16 @@ type PreferenceStore = {
   backgroundImage?: string;
 
   /** 背景动效类型 */
-  backgroundType: "grid" | "particles" | "meteors" | "hexagon";
+  backgroundType:
+    | "none"
+    | "grid"
+    | "particles"
+    | "meteors"
+    | "hexagon"
+    | "aurora"
+    | "isometric"
+    | "rolling"
+    | "balls";
 
   /** 下载站索引过期时间（分钟） */
   indexExpireTime: number;
@@ -56,6 +74,9 @@ type PreferenceStore = {
 
   /** 主题 */
   theme: "light" | "dark" | "auto";
+
+  /** 主题色 */
+  accent: AccentId;
 
   /** 当前路由（记住上次打开的页面） */
   route: string;

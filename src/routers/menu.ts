@@ -34,6 +34,11 @@ export type MenuActionItem = {
   action: () => void;
 };
 
+/** 侧边栏里的分组小标题（不占路由，路由树会忽略它） */
+export type MenuSectionItem = { section: string };
+
+export type SidebarItem = MenuItem | MenuActionItem | MenuSectionItem;
+
 export type ExternalLinkItem = {
   label: string;
   description: string;
@@ -46,7 +51,7 @@ export const getExternalLinks = (): ExternalLinkItem[] => [
     label: t("menu.wiki"),
     description: t("home.wikiDesc"),
     url: "https://ballance.jxpxxzj.cn/wiki/",
-    icon: "book-2"
+    icon: "book-open"
   },
   {
     label: t("menu.mappingManual"),
@@ -76,17 +81,17 @@ export const getExternalLinks = (): ExternalLinkItem[] => [
 
 export const getMenuItems = (
   options: { tasEditor?: boolean } = {}
-): (MenuItem | MenuActionItem)[] => [
+): SidebarItem[] => [
   { label: t("menu.game"), route: "/game", icon: "gamepad-2", view: Start },
-  "-",
+  { section: t("menu.section.game") },
   {
     label: t("menu.options"),
     route: "/options",
     icon: "sliders-horizontal",
     view: GameConfig
   },
-  { label: t("menu.data"), route: "/data", icon: "flag", view: GameData },
-  "-",
+  { label: t("menu.data"), route: "/data", icon: "trophy", view: GameData },
+  { section: t("menu.section.resources") },
   {
     label: t("menu.maps"),
     route: "/maps",
@@ -102,7 +107,7 @@ export const getMenuItems = (
   {
     label: t("menu.modConfigs"),
     route: "/mod-configs",
-    icon: "sliders-horizontal",
+    icon: "file-cog",
     view: ModConfigs
   },
   {
@@ -129,7 +134,7 @@ export const getMenuItems = (
     icon: "music",
     view: ResourcesSounds
   },
-  "-",
+  { section: t("menu.section.app") },
   // 实验功能：设置里打开才显示（默认关）。独立窗口：点一下开 TAS 编辑器，不切当前页面
   // macOS 上没有：编辑器要把游戏窗口嵌进来、要读写游戏的共享内存，这两样都是 Win32 专属
   ...(options.tasEditor && !isMac
@@ -140,8 +145,7 @@ export const getMenuItems = (
           action: () => {
             void openTasEditorWindow();
           }
-        },
-        "-"
+        }
       ] as const)
     : []),
   {
@@ -157,3 +161,24 @@ export const getMenuItems = (
     view: Settings
   }
 ];
+
+/** 当前路由对应的菜单项（页面标题栏用它拿名字和图标） */
+export const findRouteItem = (
+  pathname: string
+): { label: string; icon: string } | undefined => {
+  const walk = (
+    items: SidebarItem[]
+  ): { label: string; icon: string } | undefined => {
+    for (const it of items) {
+      if (it === "-" || !("route" in it)) continue;
+      if ("children" in it && it.children) {
+        const hit = walk(it.children);
+        if (hit) return hit;
+      } else if (pathname === it.route || pathname.startsWith(it.route + "/")) {
+        return { label: it.label, icon: it.icon };
+      }
+    }
+    return undefined;
+  };
+  return walk(getMenuItems());
+};

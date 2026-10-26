@@ -89,7 +89,13 @@ export interface TableSchema {
   data?: any[];
   columns?: { key: string; title: string; render?: (row: any) => ReactNode }[];
 }
+/** 任意自定义控件（比如主题色色板） */
+export interface CustomSchema {
+  type: "custom";
+  render: () => ReactNode;
+}
 export type Schema =
+  | CustomSchema
   | SelectSchema
   | InputSchema
   | SwitchSchema
@@ -283,6 +289,8 @@ export default function NFormWrapper({ schema }: NFormWrapperProps) {
                     />
                   </>
                 )}
+
+                {x.type === "custom" && x.render()}
 
                 {x.type === "button" && (
                   <Button variant="outline" size="sm" onClick={x.onClick}>

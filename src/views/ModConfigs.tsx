@@ -1,7 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { join } from "@tauri-apps/api/path";
 import { useSearchParams } from "react-router-dom";
-import { Loader2, RefreshCw, Save, TriangleAlert } from "lucide-react";
+import {
+  FileCog,
+  FolderOpen,
+  Loader2,
+  RefreshCw,
+  Save,
+  TriangleAlert
+} from "lucide-react";
 
 import backend from "@/backend";
 import { useAppStore } from "@/stores/app";
@@ -12,6 +19,8 @@ import { matchesQuery } from "@/utils/search";
 import { useWaitForSelectedInstance } from "@/utils/ui/waitForInstance";
 import SettingsNav, { type NavItem } from "@/views/components/SettingsNav";
 import VirtualKeyboard from "@/views/components/VirtualKeyboard";
+import PageHeader from "@/views/components/PageHeader";
+import { IconAction } from "@/views/components/ResourceToolbar";
 import { getKeyName } from "@/views/components/key";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -180,7 +189,7 @@ export default function ModConfigs() {
 
   return (
     <div className="flex h-full">
-      <aside className="flex w-52 shrink-0 flex-col border-r">
+      <aside className="flex w-52 shrink-0 flex-col border-r bg-background/70">
         <div className="border-b p-2">
           <Input
             value={query}
@@ -214,44 +223,61 @@ export default function ModConfigs() {
       </aside>
 
       <div className="flex-1 overflow-auto">
-        <div className="sticky top-0 z-10 flex flex-wrap items-center justify-between gap-3 border-b bg-background/95 px-6 py-3 backdrop-blur">
-          <div className="flex min-w-0 items-center gap-2">
-            <h1 className="truncate font-mono text-sm">
-              {active || t("menu.modConfigs")}
-            </h1>
-            {active && dirty.includes(active) && (
-              <Badge variant="secondary" className="text-[11px]">
-                {t("modConfigs.dirty")}
-              </Badge>
-            )}
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={!instance || loading || saving}
-              onClick={() => instance && void load(instance.path)}
-            >
-              <RefreshCw className="mr-1 size-4" />
-              {t("common.action.refresh")}
-            </Button>
-            <Button
-              size="sm"
-              disabled={!instance || saving || running || dirty.length === 0}
-              onClick={() => void save()}
-            >
-              {saving ? (
-                <Loader2 className="mr-1 size-4 animate-spin" />
-              ) : (
-                <Save className="mr-1 size-4" />
-              )}
-              {t("modConfigs.save")}
-              {dirty.length > 0 ? ` (${dirty.length})` : ""}
-            </Button>
-          </div>
-        </div>
+        <PageHeader
+          icon={FileCog}
+          title={t("menu.modConfigs")}
+          subtitle={
+            active ? (
+              <span className="flex min-w-0 items-center gap-2">
+                <span className="truncate font-mono">{active}</span>
+                {dirty.includes(active) && (
+                  <Badge
+                    variant="secondary"
+                    className="px-1.5 py-0 text-[10px]"
+                  >
+                    {t("modConfigs.dirty")}
+                  </Badge>
+                )}
+              </span>
+            ) : undefined
+          }
+          className="sticky top-0 z-10"
+          actions={
+            <>
+              <IconAction
+                label={t("common.action.refresh")}
+                disabled={!instance || loading || saving}
+                onClick={() => instance && void load(instance.path)}
+              >
+                <RefreshCw />
+              </IconAction>
+              <IconAction
+                label={t("common.action.openFolder")}
+                disabled={!instance}
+                onClick={() =>
+                  instance &&
+                  void join(instance.path, "ModLoader", "Configs").then(dir =>
+                    backend.openInExplorer(dir)
+                  )
+                }
+              >
+                <FolderOpen />
+              </IconAction>
+              <Button
+                size="sm"
+                className="ml-1"
+                disabled={!instance || saving || running || dirty.length === 0}
+                onClick={() => void save()}
+              >
+                {saving ? <Loader2 className="animate-spin" /> : <Save />}
+                {t("modConfigs.save")}
+                {dirty.length > 0 ? ` (${dirty.length})` : ""}
+              </Button>
+            </>
+          }
+        />
 
-        <div className="p-6">
+        <div className="mx-auto w-full max-w-4xl p-5 lg:p-6">
           {running && (
             <div className="mb-4 flex items-start gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-muted-foreground">
               <TriangleAlert className="mt-0.5 size-4 shrink-0 text-amber-600 dark:text-amber-400" />

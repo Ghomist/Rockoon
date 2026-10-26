@@ -26,10 +26,17 @@ export default function FormSection({
   children
 }: Props) {
   return (
-    <Card id={id} className="scroll-mt-4 bg-card/50 backdrop-blur-[2px]">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-base">
-          {Icon && <Icon className="size-4 text-muted-foreground" />}
+    <Card
+      id={id}
+      className="scroll-mt-4 gap-4 bg-card/80 py-5 backdrop-blur-[2px]"
+    >
+      <CardHeader className="px-5">
+        <CardTitle className="flex items-center gap-2.5 text-[15px]">
+          {Icon && (
+            <span className="flex size-7 items-center justify-center rounded-md bg-primary/10 text-primary">
+              <Icon className="size-4" />
+            </span>
+          )}
           {title}
           {badge && (
             <Badge variant="secondary" className="text-xs">
@@ -37,9 +44,11 @@ export default function FormSection({
             </Badge>
           )}
         </CardTitle>
-        {description && <CardDescription>{description}</CardDescription>}
+        {description && (
+          <CardDescription className="break-all">{description}</CardDescription>
+        )}
       </CardHeader>
-      <CardContent>{children}</CardContent>
+      <CardContent className="px-5">{children}</CardContent>
     </Card>
   );
 }

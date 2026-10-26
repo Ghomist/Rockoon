@@ -1,5 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import { SlidersHorizontal, Trash2 } from "lucide-react";
+import {
+  Map as MapIcon,
+  Puzzle,
+  SearchX,
+  SlidersHorizontal,
+  Trash2
+} from "lucide-react";
 import { join } from "@tauri-apps/api/path";
 import { useNavigate } from "react-router-dom";
 import backend from "@/backend";
@@ -11,9 +17,14 @@ import { dialog, message } from "@/utils/ui/feedback";
 import { importResources } from "@/services/resourceImport";
 import ListViewPage from "./components/ListViewPage";
 import ResourceToolbar from "./components/ResourceToolbar";
+import {
+  EmptyState,
+  ExtTag,
+  ResourceRow,
+  RowAction
+} from "./components/ResourceRow";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
 
 type ResourceType = "map" | "mod";
 
@@ -48,6 +59,7 @@ export default function ResourcesPageBase({ type }: Props) {
   const [configNames, setConfigNames] = useState<string[]>([]);
 
   const schema = resourcePageSchema[type];
+  const TypeIcon = type === "map" ? MapIcon : Puzzle;
   const rscName = t("resources.name." + type);
 
   const isFileDisabled = (fileName: string) => fileName.endsWith(".disable");
@@ -182,73 +194,65 @@ export default function ResourcesPageBase({ type }: Props) {
       }
     >
       {visibleList.length === 0 && (
-        <div className="px-4 py-6 text-sm text-muted-foreground">
-          {query.trim()
-            ? t("resources.search.empty", { query: query.trim() })
-            : t("resources.empty." + type)}
-        </div>
+        <EmptyState
+          icon={query.trim() ? <SearchX /> : <TypeIcon />}
+          title={
+            query.trim()
+              ? t("resources.search.empty", { query: query.trim() })
+              : t("resources.empty." + type)
+          }
+        />
       )}
 
       {visibleList.map(file => {
         const disabled = isFileDisabled(file.name);
+        const config = type === "mod" ? configFor(file.name) : undefined;
         return (
-          <div
+          <ResourceRow
             key={file.name}
-            className="flex cursor-pointer items-center gap-3 px-4 py-2.5 transition-colors hover:bg-accent"
+            leading={
+              <Switch
+                checked={!disabled}
+                onCheckedChange={v => onToggleDisable(file, v)}
+              />
+            }
+            icon={<TypeIcon />}
+            dimmed={disabled}
+            title={getDisplayName(file.name)}
+            meta={
+              <>
+                <ExtTag>{getFileExtension(file.name)}</ExtTag>
+                <span className="tabular-nums">
+                  {formatFileSize(file.size)}
+                </span>
+              </>
+            }
             onClick={() => onToggleDisable(file, disabled)}
-          >
-            <Switch
-              checked={!disabled}
-              onClick={e => e.stopPropagation()}
-              onCheckedChange={v => onToggleDisable(file, v)}
-            />
-
-            <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-              <span
-                className={
-                  "truncate text-sm " +
-                  (disabled ? "line-through opacity-60" : "")
-                }
-              >
-                {getDisplayName(file.name)}
-              </span>
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <Badge variant="secondary" className="px-1.5 py-0 text-[10px]">
-                  {getFileExtension(file.name)}
-                </Badge>
-                <span>{formatFileSize(file.size)}</span>
-              </div>
-            </div>
-
-            {type === "mod" && configFor(file.name) && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={e => {
-                  e.stopPropagation();
-                  navigate(
-                    `/mod-configs?mod=${encodeURIComponent(configFor(file.name)!)}`
-                  );
-                }}
-              >
-                <SlidersHorizontal className="size-4" />
-                {t("resources.config.button")}
-              </Button>
-            )}
-
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-red-600 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-950/40"
-              onClick={e => {
-                e.stopPropagation();
-                onDelete(file);
-              }}
-            >
-              <Trash2 className="size-4" />
-              {t("resources.delete.button")}
-            </Button>
-          </div>
+            actions={
+              <>
+                {config && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="mr-1"
+                    onClick={() =>
+                      navigate(`/mod-configs?mod=${encodeURIComponent(config)}`)
+                    }
+                  >
+                    <SlidersHorizontal className="size-4" />
+                    {t("resources.config.button")}
+                  </Button>
+                )}
+                <RowAction
+                  label={t("resources.delete.button")}
+                  destructive
+                  onClick={() => onDelete(file)}
+                >
+                  <Trash2 />
+                </RowAction>
+              </>
+            }
+          />
         );
       })}
     </ListViewPage>

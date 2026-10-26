@@ -1,9 +1,11 @@
 import { useState } from "react";
+import { Lock, LockOpen, Pencil, Trophy } from "lucide-react";
 import { useAppStore } from "@/stores/app";
 import { useT } from "@/i18n";
 import { message } from "@/utils/ui/feedback";
 import ListViewPage from "@/views/components/ListViewPage";
 import { useWaitForSelectedInstance } from "@/utils/ui/waitForInstance";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
@@ -42,6 +44,10 @@ export default function GameData() {
 
   if (!selectedInstanceData) return null;
 
+  const levelLock = selectedInstanceData.options.levelLock;
+  const unlocked = levelLock.filter(Boolean).length;
+  const allUnlocked = levelLock.length > 0 && levelLock.every(Boolean);
+
   const onUnlockAll = () => {
     mutateOptions(opts => {
       opts.levelLock.fill(true);
@@ -71,49 +77,89 @@ export default function GameData() {
 
   return (
     <ListViewPage
-      title={t("gameData.title")}
+      title={
+        <>
+          {t("gameData.title")}
+          <span className="mx-1.5 text-muted-foreground/50">·</span>
+          {t("gameData.unlockedCount", { n: unlocked })}
+        </>
+      }
       actions={
-        <Button variant="outline" size="sm" onClick={onUnlockAll}>
+        <Button size="sm" onClick={onUnlockAll} disabled={allUnlocked}>
+          <LockOpen />
           {t("gameData.action.unlockAll")}
         </Button>
       }
     >
-      {Array.from({ length: 12 }, (_, i) => i + 1).map(level => (
-        <div
-          key={level}
-          className="flex cursor-pointer items-center gap-3 px-4 py-2.5 transition-colors hover:bg-accent"
-          onClick={() => onToggleLevelLock(level)}
-        >
-          <Switch
-            checked={!!selectedInstanceData.options.levelLock[level - 1]}
-            onCheckedChange={() => onToggleLevelLock(level)}
-            onClick={e => e.stopPropagation()}
-          />
+      <div className="stagger grid grid-cols-2 gap-3 p-4 md:grid-cols-3 xl:grid-cols-4">
+        {Array.from({ length: 12 }, (_, i) => i + 1).map(level => {
+          const open = !!selectedInstanceData.options.levelLock[level - 1];
+          const top = selectedInstanceData.options.highscores?.[level - 1]?.[0];
+          return (
+            <div
+              key={level}
+              className={cn(
+                "group flex flex-col rounded-xl border bg-card shadow-xs transition-colors",
+                !open && "bg-muted/40"
+              )}
+            >
+              <div className="flex items-center gap-3 px-4 pt-3.5">
+                <span
+                  className={cn(
+                    "flex size-9 items-center justify-center rounded-lg font-mono text-sm font-semibold tabular-nums",
+                    open
+                      ? "bg-primary/10 text-primary"
+                      : "bg-muted text-muted-foreground"
+                  )}
+                >
+                  {String(level).padStart(2, "0")}
+                </span>
+                <div className="flex min-w-0 flex-1 flex-col">
+                  <span className="text-sm font-medium">
+                    {t("gameData.levelLabel", { i: level })}
+                  </span>
+                  <span
+                    className={cn(
+                      "flex items-center gap-1 text-xs",
+                      open ? "text-success" : "text-muted-foreground"
+                    )}
+                  >
+                    {open ? (
+                      <LockOpen className="size-3" />
+                    ) : (
+                      <Lock className="size-3" />
+                    )}
+                    {t(
+                      open
+                        ? "gameData.levelState.unlocked"
+                        : "gameData.levelState.locked"
+                    )}
+                  </span>
+                </div>
+                <Switch
+                  checked={open}
+                  onCheckedChange={() => onToggleLevelLock(level)}
+                />
+              </div>
 
-          <div className="flex flex-1 items-baseline gap-2">
-            <span className="whitespace-nowrap text-sm">
-              {t("gameData.levelLabel", { i: level })}
-            </span>
-            <code className="rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
-              {selectedInstanceData.options.highscores?.[level - 1]?.[0]
-                ?.player ?? ""}{" "}
-              {selectedInstanceData.options.highscores?.[level - 1]?.[0]
-                ?.score ?? ""}
-            </code>
-          </div>
-
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={e => {
-              e.stopPropagation();
-              onEditHighscores(level);
-            }}
-          >
-            {t("gameData.action.editHighscores")}
-          </Button>
-        </div>
-      ))}
+              <button
+                type="button"
+                onClick={() => onEditHighscores(level)}
+                className="mx-2 mt-3 mb-2 flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-accent"
+              >
+                <Trophy className="size-3.5 shrink-0 text-amber-500" />
+                <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground">
+                  {top?.player || t("gameData.noScore")}
+                </span>
+                <span className="font-mono text-sm font-semibold tabular-nums">
+                  {top ? top.score : "–"}
+                </span>
+                <Pencil className="size-3 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+              </button>
+            </div>
+          );
+        })}
+      </div>
 
       <Dialog open={editingHighscores} onOpenChange={setEditingHighscores}>
         <DialogContent className="max-w-[640px]">

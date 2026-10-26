@@ -79,7 +79,7 @@ import { launchInstance } from "@/services/launcher";
 import { PLAYER_IMAGE, restoreTasConfig } from "@/services/tasGuard";
 import { useAppStore } from "@/stores/app";
 import { usePrefStore } from "@/stores/pref";
-import { useDarkMode } from "@/utils/theme";
+import { useAccent, useDarkMode } from "@/utils/theme";
 import { dialog } from "@/utils/ui/feedback";
 import {
   DEFAULT_DELTA_MS,
@@ -317,6 +317,7 @@ function clearRunningInstance() {
  */
 export default function TasEditorWindow() {
   const dark = useDarkMode();
+  useAccent();
 
   const instancePath = usePrefStore(s => s.instancePath);
   /**

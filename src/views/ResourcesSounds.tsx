@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Loader2, Pause, Play } from "lucide-react";
+import { AudioLines, Loader2, Music, Pause, Play } from "lucide-react";
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { join } from "@tauri-apps/api/path";
 import backend from "@/backend";
@@ -10,8 +10,8 @@ import { importResources } from "@/services/resourceImport";
 import { formatFileSize } from "@/utils/format";
 import ListViewPage from "./components/ListViewPage";
 import ResourceToolbar from "./components/ResourceToolbar";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { EmptyState, ExtTag, ResourceRow } from "./components/ResourceRow";
+import { cn } from "@/lib/utils";
 
 type BackendFile = { name: string; size: number };
 
@@ -112,68 +112,55 @@ export default function ResourcesSounds() {
         />
       }
     >
-      <div className="relative">
-        {loading ? (
-          <div className="flex items-center justify-center py-16">
-            <Loader2 className="size-6 animate-spin text-muted-foreground" />
-          </div>
-        ) : files.length === 0 ? (
-          <div className="py-16 text-center text-sm text-muted-foreground">
-            {t("sounds.empty")}
-          </div>
-        ) : (
-          files.map(file => {
-            const isPlaying = playingFile === file.name;
-            return (
-              <div
-                key={file.name}
-                className="flex cursor-pointer items-center gap-3 px-4 py-2.5 transition-colors hover:bg-accent"
-                onClick={() => onTogglePlay(file)}
-              >
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="size-8 shrink-0"
-                  onClick={e => {
-                    e.stopPropagation();
-                    onTogglePlay(file);
-                  }}
-                >
-                  {isPlaying ? (
-                    <Pause className="size-4" />
-                  ) : (
-                    <Play className="size-4" />
-                  )}
-                </Button>
-
-                <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                  <span
-                    className={
-                      "truncate text-sm " + (isPlaying ? "text-primary" : "")
-                    }
-                  >
-                    {file.name}
+      {loading ? (
+        <div className="flex items-center justify-center py-16">
+          <Loader2 className="size-6 animate-spin text-muted-foreground" />
+        </div>
+      ) : files.length === 0 ? (
+        <EmptyState icon={<Music />} title={t("sounds.empty")} />
+      ) : (
+        files.map(file => {
+          const isPlaying = playingFile === file.name;
+          return (
+            <ResourceRow
+              key={file.name}
+              icon={
+                isPlaying ? (
+                  <Pause className="fill-current" />
+                ) : (
+                  <Play className="fill-current" />
+                )
+              }
+              iconClassName={cn(
+                "rounded-full",
+                isPlaying
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground group-hover/row:bg-primary/10 group-hover/row:text-primary"
+              )}
+              title={
+                <span className={cn(isPlaying && "text-primary")}>
+                  {file.name}
+                </span>
+              }
+              meta={
+                <>
+                  <ExtTag>WAV</ExtTag>
+                  <span className="tabular-nums">
+                    {formatFileSize(file.size)}
                   </span>
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <Badge
-                      variant="secondary"
-                      className="px-1.5 py-0 text-[10px]"
-                    >
-                      WAV
-                    </Badge>
-                    <span>{formatFileSize(file.size)}</span>
-                    {isPlaying && (
-                      <span className="text-primary">
-                        {t("sounds.playing")}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            );
-          })
-        )}
-      </div>
+                  {isPlaying && (
+                    <span className="flex items-center gap-1 text-primary">
+                      <AudioLines className="size-3 animate-pulse" />
+                      {t("sounds.playing")}
+                    </span>
+                  )}
+                </>
+              }
+              onClick={() => onTogglePlay(file)}
+            />
+          );
+        })
+      )}
     </ListViewPage>
   );
 }

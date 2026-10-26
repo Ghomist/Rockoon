@@ -11,7 +11,8 @@ import {
   TriangleAlert,
   Bug,
   FileText,
-  Sparkles
+  Sparkles,
+  SlidersHorizontal
 } from "lucide-react";
 import backend from "@/backend";
 import { useAppStore } from "@/stores/app";
@@ -23,6 +24,7 @@ import NFormWrapper, {
   type SchemaItem
 } from "@/views/components/NFormWrapper";
 import FormSection from "@/views/components/FormSection";
+import PageHeader from "@/views/components/PageHeader";
 import SettingsNav, { type NavItem } from "@/views/components/SettingsNav";
 import VirtualKeyboard from "@/views/components/VirtualKeyboard";
 import { getKeyName } from "@/views/components/key";
@@ -461,7 +463,7 @@ export default function GameConfig() {
 
   return (
     <div className="flex h-full">
-      <aside className="flex w-48 shrink-0 flex-col border-r">
+      <aside className="flex w-48 shrink-0 flex-col border-r bg-background/70">
         <SettingsNav
           items={navItems}
           activeId={activeId}
@@ -470,15 +472,19 @@ export default function GameConfig() {
       </aside>
 
       <div ref={scrollRoot} className="flex-1 overflow-auto">
-        <div className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b bg-background/95 px-6 py-3 backdrop-blur">
-          <h1 className="text-base font-semibold">{t("menu.options")}</h1>
-          <Button variant="ghost" size="sm" onClick={onOpenConfig}>
-            <FileText className="size-4" />
-            {t("gameConfig.openConfigFile")}
-          </Button>
-        </div>
+        <PageHeader
+          icon={SlidersHorizontal}
+          title={t("menu.options")}
+          className="sticky top-0 z-10"
+          actions={
+            <Button variant="outline" size="sm" onClick={onOpenConfig}>
+              <FileText className="size-4" />
+              {t("gameConfig.openConfigFile")}
+            </Button>
+          }
+        />
 
-        <div className="flex flex-col gap-4 p-6">
+        <div className="stagger mx-auto flex w-full max-w-4xl flex-col gap-4 p-5 lg:p-6">
           {!newPlayer && (
             <div className="flex flex-wrap items-center gap-3 rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm">
               <Sparkles className="size-4 shrink-0 text-amber-600 dark:text-amber-400" />

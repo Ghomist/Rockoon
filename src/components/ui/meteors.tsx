@@ -46,12 +46,12 @@ export function Meteors({
           key={idx}
           style={style}
           className={cn(
-            "animate-meteor pointer-events-none absolute size-[2px] rotate-(--angle) rounded-full bg-foreground/40 shadow-[0_0_0_1px_#ffffff10]",
+            "animate-meteor pointer-events-none absolute size-[2px] rotate-(--angle) rounded-full bg-primary/60 shadow-[0_0_0_1px_#ffffff10]",
             className
           )}
         >
           {/* Meteor Tail */}
-          <div className="pointer-events-none absolute top-1/2 -z-10 h-px w-[50px] -translate-y-1/2 bg-linear-to-r from-foreground/40 to-transparent" />
+          <div className="pointer-events-none absolute top-1/2 -z-10 h-px w-[50px] -translate-y-1/2 bg-linear-to-r from-primary/50 to-transparent" />
         </span>
       ))}
     </>

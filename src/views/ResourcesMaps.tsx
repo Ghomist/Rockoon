@@ -3,8 +3,10 @@ import {
   ArrowLeft,
   Folder,
   FolderInput,
+  FolderPlus,
   Map as MapIcon,
   Play,
+  SearchX,
   Trash2
 } from "lucide-react";
 import { join, sep } from "@tauri-apps/api/path";
@@ -18,12 +20,17 @@ import { launchMap } from "@/services/launcher";
 import { confirmTasAutoplayOff } from "@/services/tasGuard";
 import { importResources } from "@/services/resourceImport";
 import ListViewPage from "./components/ListViewPage";
-import ResourceToolbar from "./components/ResourceToolbar";
+import ResourceToolbar, { IconAction } from "./components/ResourceToolbar";
+import {
+  EmptyState,
+  ExtTag,
+  ResourceRow,
+  RowAction
+} from "./components/ResourceRow";
 import { matchesQuery } from "@/utils/search";
 import DirectoryTreeDialog from "./components/DirectoryTreeDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -277,7 +284,7 @@ export default function ResourcesMaps() {
   return (
     <ListViewPage
       title={
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           {breadcrumbItems.length > 0 && (
             <Breadcrumb>
               <BreadcrumbList>
@@ -286,7 +293,7 @@ export default function ResourcesMaps() {
                     <BreadcrumbItem>
                       <button
                         type="button"
-                        className="cursor-pointer text-sm hover:text-primary"
+                        className="cursor-pointer text-xs hover:text-primary"
                         onClick={() => loadDirectory(item.path)}
                       >
                         {item.label}
@@ -300,7 +307,8 @@ export default function ResourcesMaps() {
               </BreadcrumbList>
             </Breadcrumb>
           )}
-          <span className="text-sm">
+          <span className="text-muted-foreground/50">·</span>
+          <span>
             {t("resources.statistics.map", { cnt: mapCount }, mapCount)}
           </span>
         </div>
@@ -316,130 +324,96 @@ export default function ResourcesMaps() {
             placeholder: t("resources.search.placeholder")
           }}
           extra={
-            <Button
-              variant="outline"
-              size="sm"
+            <IconAction
+              label={t("resources.createFolder.button")}
               onClick={() => {
                 setNewFolderName("");
                 setShowCreateFolderDialog(true);
               }}
             >
-              {t("resources.createFolder.button")}
-            </Button>
+              <FolderPlus />
+            </IconAction>
           }
         />
       }
     >
       {currentPath && currentPath !== rootPath && (
-        <div
-          className="flex cursor-pointer items-center gap-2 px-4 py-2.5 hover:bg-accent"
+        <ResourceRow
+          icon={<ArrowLeft />}
+          iconClassName="bg-muted text-muted-foreground"
+          title={t("resources.breadcrumb.backToParent")}
           onClick={() => loadDirectory(parentPath)}
-        >
-          <ArrowLeft className="size-4" />
-          <span className="text-sm">
-            {t("resources.breadcrumb.backToParent")}
-          </span>
-        </div>
+        />
       )}
 
       {visibleList.length === 0 && (
-        <div className="px-4 py-6 text-sm text-muted-foreground">
-          {query.trim()
-            ? t("resources.search.empty", { query: query.trim() })
-            : t("resources.empty.map")}
-        </div>
+        <EmptyState
+          icon={query.trim() ? <SearchX /> : <MapIcon />}
+          title={
+            query.trim()
+              ? t("resources.search.empty", { query: query.trim() })
+              : t("resources.empty.map")
+          }
+        />
       )}
 
       {visibleList.map(item => {
         const disabled = !item.isDir && isFileDisabled(item.name);
         return (
-          <div
+          <ResourceRow
             key={item.name}
-            className="flex cursor-pointer items-center gap-3 px-4 py-2.5 transition-colors hover:bg-accent"
+            icon={item.isDir ? <Folder /> : <MapIcon />}
+            iconClassName={
+              item.isDir
+                ? "bg-amber-500/12 text-amber-600 dark:text-amber-400"
+                : undefined
+            }
+            dimmed={disabled}
+            title={item.isDir ? item.name : getDisplayName(item.name)}
+            meta={
+              item.isDir ? (
+                <span>{t("resources.folder.name")}</span>
+              ) : (
+                <>
+                  <ExtTag>{getFileExtension(item.name)}</ExtTag>
+                  <span className="tabular-nums">
+                    {formatFileSize(item.size!)}
+                  </span>
+                </>
+              )
+            }
             onClick={() =>
               item.isDir ? loadDirectory(item.path) : confirmAndLaunch(item)
             }
-          >
-            {item.isDir ? (
-              <Folder className="size-4 text-muted-foreground" />
-            ) : (
-              <MapIcon
-                className={
-                  "size-4 " +
-                  (disabled ? "text-muted-foreground/40" : "text-primary")
-                }
-              />
-            )}
-
-            <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-              <span
-                className={
-                  "truncate text-sm " +
-                  (disabled ? "line-through opacity-60" : "")
-                }
-              >
-                {item.isDir ? item.name : getDisplayName(item.name)}
-              </span>
-              {!item.isDir ? (
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <Badge
-                    variant="secondary"
-                    className="px-1.5 py-0 text-[10px]"
+            actions={
+              <>
+                {!item.isDir && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="mr-1 text-success hover:bg-success/10 hover:text-success"
+                    onClick={() => confirmAndLaunch(item)}
                   >
-                    {getFileExtension(item.name)}
-                  </Badge>
-                  <span>{formatFileSize(item.size!)}</span>
-                </div>
-              ) : (
-                <Badge
-                  variant="outline"
-                  className="w-fit px-1.5 py-0 text-[10px]"
+                    <Play className="size-4" />
+                    {t("resources.launch.button")}
+                  </Button>
+                )}
+                <RowAction
+                  label={t("resources.move.button")}
+                  onClick={() => onMoveFile(item)}
                 >
-                  {t("resources.folder.name")}
-                </Badge>
-              )}
-            </div>
-
-            <div className="flex items-center gap-1">
-              {!item.isDir && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-emerald-600 hover:text-emerald-700"
-                  onClick={e => {
-                    e.stopPropagation();
-                    confirmAndLaunch(item);
-                  }}
+                  <FolderInput />
+                </RowAction>
+                <RowAction
+                  label={t("resources.delete.button")}
+                  destructive
+                  onClick={() => onDelete(item)}
                 >
-                  <Play className="size-4" />
-                  {t("resources.launch.button")}
-                </Button>
-              )}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={e => {
-                  e.stopPropagation();
-                  onMoveFile(item);
-                }}
-              >
-                <FolderInput className="size-4" />
-                {t("resources.move.button")}
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-red-600 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-950/40"
-                onClick={e => {
-                  e.stopPropagation();
-                  onDelete(item);
-                }}
-              >
-                <Trash2 className="size-4" />
-                {t("resources.delete.button")}
-              </Button>
-            </div>
-          </div>
+                  <Trash2 />
+                </RowAction>
+              </>
+            }
+          />
         );
       })}
 

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Rocket, FolderOpen, Download, Loader2 } from "lucide-react";
+import { FolderOpen, Download, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { useT } from "@/i18n";
 import PatchOptionsDialog from "@/components/PatchOptionsDialog";
 import { useVanillaInstall } from "@/services/game";
@@ -15,7 +16,6 @@ export default function Onboarding() {
   const t = useT();
   const navigate = useNavigate();
   const loadInstance = useAppStore(s => s.loadInstance);
-  const darkMode = usePrefStore(s => s.theme === "dark");
   const profilesLoad = useProfilesStore(s => s.load);
 
   const [picking, setPicking] = useState(false);
@@ -50,50 +50,58 @@ export default function Onboarding() {
   };
 
   return (
-    <div className="flex h-screen w-screen items-center justify-center bg-background p-6">
-      <div className="w-full max-w-[520px] rounded-2xl border bg-card p-8 text-card-foreground shadow-sm">
-        <div className="flex flex-col items-center gap-5">
-          <Rocket
-            size={72}
-            className={darkMode ? "text-foreground" : "text-emerald-500"}
-          />
+    <div className="relative flex h-screen w-screen items-center justify-center overflow-hidden bg-background p-6">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_50%_at_50%_0%,color-mix(in_oklab,var(--primary)_18%,transparent),transparent)]"
+      />
+      <div className="relative w-full max-w-[460px] rounded-2xl border bg-card/90 p-8 text-card-foreground shadow-xl shadow-primary/5 backdrop-blur">
+        <div className="flex flex-col items-center gap-6">
+          <span className="flex size-20 items-center justify-center rounded-2xl border bg-background shadow-sm">
+            <img
+              src="/logo.png"
+              alt="Rockoon"
+              className="size-14 dark:invert"
+              draggable={false}
+            />
+          </span>
 
-          <div className="flex flex-col items-center gap-1.5">
-            <h1 className="m-0 text-[22px] font-semibold">
+          <div className="flex flex-col items-center gap-2">
+            <h1 className="m-0 text-[22px] font-semibold tracking-tight">
               {t("onboarding.title")}
             </h1>
-            <p className="text-center text-sm text-muted-foreground">
+            <p className="text-center text-sm leading-relaxed text-muted-foreground">
               {t("onboarding.desc")}
             </p>
           </div>
 
-          <button
-            type="button"
-            disabled={picking || installing}
-            onClick={onPickFolder}
-            className="inline-flex h-10 items-center gap-2 rounded-md bg-primary px-6 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
-          >
-            {picking ? (
-              <Loader2 className="size-4 animate-spin" />
-            ) : (
-              <FolderOpen className="size-4" />
-            )}
-            {t("onboarding.pick")}
-          </button>
+          <div className="flex w-full flex-col gap-2">
+            <Button
+              size="lg"
+              disabled={picking || installing}
+              onClick={onPickFolder}
+              className="w-full"
+            >
+              {picking ? <Loader2 className="animate-spin" /> : <FolderOpen />}
+              {t("onboarding.pick")}
+            </Button>
 
-          <button
-            type="button"
-            disabled={picking || installing}
-            onClick={() => void installGame()}
-            className="inline-flex h-9 items-center gap-2 rounded-md border border-border bg-transparent px-4 text-sm text-muted-foreground transition-colors hover:bg-muted disabled:opacity-50"
-          >
-            {installing ? (
-              <Loader2 className="size-4 animate-spin" />
-            ) : (
-              <Download className="size-4" />
-            )}
-            {t("game.install")}
-          </button>
+            <div className="flex items-center gap-3 py-1 text-xs text-muted-foreground">
+              <span className="h-px flex-1 bg-border" />
+              {t("onboarding.or")}
+              <span className="h-px flex-1 bg-border" />
+            </div>
+
+            <Button
+              variant="outline"
+              disabled={picking || installing}
+              onClick={() => void installGame()}
+              className="w-full"
+            >
+              {installing ? <Loader2 className="animate-spin" /> : <Download />}
+              {t("game.install")}
+            </Button>
+          </div>
 
           <p className="text-center text-xs text-muted-foreground/80">
             {t("onboarding.hint")}

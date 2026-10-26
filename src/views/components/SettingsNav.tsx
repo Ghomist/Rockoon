@@ -27,8 +27,9 @@ export default function SettingsNav({ items, activeId, onSelect }: Props) {
             variant="ghost"
             size="sm"
             className={cn(
-              "h-9 justify-start gap-2 font-normal",
-              activeId === item.id && "bg-secondary font-medium"
+              "relative h-8 justify-start gap-2 font-normal text-muted-foreground hover:text-foreground",
+              activeId === item.id &&
+                "bg-accent font-medium text-accent-foreground before:absolute before:inset-y-1.5 before:left-0 before:w-[3px] before:rounded-full before:bg-primary [&_svg]:text-primary"
             )}
             onClick={() => onSelect(item.id)}
           >

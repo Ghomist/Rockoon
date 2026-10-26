@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-10-13T14:54:13.600Z
-> Files: 395 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-10-26T14:14:51.476Z
+> Files: 403 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ./
 
@@ -42,6 +42,11 @@
 ## C:/Users/ghomist/AppData/Local/Temp/
 
 - `ulw-20260724-021658.md` — Ultrawork Notepad — Refactor download flow: frontend calls, backend downloads, async cancel (~133 tok)
+
+## C:/Users/ghomist/AppData/Local/Temp/claude/D--Codes-ballance-projects-rockoon/5a9e4064-88c1-4ebb-9522-3458aae03362/scratchpad/
+
+- `shot.ps1` — Declares W (~325 tok)
+- `sidebar_edit.py` — 选中项左侧的小竖条 (~2582 tok)
 
 ## C:/Users/ghomist/AppData/Local/pnpm/bin/
 
@@ -398,13 +403,17 @@
 
 ## src/components/
 
-- `AppSidebar.tsx` — resolveIcon (~2089 tok)
+- `AppSidebar.tsx` — 侧栏：分区标题、滑动选中指示器 ActiveIndicator、收起时名字淡出 + tooltip、下载数 badge、游戏状态 (~4500 tok)
 - `AppSidebar.vue` — Vue: setup (~1694 tok)
 - `GlobalDialogHost.tsx` — Renders all open dialogs from the store. Mount once at the app root. (~810 tok)
 - `GlobalDialogHost.vue` — Vue: setup (~638 tok)
 - `ImportProgressDialog.tsx` — phaseLabels — renders modal (~707 tok)
 - `TitleBarControls.tsx` — Minimize / Maximize-Restore / Close window controls. (~528 tok)
 - `TitleBarControls.vue` — Vue: setup (~430 tok)
+
+## src/components/backgrounds/
+
+- `BallanceBackgrounds.tsx` — 天空：几团很淡的主色光晕缓慢漂移（关卡里的天空盒） (~2060 tok)
 
 ## src/components/ui/
 
@@ -476,8 +485,11 @@
 
 - `common.ts` — Exports sleep, withDefault, withDebounce, withCache, defineService (~294 tok)
 - `format.ts` — value 不足 len 长度时自动在前面补 pad (~521 tok)
+- `icon.ts` — resolveIcon：kebab-case 图标名 → lucide 组件 (~120 tok)
 - `logger.ts` — Exports registerLoggers (~328 tok)
+- `session.ts` — useSessionSeconds：本次游戏已运行秒数（按 pid 记起点） (~200 tok)
 - `storage.ts` — get: set, remove, clear (~200 tok)
+- `theme.ts` — useDarkMode / useAccent / useThemeEffect（View Transition 交叉淡化切主题）/ usePrimaryRgb（MutationObserver 读主色）/ ACCENTS (~1400 tok)
 
 ## src/utils/ui/
 
@@ -507,7 +519,7 @@
 - `ResourcesTextures.tsx` — ResourcesTextures — renders modal (~1634 tok)
 - `Settings.tsx` — usePrefFields (~1918 tok)
 - `Settings.vue` — Vue: setup (~1436 tok)
-- `Start.tsx` — resolveIcon (~2062 tok)
+- `Start.tsx` — LEVEL_COUNT (~3517 tok)
 - `Start.vue` — Vue: setup (~1699 tok)
 
 ## src/views/components/
@@ -522,6 +534,8 @@
 - `MgcIcon.vue` — Vue: setup, TS, 3 props (~148 tok)
 - `NFormWrapper.tsx` — Reactive field handle. Replaces Vue's MaybeRef pattern. (~3059 tok)
 - `NFormWrapper.vue` — Vue: setup (~2430 tok)
+- `PageHeader.tsx` — 页面统一标题栏：图标块 + 页面名 + 副标题 + 右侧操作 (~350 tok)
+- `ResourceRow.tsx` — 资源列表行 ResourceRow / RowAction（悬停显眼的图标操作）/ ExtTag / EmptyState (~900 tok)
 - `SettingsNav.tsx` — SettingsNav (~378 tok)
 - `SettingsNav.vue` — Vue: setup (~285 tok)
 - `SkyboxPreview.tsx` — INITIAL_ROTATION_X (~1503 tok)

@@ -121,7 +121,12 @@
     "mappingManual": "制图手册",
     "forum": "社区论坛",
     "downloadSite": "资源下载站",
-    "github": "GitHub"
+    "github": "GitHub",
+    "section": {
+      "game": "游戏",
+      "resources": "资源",
+      "app": "更多"
+    }
   },
   "tas": {
     "dirMissing": "目录不存在：{dir}",
@@ -470,7 +475,26 @@
     "mappingManualDesc": "学习自制地图的制作流程",
     "forumDesc": "与社区成员交流与讨论",
     "downloadSiteDesc": "下载社区地图与模组资源",
-    "githubDesc": "Rockoon 源代码仓库"
+    "githubDesc": "Rockoon 源代码仓库",
+    "tagline": "准备好滚起来了吗？",
+    "running": "运行中",
+    "ready": "就绪",
+    "session": "本次 {time}",
+    "levelsUnlocked": "已解锁关卡",
+    "instance": "游戏目录",
+    "player": {
+      "original": "原版 Player",
+      "new": "新版 Player"
+    },
+    "loader": {
+      "none": "无 Mod 加载器",
+      "bml": "BML",
+      "bmlp": "BMLPlus"
+    },
+    "loaderDisabled": "已停用",
+    "lastPlayer": "上次玩家：{name}",
+    "manage": "管理",
+    "community": "社区与帮助"
   },
   "profile": {
     "currentLabel": "当前配置",
@@ -497,7 +521,8 @@
       "title": "请选择 Ballance 根目录"
     },
     "invalid": "这不是有效的 Ballance 游戏目录，或关键文件已损坏！",
-    "success": "设置成功！"
+    "success": "设置成功！",
+    "or": "或者"
   },
   "resources": {
     "search": {
@@ -634,7 +659,13 @@
       "grid": "闪烁方格",
       "particles": "粒子",
       "meteors": "流星",
-      "hexagon": "蜂巢"
+      "hexagon": "蜂巢",
+      "tip": "背景都会跟随主题色变化",
+      "none": "无",
+      "aurora": "天空光晕",
+      "isometric": "等距路块",
+      "rolling": "轨道滚球",
+      "balls": "三球"
     },
     "update": "当前版本：",
     "checkUpdate": "检查更新",
@@ -663,7 +694,18 @@
     "levelNote1": "开局有教程文本",
     "levelNote12": "场景偏暗、有闪电",
     "levelNote13": "石球开局",
-    "ingameMotdContent": "欢迎语"
+    "ingameMotdContent": "欢迎语",
+    "accent": {
+      "title": "主题色",
+      "sky": "天空蓝",
+      "indigo": "深海",
+      "violet": "暮光",
+      "rose": "樱花",
+      "amber": "木球",
+      "emerald": "苔原",
+      "teal": "冰湖",
+      "slate": "石球"
+    }
   },
   "common": {
     "loading": "加载中…",
@@ -942,7 +984,10 @@
       "unlockAllSuccess": "所有关卡已解锁",
       "levelLocked": "第 {level} 关已锁定",
       "levelUnlocked": "第 {level} 关已解锁"
-    }
+    },
+    "unlockedCount": "已解锁 {n} / 12",
+    "topScore": "最高分",
+    "noScore": "暂无记录"
   },
   "tasGuard": {
     "title": "BallanceTAS 会自动播放 TAS",
@@ -1015,5 +1060,12 @@
     "launching": "正在启动游戏…（Mac 上要等 Wine 拉起游戏，几秒到二十来秒）",
     "launchingAlready": "游戏正在启动，请稍候",
     "launchFailed": "游戏启动失败：{reason}"
+  },
+  "sidebar": {
+    "running": "游戏运行中",
+    "idle": "游戏未运行",
+    "collapse": "收起侧栏",
+    "expand": "展开侧栏",
+    "links": "社区与帮助"
   }
 }

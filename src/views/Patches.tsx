@@ -22,6 +22,7 @@ import { useWaitForSelectedInstance } from "@/utils/ui/waitForInstance";
 import { message } from "@/utils/ui/feedback";
 import { formatFileSize } from "@/utils/format";
 import ListViewPage from "@/views/components/ListViewPage";
+import { IconAction } from "@/views/components/ResourceToolbar";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -264,9 +265,8 @@ export default function Patches() {
     <ListViewPage
       title={t("menu.patches")}
       actions={
-        <Button
-          variant="ghost"
-          size="sm"
+        <IconAction
+          label={t("patches.refresh")}
           disabled={!instance || loading}
           onClick={() => {
             if (!instance) return;
@@ -274,9 +274,8 @@ export default function Patches() {
             void checkVanilla(instance.path);
           }}
         >
-          <RefreshCw className="mr-1 h-4 w-4" />
-          {t("patches.refresh")}
-        </Button>
+          <RefreshCw />
+        </IconAction>
       }
     >
       {loading && (

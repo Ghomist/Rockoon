@@ -10,75 +10,114 @@
   --list-header-h: 75px;
   --list-container-h: calc(var(--main-container-h) - var(--list-header-h));
 
-  --radius: 0.5rem;
+  --radius: 0.625rem;
 
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
+  /* 主题色只由色相 --h 和主色彩度 --c 决定（下面的 [data-accent] 预设改这两个），
+     中性色也带一点同色相的冷暖倾向，这样换主题色时整体氛围一起变 */
+  --h: 262;
+  --c: 0.19;
+  --nc: 1; /* 中性色带色倾向的强度（石灰这种低彩度主题设小一点） */
+
+  --background: oklch(0.99 calc(0.002 * var(--nc)) var(--h));
+  --foreground: oklch(0.18 calc(0.015 * var(--nc)) var(--h));
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
+  --card-foreground: oklch(0.18 calc(0.015 * var(--nc)) var(--h));
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.18 calc(0.015 * var(--nc)) var(--h));
+  --primary: oklch(0.53 var(--c) var(--h));
+  --primary-foreground: oklch(0.985 0.005 var(--h));
+  --secondary: oklch(0.96 calc(0.006 * var(--nc)) var(--h));
+  --secondary-foreground: oklch(0.24 calc(0.02 * var(--nc)) var(--h));
+  --muted: oklch(0.965 calc(0.005 * var(--nc)) var(--h));
+  --muted-foreground: oklch(0.52 calc(0.02 * var(--nc)) var(--h));
+  --accent: oklch(0.955 calc(var(--c) * 0.065) var(--h));
+  --accent-foreground: oklch(0.24 calc(var(--c) * 0.2) var(--h));
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.985 0 0);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  --success: oklch(0.6 0.15 155);
+  --warning: oklch(0.72 0.16 70);
+  --border: oklch(0.915 calc(0.008 * var(--nc)) var(--h));
+  --input: oklch(0.9 calc(0.01 * var(--nc)) var(--h));
+  --ring: oklch(0.62 calc(var(--c) * 0.8) var(--h));
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --sidebar: oklch(0.975 calc(0.004 * var(--nc)) var(--h));
+  --sidebar-foreground: oklch(0.3 calc(0.02 * var(--nc)) var(--h));
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent: oklch(0.935 calc(var(--c) * 0.075) var(--h));
+  --sidebar-accent-foreground: oklch(0.2 calc(var(--c) * 0.16) var(--h));
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--ring);
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
+  --background: oklch(0.155 calc(0.008 * var(--nc)) var(--h));
+  --foreground: oklch(0.96 0.005 var(--h));
+  --card: oklch(0.195 calc(0.01 * var(--nc)) var(--h));
+  --card-foreground: oklch(0.96 0.005 var(--h));
+  --popover: oklch(0.205 calc(0.01 * var(--nc)) var(--h));
+  --popover-foreground: oklch(0.96 0.005 var(--h));
+  --primary: oklch(0.7 calc(var(--c) * 0.8) var(--h));
+  --primary-foreground: oklch(0.17 0.03 var(--h));
+  --secondary: oklch(0.26 calc(0.012 * var(--nc)) var(--h));
+  --secondary-foreground: oklch(0.96 0.005 var(--h));
+  --muted: oklch(0.25 calc(0.01 * var(--nc)) var(--h));
+  --muted-foreground: oklch(0.7 calc(0.015 * var(--nc)) var(--h));
+  --accent: oklch(0.27 calc(var(--c) * 0.13) var(--h));
+  --accent-foreground: oklch(0.97 0.005 var(--h));
   --destructive: oklch(0.704 0.191 22.216);
   --destructive-foreground: oklch(0.985 0 0);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
+  --success: oklch(0.72 0.15 155);
+  --warning: oklch(0.8 0.14 75);
+  --border: oklch(1 0 0 / 9%);
+  --input: oklch(1 0 0 / 14%);
+  --ring: oklch(0.6 calc(var(--c) * 0.63) var(--h));
   --chart-1: oklch(0.488 0.243 264.376);
   --chart-2: oklch(0.696 0.17 162.48);
   --chart-3: oklch(0.769 0.188 70.08);
   --chart-4: oklch(0.627 0.265 303.9);
   --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --sidebar: oklch(0.175 calc(0.009 * var(--nc)) var(--h));
+  --sidebar-foreground: oklch(0.85 calc(0.01 * var(--nc)) var(--h));
+  --sidebar-accent: oklch(0.255 calc(var(--c) * 0.1) var(--h));
+  --sidebar-accent-foreground: oklch(0.97 0.005 var(--h));
+  --sidebar-border: oklch(1 0 0 / 8%);
+}
+
+/* 主题色预设（pref.accent → <html data-accent>）。名字和 Ballance 的元素挂钩：
+   天空、深海、暮光、樱花、木球、苔原、冰湖、石球 */
+:root[data-accent="indigo"] {
+  --h: 275;
+  --c: 0.2;
+}
+:root[data-accent="violet"] {
+  --h: 300;
+  --c: 0.2;
+}
+:root[data-accent="rose"] {
+  --h: 8;
+  --c: 0.19;
+}
+:root[data-accent="amber"] {
+  --h: 55;
+  --c: 0.15;
+}
+:root[data-accent="emerald"] {
+  --h: 158;
+  --c: 0.14;
+}
+:root[data-accent="teal"] {
+  --h: 200;
+  --c: 0.12;
+}
+:root[data-accent="slate"] {
+  --h: 255;
+  --c: 0.035;
+  --nc: 0.6;
 }
 
 @theme inline {
@@ -103,6 +142,8 @@
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -137,20 +178,117 @@
   }
 }
 
-/* Route change animation: triggered by remount via key={pathname}.
-   No transform — any translate inside main's overflow-auto triggers a
-   transient scrollbar flash. Pure opacity is enough. */
+/* ── 界面动效 ──────────────────────────────────────────────────────────
+   一律只用 opacity + 不会撑大滚动区域的 transform（缩小 / 向左、向上移）：
+   main 是 overflow-auto，往下或往外推的 transform 会让滚动条闪一下。 */
+
+/* 切页：key={pathname} 重挂载触发，整页从略小一点淡入放大到位 */
 @keyframes route-enter {
   from {
     opacity: 0;
-  }
-  to {
-    opacity: 1;
+    transform: scale(0.992);
   }
 }
-
 .route-enter {
-  animation: route-enter 0.18s ease-out;
+  transform-origin: 50% 0;
+  animation: route-enter 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* 卡片 / 区块依次浮现：给容器加 .stagger，直接子元素按顺序延迟 */
+@keyframes stagger-in {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+}
+.stagger > * {
+  animation: stagger-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  animation-delay: calc(var(--stagger-i, 12) * 45ms);
+}
+
+/* 列表行依次从左侧滑入：给列表容器加 .stagger-rows */
+@keyframes row-in {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+}
+.stagger-rows > * {
+  animation: row-in 0.36s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  animation-delay: calc(var(--stagger-i, 16) * 22ms);
+}
+
+.stagger > :nth-child(1),
+.stagger-rows > :nth-child(1) {
+  --stagger-i: 0;
+}
+.stagger > :nth-child(2),
+.stagger-rows > :nth-child(2) {
+  --stagger-i: 1;
+}
+.stagger > :nth-child(3),
+.stagger-rows > :nth-child(3) {
+  --stagger-i: 2;
+}
+.stagger > :nth-child(4),
+.stagger-rows > :nth-child(4) {
+  --stagger-i: 3;
+}
+.stagger > :nth-child(5),
+.stagger-rows > :nth-child(5) {
+  --stagger-i: 4;
+}
+.stagger > :nth-child(6),
+.stagger-rows > :nth-child(6) {
+  --stagger-i: 5;
+}
+.stagger > :nth-child(7),
+.stagger-rows > :nth-child(7) {
+  --stagger-i: 6;
+}
+.stagger > :nth-child(8),
+.stagger-rows > :nth-child(8) {
+  --stagger-i: 7;
+}
+.stagger > :nth-child(9),
+.stagger-rows > :nth-child(9) {
+  --stagger-i: 8;
+}
+.stagger > :nth-child(10),
+.stagger-rows > :nth-child(10) {
+  --stagger-i: 9;
+}
+.stagger > :nth-child(11),
+.stagger-rows > :nth-child(11) {
+  --stagger-i: 10;
+}
+.stagger > :nth-child(12),
+.stagger-rows > :nth-child(12) {
+  --stagger-i: 11;
+}
+.stagger-rows > :nth-child(13) {
+  --stagger-i: 12;
+}
+.stagger-rows > :nth-child(14) {
+  --stagger-i: 13;
+}
+.stagger-rows > :nth-child(15) {
+  --stagger-i: 14;
+}
+
+/* 换主题色 / 明暗：整页交叉淡化（utils/theme.ts 的 useThemeEffect） */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.4s;
+  animation-timing-function: ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .route-enter,
+  .stagger > *,
+  .stagger-rows > * {
+    animation: none;
+  }
 }
 
 @layer base {
@@ -183,4 +321,52 @@
 [data-sonner-toast] {
   cursor: pointer;
   opacity: 0.85;
+}
+
+/* ── 背景动效（components/backgrounds）：都很慢，系统开了「减少动态效果」就停下 ── */
+@keyframes bg-drift-a {
+  to {
+    transform: translate(12vw, 10vh) scale(1.15);
+  }
+}
+@keyframes bg-drift-b {
+  to {
+    transform: translate(-14vw, -8vh) scale(0.9);
+  }
+}
+@keyframes bg-drift-c {
+  to {
+    transform: translate(-10vw, 12vh) scale(1.2);
+  }
+}
+@keyframes bg-float {
+  0% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-24px) rotate(180deg);
+  }
+  100% {
+    transform: translateY(0) rotate(360deg);
+  }
+}
+.bg-drift-a {
+  animation: bg-drift-a 38s ease-in-out infinite alternate;
+}
+.bg-drift-b {
+  animation: bg-drift-b 46s ease-in-out infinite alternate;
+}
+.bg-drift-c {
+  animation: bg-drift-c 31s ease-in-out infinite alternate;
+}
+.bg-float {
+  animation: bg-float 50s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .bg-drift-a,
+  .bg-drift-b,
+  .bg-drift-c,
+  .bg-float {
+    animation: none;
+  }
 }
