@@ -11,7 +11,7 @@
     "done": "Original game installed",
     "installed": "Installed to {path} and set as the current game",
     "installedWithPatches": "Installed to {path} and set as the current game; patches: {patches}",
-    "patchFailed": "The game installed, but a patch failed — retry from the Patches page",
+    "patchFailed": "The game installed, but a patch failed — retry from the Game Patches page",
     "failed": "Install failed"
   },
   "patches": {
@@ -59,7 +59,7 @@
     "installOptionsMutexNote": "BML and BML+ are mutually exclusive — pick one (keep the default BML+ if unsure).",
     "updateTitle": "Patch updates available",
     "updateBody": "These patches have newer versions:",
-    "updateHint": "You can update now, or later from the Patches page.",
+    "updateHint": "You can update now, or later from the Game Patches page.",
     "updateNow": "Update now",
     "later": "Later",
     "installOptionsTitle": "Install the vanilla game",
@@ -67,7 +67,7 @@
     "installOptionsPlayer": "New Player (vc6 build, required by BML+)",
     "installOptionsBmlPlus": "BML+ mod loader",
     "installOptionsBml": "BML mod loader (discontinued, usually not needed)",
-    "installOptionsNote": "Leave the defaults (New Player + BML+) if unsure — you can change it later on the Patches page.",
+    "installOptionsNote": "Leave the defaults (New Player + BML+) if unsure — you can change it later on the Game Patches page.",
     "pickFolder": "Pick folder and install",
     "cancel": "Cancel",
     "installingPatch": "Installing {name}…"
@@ -100,9 +100,9 @@
     }
   },
   "menu": {
+    "mapping": "Mapping Tools",
     "downloads": "Downloads",
     "tasEditor": "TAS Editor",
-    "modConfigs": "Mod configs",
     "game": "Start Game",
     "options": "Options",
     "resources": "Resources",
@@ -110,12 +110,12 @@
     "tools": "Tools",
     "help": "Help",
     "settings": "Settings",
-    "backgrounds": "Sky Pack",
+    "backgrounds": "Sky",
     "maps": "Map",
     "mods": "Mod",
-    "patches": "Patches",
-    "musics": "Music Pack",
-    "textures": "Texture Pack",
+    "patches": "Game Patches",
+    "musics": "Music",
+    "textures": "Texture",
     "community": "Community",
     "wiki": "Wiki",
     "mappingManual": "Mapping",
@@ -125,6 +125,7 @@
     "section": {
       "game": "Game",
       "resources": "Resources",
+      "tools": "Tools",
       "app": "More"
     }
   },
@@ -636,11 +637,13 @@
     "dirty": "edited",
     "saveFailed": "Save failed: {error}",
     "loadFailed": "Failed to read configs: {error}",
-    "pickOne": "Pick a mod on the left to edit its config."
+    "pickOne": "Pick a mod on the left to edit its config.",
+    "other": "Other configs",
+    "discard": "You have unsaved changes that will be lost. Close anyway?"
   },
   "gameConfig": {
     "newPlayerRequired": "These options are written to Bin/Player.ini, which only the \"new Player\" patch reads — the original game reads the registry (Rockoon does not write it), so they are hidden. To change the original's display/graphics settings, use the in-game options.",
-    "newPlayerGotoPatches": "Install the new Player on the Patches page",
+    "newPlayerGotoPatches": "Install the new Player on the Game Patches page",
     "newPlayerSectionNote": "These options need the new Player (written to Bin/Player.ini)",
     "game": {
       "applyHotfix": {
@@ -1060,6 +1063,52 @@
     "launching": "Starting the game… (on Mac this takes a few seconds while Wine brings it up)",
     "launchingAlready": "The game is already starting, please wait",
     "launchFailed": "Failed to start the game: {reason}"
+  },
+  "mapping": {
+    "refresh": "Re-detect",
+    "noInstance": "Select a game first",
+    "blender": {
+      "notFound": "Not found",
+      "subtitle": "The Blender used to edit maps. Rockoon doesn't install Blender for you; it uses the one already on this computer.",
+      "hint": "Blender was not found. Download and install it from the official site (an LTS release is recommended; the latest BBP needs 4.5 or newer), then click Re-detect. You can also pick it manually.",
+      "download": "Download Blender",
+      "pick": "Choose Blender…",
+      "auto": "Use auto-detection"
+    },
+    "bbp": {
+      "subtitle": "The Ballance plugin for Blender, used to import / export Virtools map files. One-click install downloads the latest release from GitHub, installs and enables it in Blender, and points its texture folder at the current game's Textures.",
+      "latest": "Latest {version}",
+      "installedVersion": "Installed {version}",
+      "disabled": "disabled",
+      "notInstalled": "Not installed",
+      "install": "Install",
+      "update": "Update to latest",
+      "upToDate": "Up to date",
+      "configure": "Reconfigure",
+      "configured": "BBP enabled, texture folder set to the current game",
+      "configureFailed": "Failed to configure BBP: {reason}",
+      "manual": "Mapping manual",
+      "textureFolder": "Texture folder:",
+      "textureUnset": "(not set)",
+      "textureMismatch": "Texture folder is not the current game's {path}; click Reconfigure to fix it",
+      "legacy": "An older BBP was found elsewhere and will conflict with the new one. Close Blender and delete these folders manually:",
+      "closeHint": "Close Blender before installing / updating (BBP keeps its own files locked while Blender runs).",
+      "closeBlender": "Couldn't remove the old BBP. Close Blender and try again ({reason})",
+      "blenderTooOld": "This Blender is too old (no extension system). Please install Blender 4.5 LTS or newer",
+      "releaseFailed": "Failed to fetch the latest BBP release: {reason}",
+      "installed": "BBP {version} installed",
+      "installFailed": "Failed to install BBP: {reason}"
+    },
+    "edit": {
+      "title": "One-click map editing",
+      "subtitle": "On the Maps page, click the pen button next to a map to open it in Blender: the default scene is cleared, the map is imported with BBP, and the current game's textures are used.",
+      "goMaps": "Go to Maps",
+      "button": "Edit in Blender",
+      "noBlender": "Blender was not found. Set it up on the Mapping Tools page first",
+      "noBbp": "BBP isn't installed in Blender yet. Install it on the Mapping Tools page first",
+      "opening": "Opening the map in Blender…",
+      "failed": "Failed to start Blender: {reason}"
+    }
   },
   "sidebar": {
     "running": "Game running",

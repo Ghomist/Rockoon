@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import {
+  FileCog,
   Map as MapIcon,
   Puzzle,
   SearchX,
@@ -7,7 +8,6 @@ import {
   Trash2
 } from "lucide-react";
 import { join } from "@tauri-apps/api/path";
-import { useNavigate } from "react-router-dom";
 import backend from "@/backend";
 import { useAppStore } from "@/stores/app";
 import { useT } from "@/i18n";
@@ -17,6 +17,7 @@ import { dialog, message } from "@/utils/ui/feedback";
 import { importResources } from "@/services/resourceImport";
 import ListViewPage from "./components/ListViewPage";
 import ResourceToolbar from "./components/ResourceToolbar";
+import ModConfigSheet, { modNameOf } from "./components/ModConfigSheet";
 import {
   EmptyState,
   ExtTag,
@@ -49,7 +50,6 @@ const modConfigBase = (fileName: string) =>
 
 export default function ResourcesPageBase({ type }: Props) {
   const t = useT();
-  const navigate = useNavigate();
   const selectedInstanceData = useAppStore(s => s.selectedInstanceData);
   const refreshKey = useAppStore(s => s.refreshKey);
   const [rscPath, setRscPath] = useState("");
@@ -57,6 +57,8 @@ export default function ResourcesPageBase({ type }: Props) {
   const [query, setQuery] = useState("");
   /** mod 页专用：ModLoader/Configs 里的配置文件名（给「配置」按钮找目标） */
   const [configNames, setConfigNames] = useState<string[]>([]);
+  /** 正在编辑的配置文件名（右侧抽屉） */
+  const [editing, setEditing] = useState<string | null>(null);
 
   const schema = resourcePageSchema[type];
   const TypeIcon = type === "map" ? MapIcon : Puzzle;
@@ -173,6 +175,16 @@ export default function ResourcesPageBase({ type }: Props) {
     [rscList, query]
   );
 
+  /** 有配置、但列表里找不到对应 mod 的配置文件（搜索时按名字过滤） */
+  const orphanConfigs = useMemo(() => {
+    if (type !== "mod") return [];
+    const used = new Set(rscList.map(f => configFor(f.name)));
+    return configNames
+      .filter(name => !used.has(name) && matchesQuery(modNameOf(name), query))
+      .sort((a, b) => a.localeCompare(b));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [type, rscList, configNames, query]);
+
   return (
     <ListViewPage
       title={t(
@@ -193,7 +205,7 @@ export default function ResourcesPageBase({ type }: Props) {
         />
       }
     >
-      {visibleList.length === 0 && (
+      {visibleList.length === 0 && orphanConfigs.length === 0 && (
         <EmptyState
           icon={query.trim() ? <SearchX /> : <TypeIcon />}
           title={
@@ -235,9 +247,7 @@ export default function ResourcesPageBase({ type }: Props) {
                     variant="ghost"
                     size="sm"
                     className="mr-1"
-                    onClick={() =>
-                      navigate(`/mod-configs?mod=${encodeURIComponent(config)}`)
-                    }
+                    onClick={() => setEditing(config)}
                   >
                     <SlidersHorizontal className="size-4" />
                     {t("resources.config.button")}
@@ -255,6 +265,42 @@ export default function ResourcesPageBase({ type }: Props) {
           />
         );
       })}
+
+      {/* 没对应 mod 文件的配置（BML.cfg 这类加载器自己的、或 mod 已删），单列出来 */}
+      {orphanConfigs.length > 0 && (
+        <div className="px-5 pt-4 pb-1 text-xs font-medium text-muted-foreground">
+          {t("modConfigs.other")}
+        </div>
+      )}
+      {orphanConfigs.map(name => (
+        <ResourceRow
+          key={`cfg:${name}`}
+          icon={<FileCog />}
+          iconClassName="bg-muted text-muted-foreground"
+          title={modNameOf(name)}
+          meta={<ExtTag>{name.split(".").pop()?.toUpperCase()}</ExtTag>}
+          onClick={() => setEditing(name)}
+          actions={
+            <Button
+              variant="ghost"
+              size="sm"
+              className="mr-1"
+              onClick={() => setEditing(name)}
+            >
+              <SlidersHorizontal className="size-4" />
+              {t("resources.config.button")}
+            </Button>
+          }
+        />
+      ))}
+
+      {type === "mod" && selectedInstanceData && (
+        <ModConfigSheet
+          instancePath={selectedInstanceData.path}
+          file={editing}
+          onClose={() => setEditing(null)}
+        />
+      )}
     </ListViewPage>
   );
 }

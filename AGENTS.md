@@ -115,6 +115,26 @@ BMLPlus plugin (`RockoonIO.bmodp`) built via CMake + `build.ps1`. Sources in `sr
   Rust `restore_vanilla_levels`。只覆盖清单里的 nmo，已经是原版的跳过，`3D Entities`
   里多出来的文件（别人装的自定义关卡等）**不动**。
 
+## 制图工具（Blender + BBP）
+
+- 页面 `src/views/Mapping.tsx`（`/mapping`），逻辑 `src/services/mapping.ts`，后端
+  `src-tauri/src/commands/blender.rs`；地图页每行的笔形按钮调 `editMapInBlender()`。
+- **Blender 不代装**：`blender_find` 只找本机已装的（Windows 卸载项注册表 / Program Files /
+  Steam / PATH；macOS `/Applications/Blender*.app`），用户手选的存在 pref `blenderPath`。
+- 与 Blender 交互一律 `blender -b --python <脚本> -- 参数`，脚本在 `commands/blender_py/`
+  （`include_str!` 进二进制，运行时写到临时目录），结果是 stdout 里一行 `ROCKOON_…`。
+- **BBP 一键安装**：上游 `yyc12345/BallanceBlenderHelper` 已归档，**优先从下载站装**（`latestBbpRelease()`：
+  `hubFetch` 列 `x-patch` 找 `source_key` = `bbp-windows` / `bbp-macos`，取当前版本的序号下载地址；
+  下载站这两个是一次性存档、不周期同步，见 `ballance-resource-hub/docs/patches.md`），
+  下载站不通才回落 GitHub 最新 release（Rust `bbp_latest_release`）→
+  删掉旧的 `<user_default 扩展目录>/bbp_ng` → 复用 `start_patch_install` 解压（进度在下载任务）→
+  `configure.py` 启用并把 `ballance_texture_folder` 设成当前游戏的 Textures。
+  **不要**改用 `blender --command extension install-file`：BBP 已启用时它会把 BMap.dll
+  载进执行命令的那个 Blender，覆盖安装报 `BMap operation failed`。Blender 开着时旧目录删不掉，提示用户先关。
+- 一键编辑 = GUI 启动 Blender 跑 `open_map.py`：清空默认场景 → 设材质目录 → `bbp.import_virtools`
+  （导入编码为空时补 cp1252 / gbk，否则 BBP 拒绝导入）。
+- 最新 BBP（v4.4）要求 Blender ≥ 4.5；上游只发 windows-amd64 / macos-arm64 / linux-amd64 三个包。
+
 ## Downloads (所有下载都走一条路)
 
 - 中枢：`src/stores/downloads.ts`；界面：`src/views/Downloads.tsx`（菜单项在「启动器设置」上面）。

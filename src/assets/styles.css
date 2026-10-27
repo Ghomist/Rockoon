@@ -121,6 +121,12 @@
 }
 
 @theme inline {
+  /* Tailwind 默认的 mono 栈没有中文字体：中文落到 Chromium 的等宽回退（宋体），
+     小字号下是点阵字形，锯齿严重。补上雅黑 / 苹方。 */
+  --font-mono:
+    ui-monospace, "Cascadia Mono", Consolas, Menlo, "Microsoft YaHei UI",
+    "Microsoft YaHei", "PingFang SC", monospace;
+
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);

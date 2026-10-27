@@ -5,6 +5,7 @@ import {
   FolderInput,
   FolderPlus,
   Map as MapIcon,
+  PenTool,
   Play,
   SearchX,
   Trash2
@@ -19,6 +20,7 @@ import { dialog, message } from "@/utils/ui/feedback";
 import { launchMap } from "@/services/launcher";
 import { confirmTasAutoplayOff } from "@/services/tasGuard";
 import { importResources } from "@/services/resourceImport";
+import { editMapInBlender } from "@/services/mapping";
 import ListViewPage from "./components/ListViewPage";
 import ResourceToolbar, { IconAction } from "./components/ResourceToolbar";
 import {
@@ -397,6 +399,18 @@ export default function ResourcesMaps() {
                     <Play className="size-4" />
                     {t("resources.launch.button")}
                   </Button>
+                )}
+                {!item.isDir && !isFileDisabled(item.name) && (
+                  <RowAction
+                    label={t("mapping.edit.button")}
+                    onClick={() =>
+                      void join(currentPath || rootPath, item.name).then(
+                        editMapInBlender
+                      )
+                    }
+                  >
+                    <PenTool />
+                  </RowAction>
                 )}
                 <RowAction
                   label={t("resources.move.button")}

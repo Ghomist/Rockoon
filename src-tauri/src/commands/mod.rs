@@ -1,5 +1,6 @@
 pub mod app;
 pub mod ballance;
+pub mod blender;
 pub mod brp;
 pub mod embed;
 pub mod frame_limit;

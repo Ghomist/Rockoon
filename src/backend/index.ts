@@ -216,6 +216,22 @@ const patches = {
     invoke<string>("start_patch_install", { url, targetDir, stripTopLevel })
 };
 
+/** 制图工具：Blender + BBP（src-tauri/src/commands/blender.rs） */
+const blender = {
+  /** 本机能找到的 Blender 可执行文件（不启动它） */
+  find: () => invoke<string[]>("blender_find"),
+  /** 后台启动一次 Blender（约 1 秒），读版本与 BBP 状态 */
+  probe: (exe: string) => invoke<BlenderProbe>("blender_probe", { exe }),
+  /** 启用 BBP 并把材质目录设成 textures（空串 = 不改） */
+  configureBbp: (exe: string, textures: string) =>
+    invoke<undefined>("blender_configure_bbp", { exe, textures }),
+  /** 打开 Blender 并用 BBP 导入地图 */
+  openMap: (exe: string, map: string, textures: string) =>
+    invoke<undefined>("blender_open_map", { exe, map, textures }),
+  /** GitHub 上 BBP 最新版里当前系统对应的安装包 */
+  bbpLatestRelease: () => invoke<BbpRelease>("bbp_latest_release")
+};
+
 /** 原版素材（3D Entities 下的 nmo）：启动前校验，不一致时可以用内置包恢复 */
 const vanilla = {
   /** 比对内置清单的 sha256，返回不一致的文件（空数组 = 原版） */
@@ -234,6 +250,7 @@ export default {
   ...embed,
   ...game,
   patches,
+  blender,
   vanilla,
   wine
 };

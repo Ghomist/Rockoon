@@ -108,6 +108,8 @@ type PreferenceStore = {
   enableTasEditor: boolean;
   /** 已安装补丁的版本记录：{ [组件键]: 版本号 }（只记 Rockoon 自己装的） */
   patchVersions: Record<string, string>;
+  /** 制图工具用的 Blender（用户手选的；没选就用自动找到的第一个） */
+  blenderPath?: string;
   /** 用户已经忽略过更新提示的补丁：{ [组件键]: 提示过的版本号 } */
   seenPatchVersions: Record<string, string>;
 };

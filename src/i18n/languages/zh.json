@@ -11,7 +11,7 @@
     "done": "原版游戏安装完成",
     "installed": "已安装到 {path}，并设为当前游戏",
     "installedWithPatches": "已安装到 {path}，并设为当前游戏；补丁：{patches}",
-    "patchFailed": "原版游戏已装好，但补丁安装失败，可到「补丁」页重试",
+    "patchFailed": "原版游戏已装好，但补丁安装失败，可到「游戏补丁」页重试",
     "failed": "安装失败"
   },
   "patches": {
@@ -59,7 +59,7 @@
     "installOptionsMutexNote": "BML 与 BML+ 互斥，只能装一个（不确定就保持默认的 BML+）。",
     "updateTitle": "补丁有更新",
     "updateBody": "检测到以下补丁有新版本：",
-    "updateHint": "可以现在更新，也可以稍后在「补丁」页手动更新。",
+    "updateHint": "可以现在更新，也可以稍后在「游戏补丁」页手动更新。",
     "updateNow": "去更新",
     "later": "稍后",
     "installOptionsTitle": "安装原版游戏",
@@ -67,7 +67,7 @@
     "installOptionsPlayer": "新 Player（vc6 构建，BML+ 运行的前提）",
     "installOptionsBmlPlus": "BML+ 模组加载器",
     "installOptionsBml": "BML 模组加载器（已停更，一般不用装）",
-    "installOptionsNote": "不确定就保持默认：新 Player + BML+；之后可以在「补丁」页随时改。",
+    "installOptionsNote": "不确定就保持默认：新 Player + BML+；之后可以在「游戏补丁」页随时改。",
     "pickFolder": "选择文件夹并安装",
     "cancel": "取消",
     "installingPatch": "正在安装 {name}…"
@@ -76,7 +76,7 @@
     "title": "下载任务",
     "runningCount": "{count} 个进行中",
     "empty": "暂无下载任务",
-    "emptyHint": "在下载站点「一键下载」，或在补丁页安装补丁，任务都会出现在这里。",
+    "emptyHint": "在下载站点「一键下载」，或在游戏补丁页安装补丁，任务都会出现在这里。",
     "clearFinished": "清空已完成",
     "cancel": "取消",
     "retry": "重试",
@@ -100,9 +100,9 @@
     }
   },
   "menu": {
+    "mapping": "制图工具",
     "downloads": "下载任务",
     "tasEditor": "TAS 编辑器",
-    "modConfigs": "Mod 配置",
     "game": "启动游戏",
     "options": "游戏选项",
     "resources": "资源管理",
@@ -112,10 +112,10 @@
     "settings": "启动器设置",
     "maps": "自制地图",
     "mods": "模组",
-    "patches": "补丁",
-    "textures": "材质包",
-    "backgrounds": "背景包",
-    "musics": "音乐包",
+    "patches": "游戏补丁",
+    "textures": "材质",
+    "backgrounds": "背景",
+    "musics": "音乐",
     "community": "平衡社区",
     "wiki": "官方 Wiki",
     "mappingManual": "制图手册",
@@ -125,6 +125,7 @@
     "section": {
       "game": "游戏",
       "resources": "资源",
+      "tools": "工具",
       "app": "更多"
     }
   },
@@ -751,13 +752,15 @@
     "dirty": "已修改",
     "saveFailed": "保存失败：{error}",
     "loadFailed": "读取配置失败：{error}",
-    "pickOne": "在左侧选一个 mod 来编辑它的配置。"
+    "pickOne": "在左侧选一个 mod 来编辑它的配置。",
+    "other": "其他配置",
+    "discard": "有未保存的修改，关闭后会丢失。确定关闭？"
   },
   "gameConfig": {
     "selectInstance": "请先选择一个游戏实例",
     "openConfigFile": "打开配置文件",
     "newPlayerRequired": "下面这些选项写的是 Bin/Player.ini，只有装了「新 Player」补丁的游戏会读它；原版读的是注册表（Rockoon 不写注册表），所以先隐起来。想改原版的显示/图形设置，请在游戏内选项里改。",
-    "newPlayerGotoPatches": "去「补丁」页安装新 Player",
+    "newPlayerGotoPatches": "去「游戏补丁」页安装新 Player",
     "newPlayerSectionNote": "以下选项需要新 Player（写 Bin/Player.ini）",
     "nav": {
       "display": "显示",
@@ -1013,7 +1016,7 @@
     "warnTitle": "游戏文件被修改过",
     "warnBody": "3D Entities 里有 {count} 个原版文件被替换或缺失，游戏可能已经不是原版关卡了。",
     "warnLaunch": "仍然启动",
-    "warnRestore": "去补丁页恢复"
+    "warnRestore": "去游戏补丁页恢复"
   },
   "wine": {
     "title": "Wine 运行环境",
@@ -1060,6 +1063,52 @@
     "launching": "正在启动游戏…（Mac 上要等 Wine 拉起游戏，几秒到二十来秒）",
     "launchingAlready": "游戏正在启动，请稍候",
     "launchFailed": "游戏启动失败：{reason}"
+  },
+  "mapping": {
+    "refresh": "重新检测",
+    "noInstance": "请先选择一个游戏",
+    "blender": {
+      "notFound": "未检测到",
+      "subtitle": "用来编辑地图的 Blender。Rockoon 不代装 Blender，只使用本机已装好的。",
+      "hint": "没找到 Blender。请先到官网下载安装（推荐 LTS 版本，BBP 最新版需要 4.5 及以上），装好后点右上角重新检测；装在别处也可以手动选择。",
+      "download": "下载 Blender",
+      "pick": "选择 Blender…",
+      "auto": "恢复自动检测"
+    },
+    "bbp": {
+      "subtitle": "Ballance 的 Blender 插件，用来导入 / 导出 Virtools 地图文件。一键安装会从 GitHub 下载最新版，装进 Blender 并启用，同时把材质目录设成当前游戏的 Textures。",
+      "latest": "最新 {version}",
+      "installedVersion": "已安装 {version}",
+      "disabled": "未启用",
+      "notInstalled": "未安装",
+      "install": "一键安装",
+      "update": "更新到最新版",
+      "upToDate": "已是最新版",
+      "configure": "重新配置",
+      "configured": "BBP 已启用，材质目录已指向当前游戏",
+      "configureFailed": "配置 BBP 失败：{reason}",
+      "manual": "制图手册",
+      "textureFolder": "材质目录：",
+      "textureUnset": "（未设置）",
+      "textureMismatch": "材质目录不是当前游戏的 {path}，点「重新配置」改过来",
+      "legacy": "检测到其他位置的旧版 BBP，会与新版冲突。请关闭 Blender 后手动删除以下目录：",
+      "closeHint": "安装 / 更新前请先关闭 Blender（BBP 运行时会占用自身的文件）。",
+      "closeBlender": "删除旧版 BBP 失败，请先关闭 Blender 再试（{reason}）",
+      "blenderTooOld": "这个 Blender 版本太旧（没有扩展系统），请安装 Blender 4.5 LTS 或更新版本",
+      "releaseFailed": "获取 BBP 最新版本失败：{reason}",
+      "installed": "BBP {version} 安装完成",
+      "installFailed": "安装 BBP 失败：{reason}"
+    },
+    "edit": {
+      "title": "一键编辑地图",
+      "subtitle": "在「地图」页点地图右侧的笔形按钮，即可用 Blender 打开：自动清空默认场景、用 BBP 导入地图，并使用当前游戏的材质。",
+      "goMaps": "前往地图页",
+      "button": "用 Blender 编辑",
+      "noBlender": "没有找到 Blender，请先到「制图工具」页设置",
+      "noBbp": "Blender 里还没装 BBP，请先到「制图工具」页一键安装",
+      "opening": "正在用 Blender 打开地图…",
+      "failed": "打开 Blender 失败：{reason}"
+    }
   },
   "sidebar": {
     "running": "游戏运行中",

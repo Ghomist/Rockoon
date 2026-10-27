@@ -9,7 +9,7 @@ import ResourcesSkys from "@/views/ResourcesSkys";
 import ResourcesTextures from "@/views/ResourcesTextures";
 import ResourcesSounds from "@/views/ResourcesSounds";
 import Patches from "@/views/Patches";
-import ModConfigs from "@/views/ModConfigs";
+import Mapping from "@/views/Mapping";
 import Downloads from "@/views/Downloads";
 import Settings from "@/views/Settings";
 import { hubUrl } from "@/services/hub";
@@ -85,6 +85,12 @@ export const getMenuItems = (
   { label: t("menu.game"), route: "/game", icon: "gamepad-2", view: Start },
   { section: t("menu.section.game") },
   {
+    label: t("menu.patches"),
+    route: "/patches",
+    icon: "wrench",
+    view: Patches
+  },
+  {
     label: t("menu.options"),
     route: "/options",
     icon: "sliders-horizontal",
@@ -105,18 +111,6 @@ export const getMenuItems = (
     view: ResourcesMods
   },
   {
-    label: t("menu.modConfigs"),
-    route: "/mod-configs",
-    icon: "file-cog",
-    view: ModConfigs
-  },
-  {
-    label: t("menu.patches"),
-    route: "/patches",
-    icon: "wrench",
-    view: Patches
-  },
-  {
     label: t("menu.backgrounds"),
     route: "/backgrounds",
     icon: "image",
@@ -134,7 +128,13 @@ export const getMenuItems = (
     icon: "music",
     view: ResourcesSounds
   },
-  { section: t("menu.section.app") },
+  { section: t("menu.section.tools") },
+  {
+    label: t("menu.mapping"),
+    route: "/mapping",
+    icon: "pen-tool",
+    view: Mapping
+  },
   // 实验功能：设置里打开才显示（默认关）。独立窗口：点一下开 TAS 编辑器，不切当前页面
   // macOS 上没有：编辑器要把游戏窗口嵌进来、要读写游戏的共享内存，这两样都是 Win32 专属
   ...(options.tasEditor && !isMac
@@ -148,6 +148,7 @@ export const getMenuItems = (
         }
       ] as const)
     : []),
+  { section: t("menu.section.app") },
   {
     label: t("menu.downloads"),
     route: "/downloads",
