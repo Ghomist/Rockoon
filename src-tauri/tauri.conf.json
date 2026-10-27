@@ -20,6 +20,7 @@
         "shadow": true,
         "width": 1200,
         "height": 750,
+        "center": true,
         "minWidth": 1000,
         "minHeight": 600
       }
