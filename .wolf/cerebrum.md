@@ -23,6 +23,8 @@
 
 - **界面动效约定**（styles.css「界面动效」段）：切页 `.route-enter`（key=pathname 重挂载）；卡片 / 区块容器加 `.stagger`（直接子元素依次缩放淡入）；列表容器加 `.stagger-rows`（ListViewPage 已默认带上，行从左滑入）。transform 只能缩小 / 向左 / 向上——main 是 overflow-auto，往下或往外推会让滚动条闪；fill-mode 用 `backwards` 不用 `both`，否则动画结束后会压住子元素的 hover transform。侧栏选中底色是 `ActiveIndicator` 量 `[data-active="true"]` 的位置画一块滑过去，新加的侧栏项要带 `data-active`。明暗 / 主题色切换走 `useThemeEffect`（View Transition 整页交叉淡化，同一帧的多个改动并进一个过渡）。
 
+- **无头验证主窗口（用户开着 rockoon.exe 时）**：单实例插件会把 `tauri dev` 转发给已开的进程，别关用户的。用 vite + 无头 Edge，`Page.addScriptToEvaluateOnNewDocument` 注入假 `__TAURI_INTERNALS__`（要带 `plugins.path.sep`、`transformCallback`，`plugin:path|join` 要规整分隔符，`read_options` 不能返回 null，否则 Start 页崩），下载站接口走线上（`--proxy-server=http://127.0.0.1:4754`）。
+
 ## Do-Not-Repeat
 
 - [2026-10-26] CDP 里 `import('/src/stores/pref.ts')` 拿到的可能不是 App 用的那份 store：HMR 改过的模块被 Vite 加了 `?t=` 时间戳，两份实例互不相通，结果「改了 pref 没反应」。要么重启 dev server，要么从 `performance.getEntriesByType('resource')` 里找 App 实际加载的 URL 再 import。

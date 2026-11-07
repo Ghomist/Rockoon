@@ -24,7 +24,7 @@ const MAX_DEPTH = 5;
 type PackageInfo = { name: string; dependencies: string[]; category?: string };
 
 /** 从下载站地址里取资源 id：/packages/137/download */
-function packageIdFromUrl(url: string): number | null {
+export function packageIdFromUrl(url: string): number | null {
   const match = /\/packages\/(\d+)(?:\/|$)/.exec(url);
   return match ? Number(match[1]) : null;
 }

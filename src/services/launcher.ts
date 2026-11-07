@@ -1,6 +1,14 @@
 import backend, { type VanillaFileState } from "@/backend";
+import {
+  askResourceUpdatesBeforeLaunch,
+  isResourceGuardMounted
+} from "@/components/ResourceUpdateGuard";
 import { askVanillaModified } from "@/components/VanillaGuard";
 import { t } from "@/i18n";
+import {
+  checkResourceUpdatesQuickly,
+  unseenUpdates
+} from "@/services/resourceUpdates";
 import { ensureWineReady } from "@/services/wine";
 import { useAppStore } from "@/stores/app";
 import { usePrefStore } from "@/stores/pref";
@@ -23,6 +31,19 @@ async function passVanillaCheck(instancePath: string): Promise<boolean> {
   if (mismatched.length === 0) return true;
   // “去补丁页恢复”由对话框自己跳转，这里只管发不启动
   return (await askVanillaModified(mismatched.map(f => f.path))) === "launch";
+}
+
+/**
+ * 启动前看看地图 / mod 有没有新版，有就问一句。返回 true = 可以继续启动。
+ * 检查失败或超时都放行；说过「继续启动」的版本不再问。TAS 编辑器窗口没有对话框，不查。
+ */
+async function passResourceUpdateCheck(instancePath: string): Promise<boolean> {
+  if (!isResourceGuardMounted()) return true;
+  const updates = unseenUpdates(
+    await checkResourceUpdatesQuickly(instancePath)
+  );
+  if (updates.length === 0) return true;
+  return (await askResourceUpdatesBeforeLaunch(updates)) === "launch";
 }
 
 /** macOS 上正在启动：要等 Wine 把游戏拉起来（几秒到二十来秒），期间别让人连点出两个游戏 */
@@ -77,6 +98,7 @@ export async function launchInstance(options?: {
   if (!instance) return undefined;
   // 原版关卡 / 组件被换过就提醒一下：不再是原版游戏了，玩家容易懵
   if (!(await passVanillaCheck(instance.path))) return undefined;
+  if (!(await passResourceUpdateCheck(instance.path))) return undefined;
   // macOS 上游戏跑在 Wine 里：Wine 没装 / 前缀没初始化就先处理（Windows 上直接放行）
   if (!(await ensureWineReady())) return undefined;
   const cwd = await join(instance.path, "Bin");
@@ -106,6 +128,7 @@ export async function launchInstance(options?: {
 export async function launchMap(mapAbsolutePath: string): Promise<void> {
   const instance = useAppStore.getState().selectedInstanceData;
   if (!instance) return;
+  if (!(await passResourceUpdateCheck(instance.path))) return;
   if (!(await ensureWineReady())) return;
   const cwd = await join(instance.path, "Bin");
   const bin = await join(cwd, "Player.exe");

@@ -526,6 +526,21 @@
     "or": "或者"
   },
   "resources": {
+    "update": {
+      "button": "更新",
+      "all": "更新 ({count})",
+      "newVersion": "新版 v{version}",
+      "updatedAt": "更新于 {date}",
+      "promptTitle": "地图 / 模组有新版本",
+      "promptBody": "下载站上有 {count} 个资源出了新版本，可以到对应页面右上角更新。",
+      "andMore": "还有 {count} 个…",
+      "goUpdate": "去更新",
+      "later": "稍后",
+      "launchAnyway": "继续启动",
+      "confirmTitle": "更新到最新版本",
+      "confirmAll": "全部更新",
+      "gameRunning": "游戏正在运行，请先关闭游戏再更新"
+    },
     "search": {
       "placeholder": "搜索名称…",
       "empty": "没有匹配「{query}」的内容"

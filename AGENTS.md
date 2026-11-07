@@ -71,6 +71,14 @@ BMLPlus plugin (`RockoonIO.bmodp`) built via CMake + `build.ps1`. Sources in `sr
 - UI is **shadcn (React, "new-york" style)** on Tailwind v4 (`components.json`, CSS variables in `src/assets/styles.css`, `cn()` in `@/lib/utils`) — add primitives via the shadcn CLI, do not hand-roll them. Icons are `lucide-react`. Toasts via `sonner`. Dialogs/messages via `@/utils/ui/feedback` + `@/utils/ui/dialog-store` and `GlobalDialogHost.tsx`. **Do not add another UI library** — extend the existing shadcn set.
 - Rust: `?` propagation, `thiserror` for errors, `log` crate macros (`info!`, etc.).
 
+## 地图 / mod 更新检查
+
+`src/services/resourceUpdates.ts`：Rust `hash_instance_resources`（`commands/resources.rs`，Maps 递归、Mods 只看根目录，含 `.disable`，按路径+大小+修改时间缓存）算出文件本身的 sha256，再 `POST /packages/by-hash` 反查（规则在下载站 `AGENTS.md`）。结果放 `useResourceUpdatesStore`，键是 `resourceKey(路径)`。
+
+- **三个时机**：打开启动器（`components/ResourceUpdateGuard.tsx`，每次运行一次）、开游戏（`launcher.ts` 的 `passResourceUpdateCheck`，最多等 2.5 秒，失败放行；对话框没挂载的 TAS 窗口跳过）、进地图 / 模组页（`useResourceUpdateCheck`）。
+- 弹窗只提示 `seenResourceUpdates`（pref）里没记过的新版，「稍后」/「继续启动」后同一版本不再弹；页面右上角与行尾的更新按钮不受影响。
+- **更新**（`updateResources`）走 `importFromUrl`，靠 `onInstalled` 收尾：安装器只往 Maps / Mods 根目录放，所以要把新文件挪回旧文件的文件夹、删掉改了名的旧文件、保持禁用状态。游戏运行时不让更新。
+
 ## Patches (download-site patches)
 
 补丁页（`/patches`）不是本地文件管理页：它对接下载站的补丁资源（BML / BML+ / 新 Player）。

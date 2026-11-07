@@ -650,3 +650,4 @@
 | 22:30 | UI 动效：切页缩放淡入、.stagger/.stagger-rows 依次进场、侧栏滑动选中指示器 + 收起淡出 + 分组展开高度动画、首页数字滚动、启动按钮切换动画、背景切换淡入、明暗/主题色 View Transition 交叉淡化 | styles.css, AppSidebar.tsx, theme.ts, App.tsx, AppBackground.tsx, Start.tsx, ListViewPage.tsx, GameData/Settings/GameConfig/ResourcesSkys | tsc+eslint 通过，CDP 截中间帧验证 | ~30k |
 | 22:15 | Session end: 3 writes across 2 files (sidebar_edit.py, theme.ts) | 9 reads | ~4672 tok |
 | 22:43 | Session end: 3 writes across 2 files (sidebar_edit.py, theme.ts) | 9 reads | ~4672 tok |
+| 2026-11-07 | 地图/mod 按 hash 反查下载站：更新检查、右上角更新按钮、列表显示作者/日期/版本 | src/services/resourceUpdates.ts, src/components/ResourceUpdateGuard.tsx, src/views/components/ResourceUpdates.tsx, src-tauri/src/commands/resources.rs | build:ui + cargo test + 无头 UI 流程通过，未真机运行 | - |

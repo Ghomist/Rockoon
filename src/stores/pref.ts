@@ -30,7 +30,8 @@ const defaultState: PreferenceStore = {
   confirmLaunchMap: true,
   enableTasEditor: false,
   patchVersions: {},
-  seenPatchVersions: {}
+  seenPatchVersions: {},
+  seenResourceUpdates: {}
 };
 
 interface PrefActions {

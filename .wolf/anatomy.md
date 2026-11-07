@@ -458,6 +458,8 @@
 
 ## src/services/
 
+- `resourceUpdates.ts` — 地图/mod 按 sha256 反查下载站、更新检查与更新流程
+
 - `brp.ts` — Render a short description of what the manifest contains, for notifications. (~1171 tok)
 - `hub.ts` — Exports fetchMaps, fetchMap, fetchTags, getDownloadUrl + 14 more (~1324 tok)
 - `launcher.ts` — Launch the Ballance Player.exe for the selected instance. (~692 tok)
@@ -552,3 +554,9 @@
 - `HubBatch.vue` — Vue: ZIP, setup, TS (~1376 tok)
 - `HubMaps.vue` — Vue: Map, setup, TS (~6811 tok)
 - `HubUpload.vue` — Vue: Map, setup, TS (~2263 tok)
+
+## 地图/mod 更新检查（2026-11-07 新增）
+
+- `src/components/ResourceUpdateGuard.tsx` — 启动器打开 / 开游戏时的更新提示
+- `src/views/components/ResourceUpdates.tsx` — 列表元信息、行尾与右上角更新按钮
+- `src-tauri/src/commands/resources.rs` — 实例地图/mod 文件 sha256（带缓存）

@@ -117,6 +117,8 @@ export interface BrpImportOptions {
   title?: string;
   /** true = 这是被依赖的资源：失败多提示一句名字，成功不打扰 */
   isDependency?: boolean;
+  /** 文件落盘之后、任务算成功之前的收尾（更新资源时挪文件、删旧版）；抛错算这次导入失败 */
+  onInstalled?: (result: BrpImportResult) => Promise<void>;
 }
 
 /** 占位任务 id：后端 id 要等 start 返回才拿到，先拿它登记任务（拿到后 update 替换） */
@@ -200,6 +202,7 @@ export async function importFromUrl(
     }
 
     const m = result.manifest;
+    await options.onInstalled?.(m);
     const what = describeBrp(m.manifest);
     useDownloadsStore.getState().succeed(id, { title: what });
     useAppStore.getState().triggerRefresh();

@@ -71,6 +71,7 @@ pub fn run() {
             commands::game::start_game_install,
             commands::game::start_patch_install,
             commands::game::cancel_game_install,
+            commands::resources::hash_instance_resources,
             commands::vanilla::verify_vanilla_levels,
             commands::vanilla::restore_vanilla_levels,
             commands::blender::blender_find,

@@ -34,6 +34,14 @@ export type SkyboxAnalysisResult = {
 };
 
 /** 原版素材校验的一项：`reason` 为 `modified` 表示内容被换过，`missing` 表示文件不在 */
+/** 实例里的一个地图 / mod 文件（`path` 是绝对路径，被禁用的带 `.disable`） */
+export type ResourceFile = {
+  path: string;
+  kind: "map" | "mod";
+  size: number;
+  sha256: string;
+};
+
 export type VanillaFileState = {
   path: string;
   reason: "modified" | "missing";
@@ -87,6 +95,9 @@ const fs = {
   size: (file: string) => invoke<number>("size", { path: file }),
   list: (dir: string, exts: string[]) =>
     invoke<ManagedFile[]>("list", { path: dir, exts }),
+  /** 实例里所有地图 / mod 的 sha256（含被禁用的），查下载站更新用 */
+  hashInstanceResources: (instancePath: string) =>
+    invoke<ResourceFile[]>("hash_instance_resources", { instancePath }),
   listDirs: (dir: string) => invoke<string[]>("list_dirs", { path: dir }),
   copy: (from: string, to: string) => invoke<undefined>("copy", { from, to }),
   rename: (from: string, to: string) =>

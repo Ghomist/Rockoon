@@ -16,6 +16,7 @@ import AppSidebar from "@/components/AppSidebar";
 import GlobalDialogHost from "@/components/GlobalDialogHost";
 import PatchUpdateWatcher from "@/components/PatchUpdateWatcher";
 import TitleBarControls from "@/components/TitleBarControls";
+import ResourceUpdateGuard from "@/components/ResourceUpdateGuard";
 import VanillaGuard from "@/components/VanillaGuard";
 import AppBackground from "@/components/AppBackground";
 import { WordRotate } from "@/components/ui/word-rotate";
@@ -418,6 +419,7 @@ function MainLayout() {
           <AppRoutes />
         </main>
         <PatchUpdateWatcher />
+        <ResourceUpdateGuard />
         <VanillaGuard />
       </div>
     </div>

@@ -19,6 +19,12 @@ import ListViewPage from "./components/ListViewPage";
 import ResourceToolbar from "./components/ResourceToolbar";
 import ModConfigSheet, { modNameOf } from "./components/ModConfigSheet";
 import {
+  HubMeta,
+  RowUpdateButton,
+  UpdateAllButton,
+  useResourceUpdateCheck
+} from "./components/ResourceUpdates";
+import {
   EmptyState,
   ExtTag,
   ResourceRow,
@@ -59,6 +65,8 @@ export default function ResourcesPageBase({ type }: Props) {
   const [configNames, setConfigNames] = useState<string[]>([]);
   /** 正在编辑的配置文件名（右侧抽屉） */
   const [editing, setEditing] = useState<string | null>(null);
+
+  useResourceUpdateCheck();
 
   const schema = resourcePageSchema[type];
   const TypeIcon = type === "map" ? MapIcon : Puzzle;
@@ -202,6 +210,7 @@ export default function ResourcesPageBase({ type }: Props) {
             onChange: setQuery,
             placeholder: t("resources.search.placeholder")
           }}
+          extra={<UpdateAllButton kind={type} />}
         />
       }
     >
@@ -219,6 +228,7 @@ export default function ResourcesPageBase({ type }: Props) {
       {visibleList.map(file => {
         const disabled = isFileDisabled(file.name);
         const config = type === "mod" ? configFor(file.name) : undefined;
+        const filePath = `${rscPath}/${file.name}`;
         return (
           <ResourceRow
             key={file.name}
@@ -237,11 +247,13 @@ export default function ResourcesPageBase({ type }: Props) {
                 <span className="tabular-nums">
                   {formatFileSize(file.size)}
                 </span>
+                <HubMeta path={filePath} />
               </>
             }
             onClick={() => onToggleDisable(file, disabled)}
             actions={
               <>
+                <RowUpdateButton path={filePath} />
                 {config && (
                   <Button
                     variant="ghost"

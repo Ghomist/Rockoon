@@ -112,6 +112,8 @@ type PreferenceStore = {
   blenderPath?: string;
   /** 用户已经忽略过更新提示的补丁：{ [组件键]: 提示过的版本号 } */
   seenPatchVersions: Record<string, string>;
+  /** 资源 id → 已经提示过的最新版本号：同一版本不再弹窗（页面上的更新按钮不受影响） */
+  seenResourceUpdates: Record<string, number>;
 };
 
 type ProfileStore = {

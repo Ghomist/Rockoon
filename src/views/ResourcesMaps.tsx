@@ -24,6 +24,12 @@ import { editMapInBlender } from "@/services/mapping";
 import ListViewPage from "./components/ListViewPage";
 import ResourceToolbar, { IconAction } from "./components/ResourceToolbar";
 import {
+  HubMeta,
+  RowUpdateButton,
+  UpdateAllButton,
+  useResourceUpdateCheck
+} from "./components/ResourceUpdates";
+import {
   EmptyState,
   ExtTag,
   ResourceRow,
@@ -67,6 +73,8 @@ export default function ResourcesMaps() {
   const [itemToMove, setItemToMove] = useState<DirItem | null>(null);
   /** 搜索关键词：只在当前目录内过滤（不跳目录），切目录时清空 */
   const [query, setQuery] = useState("");
+
+  useResourceUpdateCheck();
 
   const isFileDisabled = (fileName: string) => fileName.endsWith(".disable");
   const getDisplayName = (fileName: string) =>
@@ -326,15 +334,18 @@ export default function ResourcesMaps() {
             placeholder: t("resources.search.placeholder")
           }}
           extra={
-            <IconAction
-              label={t("resources.createFolder.button")}
-              onClick={() => {
-                setNewFolderName("");
-                setShowCreateFolderDialog(true);
-              }}
-            >
-              <FolderPlus />
-            </IconAction>
+            <>
+              <UpdateAllButton kind="map" />
+              <IconAction
+                label={t("resources.createFolder.button")}
+                onClick={() => {
+                  setNewFolderName("");
+                  setShowCreateFolderDialog(true);
+                }}
+              >
+                <FolderPlus />
+              </IconAction>
+            </>
           }
         />
       }
@@ -361,6 +372,7 @@ export default function ResourcesMaps() {
 
       {visibleList.map(item => {
         const disabled = !item.isDir && isFileDisabled(item.name);
+        const filePath = `${currentPath}/${item.name}`;
         return (
           <ResourceRow
             key={item.name}
@@ -381,6 +393,7 @@ export default function ResourcesMaps() {
                   <span className="tabular-nums">
                     {formatFileSize(item.size!)}
                   </span>
+                  <HubMeta path={filePath} />
                 </>
               )
             }
@@ -389,6 +402,7 @@ export default function ResourcesMaps() {
             }
             actions={
               <>
+                {!item.isDir && <RowUpdateButton path={filePath} />}
                 {!item.isDir && (
                   <Button
                     variant="ghost"

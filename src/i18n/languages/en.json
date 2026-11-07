@@ -878,6 +878,21 @@
     "noScore": "No record"
   },
   "resources": {
+    "update": {
+      "button": "Update",
+      "all": "Update ({count})",
+      "newVersion": "New v{version}",
+      "updatedAt": "Updated {date}",
+      "promptTitle": "Map / mod updates available",
+      "promptBody": "{count} of your resources have a new version on the download site. Update them from the top right of the Maps or Mods page.",
+      "andMore": "and {count} more…",
+      "goUpdate": "Go to update",
+      "later": "Later",
+      "launchAnyway": "Launch anyway",
+      "confirmTitle": "Update to the latest version",
+      "confirmAll": "Update all",
+      "gameRunning": "The game is running. Close it before updating."
+    },
     "search": {
       "placeholder": "Search by name…",
       "empty": "Nothing matches \"{query}\""

@@ -65,7 +65,7 @@ export function ResourceRow({
           {title}
         </span>
         {meta && (
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <div className="flex min-w-0 items-center gap-2 text-xs text-muted-foreground">
             {meta}
           </div>
         )}
