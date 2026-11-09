@@ -28,7 +28,8 @@ export const formatFileSize = (b: number) => {
 
 /** 下载进度 / 速度用：保留一位小数，小文件也能看出变化 */
 export const formatBytes = (b: number) => {
-  if (b < 1024) return `${b} B`;
+  // 单个字节的小数值原样打印会变成「366.4001951904217 B/s」，这里取整
+  if (b < 1024) return `${Math.round(b)} B`;
   if (b < 1024 * 1024) return `${(b / 1024).toFixed(1)} KB`;
   if (b < 1024 * 1024 * 1024) return `${(b / 1024 / 1024).toFixed(1)} MB`;
   return `${(b / 1024 / 1024 / 1024).toFixed(2)} GB`;

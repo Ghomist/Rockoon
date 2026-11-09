@@ -142,6 +142,166 @@ fn fail(id: &str, msg: impl Into<String>) -> CompletePayload {
     }
 }
 
+/// 单个连接的读取缓冲
+const READ_BUF: usize = 64 * 1024;
+/// 收不到数据多久算连接假死（ureq 的 socket 读超时）
+const STALL_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(10);
+/// 最多重连几次（每次从已下载的偏移继续）
+const MAX_ATTEMPTS: u32 = 8;
+/// 连续几轮一点数据都没拿到就放弃
+const MAX_IDLE_ROUNDS: u32 = 2;
+
+/// 解析 `content-range: bytes <start>-<end>/<total>`，返回 (起始偏移, 总长度)
+fn parse_content_range(value: &str) -> Option<(u64, u64)> {
+    let rest = value.trim().strip_prefix("bytes")?.trim();
+    let (range, total) = rest.rsplit_once('/')?;
+    let (start, _end) = range.split_once('-')?;
+    let start = start.trim().parse::<u64>().ok()?;
+    let total = total.trim().parse::<u64>().unwrap_or(0);
+    Some((start, total))
+}
+
+fn percent_of(downloaded: u64, total: u64) -> u64 {
+    if total > 0 {
+        (downloaded.min(total) * 100 / total).min(100)
+    } else {
+        0
+    }
+}
+
+/// 把 `url` 下到 `tmp`，支持 Range 断点续传。
+///
+/// 之前是一条连接读到尾：链路一抖（TCP 假死、运营商掐长连接）整份包就得重下，
+/// 而 12MB 的 BML+ 包在烂链路上能慢到几百字节每秒。现在每轮读超时或断开就记下
+/// 已下载的偏移，下一轮带 `Range` 从那里接着发；连续两轮零进展才放弃。
+///
+/// 返回 (已下载字节, 总字节)；总字节未知时是 0。
+fn download_resumable(
+    app: &AppHandle,
+    id: &str,
+    url: &str,
+    tmp: &Path,
+    cancel: &Arc<AtomicBool>,
+) -> Result<(u64, u64), String> {
+    let agent = ureq::AgentBuilder::new()
+        .timeout_connect(std::time::Duration::from_secs(30))
+        // 没有这个超时，连接假死时 read 会一直阻塞，任务永远停在某个百分比
+        .timeout_read(STALL_TIMEOUT)
+        .build();
+
+    let mut downloaded: u64 = 0;
+    let mut total: u64 = 0;
+    let mut last_emit = std::time::Instant::now();
+    let mut idle_rounds: u32 = 0;
+    let mut last_error = String::from("下载失败");
+
+    for attempt in 1..=MAX_ATTEMPTS {
+        if cancel.load(Ordering::Relaxed) {
+            return Err("已取消".to_string());
+        }
+
+        let request = if downloaded > 0 {
+            agent.get(url).set("Range", &format!("bytes={downloaded}-"))
+        } else {
+            agent.get(url)
+        };
+        let response = match request.call() {
+            Ok(r) => r,
+            Err(e) => {
+                last_error = format!("连接下载站失败：{e}");
+                if attempt < MAX_ATTEMPTS {
+                    std::thread::sleep(std::time::Duration::from_millis(500 * attempt as u64));
+                }
+                continue;
+            }
+        };
+
+        // 206 且起始偏移对得上才算续传；服务器不支持 Range（回 200）或者偏移对不上
+        // 就把它当从头发的完整内容，清空临时文件重来 —— 绝不能把两份数据拼在一起。
+        let content_range = response.header("content-range").and_then(parse_content_range);
+        let resuming = matches!(content_range, Some((start, _)) if downloaded > 0 && start == downloaded);
+
+        let mut file = if resuming {
+            match std::fs::OpenOptions::new().append(true).open(tmp) {
+                Ok(f) => f,
+                Err(e) => return Err(format!("无法写入临时文件：{e}")),
+            }
+        } else {
+            downloaded = 0;
+            match std::fs::File::create(tmp) {
+                Ok(f) => f,
+                Err(e) => return Err(format!("无法创建临时文件：{e}")),
+            }
+        };
+
+        if total == 0 {
+            let declared = match content_range {
+                Some((_, len)) if len > 0 => len,
+                _ => response
+                    .header("Content-Length")
+                    .and_then(|s| s.parse::<u64>().ok())
+                    .map(|len| len + downloaded)
+                    .unwrap_or(0),
+            };
+            if declared > 0 {
+                total = declared;
+            }
+        }
+
+        let mut reader = response.into_reader();
+        let mut buf = vec![0u8; READ_BUF];
+        let before = downloaded;
+        let mut read_error: Option<String> = None;
+
+        loop {
+            if cancel.load(Ordering::Relaxed) {
+                return Err("已取消".to_string());
+            }
+            match reader.read(&mut buf) {
+                Ok(0) => break,
+                Ok(n) => {
+                    if let Err(e) = file.write_all(&buf[..n]) {
+                        return Err(format!("写入临时文件失败：{e}"));
+                    }
+                    downloaded += n as u64;
+                    if last_emit.elapsed().as_millis() >= 100 {
+                        let percent = percent_of(downloaded, total);
+                        emit_progress(app, id, "downloading", percent, downloaded, total);
+                        last_emit = std::time::Instant::now();
+                    }
+                }
+                Err(e) => {
+                    // 读超时 / 连接被掐：本轮到此为止，外层从当前偏移重连续传
+                    read_error = Some(e.to_string());
+                    break;
+                }
+            }
+        }
+        drop(file);
+
+        // 收够字节就算成功；没有 content-length 时读到 EOF 就是完整
+        if (total > 0 && downloaded >= total) || (total == 0 && read_error.is_none()) {
+            let percent = percent_of(downloaded, total);
+            emit_progress(app, id, "downloading", percent, downloaded, total);
+            return Ok((downloaded, total));
+        }
+
+        last_error = match read_error {
+            Some(e) => format!("下载中断（已下载 {downloaded} 字节）：{e}"),
+            None => format!("下载不完整：{downloaded}/{total} 字节"),
+        };
+        idle_rounds = if downloaded > before { 0 } else { idle_rounds + 1 };
+        if idle_rounds >= MAX_IDLE_ROUNDS {
+            break;
+        }
+        if attempt < MAX_ATTEMPTS {
+            std::thread::sleep(std::time::Duration::from_millis(500 * attempt as u64));
+        }
+    }
+
+    Err(last_error)
+}
+
 fn download_and_extract(
     app: &AppHandle,
     id: &str,
@@ -159,63 +319,15 @@ fn download_and_extract(
     let mut tmp = std::env::temp_dir();
     tmp.push(format!("rockoon-game-{id}.zip"));
 
-    // ── 下载 ────────────────────────────────────────────────
+    // ── 下载（断线 / 卡死从当前偏移续传，不必整个重来）────────
     emit_progress(app, id, "connecting", 0, 0, 0);
-    let response = match ureq::get(url).call() {
-        Ok(r) => r,
-        Err(e) => return fail(id, format!("连接下载站失败：{e}")),
-    };
-    let total = response
-        .header("Content-Length")
-        .and_then(|s| s.parse::<u64>().ok())
-        .unwrap_or(0);
-    let mut reader = response.into_reader();
-    let mut file = match std::fs::File::create(&tmp) {
-        Ok(f) => f,
-        Err(e) => return fail(id, format!("无法创建临时文件：{e}")),
-    };
-
-    let mut buf = [0u8; 64 * 1024];
-    let mut downloaded: u64 = 0;
-    let mut last_emit = std::time::Instant::now();
-
-    loop {
-        let n = match reader.read(&mut buf) {
-            Ok(0) => break,
-            Ok(n) => n,
-            Err(e) => {
-                let _ = std::fs::remove_file(&tmp);
-                return fail(id, format!("下载中断：{e}"));
-            }
-        };
-        if file.write_all(&buf[..n]).is_err() {
+    let (downloaded, total) = match download_resumable(app, id, url, &tmp, cancel) {
+        Ok(result) => result,
+        Err(msg) => {
             let _ = std::fs::remove_file(&tmp);
-            return fail(id, "写入临时文件失败");
+            return fail(id, msg);
         }
-        downloaded += n as u64;
-
-        if cancel.load(Ordering::Relaxed) {
-            drop(file);
-            let _ = std::fs::remove_file(&tmp);
-            return fail(id, "已取消");
-        }
-
-        if last_emit.elapsed().as_millis() >= 100 {
-            let percent = if total > 0 {
-                (downloaded.min(total) * 100 / total).min(100)
-            } else {
-                0
-            };
-            emit_progress(app, id, "downloading", percent, downloaded, total);
-            last_emit = std::time::Instant::now();
-        }
-    }
-    drop(file);
-
-    if total > 0 && downloaded < total {
-        let _ = std::fs::remove_file(&tmp);
-        return fail(id, format!("下载不完整：{downloaded}/{total} 字节"));
-    }
+    };
 
     // ── 解压 ────────────────────────────────────────────────
     emit_progress(app, id, "importing", 100, downloaded, total);
@@ -296,6 +408,18 @@ fn extract_zip(archive_path: &Path, target: &Path, strip_top_level: bool) -> Res
 mod tests {
     use super::*;
     use std::io::Write;
+
+    /// 续传靠 content-range 对偏移：解析错了要么白下要么把两份数据拼起来。
+    #[test]
+    fn parse_content_range_works() {
+        assert_eq!(
+            parse_content_range("bytes 5000000-5499999/12018863"),
+            Some((5000000, 12018863))
+        );
+        assert_eq!(parse_content_range("bytes 0-99/*"), Some((0, 0)));
+        assert_eq!(parse_content_range("bytes */12018863"), None);
+        assert_eq!(parse_content_range(""), None);
+    }
 
     fn make_zip(path: &Path, entries: &[(&str, &[u8])]) {
         let file = std::fs::File::create(path).unwrap();
