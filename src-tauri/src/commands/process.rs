@@ -1,4 +1,4 @@
-use crate::common::exception::{RcResult, RcResultWith};
+use crate::common::exception::{RcError, RcResult, RcResultWith};
 use std::collections::HashMap;
 #[cfg(target_os = "windows")]
 use std::{os::windows::process::CommandExt, path::PathBuf};
@@ -15,30 +15,42 @@ pub fn execute(
     // 要不要把游戏进程提到「高」优先级（TAS 回放用）
     high_priority: Option<bool>,
 ) -> RcResultWith<u32> {
+    let high_priority = high_priority.unwrap_or(false);
+    let args = args.unwrap_or_default();
+
     let mut cmd = std::process::Command::new(&bin);
     cmd.current_dir(&cwd);
-    if let Some(env_vars) = env {
+    if let Some(env_vars) = &env {
         cmd.envs(env_vars);
     }
-    if let Some(args) = args {
-        cmd.args(args);
-    }
-    let child = cmd.creation_flags(0x08000000).spawn()?;
+    cmd.args(&args);
+
+    // 游戏被标记成「以管理员身份运行」（兼容性勾选 / exe 清单要求）时，普通 CreateProcess 会直接失败：
+    // `io error: 请求的操作需要提升 (os error 740)` —— ERROR_ELEVATION_REQUIRED。
+    // 这时改走 ShellExecuteEx 的 `runas` 动词，由系统弹 UAC：这是 Windows 上唯一「申请」提权的正规接口。
+    let child = match cmd.creation_flags(0x08000000).spawn() {
+        Ok(child) => child,
+        Err(e) if e.raw_os_error() == Some(740) => {
+            log::warn!(
+                "CreateProcess denied with ERROR_ELEVATION_REQUIRED, asking the UAC for elevation"
+            );
+            let pid = win_exec::spawn_elevated(&cwd, &bin, env.as_ref(), &args, high_priority)?;
+            log::info!(
+                "Started {} elevated (pid: {})",
+                PathBuf::from(&cwd).join(&bin).display(),
+                pid
+            );
+            return Ok(pid);
+        }
+        Err(e) => return Err(e.into()),
+    };
 
     // TAS 回放对帧稳定很敏感，而编辑器（WebView2）会时不时抢 CPU（鼠标一动尤其明显）：
     // 需要时把游戏提到 HIGH_PRIORITY_CLASS，让它的渲染/回放线程不至于被编辑器挤掉帧。
     #[cfg(target_os = "windows")]
-    if high_priority.unwrap_or(false) {
+    if high_priority {
         use std::os::windows::io::AsRawHandle;
-        use windows_sys::Win32::Foundation::HANDLE;
-        use windows_sys::Win32::System::Threading::{SetPriorityClass, HIGH_PRIORITY_CLASS};
-        let handle = child.as_raw_handle() as HANDLE;
-        let ok = unsafe { SetPriorityClass(handle, HIGH_PRIORITY_CLASS) } != 0;
-        log::info!(
-            "Set game process {} priority to HIGH: {}",
-            child.id(),
-            if ok { "ok" } else { "failed" }
-        );
+        win_exec::set_high_priority(child.as_raw_handle() as windows_sys::Win32::Foundation::HANDLE);
     }
     #[cfg(not(target_os = "windows"))]
     let _ = high_priority;
@@ -50,6 +62,183 @@ pub fn execute(
     );
 
     Ok(child.id())
+}
+
+/// 提权启动（UAC）与进程优先级的 Win32 实现。
+///
+/// 提权的子进程**拿不到**父进程的环境变量（UAC 用的是另一个登录会话的令牌，微软有意为之），
+/// 所以要不要传 env 决定走哪条路：没有 env 直接 ShellExecuteEx 游戏 exe；有 env 就先写个临时
+/// `.cmd`（set 好变量再 `start` 游戏），由提权的 cmd 把环境变量带给游戏。
+#[cfg(target_os = "windows")]
+mod win_exec {
+    use super::*;
+    use windows_sys::Win32::Foundation::{CloseHandle, GetLastError, ERROR_CANCELLED, HANDLE};
+    use windows_sys::Win32::System::Threading::{GetProcessId, SetPriorityClass, HIGH_PRIORITY_CLASS};
+    use windows_sys::Win32::UI::Shell::{
+        ShellExecuteExW, SEE_MASK_NOASYNC, SEE_MASK_NOCLOSEPROCESS, SHELLEXECUTEINFOW,
+    };
+    use windows_sys::Win32::UI::WindowsAndMessaging::SW_SHOWNORMAL;
+
+    fn wide(s: &str) -> Vec<u16> {
+        s.encode_utf16().chain(std::iter::once(0)).collect()
+    }
+
+    /// 按 Windows 命令行规则给单个参数加引号
+    fn quote(arg: &str) -> String {
+        if !arg.is_empty() && !arg.contains([' ', '\t', '"']) {
+            return arg.to_string();
+        }
+        let mut out = String::from("\"");
+        let mut backslashes = 0usize;
+        for c in arg.chars() {
+            match c {
+                '\\' => backslashes += 1,
+                '"' => {
+                    out.push_str(&"\\".repeat(backslashes * 2 + 1));
+                    out.push('"');
+                    backslashes = 0;
+                }
+                _ => {
+                    out.push_str(&"\\".repeat(backslashes));
+                    backslashes = 0;
+                    out.push(c);
+                }
+            }
+        }
+        out.push_str(&"\\".repeat(backslashes * 2));
+        out.push('"');
+        out
+    }
+
+    pub(super) fn set_high_priority(handle: HANDLE) {
+        if handle.is_null() {
+            return;
+        }
+        let ok = unsafe { SetPriorityClass(handle, HIGH_PRIORITY_CLASS) } != 0;
+        log::info!("Set game priority to HIGH: {}", if ok { "ok" } else { "failed" });
+    }
+
+    /// 等游戏进程真正出现（走 cmd 包装时拿到的 pid 是 cmd 的）
+    fn wait_for_new_process(exe: &str, before: &[u32]) -> RcResultWith<u32> {
+        for _ in 0..150 {
+            if let Some(pid) = super::win_proc::pids_by_image(exe)
+                .into_iter()
+                .find(|pid| !before.contains(pid))
+            {
+                return Ok(pid);
+            }
+            std::thread::sleep(std::time::Duration::from_millis(100));
+        }
+        Err(RcError::Other(
+            "elevation-failed: the game process did not show up within 15s".to_string(),
+        ))
+    }
+
+    pub(super) fn spawn_elevated(
+        cwd: &str,
+        bin: &str,
+        env: Option<&HashMap<String, String>>,
+        args: &[String],
+        high_priority: bool,
+    ) -> RcResultWith<u32> {
+        let bin_path = PathBuf::from(bin);
+        let exe_name = bin_path
+            .file_name()
+            .map(|n| n.to_string_lossy().to_string())
+            .unwrap_or_else(|| bin.to_string());
+        let exe_path = if bin_path.is_absolute() {
+            bin_path
+        } else {
+            PathBuf::from(cwd).join(bin_path)
+        };
+        let quoted_args: Vec<String> = args.iter().map(|a| quote(a)).collect();
+
+        let wrapper = match env {
+            Some(vars) if !vars.is_empty() => {
+                let mut text = String::from("@echo off\r\n");
+                for (k, v) in vars {
+                    text.push_str(&format!("set \"{k}={}\"\r\n", v.replace('%', "%%")));
+                }
+                text.push_str(&format!(
+                    "start \"\" \"{}\"{}\r\n",
+                    exe_path.display(),
+                    quoted_args
+                        .iter()
+                        .map(|a| format!(" {a}"))
+                        .collect::<String>()
+                ));
+                let path = std::env::temp_dir()
+                    .join(format!("rockoon-launch-{}.cmd", std::process::id()));
+                std::fs::write(&path, text)?;
+                log::info!(
+                    "Elevated launch goes through a temp wrapper: {}",
+                    path.display()
+                );
+                Some(path)
+            }
+            _ => None,
+        };
+
+        let (file, params) = match &wrapper {
+            Some(path) => (
+                "cmd.exe".to_string(),
+                format!("/c \"{}\"", path.display()),
+            ),
+            None => (exe_path.display().to_string(), quoted_args.join(" ")),
+        };
+
+        // 走包装时要先拍快照才能认出哪个是本次启动的游戏进程
+        let before = if wrapper.is_some() {
+            super::win_proc::pids_by_image(&exe_name)
+        } else {
+            Vec::new()
+        };
+
+        let verb = wide("runas");
+        let file_w = wide(&file);
+        let params_w = wide(&params);
+        let cwd_w = wide(cwd);
+
+        let mut info: SHELLEXECUTEINFOW = unsafe { std::mem::zeroed() };
+        info.cbSize = std::mem::size_of::<SHELLEXECUTEINFOW>() as u32;
+        info.fMask = SEE_MASK_NOCLOSEPROCESS | SEE_MASK_NOASYNC;
+        info.lpVerb = verb.as_ptr();
+        info.lpFile = file_w.as_ptr();
+        info.lpParameters = params_w.as_ptr();
+        info.lpDirectory = cwd_w.as_ptr();
+        info.nShow = SW_SHOWNORMAL;
+
+        let ok = unsafe { ShellExecuteExW(&mut info) } != 0;
+        if !ok {
+            let code = unsafe { GetLastError() };
+            if let Some(path) = &wrapper {
+                let _ = std::fs::remove_file(path);
+            }
+            return Err(RcError::Other(if code == ERROR_CANCELLED {
+                "elevation-cancelled".to_string()
+            } else {
+                format!("elevation-failed: ShellExecuteEx(runas) failed with code {code}")
+            }));
+        }
+
+        if high_priority && !info.hProcess.is_null() {
+            set_high_priority(info.hProcess);
+        }
+
+        let pid = match (&wrapper, info.hProcess.is_null()) {
+            (None, false) => Ok(unsafe { GetProcessId(info.hProcess) }),
+            _ => wait_for_new_process(&exe_name, &before),
+        };
+
+        if let Some(path) = &wrapper {
+            let _ = std::fs::remove_file(path);
+        }
+        if !info.hProcess.is_null() {
+            unsafe { CloseHandle(info.hProcess) };
+        }
+
+        pid
+    }
 }
 
 /// 其它平台（macOS）：`.exe` 交给 Wine（commands/wine.rs）。async 是因为要等 Wine 把游戏进程拉起来
@@ -111,17 +300,24 @@ pub fn execute(
 }
 
 // TODO: should check if the process is spawned by the launcher
+// 等 taskkill 结束再返回（原来只 spawn 不等，前端紧接着重启会撞上还没退干净的游戏）。
+// 提权启动的游戏非管理员杀不掉（UIPI），失败必须报错，不能让「结束游戏」按钮静默失败。
 #[cfg(target_os = "windows")]
-#[command]
+#[command(async)]
 pub fn kill(pid: u32) -> RcResult {
-    std::process::Command::new("taskkill")
+    let out = std::process::Command::new("taskkill")
         .args(["/pid", &pid.to_string(), "/f"])
         .creation_flags(0x08000000)
-        .spawn()?;
+        .output()?;
 
-    log::info!("Killed process {}", pid);
+    if out.status.success() {
+        log::info!("Killed process {}", pid);
+        return Ok(());
+    }
 
-    Ok(())
+    let stderr = String::from_utf8_lossy(&out.stderr).trim().to_string();
+    log::warn!("Killing process {} failed: {}", pid, stderr);
+    Err(RcError::Other(format!("kill-failed: {stderr}")))
 }
 #[cfg(not(target_os = "windows"))]
 #[command]
@@ -137,7 +333,7 @@ pub fn kill(pid: u32) -> RcResult {
 
 /// 按映像名列出正在运行的进程 pid（如 `Player.exe`，不区分大小写）。
 ///
-/// TAS 编辑器用它确认游戏真的退干净了：`kill` 只是发出 `taskkill`、不等它结束，
+/// TAS 编辑器用它确认游戏真的退干净了：`kill` 现在会等 `taskkill` 结束，但
 /// `Player.exe` 往往还要再活一小会儿；Ballance 不支持多开，这时候再启动会出问题。
 /// 也能发现从主窗口启动、编辑器不知道 pid 的那个游戏。
 ///

@@ -12,7 +12,7 @@ import {
 import { ensureWineReady } from "@/services/wine";
 import { useAppStore } from "@/stores/app";
 import { usePrefStore } from "@/stores/pref";
-import { message } from "@/utils/ui/feedback";
+import { dialog, message } from "@/utils/ui/feedback";
 import { isMac } from "@/utils/platform";
 import { join } from "@tauri-apps/api/path";
 
@@ -83,8 +83,58 @@ async function startGame(
   }
 }
 
-/** Launch the Ballance Player.exe for the selected instance. */
-export async function launchInstance(options?: {
+/** 后端提权失败用的标记（见 src-tauri/src/commands/process.rs 的 win_exec） */
+const ELEVATION_CANCELLED = "elevation-cancelled";
+const ELEVATION_FAILED = "elevation-failed";
+
+/**
+ * 启动失败：日志留一份，界面上弹窗说清楚。
+ * 原来 Start 页直接 `await launchInstance()`，后端抛的异常变成 uncaught promise ——
+ * 用户只看到「点了没反应」，报错只在控制台里。
+ */
+export function reportLaunchError(e: unknown): void {
+  console.error("Launch failed:", e);
+  const raw = e instanceof Error ? e.message : String(e);
+  if (raw.includes(ELEVATION_CANCELLED)) {
+    // 用户自己在 UAC 里点了「否」：不是故障，平级提示
+    dialog.warning({
+      title: t("home.launchFailedTitle"),
+      content: t("home.launchElevationCancelled")
+    });
+    return;
+  }
+  dialog.error({
+    title: t("home.launchFailedTitle"),
+    content: raw.includes(ELEVATION_FAILED)
+      ? `${t("home.launchElevationFailed")}\n\n${raw}`
+      : `${raw}\n\n${t("home.launchFailedHint")}`
+  });
+}
+
+/** 正在启动中的 promise：提权（UAC）路径要等好几秒，期间再点一次不能开第二个游戏 */
+let launchingPromise: Promise<number | undefined> | null = null;
+
+/**
+ * 启动游戏。返回 undefined = 没启动（用户在选择框里选了「不启动」，或者启动出错）。
+ * 出错一律弹窗，见 `reportLaunchError`；启动过程中重复调用会复用同一个 promise（防抖）。
+ */
+export async function launchInstance(
+  options?: LaunchOptions
+): Promise<number | undefined> {
+  if (launchingPromise) return launchingPromise;
+  launchingPromise = doLaunchInstance(options)
+    .catch(e => {
+      reportLaunchError(e);
+      return undefined;
+    })
+    .finally(() => {
+      launchingPromise = null;
+    });
+  return launchingPromise;
+}
+
+/** `launchInstance` 的参数 */
+export interface LaunchOptions {
   /** 额外命令行参数（TAS 编辑器用它给游戏定分辨率：`-w 1024 -h 768`） */
   args?: string[];
   /** 不因为「启动时隐藏主窗口」这个偏好把主窗口藏起来（TAS 编辑器要一直显示） */
@@ -93,7 +143,17 @@ export async function launchInstance(options?: {
   highPriority?: boolean;
   /** 额外环境变量（TAS 编辑器用 `ROCKOON_TAS_FPS` 让 RockoonIO 打开回放调速） */
   env?: Record<string, string>;
-}): Promise<number | undefined> {
+}
+
+/**
+ * 启动游戏。返回 undefined = 没启动（用户在选择框里选了「不启动」，或者启动出错）。
+ * 出错一律弹窗，见 `reportLaunchError`。
+ */
+
+/** Launch the Ballance Player.exe for the selected instance. */
+async function doLaunchInstance(
+  options?: LaunchOptions
+): Promise<number | undefined> {
   const instance = useAppStore.getState().selectedInstanceData;
   if (!instance) return undefined;
   // 原版关卡 / 组件被换过就提醒一下：不再是原版游戏了，玩家容易懵
@@ -126,6 +186,15 @@ export async function launchInstance(options?: {
 
 /** Launch the game with a specific map (passed via env). */
 export async function launchMap(mapAbsolutePath: string): Promise<void> {
+  try {
+    await doLaunchMap(mapAbsolutePath);
+  } catch (e) {
+    reportLaunchError(e);
+  }
+}
+
+/** Launch the game with a specific map (passed via env). */
+async function doLaunchMap(mapAbsolutePath: string): Promise<void> {
   const instance = useAppStore.getState().selectedInstanceData;
   if (!instance) return;
   if (!(await passResourceUpdateCheck(instance.path))) return;
@@ -151,7 +220,18 @@ export async function launchMap(mapAbsolutePath: string): Promise<void> {
 export async function killInstance(): Promise<void> {
   const app = useAppStore.getState();
   if (!app.runningInstancePid) return;
-  await backend.kill(app.runningInstancePid);
+  try {
+    await backend.kill(app.runningInstancePid);
+  } catch (e) {
+    console.error("Kill failed:", e);
+    dialog.error({
+      title: t("home.stopFailedTitle"),
+      content: `${e instanceof Error ? e.message : String(e)}\n\n${t(
+        "home.stopFailedHint"
+      )}`
+    });
+    return;
+  }
   await backend.showWindow();
   app.updateInstanceRunningTime();
   useAppStore.setState({

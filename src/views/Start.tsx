@@ -8,6 +8,7 @@ import {
   FolderOpen,
   FolderSync,
   History,
+  Loader2,
   Map as MapIcon,
   Play,
   Puzzle,
@@ -84,6 +85,8 @@ export default function Start() {
 
   const [mapCount, setMapCount] = useState<number>();
   const [modCount, setModCount] = useState<number>();
+  // 启动请求正在进行（提权要等 UAC + 游戏进程出现，可能好几秒）
+  const [launching, setLaunching] = useState(false);
   const unlocked = instance?.options.levelLock.filter(Boolean).length ?? 0;
   const shownMaps = useCountUp(mapCount);
   const shownMods = useCountUp(modCount);
@@ -112,7 +115,9 @@ export default function Start() {
   }, [instance?.path, refreshKey]);
 
   const onLaunchGame = async () => {
-    if (!instance) return;
+    // 提权（UAC）那条路要等 UAC 弹窗 + 游戏进程出现，可能好几秒：
+    // 期间按钮必须变成「启动中」并禁掉，否则连点会去起第二个游戏。
+    if (!instance || launching) return;
     if (runningInstancePid) {
       const isRunning = await checkRunningInstance();
       if (isRunning) {
@@ -122,10 +127,15 @@ export default function Start() {
     }
     // BallanceTAS 还开着「启动时自动播放」（TAS 编辑器留下的）就先问一句
     if (!(await confirmTasAutoplayOff(instance.path))) return;
-    const pid = await launchInstance();
-    // 用户在「原版素材被改过」的提示里选了不启动时不报「正在启动」
-    if (pid === undefined) return;
-    message.success(t("home.launching"));
+    setLaunching(true);
+    try {
+      const pid = await launchInstance();
+      // 用户在「原版素材被改过」的提示里选了不启动，或者启动出错（已弹窗）时不再报「正在启动」
+      if (pid === undefined) return;
+      message.success(t("home.launching"));
+    } finally {
+      setLaunching(false);
+    }
   };
 
   if (!instance) return null;
@@ -228,11 +238,16 @@ export default function Start() {
               <Button
                 key="launch"
                 size="lg"
+                disabled={launching}
                 className="h-12 animate-in rounded-xl px-8 text-base shadow-lg shadow-primary/25 duration-300 fade-in-0 zoom-in-95 hover:-translate-y-px hover:shadow-xl hover:shadow-primary/30"
                 onClick={onLaunchGame}
               >
-                <Play className="size-5 fill-current" />
-                {t("home.launch")}
+                {launching ? (
+                  <Loader2 className="size-5 animate-spin" />
+                ) : (
+                  <Play className="size-5 fill-current" />
+                )}
+                {launching ? t("home.starting") : t("home.launch")}
               </Button>
             ) : (
               <Button
@@ -250,14 +265,18 @@ export default function Start() {
               <span
                 className={cn(
                   "size-1.5 rounded-full",
-                  running
-                    ? "animate-pulse bg-success"
-                    : "bg-muted-foreground/40"
+                  launching
+                    ? "animate-pulse bg-primary"
+                    : running
+                      ? "animate-pulse bg-success"
+                      : "bg-muted-foreground/40"
                 )}
               />
-              {running
-                ? `${t("home.running")} · ${formatTime((session ?? 0) * 1000)}`
-                : t("home.ready")}
+              {launching
+                ? t("home.starting")
+                : running
+                  ? `${t("home.running")} · ${formatTime((session ?? 0) * 1000)}`
+                  : t("home.ready")}
             </div>
           </div>
         </div>
