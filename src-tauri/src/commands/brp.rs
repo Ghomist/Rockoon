@@ -41,7 +41,10 @@ static CANCEL_MAP: LazyLock<Mutex<HashMap<String, Arc<AtomicBool>>>> =
 
 fn register_cancel(id: &str) -> Arc<AtomicBool> {
     let flag = Arc::new(AtomicBool::new(false));
-    CANCEL_MAP.lock().unwrap().insert(id.to_string(), flag.clone());
+    CANCEL_MAP
+        .lock()
+        .unwrap()
+        .insert(id.to_string(), flag.clone());
     flag
 }
 
@@ -155,7 +158,8 @@ fn download_and_install(
     tmp.push(format!("rockoon-brp-{}.{}", id, ext));
 
     // Phase: download
-    let response = match ureq::get(url).call() {
+    // 代理走统一的网络配置（见 common/net.rs）
+    let response = match crate::common::net::agent().get(url).call() {
         Ok(r) => r,
         Err(e) => return fail(&format!("BRP download failed: {}", e)),
     };

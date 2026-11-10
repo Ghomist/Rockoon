@@ -6,13 +6,17 @@ import {
   Gamepad2,
   GlassWater,
   Palette,
-  Settings2
+  Settings2,
+  Wifi
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { getVersion } from "@tauri-apps/api/app";
 import backend from "@/backend";
 import { usePrefStore } from "@/stores/pref";
 import { checkForUpdate } from "@/services/updater";
 import PatchOptionsDialog from "@/components/PatchOptionsDialog";
+import ProxyDialog from "@/components/ProxyDialog";
+import { HUB_ORIGINS } from "@/services/hub";
 import { changeInstanceFolder, useVanillaInstall } from "@/services/game";
 import { useT } from "@/i18n";
 import { dialog, message } from "@/utils/ui/feedback";
@@ -43,7 +47,10 @@ function usePrefFields() {
     levelSlot: usePrefStore(s => s.levelSlot),
     ingameMotd: usePrefStore(s => s.ingameMotd),
     ingameMotdContent: usePrefStore(s => s.ingameMotdContent),
-    enableTasEditor: usePrefStore(s => s.enableTasEditor)
+    enableTasEditor: usePrefStore(s => s.enableTasEditor),
+    downloadProxyMode: usePrefStore(s => s.downloadProxyMode),
+    downloadProxy: usePrefStore(s => s.downloadProxy),
+    downloadOriginMode: usePrefStore(s => s.downloadOriginMode)
   };
 }
 
@@ -68,6 +75,19 @@ export default function Settings() {
   const t = useT();
   const pref = usePrefFields();
   const [appVersion, setAppVersion] = useState("");
+  const [proxyOpen, setProxyOpen] = useState(false);
+
+  // 下载走哪条出口（只显示，改在 ProxyDialog 里）
+  const proxySummary =
+    pref.downloadProxyMode === "custom"
+      ? pref.downloadProxy.trim()
+        ? t("settings.network.summaryCustom", {
+            proxy: pref.downloadProxy.trim()
+          })
+        : t("settings.network.summaryCustomEmpty")
+      : pref.downloadProxyMode === "direct"
+        ? t("settings.network.summaryDirect")
+        : t("settings.network.summarySystem");
 
   useEffect(() => {
     getVersion().then(setAppVersion);
@@ -100,6 +120,12 @@ export default function Settings() {
   ];
 
   const basicSchema: (Schema & SchemaItem)[] = [
+    {
+      type: "button",
+      label: t("settings.checkUpdate"),
+      tip: t("settings.update") + appVersion,
+      onClick: onCheckUpdate
+    },
     {
       type: "select",
       label: "语言 / Language",
@@ -210,12 +236,6 @@ export default function Settings() {
   const debugSchema: (Schema & SchemaItem)[] = [
     {
       type: "button",
-      label: t("settings.checkUpdate"),
-      tip: t("settings.update") + appVersion,
-      onClick: onCheckUpdate
-    },
-    {
-      type: "button",
       label: t("common.action.openDevtools"),
       onClick: () => backend.openDevtools()
     },
@@ -237,6 +257,40 @@ export default function Settings() {
     }
   ];
 
+  // 网络出口：代理是弹窗（按钮上直接写当前模式），下载站域名是普通下拉
+  const networkSchema: (Schema & SchemaItem)[] = [
+    {
+      type: "custom",
+      label: t("settings.network.proxy"),
+      tip: t("settings.network.proxyTip"),
+      render: () => (
+        <Button variant="outline" size="sm" onClick={() => setProxyOpen(true)}>
+          {proxySummary}
+        </Button>
+      )
+    },
+    {
+      type: "select",
+      label: t("settings.network.origin"),
+      tip: t("settings.network.originHint"),
+      field: prefField(pref, "downloadOriginMode"),
+      options: [
+        {
+          value: "primary",
+          label: t("settings.network.originPrimary", {
+            host: new URL(HUB_ORIGINS.primary).host
+          })
+        },
+        {
+          value: "mirror",
+          label: t("settings.network.originMirror", {
+            host: new URL(HUB_ORIGINS.mirror).host
+          })
+        }
+      ]
+    }
+  ];
+
   return (
     <div className="flex min-h-full flex-col">
       <PageHeader
@@ -255,6 +309,7 @@ export default function Settings() {
         </FormSection>
 
         <PatchOptionsDialog {...gameOptions} />
+        <ProxyDialog open={proxyOpen} onOpenChange={setProxyOpen} />
 
         {/* macOS：游戏跑在 Wine 里，这里管理 Wine 运行时与前缀 */}
         {isMac && (
@@ -271,6 +326,10 @@ export default function Settings() {
           <NFormWrapper schema={ingameSchema} />
         </FormSection>
 
+        {/* 下载走哪条网络出口：代理在弹窗里改，按钮上直接写当前模式 */}
+        <FormSection icon={Wifi} title={t("settings.network.title")}>
+          <NFormWrapper schema={networkSchema} />
+        </FormSection>
         {/* 实验功能目前只有 TAS 编辑器，它依赖 Win32（窗口嵌入、共享内存），macOS 上不显示 */}
         {!isMac && (
           <FormSection icon={FlaskConical} title={t("settings.labs")}>

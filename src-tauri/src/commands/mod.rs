@@ -6,6 +6,7 @@ pub mod embed;
 pub mod frame_limit;
 pub mod fs;
 pub mod game;
+pub mod network;
 pub mod process;
 pub mod resources;
 pub mod vanilla;

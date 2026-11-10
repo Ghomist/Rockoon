@@ -25,6 +25,7 @@ import ListViewPage from "./components/ListViewPage";
 import ResourceToolbar, { IconAction } from "./components/ResourceToolbar";
 import {
   HubMeta,
+  RowHubLink,
   RowUpdateButton,
   UpdateAllButton,
   useResourceUpdateCheck
@@ -403,6 +404,7 @@ export default function ResourcesMaps() {
             actions={
               <>
                 {!item.isDir && <RowUpdateButton path={filePath} />}
+                {!item.isDir && <RowHubLink path={filePath} />}
                 {!item.isDir && (
                   <Button
                     variant="ghost"

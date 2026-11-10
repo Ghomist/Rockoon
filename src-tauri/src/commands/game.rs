@@ -120,7 +120,14 @@ pub fn cancel_game_install(id: String) -> RcResult {
     Ok(())
 }
 
-fn emit_progress(app: &AppHandle, id: &str, phase: &str, percent: u64, downloaded: u64, total: u64) {
+fn emit_progress(
+    app: &AppHandle,
+    id: &str,
+    phase: &str,
+    percent: u64,
+    downloaded: u64,
+    total: u64,
+) {
     let _ = app.emit(
         "game-install:progress",
         ProgressPayload {
@@ -183,7 +190,8 @@ fn download_resumable(
     tmp: &Path,
     cancel: &Arc<AtomicBool>,
 ) -> Result<(u64, u64), String> {
-    let agent = ureq::AgentBuilder::new()
+    // 代理走统一的网络配置（系统代理 / 自定义 / 直连，见 common/net.rs）
+    let agent = crate::common::net::agent_builder()
         .timeout_connect(std::time::Duration::from_secs(30))
         // 没有这个超时，连接假死时 read 会一直阻塞，任务永远停在某个百分比
         .timeout_read(STALL_TIMEOUT)
@@ -218,8 +226,11 @@ fn download_resumable(
 
         // 206 且起始偏移对得上才算续传；服务器不支持 Range（回 200）或者偏移对不上
         // 就把它当从头发的完整内容，清空临时文件重来 —— 绝不能把两份数据拼在一起。
-        let content_range = response.header("content-range").and_then(parse_content_range);
-        let resuming = matches!(content_range, Some((start, _)) if downloaded > 0 && start == downloaded);
+        let content_range = response
+            .header("content-range")
+            .and_then(parse_content_range);
+        let resuming =
+            matches!(content_range, Some((start, _)) if downloaded > 0 && start == downloaded);
 
         let mut file = if resuming {
             match std::fs::OpenOptions::new().append(true).open(tmp) {
@@ -290,7 +301,11 @@ fn download_resumable(
             Some(e) => format!("下载中断（已下载 {downloaded} 字节）：{e}"),
             None => format!("下载不完整：{downloaded}/{total} 字节"),
         };
-        idle_rounds = if downloaded > before { 0 } else { idle_rounds + 1 };
+        idle_rounds = if downloaded > before {
+            0
+        } else {
+            idle_rounds + 1
+        };
         if idle_rounds >= MAX_IDLE_ROUNDS {
             break;
         }

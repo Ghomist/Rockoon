@@ -26,6 +26,11 @@ type AccentId =
   | "emerald"
   | "teal"
   | "slate";
+/** 下载走的网络出口：system = 跟随系统代理，custom = 自定义代理，direct = 直连 */
+type DownloadProxyMode = "system" | "custom" | "direct";
+/** 下载站域名：primary = dl.ballance.top（默认），mirror = dl.bcrc.site（被运营商拦时切） */
+type DownloadOriginMode = "primary" | "mirror";
+
 type PreferenceStore = {
   /** 唯一实例（Ballance 安装目录）路径 */
   instancePath?: string;
@@ -114,6 +119,12 @@ type PreferenceStore = {
   seenPatchVersions: Record<string, string>;
   /** 资源 id → 已经提示过的最新版本号：同一版本不再弹窗（页面上的更新按钮不受影响） */
   seenResourceUpdates: Record<string, number>;
+  /** 下载代理模式（系统 / 自定义 / 直连） */
+  downloadProxyMode: DownloadProxyMode;
+  /** 自定义下载代理地址，如 http://127.0.0.1:7890（只有 custom 模式才用） */
+  downloadProxy: string;
+  /** 下载站用哪个域名：主域名被运营商拦时才需要切备用（不做自动切换） */
+  downloadOriginMode: DownloadOriginMode;
 };
 
 type ProfileStore = {

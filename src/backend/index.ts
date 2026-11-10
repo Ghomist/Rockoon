@@ -253,6 +253,16 @@ const vanilla = {
     invoke<VanillaRestoreResult>("restore_vanilla_levels", { instancePath })
 };
 
+/** 下载代理（src-tauri/src/commands/network.rs，配置逻辑在 common/net.rs） */
+const network = {
+  /** 把当前的下载代理配置推给 Rust（启动时 + 设置变更时） */
+  apply: (config: DownloadProxyConfig) =>
+    invoke<undefined>("set_network_config", { config }),
+  /** 用这份（还没保存的）配置请求一次 url，看看代理通不通 */
+  test: (config: DownloadProxyConfig, url: string) =>
+    invoke<NetworkTestResult>("test_network_config", { config, url })
+};
+
 export default {
   ...common,
   ...ballance,
@@ -263,5 +273,6 @@ export default {
   patches,
   blender,
   vanilla,
+  network,
   wine
 };

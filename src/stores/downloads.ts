@@ -68,9 +68,10 @@ export interface BeginDownloadInput {
 interface DownloadsState {
   tasks: DownloadTask[];
   /** 登记任务；同 key 有任务在跑就直接返回它 */
-  begin: (
-    input: BeginDownloadInput
-  ) => { task: DownloadTask; duplicate: boolean };
+  begin: (input: BeginDownloadInput) => {
+    task: DownloadTask;
+    duplicate: boolean;
+  };
   update: (id: string, patch: Partial<DownloadTask>) => void;
   /** 记录进度：自动算百分比与速度 */
   progress: (id: string, downloaded: number, total?: number) => void;
@@ -103,9 +104,39 @@ function sampleSpeed(id: string, downloaded: number): number {
 
 const isFinished = (status: DownloadStatus) => status !== "running";
 
-export const useDownloadsStore = create<DownloadsState>((set, get) => ({
-  tasks: [],
+/**
+ * 刷新一下页面不该把记录全丢掉（Vite 整页刷新、窗口重新加载都会）。
+ * 只存 sessionStorage：关掉启动器就该忘掉，这正是这个页面的定位。
+ * 只存已经结束的任务 —— 进行中的重新加载后已经收不到进度事件，留一行僵尸比没有更误导。
+ */
+const STORAGE_KEY = "rockoon.downloads.tasks";
+const MAX_PERSISTED = 30;
 
+const finishedOnly = (tasks: DownloadTask[]) =>
+  tasks.filter(t => t.status !== "running").slice(-MAX_PERSISTED);
+
+function loadPersisted(): DownloadTask[] {
+  try {
+    const raw = sessionStorage.getItem(STORAGE_KEY);
+    if (!raw) return [];
+    const parsed: unknown = JSON.parse(raw);
+    // retry 是闭包，存不进去：刷新后只能看记录，不能点重试
+    return Array.isArray(parsed) ? finishedOnly(parsed as DownloadTask[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function persist(tasks: DownloadTask[]) {
+  try {
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(finishedOnly(tasks)));
+  } catch {
+    /* 存不了就算了：少的是刷新后的历史，不影响下载本身 */
+  }
+}
+
+export const useDownloadsStore = create<DownloadsState>((set, get) => ({
+  tasks: loadPersisted(),
   begin: input => {
     const existing = get().tasks.find(
       t => t.key === input.key && t.status === "running"
@@ -236,3 +267,6 @@ export const useDownloadsStore = create<DownloadsState>((set, get) => ({
 
   findByKey: key => get().tasks.find(t => t.key === key)
 }));
+
+// 任何一次任务变动都写回 sessionStorage（几十行文本，不值得做防抖）
+useDownloadsStore.subscribe(state => persist(state.tasks));

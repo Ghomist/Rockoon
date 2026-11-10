@@ -71,6 +71,8 @@ pub fn run() {
             commands::game::start_game_install,
             commands::game::start_patch_install,
             commands::game::cancel_game_install,
+            commands::network::set_network_config,
+            commands::network::test_network_config,
             commands::resources::hash_instance_resources,
             commands::vanilla::verify_vanilla_levels,
             commands::vanilla::restore_vanilla_levels,

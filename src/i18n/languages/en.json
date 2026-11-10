@@ -435,24 +435,17 @@
     "modNotice": {
       "noLoader": "No mod loader detected — both the BML and BML+ builds were placed in ModLoader/Mods, so either loader works.",
       "mismatch": "This mod has no {loader} build; the {installed} build was installed instead. It takes effect only with the {installed} loader."
+    },
+    "existing": {
+      "title": "This map is already installed",
+      "body": "\"{name}\" (v{version}) is already installed. Download it again? Same-named files get overwritten.",
+      "bodyRenamed": "\"{local}\" (v{version}) is the same map as \"{hub}\" on the site. Downloading installs it under the site's name and removes the old file.",
+      "confirm": "Download anyway",
+      "confirmRename": "Download and rename"
     }
   },
   "header": {
-    "pleaseLogin": "Please log in",
-    "rotateText": {
-      "1": "Browse the download hub for new content",
-      "2": "Drop a .brp file onto the launcher to install",
-      "3": "Speedrun, casual, mapping — try multiple profiles",
-      "4": "Thanks for using Rockoon",
-      "5": "Issues? Send feedback from Settings",
-      "6": "Join the Ballance community forum",
-      "7": "Rockoon is open source",
-      "8": "Crafted by Ghomist",
-      "9": "Have you tried speedrunning today?",
-      "10": "Also check out Celeste",
-      "11": "Regret looks sincere",
-      "12": "Whatever you do, don't DeformedWoodenBall!"
-    }
+    "pleaseLogin": "Please log in"
   },
   "message": {
     "welcome": "Welcome to use Rockoon!",
@@ -514,6 +507,46 @@
     "levelNote12": "dark scene with lightning",
     "levelNote13": "starts with the stone ball",
     "ingameMotdContent": "In-game welcome message",
+    "network": {
+      "title": "Network",
+      "proxy": "Proxy",
+      "proxyTip": "Downloads (game, patches, maps & mods, BBP) leave through this exit; click to configure",
+      "summarySystem": "Follow system proxy",
+      "summaryCustom": "Custom proxy {proxy}",
+      "summaryCustomEmpty": "Custom proxy (no address)",
+      "summaryDirect": "Direct",
+      "dialogTitle": "Proxy settings",
+      "dialogDesc": "Downloads (game, patches, maps & mods, BBP) all go through the proxy configured here; changes apply immediately.",
+      "mode": "Proxy mode",
+      "modeSystem": "Follow system proxy",
+      "modeSystemDesc": "Reads the Windows Internet Options; a PAC script alone is not supported",
+      "modeCustom": "Custom proxy",
+      "modeCustomDesc": "Enter the address manually, e.g. Clash / v2rayN",
+      "modeDirect": "Direct",
+      "modeDirectDesc": "Ignore the system proxy and environment variables",
+      "proxyLabel": "Proxy address",
+      "proxyPlaceholder": "http://127.0.0.1:7890",
+      "proxyHint": "http:// and socks5:// are supported, credentials allowed. Empty means direct.",
+      "proxyInvalid": "Invalid proxy address, it must start with http:// or socks5://",
+      "save": "Save",
+      "origin": "Download site domain",
+      "originPrimary": "Primary ({host})",
+      "originMirror": "Mirror ({host})",
+      "originHint": "Patches, maps, mods and the game itself are downloaded from the selected domain. Switch to the mirror if your ISP blocks the primary one.",
+      "test": "Test connection",
+      "testing": "Testing…",
+      "testOk": "Connected · {elapsed}ms",
+      "testFail": "Connection failed: {error}",
+      "exitDirect": "Direct connection",
+      "exitSystem": "System proxy {proxy}",
+      "exitSystemNone": "No system proxy, falling back to direct",
+      "exitCustomEmpty": "No custom address, falling back to direct",
+      "sourceRegistry": "Windows Internet Options",
+      "sourceEnv": "Environment variables",
+      "sourceCustom": "Entered manually",
+      "saved": "Download proxy updated",
+      "proxyRequired": "Enter an address for the custom proxy"
+    },
     "accent": {
       "title": "Accent color",
       "sky": "Sky",
@@ -898,7 +931,8 @@
       "launchAnyway": "Launch anyway",
       "confirmTitle": "Update to the latest version",
       "confirmAll": "Update all",
-      "gameRunning": "The game is running. Close it before updating."
+      "gameRunning": "The game is running. Close it before updating.",
+      "openSite": "View on download site"
     },
     "search": {
       "placeholder": "Search by name…",

@@ -5,7 +5,7 @@ import backend, { type ResourceFile } from "@/backend";
 import { t } from "@/i18n";
 import { importFromUrl } from "@/services/brp";
 import { buildImportQueue, packageIdFromUrl } from "@/services/deepLinkImport";
-import { hubFetch, hubReady, hubUrl } from "@/services/hub";
+import { hubFetch, hubUrl } from "@/services/hub";
 import { useAppStore } from "@/stores/app";
 import { usePrefStore } from "@/stores/pref";
 import { message } from "@/utils/ui/feedback";
@@ -153,6 +153,28 @@ export function checkResourceUpdatesQuickly(
   ]);
 }
 
+/** 已有的资源最多等这么久去反查：下载站慢的时候不能把「一键下载」卡住 */
+const EXISTING_CHECK_TIMEOUT_MS = 3000;
+
+/**
+ * 本地已经装过的同一资源（文件 hash 反查到同一个资源 id）。
+ * 超时或下载站连不上就返回空 —— 只是少问一句「已经装过了」，不能拖住下载。
+ */
+export async function installedCopiesOf(
+  instancePath: string,
+  packageId: number
+): Promise<ResourceUpdate[]> {
+  await Promise.race([
+    checkResourceUpdates(instancePath).then(() => undefined),
+    new Promise<void>(resolve => {
+      setTimeout(resolve, EXISTING_CHECK_TIMEOUT_MS);
+    })
+  ]);
+  return Object.values(useResourceUpdatesStore.getState().resources).filter(
+    (r): r is ResourceUpdate => r.hub?.package.id === packageId
+  );
+}
+
 /** 用户还没说过「稍后」的更新：弹窗只提示这些，页面上的更新按钮不受影响 */
 export function unseenUpdates(updates: ResourceUpdate[]): ResourceUpdate[] {
   const seen = usePrefStore.getState().seenResourceUpdates ?? {};
@@ -211,7 +233,6 @@ function needsDependency(
 /** 更新同一资源、同一文件夹下的一组文件。返回 false = 用户取消了，后面的也别装了 */
 async function updateGroup(group: ResourceUpdate[]): Promise<boolean> {
   const { id, name } = group[0].hub.package;
-  await hubReady();
   const queue = await buildImportQueue(hubUrl(`/packages/${id}/download`));
   const resources = Object.values(useResourceUpdatesStore.getState().resources);
 

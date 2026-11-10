@@ -201,7 +201,7 @@ export default function Start() {
                 {t("home.tagline")}
               </h1>
             </div>
-            <div className="flex max-w-full items-center gap-1 self-start">
+            <div className="flex max-w-full items-center gap-2 self-start">
               <button
                 type="button"
                 onClick={() => void changeInstanceFolder()}
@@ -213,12 +213,13 @@ export default function Start() {
               </button>
               <Button
                 variant="ghost"
-                size="icon-xs"
-                className="text-muted-foreground"
+                size="xs"
+                className="ml-1 shrink-0 gap-1.5 text-muted-foreground"
                 title={t("common.action.openFolder")}
                 onClick={() => void backend.openInExplorer(instance.path)}
               >
                 <FolderOpen />
+                {t("common.action.openFolder")}
               </Button>
               <Button
                 variant="ghost"

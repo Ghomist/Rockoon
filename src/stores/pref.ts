@@ -31,7 +31,10 @@ const defaultState: PreferenceStore = {
   enableTasEditor: false,
   patchVersions: {},
   seenPatchVersions: {},
-  seenResourceUpdates: {}
+  seenResourceUpdates: {},
+  downloadProxyMode: "system",
+  downloadProxy: "",
+  downloadOriginMode: "primary"
 };
 
 interface PrefActions {
@@ -48,10 +51,20 @@ const persisted = storage.getWithDefault<PreferenceStore>(
   defaultState
 );
 
+/** 老版本 / 手改 localStorage 时兜底，避免代理模式变成无效值 */
+const normalizeProxyMode = (mode?: string): DownloadProxyMode =>
+  mode === "custom" || mode === "direct" ? mode : "system";
+
+/** 下载站域名也兜一下，别让手改的 localStorage 把地址拼空 */
+const normalizeOriginMode = (mode?: string): DownloadOriginMode =>
+  mode === "mirror" ? "mirror" : "primary";
+
 export const usePrefStore = create<PrefStore>()(
   subscribeWithSelector((set, get) => ({
     ...defaultState,
     ...persisted,
+    downloadProxyMode: normalizeProxyMode(persisted.downloadProxyMode),
+    downloadOriginMode: normalizeOriginMode(persisted.downloadOriginMode),
     save: () => storage.set(PREF_STORE_KEY, get()),
     restore: () => {
       storage.set(PREF_STORE_KEY, {});

@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from "react";
-import { CircleArrowUp, LoaderCircle } from "lucide-react";
+import { CircleArrowUp, ExternalLink, LoaderCircle } from "lucide-react";
 
+import backend from "@/backend";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useT } from "@/i18n";
@@ -14,8 +15,10 @@ import {
   updateResources,
   useResourceUpdatesStore
 } from "@/services/resourceUpdates";
+import { hubUrl } from "@/services/hub";
 import { useAppStore } from "@/stores/app";
 import { dialog } from "@/utils/ui/feedback";
+import { RowAction } from "./ResourceRow";
 
 /** 进页面、页面刷新（导入 / 更新完）时查一次更新 */
 export function useResourceUpdateCheck() {
@@ -84,6 +87,23 @@ export function RowUpdateButton({ path }: { path: string }) {
       <CircleArrowUp className="size-4" />
       {t("resources.update.button")}
     </Button>
+  );
+}
+
+/** 能反查到下载站资源时，给一个跳到资源详情页的入口；查不到的文件不显示 */
+export function RowHubLink({ path }: { path: string }) {
+  const t = useT();
+  const hub = useHubMatch(path);
+  if (!hub) return null;
+  const onOpen = () => {
+    void backend
+      .open(hubUrl(`/resource/${hub.package.id}`))
+      .catch(error => console.warn("Open resource page failed:", error));
+  };
+  return (
+    <RowAction label={t("resources.update.openSite")} onClick={onOpen}>
+      <ExternalLink />
+    </RowAction>
   );
 }
 

@@ -1,51 +1,68 @@
 /**
- * 下载站地址与回落。
+ * 下载站地址（主域名 / 备用域名）。
  *
  * 有些运营商主动拦截 `.top` 解析，所以下载站备了 `dl.bcrc.site` 别名。
- * 所有对下载站的请求都走这里：主域名连不上（DNS 被拦/超时）时自动切别名，
- * 并记住这次能用的那个，后续请求（含交给 Rust 下载器的 URL）都用它。
+ * 用哪个域名由用户在「设置 → 网络」里选（pref 的 `downloadOriginMode`），
+ * **不做自动切换**：被拦的时候自己切到备用域名，之后所有跟下载站交互的地方
+ * （补丁、地图、模组、原版游戏、深链）都跟着走这个域名。
  *
- * 注意两点：
- * - 必须校验响应像不像下载站（content-type 是 JSON），否则别名还没指过来时
- *   会连上别的站、拿到 HTML 200 就被当成"成功"了。
- * - 下载是交给 Rust 的 `download` 插件做的（不走 webview），所以 URL 一定
- *   先经过一次上面的探测，避免把被拦的域名塞给它。
+ * 所以下载站相关的代码一律经过这里，不要在业务代码里直接写域名：
+ * - `hubUrl(path)` / `hubUrlFor(mode, path)` 拼地址（交给 Rust 下载器、外部浏览器）
+ * - `hubFetch(path)` 带超时 + 「像不像下载站」校验的 fetch
+ * - `rebaseHubUrl(url)` 把深链里带的旧域名换成当前选的
  */
 
-/** 内置候选地址：首次连接时的引导用；连上后会采用下载站返回的根域名表（加新域名不用改这里） */
-export const HUB_ORIGINS = ["https://dl.ballance.top", "https://dl.bcrc.site"] as const;
+import { usePrefStore } from "@/stores/pref";
 
-/** 单个候选的超时（被运营商拦时通常是干等，所以给短一点） */
-const PROBE_TIMEOUT_MS = 5000;
+/** 两个域名：`primary` 是默认，`mirror` 是给被运营商拦截的用户备的 */
+export const HUB_ORIGINS: Record<DownloadOriginMode, string> = {
+  primary: "https://dl.ballance.top",
+  mirror: "https://dl.bcrc.site"
+};
 
-/** 实际候选表 = 内置 + 下载站配置里的根域名 */
-let origins: string[] = [...HUB_ORIGINS];
-let originsAdopted = false;
-let activeOrigin: string | null = null;
+/** 单个请求的超时（被运营商拦时通常是干等，所以给短一点） */
+const REQUEST_TIMEOUT_MS = 5000;
 
 /**
- * 连上之后拉一次根域名表（`/site/domains`），把里面的根域名并进候选表。
- * 这样以后加新根域名只需改下载站配置，启动器不用跟着发版。
+ * 认识的域名 = 内置两个 + 下载站自己声明的根域名。
+ * 只用来认地址（`rebaseHubUrl`），不参与「这次用哪个」的判断。
  */
-async function adoptHubOrigins(origin: string): Promise<void> {
+const knownOrigins = new Set<string>(Object.values(HUB_ORIGINS));
+let domainsAdopted = false;
+
+/**
+ * 拉一次下载站配置里的根域名表（`/site/domains`），并进 `knownOrigins`。
+ * 这样下载站以后加根域名，深链里带的地址也能被认出来、换成当前选的域名。
+ */
+async function adoptHubDomains(origin: string): Promise<void> {
   try {
     const res = await fetch(`${origin}/site/domains`, {
-      signal: AbortSignal.timeout(PROBE_TIMEOUT_MS)
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
     });
     if (!res.ok) return;
     const data = (await res.json()) as { roots?: { frontend?: unknown }[] };
-    const extra = (data.roots ?? [])
-      .map(root => root.frontend)
-      .filter((url): url is string => typeof url === "string" && url.startsWith("http"));
-    if (extra.length) origins = [...new Set([...origins, ...extra])];
+    for (const root of data.roots ?? []) {
+      const value = root.frontend;
+      if (typeof value === "string" && value.startsWith("http")) {
+        knownOrigins.add(value.replace(/\/+$/, ""));
+      }
+    }
   } catch {
-    // 拿不到就用内置的
+    // 拿不到就只认内置的两个
   }
 }
 
-/** 当前认定的下载站基地址（没探测过时用正式域名） */
+/** 按指定模式拼下载站地址（设置页测试草稿用，不读 pref） */
+export function hubUrlFor(mode: DownloadOriginMode, path: string): string {
+  return `${HUB_ORIGINS[mode] ?? HUB_ORIGINS.primary}${path}`;
+}
+
+/** 当前选的下载站基地址 */
 export function hubOrigin(): string {
-  return activeOrigin ?? HUB_ORIGINS[0];
+  return (
+    HUB_ORIGINS[usePrefStore.getState().downloadOriginMode] ??
+    HUB_ORIGINS.primary
+  );
 }
 
 /** 拼下载站地址：给 Rust 下载器或外部浏览器用 */
@@ -53,69 +70,51 @@ export function hubUrl(path: string): string {
   return `${hubOrigin()}${path}`;
 }
 
-/** 按“已认定的优先”排候选 */
-function candidateOrder(): string[] {
-  if (!activeOrigin) return [...origins];
-  return [activeOrigin, ...origins.filter(origin => origin !== activeOrigin)];
-}
-
 /**
- * 带回落的 fetch。成功（能连上 + 状态 OK + 响应是 JSON）就记住这个域名并返回响应，
- * 全都失败则抛出最后一个错误。
+ * 请求下载站。**不做域名回落**：域名是用户选的，连不上就把错误抛出去，
+ * 由界面提示去设置里切备用域名。
  */
-export async function hubFetch(path: string, init?: RequestInit): Promise<Response> {
-  let lastError: unknown = null;
-
-  for (const origin of candidateOrder()) {
-    try {
-      const res = await fetch(`${origin}${path}`, {
-        ...init,
-        signal: init?.signal ?? AbortSignal.timeout(PROBE_TIMEOUT_MS)
-      });
-      if (!res.ok) {
-        throw new Error(`${origin} 返回 HTTP ${res.status}`);
-      }
-      const contentType = res.headers.get("content-type") ?? "";
-      if (!contentType.includes("json")) {
-        throw new Error(`${origin} 返回的不是下载站（content-type: ${contentType || "空"}）`);
-      }
-      activeOrigin = origin;
-      if (!originsAdopted) {
-        originsAdopted = true;
-        void adoptHubOrigins(origin);
-      }
-      return res;
-    } catch (error) {
-      lastError = error;
-    }
-  }
-
-  throw lastError ?? new Error("下载站不可达");
-}
-
-/**
- * 确保已经有一个确认可用的基地址（第一次用会探一次）。
- * 交给 Rust 下载器的 URL 之前先 await 它，免得把被拦的域名递过去。
- */
-export async function hubReady(): Promise<string> {
-  if (activeOrigin) return activeOrigin;
+export async function hubFetch(
+  path: string,
+  init?: RequestInit
+): Promise<Response> {
+  const url = `${hubOrigin()}${path}`;
+  let res: Response;
   try {
-    await hubFetch("/packages?limit=1");
-  } catch {
-    // 探测失败就退回默认域名，让下游自己报错（错误信息更贴近实际原因）
+    res = await fetch(url, {
+      ...init,
+      signal: init?.signal ?? AbortSignal.timeout(REQUEST_TIMEOUT_MS)
+    });
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error);
+    throw new Error(`${url} 请求失败：${reason}`);
   }
-  return hubOrigin();
+  if (!res.ok) {
+    throw new Error(`${url} 返回 HTTP ${res.status}`);
+  }
+  const contentType = res.headers.get("content-type") ?? "";
+  if (!contentType.includes("json")) {
+    throw new Error(
+      `${url} 返回的不是下载站（content-type: ${contentType || "空"}）`
+    );
+  }
+  if (!domainsAdopted) {
+    domainsAdopted = true;
+    void adoptHubDomains(hubOrigin());
+  }
+  return res;
 }
 
 /**
- * 把下载站 URL 换到当前可用的域名（路径不变）。
- * 深链里带的可能正是被拦的那个域名，交给下载器前先换掉。
- * 不是下载站的地址原样返回。
+ * 把下载站 URL 换到当前选的域名（路径不变）。
+ * 深链里带的可能是另一个域名，交给下载器前先换掉。不是下载站的地址原样返回。
  */
 export function rebaseHubUrl(url: string): string {
   try {
     const parsed = new URL(url);
-    const isHub = origins.some(origin => new URL(origin).host === parsed.host);
+    const isHub = [...knownOrigins].some(
+      origin => new URL(origin).host === parsed.host
+    );
     if (!isHub) return url;
     return `${hubOrigin()}${parsed.pathname}${parsed.search}`;
   } catch {

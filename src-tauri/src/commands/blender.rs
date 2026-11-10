@@ -301,7 +301,8 @@ pub fn bbp_latest_release() -> RcResultWith<BbpRelease> {
         "macos" => "macos",
         _ => "linux",
     };
-    let text = ureq::get(BBP_RELEASE_API)
+    let text = crate::common::net::agent()
+        .get(BBP_RELEASE_API)
         .set("User-Agent", "Rockoon")
         .set("Accept", "application/vnd.github+json")
         .call()

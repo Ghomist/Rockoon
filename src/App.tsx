@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ChevronDown, Check, Layers, Plus, Pencil, Trash2 } from "lucide-react";
 import { Toaster } from "@/components/ui/sonner";
 import { Button } from "@/components/ui/button";
@@ -19,12 +19,11 @@ import TitleBarControls from "@/components/TitleBarControls";
 import ResourceUpdateGuard from "@/components/ResourceUpdateGuard";
 import VanillaGuard from "@/components/VanillaGuard";
 import AppBackground from "@/components/AppBackground";
-import { WordRotate } from "@/components/ui/word-rotate";
 
 import Onboarding from "@/views/Onboarding";
-import { buildImportQueue } from "@/services/deepLinkImport";
+import { buildImportQueue, packageIdFromUrl } from "@/services/deepLinkImport";
 import { AppRoutes } from "@/routers";
-import { t, useT } from "@/i18n";
+import { t } from "@/i18n";
 import { useAppStore } from "@/stores/app";
 import { usePrefStore } from "@/stores/pref";
 import { useProfilesStore } from "@/stores/profiles";
@@ -34,6 +33,7 @@ import { cn } from "@/lib/utils";
 import { useAccent, useThemeEffect } from "@/utils/theme";
 import { checkRunningInstance } from "@/services/launcher";
 import { importFromFile, importFromUrl } from "@/services/brp";
+import { installedCopiesOf, resourceKey } from "@/services/resourceUpdates";
 import { askSkyTarget } from "@/services/sky";
 import backend from "@/backend";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
@@ -98,16 +98,76 @@ export default function App() {
   }, isDark);
 
   const hasInstance = useAppStore(s => !!s.selectedInstanceData);
+  // initStores 还在读实例时不能当「没实例」处理，否则已经选好实例的用户每次
+  // 启动都会先被拎到「选游戏目录」的开局页上闪一下（慢盘上能停好几百毫秒）。
+  const booted = useAppStore(s => s.booted);
 
   return (
     <>
       <Toaster richColors closeButton position="top-right" />
       <GlobalDialogHost />
       <TooltipProvider>
-        {hasInstance ? <MainLayout /> : <Onboarding />}
+        {!booted ? (
+          <BootSplash />
+        ) : hasInstance ? (
+          <MainLayout />
+        ) : (
+          <Onboarding />
+        )}
       </TooltipProvider>
     </>
   );
+}
+
+/** 开屏：只铺个 logo（不写字、不弹任何选择），等 initStores 说完话再决定去哪 */
+function BootSplash() {
+  return (
+    <div className="flex h-screen w-screen items-center justify-center bg-background">
+      <img
+        src="/logo.png"
+        alt="Rockoon"
+        className="size-12 animate-pulse opacity-70 dark:invert"
+        draggable={false}
+      />
+    </div>
+  );
+}
+/** 路径最后一段（Windows / POSIX 都要能分） */
+const baseName = (path: string) => path.split(/[\\/]/).pop() ?? path;
+
+/**
+ * 下载站上的地图本地已经有了：问一句要不要覆盖重下。
+ * 本地文件可能是被改过名的（反查靠 hash，不靠名字），对不上时把两个名字都摆出来，
+ * 并在确认后把旧名字那份删掉 —— 不然同一个地图会在列表里出现两次。
+ */
+function askRedownload(opts: {
+  localName: string;
+  hubName: string;
+  version: number;
+}): Promise<boolean> {
+  const renamed = opts.localName !== opts.hubName;
+  return new Promise<boolean>(resolve => {
+    dialog.create({
+      title: t("brp.existing.title"),
+      content: renamed
+        ? t("brp.existing.bodyRenamed", {
+            local: opts.localName,
+            hub: opts.hubName,
+            version: opts.version
+          })
+        : t("brp.existing.body", {
+            name: opts.localName,
+            version: opts.version
+          }),
+      positiveText: renamed
+        ? t("brp.existing.confirmRename")
+        : t("brp.existing.confirm"),
+      negativeText: t("common.dialog.cancel"),
+      onPositiveClick: () => resolve(true),
+      onNegativeClick: () => resolve(false),
+      onClose: () => resolve(false)
+    });
+  });
 }
 
 function MainLayout() {
@@ -128,6 +188,34 @@ function MainLayout() {
         const queue = await buildImportQueue(url);
         if (queue.length === 0) return;
 
+        // 这个地图本地已经装过（文件 hash 反查到同一个资源）：先问一句，别白下一遍
+        const mainTask = queue.find(task => !task.isDependency);
+        const instancePath = useAppStore.getState().selectedInstanceData?.path;
+        // 本地那份的名字和下载站不一致时，记下来（装完把旧名字那份删掉）
+        let stalePath: string | undefined;
+        if (mainTask && instancePath) {
+          const packageId = packageIdFromUrl(mainTask.url);
+          const existing = packageId
+            ? (await installedCopiesOf(instancePath, packageId)).find(
+                r => r.kind === "map"
+              )
+            : undefined;
+          if (existing) {
+            const localName = baseName(existing.path).replace(
+              /\.disable$/i,
+              ""
+            );
+            const hubName = existing.hub.asset.name;
+            const go = await askRedownload({
+              localName,
+              hubName,
+              version: existing.hub.version
+            });
+            if (!go) return;
+            if (localName !== hubName) stalePath = existing.path;
+          }
+        }
+
         // 天空盒包的文件名是 Sky_X_<方位>.bmp（X 是占位符）：装之前问用户装到哪一关
         let skyLetter: SkyLetter | undefined;
         if (queue.some(task => task.category === "sky")) {
@@ -139,7 +227,19 @@ function MainLayout() {
         for (const task of queue) {
           const outcome = await importFromUrl(task.url, skyLetter, {
             title: task.isDependency ? task.name : name || task.name,
-            isDependency: task.isDependency
+            isDependency: task.isDependency,
+            // 名字对齐：新文件已经按下载站的名字装好了，旧名字那份就没用了
+            onInstalled:
+              stalePath && !task.isDependency
+                ? async result => {
+                    const keep = new Set(
+                      result.installedPaths.map(resourceKey)
+                    );
+                    if (stalePath && !keep.has(resourceKey(stalePath))) {
+                      await backend.delete(stalePath).catch(() => {});
+                    }
+                  }
+                : undefined
           });
           // 用户取消了就断掉整条依赖链（失败或去重命中都继续装下一个）
           if (outcome === "cancelled") break;
@@ -154,20 +254,6 @@ function MainLayout() {
     },
     []
   );
-  const translate = useT();
-
-  // Header rotate text — reads i18n header.rotateText.1..N dynamically.
-  const rotateWords = useMemo(() => {
-    const words: string[] = [];
-    for (let i = 1; ; i++) {
-      const key = `header.rotateText.${i}`;
-      const w = translate(key);
-      if (w === key) break;
-      words.push(w);
-    }
-    return words.length > 0 ? words : ["Rockoon"];
-  }, [translate]);
-
   useEffect(() => {
     getVersion().then(setAppVersion);
   }, []);
@@ -333,15 +419,7 @@ function MainLayout() {
         <div
           data-tauri-drag-region
           className="relative flex flex-1 items-center justify-center self-stretch"
-        >
-          {rotateWords.length > 0 && (
-            <WordRotate
-              className="pointer-events-none text-[13px] text-muted-foreground/80 select-none"
-              duration={4000}
-              words={rotateWords}
-            />
-          )}
-        </div>
+        />
         <div data-tauri-drag-region className="flex items-center gap-2">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

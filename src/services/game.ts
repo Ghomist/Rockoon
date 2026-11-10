@@ -4,7 +4,7 @@ import { open as browseDir } from "@tauri-apps/plugin-dialog";
 
 import backend from "@/backend";
 import { t } from "@/i18n";
-import { hubReady, hubUrl } from "@/services/hub";
+import { hubUrl } from "@/services/hub";
 import { useAppStore } from "@/stores/app";
 import { useDownloadsStore } from "@/stores/downloads";
 import { usePrefStore } from "@/stores/pref";
@@ -112,8 +112,7 @@ export function useVanillaInstall(): {
     // macOS：顺带把启动器自带的 Wine 解出来（另一个任务，不用联网；Windows 上什么都不做）
     void installWineIfMissing();
     try {
-      // 先把下载站域名探一次（被运营商拦 .top 时自动切别名），再把 URL 交给 Rust 下载器
-      await hubReady();
+      // 域名是用户在设置里选的（不自动切），直接把地址交给 Rust 下载器
       const url = hubUrl("/game/download");
       const { task, duplicate } = useDownloadsStore.getState().begin({
         id: `game-${++taskSeq}`,

@@ -9,6 +9,9 @@ interface AppState {
   runningInstancePath: string | undefined;
   runningInstanceTimestamp: number;
   refreshKey: number;
+  /** 开屏状态：initStores 跑完前，界面还不知道到底有没有实例 */
+  booted: boolean;
+  markBooted: () => void;
   loadInstance: (path: string) => Promise<boolean>;
   updateInstanceRunningTime: () => void;
   triggerRefresh: () => void;
@@ -21,6 +24,7 @@ export const useAppStore = create<AppState>()(
     runningInstancePath: undefined,
     runningInstanceTimestamp: 0,
     refreshKey: 0,
+    booted: false,
 
     /** Load the single instance's InstanceData and install RockoonIO mod. */
     async loadInstance(path) {
@@ -31,6 +35,10 @@ export const useAppStore = create<AppState>()(
         return true;
       }
       return false;
+    },
+
+    markBooted() {
+      set({ booted: true });
     },
 
     updateInstanceRunningTime() {

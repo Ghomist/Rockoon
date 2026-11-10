@@ -158,6 +158,20 @@ BMLPlus plugin (`RockoonIO.bmodp`) built via CMake + `build.ps1`. Sources in `sr
 - 进度/成功/失败一律写进任务；需要用户决策的（选目录、选补丁版本、更新提醒）才用弹窗。
   旧的 `ImportProgressDialog`（锁死式进度弹窗）已删除，不要再引回来。
 
+## 下载代理（系统 / 自定义 / 直连）
+
+- 所有走 `ureq` 的网络请求（下载器、BBP release、BRP 校验）都经 `src-tauri/src/common/net.rs` 的
+  `agent()` / `agent_builder()`；**不要自己 `ureq::get` / `ureq::AgentBuilder::new()`**，否则那条路径不吃代理。
+- 三种模式存在 pref（`downloadProxyMode` / `downloadProxy`），Rust 只存内存：
+  `initStores()` 里 `initDownloadProxy()`（`src/services/network.ts`）启动时推一次，之后跟随 pref 变化。
+- `system` = Windows「Internet 选项」的静态代理（`ProxyEnable` + `ProxyServer`，有 `http=`/`https=` 分项时
+  优先 `https=`），没有再看 `HTTPS_PROXY`/`HTTP_PROXY`/`ALL_PROXY`。**不支持** PAC 脚本、
+  `ProxyOverride` 绕过表、`NO_PROXY` —— 要绕开就选「直连」；只配了 PAC 的系统请用「自定义代理」。
+- `agent_builder()` 里 `try_proxy_from_env(false)` 是故意的：走不走代理由配置决定，`direct` 必须能压住环境变量。
+- 界面：启动器设置页的「网络」卡片 → `src/components/ProxyDialog.tsx`（代理 + 下载站域名）。
+  「测试连接」由 Rust `test_network_config` 用**草稿**配置请求 `<选中的域名>/patches`（`hubUrlFor()`），
+  不保存也能试；同一弹窗里换域名也会直接打在草稿域名上。
+
 ## Operational gotchas
 
 - PowerShell 5.1 写仓库里的文件**不要用 `Set-Content -Encoding UTF8`** —— 它会带 UTF-8 BOM，
@@ -166,11 +180,15 @@ BMLPlus plugin (`RockoonIO.bmodp`) built via CMake + `build.ps1`. Sources in `sr
   中文 commit message 也照这个写法先落文件再 `git commit -F`。
 
 - **下载站有备用域名（`.top` 会被部分运营商拦）**：`dl.bcrc.site` 是 `dl.ballance.top` 的
-  别名（同一台 nginx、同一份后端）。所有对下载站的请求一律走 `src/services/hub.ts`：
-  `hubFetch()` 主域名失败/超时（5s）自动切别名、并记住这次能用的那个；`hubUrl()` 拼给
-  Rust 下载器/外部浏览器的地址；`hubReady()` 在递交下载 URL 前先探一次。
-  **不要再直接写 `https://dl.ballance.top`**（被拦的用户会整条链路失效）。
-  CSP 的 `connect-src`、`plugins.updater.endpoints` 里都并列带着别名。
+  别名（同一台 nginx、同一份后端）。用哪个由**用户在「设置 → 网络」里选**（pref 的
+  `downloadOriginMode`：`primary` = `.top` 默认 / `mirror` = `.bcrc.site`），
+  **不做自动切换**（以前的自动探测 + 记住已删掉）：被拦时用户自己去弹窗里换，换完所有下载站请求跟着走。
+- 所有跟下载站打交道的代码一律走 `src/services/hub.ts`，**业务代码里不要写域名**：
+  `hubUrl(path)` / `hubUrlFor(mode, path)` 拼给 Rust 下载器与外部浏览器的地址；
+  `hubFetch(path)` 是带 5s 超时 + 「响应像不像下载站」校验的 fetch（不再域名回落，失败直接抛，
+  错误里带完整 URL）；`hubOrigin()` 是当前基地址；`rebaseHubUrl(url)` 把深链里的旧域名换成当前选的。
+  域名由 `usePrefStore.getState()` 现取，所以不需要任何「推送 / 初始化」调用（`hubReady()` 已删除）。
+  CSP 的 `connect-src`、`plugins.updater.endpoints` 里仍然并列写着两个域名（那是启动器自更新用的，与 hub 选择无关）。
 
 - **前端直连下载站要改 CSP**：`tauri.conf.json` 的 `app.security.csp` 必须写上
   `connect-src ... https://dl.ballance.top`，否则 webview 里的 `fetch` 会被
