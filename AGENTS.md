@@ -24,6 +24,7 @@ No test suite exists. Do not invent test commands; verify changes by running the
 ## First-time setup gotchas
 
 - **Git submodule**: `src-bmodp/3rd-party/Virtools-SDK-2.1` is a submodule. Clone with `git submodule update --init --recursive` before any C++ build.
+- **原版游戏包**: `pnpm tauri dev` / `pnpm tauri build` 会先跑 `pnpm fetch:game`，把约 65MB 的内嵌游戏包下载到 `src-tauri/resources/game/`（gitignore）。如果只跑 `cargo build` / `cargo test`，先手动跑一次 `pnpm fetch:game`，否则 tauri-build 找不到这个资源会失败（依赖它的 Rust 测试会跳过）。
 - **BMLPlus SDK**: `build.ps1` auto-downloads it (version pinned in `src-bmodp/config.ps1`) into `src-bmodp/3rd-party/BMLPlus/` on first build. Set `BMLP_PROXY` in `config.ps1` if behind a proxy.
 - **C++ is 32-bit**: CMake invokes `-A Win32` because Ballance is a 32-bit game. The built `RockoonIO.bmodp` is copied to `src-tauri/resources/builtin-mods/` and bundled as a Tauri resource. Requires CMake 4.0+ and C++20.
 - `pnpm tauri build` triggers `pnpm build` via `beforeBuildCommand`, so the C++ module rebuilds automatically — but only if the submodule is present.
@@ -79,6 +80,23 @@ BMLPlus plugin (`RockoonIO.bmodp`) built via CMake + `build.ps1`. Sources in `sr
 - 弹窗只提示 `seenResourceUpdates`（pref）里没记过的新版，「稍后」/「继续启动」后同一版本不再弹；页面右上角与行尾的更新按钮不受影响。
 - **更新**（`updateResources`）走 `importFromUrl`，靠 `onInstalled` 收尾：安装器只往 Maps / Mods 根目录放，所以要把新文件挪回旧文件的文件夹、删掉改了名的旧文件、保持禁用状态。游戏运行时不让更新。
 
+## 原版游戏安装（内嵌，离线）
+
+原版游戏包内嵌在启动器里，安装 = 解压本地 zip，**不联网**；补丁仍然从下载站装。
+
+- **包** `src-tauri/resources/game/ballance-original.zip`（完整原版游戏，约 65MB，含
+  Textures/Sounds）。它**不进 git**：`pnpm fetch:game`（`scripts/fetch-game.mjs`，PIN 里有
+  version/size/sha256）在构建前从下载站 `/game/info` 与 `/game/download` 取到该位置；
+  `tauri.conf.json` / `tauri.macos.conf.json` 的 `beforeDevCommand` / `beforeBuildCommand`
+  已接好，CI 两个平台也缓存这个目录。下载站上的包和 PIN 不一致时脚本直接报错 ——
+  内置包必须和入库的 `manifest.json` 是同一份。
+- **安装**：`backend.startInstall(targetDir)` → Rust `start_game_install`
+  （`commands/game.rs`）解压内置包，进度走 `game-install:*` 事件（阶段 `importing`，
+  百分比按解压后字节算），可取消（取消会删掉这次写出的文件）。装完校验
+  `Bin/Player.exe`，前端再把它设为当前实例、按勾选装补丁。
+- 开发构建没跑过 `pnpm fetch:game` 时，Rust 会报「启动器里没有内置的原版游戏包」；
+  `cargo test` 里依赖内置包的测试会跳过并打印提示。
+
 ## Patches (download-site patches)
 
 补丁页（`/patches`）不是本地文件管理页：它对接下载站的补丁资源（BML / BML+ / 新 Player）。
@@ -102,16 +120,16 @@ BMLPlus plugin (`RockoonIO.bmodp`) built via CMake + `build.ps1`. Sources in `sr
 
 ## 原版素材校验（3D Entities）
 
-启动器内置了一份原版游戏的文件哈希和文件本身，用来发现「关卡 / 组件被换掉」并一键恢复。
+启动器内置了一份原版游戏的文件哈希，用来发现「关卡 / 组件被换掉」并一键恢复；恢复用的文件
+直接取自上面那份**内置游戏包**（不再单独内嵌 nmo 包）。
 
 - **清单** `src-tauri/resources/vanilla/manifest.json`（359 个文件的 sha256，编译时
-  `include_str!` 嵌进二进制，运行时不依赖它还在）；**内置包**
-  `src-tauri/resources/vanilla/vanilla-core.zip`（原版游戏去掉 Textures/ 与 Sounds/，
-  约 10.7MB，材质/天空/音效仍走下载站）。
+  `include_str!` 嵌进二进制，运行时不依赖它还在）。
 - **重新生成**：`powershell -File tools/gen-vanilla-assets.ps1 -SourceDir <解压好的原版游戏>`
-  （下载 `https://dl.ballance.top/game/download` 解压到一个空目录即可）。换了原版包才需要重跑，
-  两个产物一起提交；改完跑 `cargo test --lib vanilla`（校验清单项数、内置包与清单哈希一致、
-  modified/missing 判定）。
+  （下载 `https://dl.ballance.top/game/download` 解压到一个空目录即可），只生成清单。
+  换原版包时三件事一起做：上传新包到下载站 → 改 `scripts/fetch-game.mjs` 的 PIN →
+  `pnpm fetch:game --force`，然后跑 `cargo test --lib vanilla`（校验清单项数、内置包与
+  清单哈希一致、modified/missing 判定；内置包不在时这两个测试会跳过）。
 - **校验范围只有** `3D Entities/**/*.nmo`（扩展名大小写不敏感，原版 `.nmo`/`.NMO` 混用）：
   13 个关卡 + 组件共 51 个文件。Bin、材质、音效不在范围内。
 - **启动时校验**：`src/services/launcher.ts` 的 `passVanillaCheck()` 在 `launchInstance()` 里跑
@@ -120,8 +138,8 @@ BMLPlus plugin (`RockoonIO.bmodp`) built via CMake + `build.ps1`. Sources in `sr
   「仍然启动 / 去补丁页恢复 / 取消」。**没挂这个对话框的窗口（TAS 编辑器）会跳过校验**，
   否则 `await` 永远等不到人点按钮，启动就卡死了。
 - **一键恢复**：补丁页顶部的「原版游戏素材」卡片 → `backend.vanilla.restoreLevels()` →
-  Rust `restore_vanilla_levels`。只覆盖清单里的 nmo，已经是原版的跳过，`3D Entities`
-  里多出来的文件（别人装的自定义关卡等）**不动**。
+  Rust `restore_vanilla_levels`（从内置游戏包里按清单取文件）。只覆盖清单里的 nmo，
+  已经是原版的跳过，`3D Entities` 里多出来的文件（别人装的自定义关卡等）**不动**。
 
 ## 制图工具（Blender + BBP）
 

@@ -1,13 +1,15 @@
 //! 原版游戏素材校验与恢复（3D Entities 下的 nmo：13 个关卡 + 组件）。
 //!
 //! - `verify_vanilla_levels`：启动游戏前比对 sha256，找出被替换 / 缺失的原版文件
-//! - `restore_vanilla_levels`：用启动器内置的原版包覆盖这些文件，一键恢复原版
+//! - `restore_vanilla_levels`：从启动器内置的原版游戏包里取出这些文件，一键恢复
 //!
-//! 清单与内置包由 `tools/gen-vanilla-assets.ps1` 从原版游戏包生成：
-//! `resources/vanilla/manifest.json`（编译时 `include_str!` 嵌进二进制，避免运行时再多一个
-//! 必须能读到的文件），`resources/vanilla/vanilla-core.zip`（运行时资源，Tauri resource）。
-//! 内置包不含 Textures/ 与 Sounds/ —— 材质、天空、音效走下载站，不在启动器里重复打包。
+//! 清单由 `tools/gen-vanilla-assets.ps1` 从原版游戏包生成：
+//! `resources/vanilla/manifest.json`（编译时 `include_str!` 嵌进二进制，运行时不用再读它）。
+//! 恢复用的文件来自内置游戏包 `resources/game/ballance-original.zip`（构建时由
+//! `scripts/fetch-game.mjs` 取，和安装原版游戏用的是同一份），不再单独内嵌一份
+//! 「去掉 Textures/Sounds」的 nmo 包。
 
+use crate::commands::game::bundled_game_archive;
 use crate::common::exception::{RcError, RcResultWith};
 use serde::Serialize;
 use sha2::{Digest, Sha256};
@@ -15,8 +17,7 @@ use std::collections::BTreeMap;
 use std::fmt::Write as _;
 use std::io::Read;
 use std::path::{Path, PathBuf};
-use tauri::path::BaseDirectory;
-use tauri::{command, AppHandle, Manager};
+use tauri::{command, AppHandle};
 
 const MANIFEST: &str = include_str!("../../resources/vanilla/manifest.json");
 const LEVELS_DIR: &str = "3D Entities/";
@@ -133,7 +134,7 @@ pub fn verify_vanilla_levels(instance_path: String) -> RcResultWith<Vec<VanillaF
     Ok(mismatched)
 }
 
-/// 用内置的原版包恢复 `3D Entities` 下的 nmo。
+/// 用内置的原版游戏包恢复 `3D Entities` 下的 nmo。
 ///
 /// 只覆盖清单里的文件，且已经是原版的跳过；`3D Entities` 里多出来的文件（别人装的
 /// 自定义关卡等）一律不动 —— 恢复的是「原版文件」，不是「清空文件夹」。
@@ -148,10 +149,7 @@ pub fn restore_vanilla_levels(
             "不是有效的游戏目录：{instance_path}"
         )));
     }
-    let zip_path = app.path().resolve(
-        "resources/vanilla/vanilla-core.zip",
-        BaseDirectory::Resource,
-    )?;
+    let zip_path = bundled_game_archive(&app)?;
     restore_from_zip(&root, &zip_path)
 }
 
@@ -206,12 +204,26 @@ mod tests {
             .any(|(path, _)| *path == "3D Entities/PH/P_Box.nmo"));
     }
 
-    /// 内置包必须含全部清单文件、且内容与清单哈希一致（包和清单是同一个脚本生成的，
+    /// 内置游戏包是构建产物（`scripts/fetch-game.mjs`，不进 git）：没跑过 fetch:game
+    /// 时跳过依赖它的测试，而不是让 `cargo test` 在干净 clone 上必红。
+    fn builtin_game_archive() -> Option<PathBuf> {
+        let path =
+            Path::new(env!("CARGO_MANIFEST_DIR")).join("resources/game/ballance-original.zip");
+        if path.is_file() {
+            Some(path)
+        } else {
+            eprintln!("跳过：{} 不存在，先运行 pnpm fetch:game", path.display());
+            None
+        }
+    }
+
+    /// 内置包必须含全部清单文件、且内容与清单哈希一致（包和清单是同一份原版生成的，
     /// 但凡有人只换了一个，恢复出来的就不是原版）
     #[test]
     fn builtin_zip_matches_manifest() {
-        let zip_path =
-            Path::new(env!("CARGO_MANIFEST_DIR")).join("resources/vanilla/vanilla-core.zip");
+        let Some(zip_path) = builtin_game_archive() else {
+            return;
+        };
         let mut archive = zip::ZipArchive::new(std::fs::File::open(zip_path).unwrap()).unwrap();
         let manifest = manifest().unwrap();
         for (rel, want) in level_entries(&manifest) {
@@ -265,8 +277,9 @@ mod tests {
     /// 端到端：把内置包铺到一个空目录 → 全部原版；改掉其中一个 → 恢复回去
     #[test]
     fn restore_brings_files_back_to_vanilla() {
-        let zip_path =
-            Path::new(env!("CARGO_MANIFEST_DIR")).join("resources/vanilla/vanilla-core.zip");
+        let Some(zip_path) = builtin_game_archive() else {
+            return;
+        };
         let manifest = manifest().unwrap();
 
         let mut root = std::env::temp_dir();

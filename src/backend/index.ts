@@ -191,9 +191,9 @@ const embed = {
 };
 
 const game = {
-  /** 从下载站下载原版游戏并解压到目标文件夹；进度与结果走 game-install:* 事件 */
-  startInstall: (url: string, targetDir: string) =>
-    invoke<string>("start_game_install", { url, targetDir }),
+  /** 把启动器内置的原版游戏包解压到目标文件夹；进度与结果走 game-install:* 事件 */
+  startInstall: (targetDir: string) =>
+    invoke<string>("start_game_install", { targetDir }),
   cancelInstall: (id: string) =>
     invoke<undefined>("cancel_game_install", { id })
 };

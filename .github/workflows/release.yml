@@ -58,6 +58,14 @@ jobs:
         # If you don't have `beforeBuildCommand` configured you may want to build your frontend here too.
         run: pnpm install
 
+      # 原版游戏包约 65MB，由 beforeBuildCommand 里的 pnpm fetch:game 下载并打进安装包；
+      # 脚本（含 PIN）没变就复用上次的缓存，不重复下载
+      - name: Cache bundled game archive
+        uses: actions/cache@v4
+        with:
+          path: src-tauri/resources/game
+          key: game-${{ runner.os }}-${{ hashFiles('scripts/fetch-game.mjs') }}
+
       # 发版约束：每次发新 release 前必须先写 release-notes/<版本>.md（新增/修改/删除，
       # 格式见该目录 README）。这份文件同时是 GitHub release 正文和 latest.json 的
       # `notes` —— 也就是启动器「发现新版本」弹窗里显示的更新内容，所以没写就不让发。
@@ -175,9 +183,17 @@ jobs:
       - name: install frontend dependencies
         run: pnpm install
 
+      # 原版游戏包约 65MB，由 beforeBuildCommand 里的 pnpm fetch:game 下载并打进 dmg；
+      # 脚本（含 PIN）没变就复用上次的缓存
+      - name: Cache bundled game archive
+        uses: actions/cache@v4
+        with:
+          path: src-tauri/resources/game
+          key: game-${{ runner.os }}-${{ hashFiles('scripts/fetch-game.mjs') }}
+
       # CI=true（Actions 默认就有）让 tauri 跳过 Finder 摆 DMG 窗口那一步。
-      # 构建前会跑 fetch:bmodp 与 fetch:wine（tauri.macos.conf.json）：
-      # 前者从本版本的 Windows 安装包里取 RockoonIO.bmodp，后者把 Wine 打进包里。
+      # 构建前会跑 fetch:game / fetch:bmodp / fetch:wine（tauri.macos.conf.json）：
+      # 游戏与 Wine 都打进包里，玩家那边不用再下载；fetch:bmodp 从本版本的 Windows 安装包里取 RockoonIO.bmodp。
       - name: build
         env:
           GITHUB_TOKEN: ${{ github.token }}

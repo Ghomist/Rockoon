@@ -1,9 +1,15 @@
 //! Install the vanilla Ballance game, and game patches (BML / BML+ / new Player).
 //!
-//! 与 BRP 导入同一套做法：起线程下载 + 解压，进度与结果用事件回传
-//! （`game-install:progress` / `game-install:complete`），支持取消。
-//! 原版游戏包的结构就是游戏根（Bin/Player.exe 在顶层），直接解压到目标文件夹；
-//! 补丁用同一条流水线，只是目标文件夹与「是否剥掉一层目录」不同（见 start_patch_install）。
+//! 原版游戏包内嵌在启动器里（`resources/game/ballance-original.zip`，构建时由
+//! `scripts/fetch-game.mjs` 从下载站取，见 AGENTS.md），装游戏 = 解压这份本地 zip，
+//! 玩家那边不用联网；补丁仍然从下载站下载。
+//!
+//! 两者共用同一套事件（`game-install:progress` / `game-install:complete`）与取消表，
+//! 也都跑在后台线程里，不堵主线程：
+//! - 原版游戏：解压内置包（阶段 `importing`）；
+//! - 补丁：下载（带断点续传）后解压（阶段 `downloading` → `importing`）。
+//!
+//! 包的结构就是游戏根（Bin/Player.exe 在顶层），直接解压到目标文件夹。
 
 use crate::common::exception::{RcError, RcResult, RcResultWith};
 use std::collections::HashMap;
@@ -11,7 +17,8 @@ use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, LazyLock, Mutex};
-use tauri::{command, AppHandle, Emitter};
+use tauri::path::BaseDirectory;
+use tauri::{command, AppHandle, Emitter, Manager};
 use zip::ZipArchive;
 
 static CANCEL_MAP: LazyLock<Mutex<HashMap<String, Arc<AtomicBool>>>> =
@@ -52,10 +59,33 @@ struct CompletePayload {
     target: Option<String>,
 }
 
-/// Download the vanilla game archive and extract it into `target_dir`.
+/// 启动器内置原版游戏包的位置（相对 Tauri 的 resource 根目录）。
+/// 它同时是「安装原版游戏」和「恢复原版关卡素材」（commands/vanilla.rs）的唯一来源。
+pub const GAME_ARCHIVE_REL: &str = "resources/game/ballance-original.zip";
+
+/// 找到内置的原版游戏包；缺了（比如开发构建没跑 `pnpm fetch:game`）就给出能照着做的提示。
+pub fn bundled_game_archive(app: &AppHandle) -> Result<PathBuf, RcError> {
+    let path = app
+        .path()
+        .resolve(GAME_ARCHIVE_REL, BaseDirectory::Resource)?;
+    if !path.is_file() {
+        return Err(RcError::BundledResourceMissing(format!(
+            "启动器里没有内置的原版游戏包（{}）。开发构建请先运行 pnpm fetch:game。",
+            path.display()
+        )));
+    }
+    Ok(path)
+}
+
+/// Extract the bundled vanilla game archive into `target_dir`.
 /// Returns a task id immediately; progress and the result arrive as events.
+///
+/// 内置包在安装目录里（Tauri resource），不联网、也不写临时文件 —— 直接从 zip 解到目标文件夹。
+/// 内置包缺失时直接返回错误，免得前端的任务先建出来再失败。
 #[command(async)]
-pub fn start_game_install(app: AppHandle, url: String, target_dir: String) -> RcResultWith<String> {
+pub fn start_game_install(app: AppHandle, target_dir: String) -> RcResultWith<String> {
+    let archive = bundled_game_archive(&app)?;
+
     let id = unique_id();
     let flag = Arc::new(AtomicBool::new(false));
     CANCEL_MAP.lock().unwrap().insert(id.clone(), flag.clone());
@@ -63,7 +93,7 @@ pub fn start_game_install(app: AppHandle, url: String, target_dir: String) -> Rc
     let app2 = app.clone();
     let id2 = id.clone();
     std::thread::spawn(move || {
-        let result = download_and_extract(&app2, &id2, &url, &target_dir, &flag, true, false);
+        let result = install_from_archive(&app2, &id2, &archive, &target_dir, &flag);
         CANCEL_MAP.lock().unwrap().remove(&id2);
         let _ = app2.emit("game-install:complete", result);
     });
@@ -94,15 +124,7 @@ pub fn start_patch_install(
     let app2 = app.clone();
     let id2 = id.clone();
     std::thread::spawn(move || {
-        let result = download_and_extract(
-            &app2,
-            &id2,
-            &url,
-            &target_dir,
-            &flag,
-            false,
-            strip_top_level,
-        );
+        let result = download_and_extract(&app2, &id2, &url, &target_dir, &flag, strip_top_level);
         CANCEL_MAP.lock().unwrap().remove(&id2);
         let _ = app2.emit("game-install:complete", result);
     });
@@ -317,13 +339,78 @@ fn download_resumable(
     Err(last_error)
 }
 
+/// 解压启动器内置的原版游戏包，并在装完后确认确实是一份游戏（`Bin/Player.exe` 在）。
+///
+/// 取消时 `extract_zip_with` 会把这次写出去的文件删掉，目标文件夹恢复成空的，可以直接重试。
+fn install_from_archive(
+    app: &AppHandle,
+    id: &str,
+    archive: &Path,
+    target_dir: &str,
+    cancel: &Arc<AtomicBool>,
+) -> CompletePayload {
+    let target = PathBuf::from(target_dir);
+    if let Err(e) = std::fs::create_dir_all(&target) {
+        return fail(id, format!("无法创建目标文件夹：{e}"));
+    }
+
+    emit_progress(app, id, "importing", 0, 0, 0);
+    let mut last_emit = std::time::Instant::now();
+    let mut done: u64 = 0;
+    let mut total: u64 = 0;
+    let outcome = extract_zip_with(archive, &target, false, Some(cancel), |processed, all| {
+        done = processed;
+        total = all;
+        // 每个 128KB 块都发一次事件太密了，100ms 一次就够进度条用
+        if last_emit.elapsed().as_millis() >= 100 || processed >= all {
+            emit_progress(
+                app,
+                id,
+                "importing",
+                percent_of(processed, all),
+                processed,
+                all,
+            );
+            last_emit = std::time::Instant::now();
+        }
+    });
+
+    match outcome {
+        Ok(ExtractOutcome::Cancelled) => return fail(id, "已取消"),
+        Ok(ExtractOutcome::Done) => {}
+        Err(e) => return fail(id, format!("解压失败：{e}")),
+    }
+
+    // 省得把空包/坏包当成安装成功（内置包理应一定是游戏，但这里和旧流程一样校验一次）
+    if !target.join("Bin").join("Player.exe").exists() {
+        return fail(id, "内置包解压后没找到 Bin/Player.exe，可能不是原版游戏包");
+    }
+
+    let _ = app.emit(
+        "game-install:progress",
+        ProgressPayload {
+            id: id.to_string(),
+            phase: "done".to_string(),
+            percent: 100,
+            downloaded: done,
+            total: total.max(done),
+        },
+    );
+
+    CompletePayload {
+        id: id.to_string(),
+        success: true,
+        error: None,
+        target: Some(target.to_string_lossy().to_string()),
+    }
+}
+
 fn download_and_extract(
     app: &AppHandle,
     id: &str,
     url: &str,
     target_dir: &str,
     cancel: &Arc<AtomicBool>,
-    require_player: bool,
     strip_top_level: bool,
 ) -> CompletePayload {
     let target = PathBuf::from(target_dir);
@@ -352,15 +439,6 @@ fn download_and_extract(
     }
     let _ = std::fs::remove_file(&tmp);
 
-    // 装原版游戏时确认一下确实是游戏（省得把空包/坏包当成安装成功）；
-    // 补丁不做这个检查（补丁包里本来就没有 Bin/Player.exe）。
-    if require_player {
-        let player = target.join("Bin").join("Player.exe");
-        if !player.exists() {
-            return fail(id, "解压后没找到 Bin/Player.exe，可能不是原版游戏包");
-        }
-    }
-
     let _ = app.emit(
         "game-install:progress",
         ProgressPayload {
@@ -380,13 +458,57 @@ fn download_and_extract(
     }
 }
 
+/// 解压结果。
+enum ExtractOutcome {
+    Done,
+    /// 被取消：这次写出去的文件已经删掉了（目录留着，重试会覆盖）
+    Cancelled,
+}
+
 /// 解压到 target。逐个条目规范化路径，挡掉 zip-slip（`..` 与绝对路径）。
 /// `strip_top_level` 为真时丢掉路径的第一段（上游包外层多套一层目录时用）。
-fn extract_zip(archive_path: &Path, target: &Path, strip_top_level: bool) -> Result<(), RcError> {
+///
+/// `progress(已解压字节, 压缩包解压后总字节)` 在开始、结束各调用一次，中间按块调用；
+/// `cancel` 非空时每写一块检查一次取消标记。取消或非法路径时把这次新建的文件删掉，
+/// 免得用户重试时面对一份半截游戏。
+fn extract_zip_with(
+    archive_path: &Path,
+    target: &Path,
+    strip_top_level: bool,
+    cancel: Option<&AtomicBool>,
+    mut progress: impl FnMut(u64, u64),
+) -> Result<ExtractOutcome, RcError> {
     let file = std::fs::File::open(archive_path)?;
     let mut zip = ZipArchive::new(file)?;
 
+    // 先算总量：进度条要按「解压后的大小」走，不能拿压缩包大小充数
+    let mut total: u64 = 0;
     for i in 0..zip.len() {
+        if let Ok(entry) = zip.by_index(i) {
+            if !entry.is_dir() {
+                total += entry.size();
+            }
+        }
+    }
+
+    let mut processed: u64 = 0;
+    let mut created: Vec<PathBuf> = Vec::new();
+    let cleanup = |created: &[PathBuf]| {
+        for path in created.iter().rev() {
+            let _ = std::fs::remove_file(path);
+        }
+        // 文件删完后再把空出来的子目录收掉，目标根目录保留 —— 取消后用户选的那个空文件夹
+        // 还是空的，可以重新选它安装
+        remove_empty_subdirs(target);
+    };
+    progress(0, total);
+
+    for i in 0..zip.len() {
+        if cancel.is_some_and(|flag| flag.load(Ordering::Relaxed)) {
+            cleanup(&created);
+            return Ok(ExtractOutcome::Cancelled);
+        }
+
         let mut entry = zip.by_index(i)?;
         // 7-Zip 在 Windows 上可能写反斜杠，统一按 / 切分
         let raw = entry.name().replace('\\', "/");
@@ -398,6 +520,7 @@ fn extract_zip(archive_path: &Path, target: &Path, strip_top_level: bool) -> Res
         }
         for seg in segs {
             if seg == ".." || seg.contains(':') {
+                cleanup(&created);
                 return Err(RcError::Other(format!("压缩包含非法路径：{raw}")));
             }
             out.push(seg);
@@ -414,9 +537,50 @@ fn extract_zip(archive_path: &Path, target: &Path, strip_top_level: bool) -> Res
             std::fs::create_dir_all(parent)?;
         }
         let mut f = std::fs::File::create(&out)?;
-        std::io::copy(&mut entry, &mut f)?;
+        created.push(out);
+
+        // 不用 io::copy：要按块检查取消、报进度
+        let mut buf = [0u8; 128 * 1024];
+        loop {
+            if cancel.is_some_and(|flag| flag.load(Ordering::Relaxed)) {
+                drop(f);
+                cleanup(&created);
+                return Ok(ExtractOutcome::Cancelled);
+            }
+            let n = entry.read(&mut buf)?;
+            if n == 0 {
+                break;
+            }
+            f.write_all(&buf[..n])?;
+            processed += n as u64;
+            progress(processed, total);
+        }
     }
-    Ok(())
+
+    progress(processed, total.max(processed));
+    Ok(ExtractOutcome::Done)
+}
+
+/// 递归删掉 `root` 下面已经空了的子目录（只删空目录，`root` 本身不动）。
+fn remove_empty_subdirs(root: &Path) {
+    let Ok(entries) = std::fs::read_dir(root) else {
+        return;
+    };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if path.is_dir() {
+            remove_empty_subdirs(&path);
+            let _ = std::fs::remove_dir(&path);
+        }
+    }
+}
+
+/// 不需要进度/取消的调用方（补丁安装）。
+fn extract_zip(archive_path: &Path, target: &Path, strip_top_level: bool) -> Result<(), RcError> {
+    match extract_zip_with(archive_path, target, strip_top_level, None, |_, _| {})? {
+        ExtractOutcome::Done => Ok(()),
+        ExtractOutcome::Cancelled => unreachable!("没传取消标记时不会返回 Cancelled"),
+    }
 }
 
 #[cfg(test)]
@@ -546,6 +710,54 @@ mod tests {
         extract_zip(&zip_path, &out, false).unwrap();
 
         assert!(out.join("Bin/Player.exe").exists());
+    }
+
+    /// 端到端：内置游戏包必须能整包解开，而且确实是一份游戏（安装命令走的就是这条路径）。
+    /// 内置包是构建产物（gitignore），没跑过 fetch:game 时跳过。
+    #[test]
+    fn extracts_the_bundled_game_archive() {
+        let zip_path =
+            Path::new(env!("CARGO_MANIFEST_DIR")).join("resources/game/ballance-original.zip");
+        if !zip_path.is_file() {
+            eprintln!(
+                "跳过：{} 不存在，先运行 pnpm fetch:game",
+                zip_path.display()
+            );
+            return;
+        }
+
+        let out = temp_dir("bundled");
+        let outcome = extract_zip_with(&zip_path, &out, false, None, |_, _| {}).unwrap();
+        assert!(matches!(outcome, ExtractOutcome::Done));
+        assert!(out.join("Bin/Player.exe").is_file());
+        assert!(out.join("3D Entities/Level/Level_01.NMO").is_file());
+
+        let _ = std::fs::remove_dir_all(&out);
+    }
+
+    /// 取消解压不能留下半截游戏，也不能留下空目录（用户还得能重新选同一个空文件夹）。
+    #[test]
+    fn cancel_cleans_up_partial_extract() {
+        let dir = temp_dir("cancel");
+        let zip_path = dir.join("game.zip");
+        make_zip(
+            &zip_path,
+            &[
+                ("Bin/Player.exe", b"MZ"),
+                ("3D Entities/Level/Level_01.NMO", b"level"),
+            ],
+        );
+
+        let out = dir.join("out");
+        std::fs::create_dir_all(&out).unwrap();
+        let cancel = AtomicBool::new(true);
+        let outcome = extract_zip_with(&zip_path, &out, false, Some(&cancel), |_, _| {}).unwrap();
+
+        assert!(matches!(outcome, ExtractOutcome::Cancelled));
+        assert!(
+            std::fs::read_dir(&out).unwrap().next().is_none(),
+            "取消后目标目录应该是空的"
+        );
     }
 
     /// zip-slip：带 .. 的条目必须被拒绝，且不能写到目标目录外。

@@ -7,6 +7,7 @@ Rockoon 是一款集成了 **下载、管理、启动** 于一体的 Ballance �
 ## 功能
 
 - 启动 Ballance（支持一键启动指定地图）
+- 原版游戏内嵌在启动器里：安装不用联网，也不用从下载站取
 - 管理 Ballance 实例
   - 外部更改游戏设置
   - 解锁原版关卡
@@ -45,6 +46,10 @@ pnpm install
 pnpm tauri dev
 ```
 
+`tauri dev` / `tauri build` 会先跑 `pnpm fetch:game`：从下载站取一份完整的原版游戏包
+（约 65MB）放到 `src-tauri/resources/game/`，打包进安装包，玩家安装原版游戏时就不用联网。
+这个文件不进 git，取过一次之后会复用；想强制重下用 `pnpm fetch:game --force`。
+
 也支持仅启动 vite（前端调试）：
 
 ```shell
@@ -69,7 +74,7 @@ pnpm lint  # 运行 eslint + prettier + stylelint
 
 macOS 上游戏通过 [Wine](https://www.winehq.org/) 运行（Apple 芯片需要 Rosetta 2，启动器会提示一键安装）：
 
-- Wine 随启动器打包（[Gcenx 的 macOS 构建](https://github.com/Gcenx/macOS_Wine_builds)，去掉了用不到的 Gecko/Mono），第一次启动游戏（或安装原版游戏）时解到启动器自己的数据目录，不需要联网。所以 Mac 上和 Windows 一样：装好启动器、从下载站装原版游戏，就能玩。
+- Wine 随启动器打包（[Gcenx 的 macOS 构建](https://github.com/Gcenx/macOS_Wine_builds)，去掉了用不到的 Gecko/Mono），第一次启动游戏（或安装原版游戏）时解到启动器自己的数据目录，不需要联网。所以 Mac 上和 Windows 一样：装好启动器、装启动器里内嵌的原版游戏，就能玩。
 - 安装原版游戏、补丁、下载站资源与 Windows 版一致；设置页多了「Wine 运行环境」一节（重新安装自带的 Wine / 指定已有 Wine / 重建前缀）。
 - 启动游戏经过一个小启动器 `BallanceLauncher.exe`（`src-launcher/`）：Apple 芯片上 Rosetta 2 偶尔让 Player 初始化 Direct3D 失败，启动器会等到游戏窗口出来，没起来就自动重试。
 - 自动修补原版输入管理器（`Managers/Dx5InputManager.dll`）的按键重复 bug：开机超过 24.8 天后输入名字会一个键出一串字，Mac 很少重启所以几乎必现（只改原版文件，留 `.orig` 备份）。

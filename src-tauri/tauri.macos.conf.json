@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "build": {
-    "beforeDevCommand": "pnpm fetch:bmodp && pnpm fetch:wine && pnpm dev",
-    "beforeBuildCommand": "pnpm build:ui && pnpm fetch:bmodp && pnpm fetch:wine"
+    "beforeDevCommand": "pnpm fetch:game && pnpm fetch:bmodp && pnpm fetch:wine && pnpm dev",
+    "beforeBuildCommand": "pnpm fetch:game && pnpm build:ui && pnpm fetch:bmodp && pnpm fetch:wine"
   },
   "app": {
     "windows": [

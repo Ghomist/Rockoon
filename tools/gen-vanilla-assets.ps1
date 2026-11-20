@@ -1,17 +1,22 @@
-# 生成启动器内置的原版素材（src-tauri/resources/vanilla/）：
-#   manifest.json    —— 原版游戏全部文件的 sha256（启动时校验 3D Entities 的 nmo 用）
-#   vanilla-core.zip —— 原版游戏去掉 Textures/ 与 Sounds/（材质、天空、音效走下载站）
+# 生成启动器内置的原版素材清单（src-tauri/resources/vanilla/manifest.json）：
+#   manifest.json —— 原版游戏全部文件的 sha256（校验 3D Entities 下的 nmo、一键恢复原版时用）
+#
+# 启动器不再单独内嵌一份 nmo 包：恢复原版素材时直接从内置的完整游戏包
+# （src-tauri/resources/game/ballance-original.zip，由 scripts/fetch-game.mjs 下载）里取。
+# 所以这里只生成清单，不打包。
 #
 # 用法：
 #   1. 下载 https://dl.ballance.top/game/download 并解压到一个空目录（解压出来就是游戏根）
 #   2. powershell -ExecutionPolicy Bypass -File tools/gen-vanilla-assets.ps1 -SourceDir D:\tmp\vanilla-game
 #
-# 换了原版包才需要重跑；跑完记得把两个产物一起提交。
+# 换了原版包才需要重跑。清单必须和内置游戏包是同一份，换包时三件事一起做：
+#   1. 把新包传到下载站（ballance-resource-hub/docs/vanilla-game.md）；
+#   2. 改 scripts/fetch-game.mjs 的 PIN（version / size / sha256，取自 GET /game/info）；
+#   3. 跑 `pnpm fetch:game --force`，再跑 `cargo test --lib vanilla` 确认包与清单一致。
 
 param(
   [Parameter(Mandatory = $true)][string]$SourceDir,
-  [string]$OutDir = '',
-  [string]$SevenZip = ''
+  [string]$OutDir = ''
 )
 
 $ErrorActionPreference = 'Stop'
@@ -19,15 +24,6 @@ if (-not $OutDir) { $OutDir = Join-Path $PSScriptRoot '..\src-tauri\resources\va
 $SourceDir = (Resolve-Path $SourceDir).Path
 if (-not (Test-Path (Join-Path $SourceDir 'Bin\Player.exe'))) {
   throw "不是原版游戏目录（缺 Bin\Player.exe）：$SourceDir"
-}
-if (-not $SevenZip) {
-  $candidates = @(
-    'C:\Program Files\7-Zip\7z.exe',
-    'C:\Program Files (x86)\7-Zip\7z.exe',
-    'D:\7-Zip\7z.exe'
-  )
-  $SevenZip = $candidates | Where-Object { Test-Path $_ } | Select-Object -First 1
-  if (-not $SevenZip) { throw '找不到 7z.exe，用 -SevenZip 指定路径' }
 }
 
 New-Item -ItemType Directory -Force -Path $OutDir | Out-Null
@@ -54,17 +50,5 @@ $json = $manifest | ConvertTo-Json -Depth 4
   (New-Object System.Text.UTF8Encoding $false)
 )
 
-# ── 内置素材包：去掉 Textures/ 与 Sounds/ ──────────────────
-$zip = Join-Path $OutDir 'vanilla-core.zip'
-if (Test-Path $zip) { Remove-Item $zip -Force }
-Push-Location $root
-try {
-  & $SevenZip a -tzip -mx=9 $zip '*' '-xr!Textures' '-xr!Sounds' | Out-Null
-  if ($LASTEXITCODE -ne 0) { throw "7z 打包失败（exit $LASTEXITCODE）" }
-}
-finally {
-  Pop-Location
-}
-
 "manifest.json      {0} 个文件, {1:N0} KB" -f $files.Count, ((Get-Item (Join-Path $OutDir 'manifest.json')).Length / 1KB)
-"vanilla-core.zip   {0:N2} MB" -f ((Get-Item $zip).Length / 1MB)
+"别忘了：新包上传到下载站后，把 /game/info 的 version / size / sha256 填进 scripts/fetch-game.mjs 的 PIN"

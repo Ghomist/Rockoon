@@ -12,6 +12,10 @@ pub enum RcError {
     TauriError(#[from] tauri::Error),
     #[error("tdb parse error: {0}")]
     TdbParseError(String),
+    /// 内置资源缺失（例如开发构建没跑 `pnpm fetch:game`）：消息本身就能直接给用户看，
+    /// 所以不加前缀
+    #[error("{0}")]
+    BundledResourceMissing(String),
     #[error("other error: {0}")]
     Other(String),
 }

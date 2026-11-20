@@ -4,7 +4,6 @@ import { open as browseDir } from "@tauri-apps/plugin-dialog";
 
 import backend from "@/backend";
 import { t } from "@/i18n";
-import { hubUrl } from "@/services/hub";
 import { useAppStore } from "@/stores/app";
 import { useDownloadsStore } from "@/stores/downloads";
 import { usePrefStore } from "@/stores/pref";
@@ -84,10 +83,10 @@ let taskSeq = 0;
 
 /**
  * 「安装原版游戏」流程：先问要不要顺带装补丁（默认 新 Player + BML+）→ 选目标
- * 文件夹 → 从下载站下载解压 → 设为当前实例 → 按勾选依次安装补丁。
+ * 文件夹 → 解压启动器内置的原版游戏包（不用联网）→ 设为当前实例 → 按勾选依次安装补丁。
  *
  * 首次引导（没有可用游戏时）和设置里「换文件夹 / 装新游戏」共用这一套；
- * 下载本身是「下载任务」页里的后台任务（见 stores/downloads），这里只在装完时弹一条
+ * 解压本身是「下载任务」页里的后台任务（见 stores/downloads），这里只在装完时弹一条
  * 结果，optionsDialog 仍是补丁勾选弹窗。
  */
 export function useVanillaInstall(): {
@@ -112,27 +111,32 @@ export function useVanillaInstall(): {
     // macOS：顺带把启动器自带的 Wine 解出来（另一个任务，不用联网；Windows 上什么都不做）
     void installWineIfMissing();
     try {
-      // 域名是用户在设置里选的（不自动切），直接把地址交给 Rust 下载器
-      const url = hubUrl("/game/download");
       const { task, duplicate } = useDownloadsStore.getState().begin({
         id: `game-${++taskSeq}`,
-        key: `game:${url}:${folder}`,
+        key: `game:${folder}`,
         kind: "game",
         title: t("game.taskTitle"),
         target: folder,
         cancellable: true,
+        startedText: t("game.installing"),
         retry: () => void run(folder, picked)
       });
-      // 同一个目录已经在装了：不重复下载
+      // 同一个目录已经在装了：不重复解压
       if (duplicate) return;
       id = task.id;
+      // 内置包解压是纯本地操作，没有「连接 / 下载」阶段
+      useDownloadsStore.getState().update(id, { phase: "importing" });
 
       const unlisten: (() => void)[] = [
         await listen<GameInstallProgress>("game-install:progress", e => {
           if (e.payload.id !== id) return;
           const downloads = useDownloadsStore.getState();
           downloads.progress(id, e.payload.downloaded, e.payload.total);
-          if (e.payload.phase !== "done")
+          // progress() 默认把阶段标成 downloading；原版游戏是本地解压，得盖回 importing，
+          // 顺手把按字节算的「速度」清掉（解压不是下载）
+          if (e.payload.phase === "importing")
+            downloads.update(id, { phase: "importing", speed: 0 });
+          else if (e.payload.phase !== "done")
             downloads.update(id, { phase: e.payload.phase });
         })
       ];
@@ -147,8 +151,8 @@ export function useVanillaInstall(): {
           })
         );
 
-        const backendId = await backend.startInstall(url, folder);
-        // 任务 id 换成后端的，取消才能真的中断这次下载
+        const backendId = await backend.startInstall(folder);
+        // 任务 id 换成后端的，取消才能真的中断这次解压
         useDownloadsStore.getState().update(id, { id: backendId });
         id = backendId;
 

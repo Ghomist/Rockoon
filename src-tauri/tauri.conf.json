@@ -4,9 +4,9 @@
   "version": "2.8.2",
   "identifier": "com.ghomist.rockoon",
   "build": {
-    "beforeDevCommand": "pnpm dev",
+    "beforeDevCommand": "pnpm fetch:game && pnpm dev",
     "devUrl": "http://127.0.0.1:1420",
-    "beforeBuildCommand": "pnpm build",
+    "beforeBuildCommand": "pnpm fetch:game && pnpm build",
     "frontendDist": "../dist"
   },
   "app": {

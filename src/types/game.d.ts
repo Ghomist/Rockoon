@@ -18,18 +18,6 @@ type GameInstallComplete = {
   target?: string;
 };
 
-/** 下载站给启动器的元信息（GET /game/info） */
-type VanillaGameInfo = {
-  available: boolean;
-  name: string;
-  version: string;
-  filename: string;
-  size?: number;
-  sha256?: string;
-  updated_at?: string;
-  url?: string;
-};
-
 /** Wine 运行时状态（src-tauri/src/commands/wine.rs 的 WineStatus） */
 type WineStatus = {
   /** 这个平台要不要 Wine（Windows 上为 false，其余字段无意义） */

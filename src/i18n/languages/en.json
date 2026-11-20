@@ -1,12 +1,11 @@
 {
   "game": {
-    "install": "Download and install the original game",
+    "install": "Install the original game",
     "taskTitle": "Original game",
     "pickTarget": "Choose where to install (must be an empty folder)",
     "folderNotEmpty": "\"{path}\" is not empty — pick or create an empty folder to install into",
     "folderUnreadable": "Can't read \"{path}\" — pick another folder",
-    "connecting": "Connecting to the download site…",
-    "downloading": "Downloading the original game…",
+    "installing": "Installing the original game",
     "extracting": "Extracting…",
     "done": "Original game installed",
     "installed": "Installed to {path} and set as the current game",
@@ -457,7 +456,7 @@
       "change": "Change Game Directory",
       "changed": "Game directory changed",
       "installGame": "Install a new game",
-      "installGameTip": "Fetch a clean copy of the original game from the download site (~65MB); it becomes the current game when done"
+      "installGameTip": "The launcher already bundles a clean copy of the original game — pick an empty folder to install it (no network needed); it becomes the current game when done"
     },
     "basic": "Basic Settings",
     "theme": {
@@ -510,13 +509,13 @@
     "network": {
       "title": "Network",
       "proxy": "Proxy",
-      "proxyTip": "Downloads (game, patches, maps & mods, BBP) leave through this exit; click to configure",
+      "proxyTip": "Downloads (patches, maps & mods, BBP) leave through this exit; click to configure",
       "summarySystem": "Follow system proxy",
       "summaryCustom": "Custom proxy {proxy}",
       "summaryCustomEmpty": "Custom proxy (no address)",
       "summaryDirect": "Direct",
       "dialogTitle": "Proxy settings",
-      "dialogDesc": "Downloads (game, patches, maps & mods, BBP) all go through the proxy configured here; changes apply immediately.",
+      "dialogDesc": "Downloads (patches, maps & mods, BBP) all go through the proxy configured here; changes apply immediately. The original game is bundled with the launcher, so installing it needs no network.",
       "mode": "Proxy mode",
       "modeSystem": "Follow system proxy",
       "modeSystemDesc": "Reads the Windows Internet Options; a PAC script alone is not supported",
@@ -532,7 +531,7 @@
       "origin": "Download site domain",
       "originPrimary": "Primary ({host})",
       "originMirror": "Mirror ({host})",
-      "originHint": "Patches, maps, mods and the game itself are downloaded from the selected domain. Switch to the mirror if your ISP blocks the primary one.",
+      "originHint": "Patches, maps and mods are downloaded from the selected domain (the original game is bundled and needs no network). Switch to the mirror if your ISP blocks the primary one.",
       "test": "Test connection",
       "testing": "Testing…",
       "testOk": "Connected · {elapsed}ms",

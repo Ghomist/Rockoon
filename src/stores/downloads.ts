@@ -8,7 +8,7 @@ import { message } from "@/utils/ui/feedback";
  * 下载任务中枢。
  *
  * 以前每个下载入口各自弹一个进度弹窗（而且锁死不能关），多任务会互相顶掉、
- * 也无法统一去重。现在所有下载（下载站资源、补丁、原版游戏、启动器自更新）
+ * 也无法统一去重。现在所有后台任务（下载站资源、补丁、原版游戏解压、启动器自更新）
  * 都登记成这里的任务，界面统一由「下载任务」页展示，常态下只在开始时弹一条
  * message，完成后自动导入并再弹一条。
  *
@@ -63,6 +63,8 @@ export interface BeginDownloadInput {
   retry?: () => void;
   /** 不弹「开始下载」提示（不联网的任务，例如 macOS 上解压启动器自带的 Wine） */
   silent?: boolean;
+  /** 自定义「开始」提示（离线解压类的任务不该说「开始下载」） */
+  startedText?: string;
 }
 
 interface DownloadsState {
@@ -164,9 +166,10 @@ export const useDownloadsStore = create<DownloadsState>((set, get) => ({
     // 所有下载入口统一在这里提示一次「开始下载」，入口自己不用再弹
     if (!input.silent)
       message.success(
-        task.title
-          ? t("downloads.started", { title: task.title })
-          : t("downloads.startedUnknown")
+        input.startedText ??
+          (task.title
+            ? t("downloads.started", { title: task.title })
+            : t("downloads.startedUnknown"))
       );
     return { task, duplicate: false };
   },

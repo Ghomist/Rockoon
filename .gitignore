@@ -28,6 +28,9 @@ target
 *_ignored
 .secrets
 
+# 构建时从下载站拉的原版游戏包（scripts/fetch-game.mjs，约 65MB，打包进安装包但不入库）
+src-tauri/resources/game/
+
 # Ballance mod files
 src-bmodp/.clangd
 src-bmodp/build

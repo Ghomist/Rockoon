@@ -1,12 +1,11 @@
 {
   "game": {
-    "install": "下载并安装原版游戏",
+    "install": "安装原版游戏",
     "taskTitle": "原版游戏",
     "pickTarget": "选择安装位置（必须是空文件夹）",
     "folderNotEmpty": "「{path}」不是空文件夹，请选择或新建一个空文件夹来安装",
     "folderUnreadable": "无法读取「{path}」，请换一个文件夹",
-    "connecting": "正在连接下载站…",
-    "downloading": "正在下载原版游戏…",
+    "installing": "开始安装原版游戏",
     "extracting": "正在解压…",
     "done": "原版游戏安装完成",
     "installed": "已安装到 {path}，并设为当前游戏",
@@ -662,7 +661,7 @@
       "change": "更改游戏目录",
       "changed": "游戏目录已更改",
       "installGame": "安装新游戏",
-      "installGameTip": "从下载站获取一份干净的原版游戏（约 65MB），装好会自动设为当前游戏"
+      "installGameTip": "启动器里已经带了一份干净的原版游戏，选个空文件夹直接装（不用联网），装好会自动设为当前游戏"
     },
     "basic": "基础设置",
     "theme": {
@@ -715,13 +714,13 @@
     "network": {
       "title": "网络",
       "proxy": "代理",
-      "proxyTip": "下载（原版游戏、补丁、地图与模组、BBP）走这条网络出口，点按钮打开配置",
+      "proxyTip": "下载（补丁、地图与模组、BBP）走这条网络出口，点按钮打开配置",
       "summarySystem": "跟随系统代理",
       "summaryCustom": "自定义代理 {proxy}",
       "summaryCustomEmpty": "自定义代理（未填写地址）",
       "summaryDirect": "直连",
       "dialogTitle": "代理设置",
-      "dialogDesc": "下载（原版游戏、补丁、地图与模组、BBP）都走这里设置的代理，改完立即生效。",
+      "dialogDesc": "下载（补丁、地图与模组、BBP）都走这里设置的代理，改完立即生效。原版游戏内嵌在启动器里，装它不走网络。",
       "mode": "代理模式",
       "modeSystem": "跟随系统代理",
       "modeSystemDesc": "读取 Windows「Internet 选项」；系统只配了 PAC 脚本时不生效",
@@ -737,7 +736,7 @@
       "origin": "下载站域名",
       "originPrimary": "主域名（{host}）",
       "originMirror": "备用域名（{host}）",
-      "originHint": "补丁、地图、模组、原版游戏都从当前选中的域名下载。主域名被运营商拦截时切到备用域名。",
+      "originHint": "补丁、地图、模组都从当前选中的域名下载（原版游戏内嵌在启动器里，不走网络）。主域名被运营商拦截时切到备用域名。",
       "test": "测试连接",
       "testing": "正在测试…",
       "testOk": "连接成功 · {elapsed}ms",
