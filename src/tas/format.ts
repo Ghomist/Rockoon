@@ -102,12 +102,16 @@ export function recordKeyFor(key: string): TasKey | null {
 // ---------------------------------------------------------------- zlib（浏览器原生，零依赖）
 
 async function inflateZlib(bytes: Uint8Array): Promise<Uint8Array> {
-  const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream("deflate"));
+  const stream = new Blob([bytes])
+    .stream()
+    .pipeThrough(new DecompressionStream("deflate"));
   return new Uint8Array(await new Response(stream).arrayBuffer());
 }
 
 async function deflateZlib(bytes: Uint8Array): Promise<Uint8Array> {
-  const stream = new Blob([bytes]).stream().pipeThrough(new CompressionStream("deflate"));
+  const stream = new Blob([bytes])
+    .stream()
+    .pipeThrough(new CompressionStream("deflate"));
   return new Uint8Array(await new Response(stream).arrayBuffer());
 }
 
@@ -199,10 +203,15 @@ export class TasFile {
   }
 
   /** 插入空帧（deltaTime 用 commonDeltaTime，按键全松开）。 */
-  insertFrames(at: number, count: number, deltaMs = this.commonDeltaTime): void {
+  insertFrames(
+    at: number,
+    count: number,
+    deltaMs = this.commonDeltaTime
+  ): void {
     const blank = new Uint8Array(count * FRAME_SIZE);
     const view = new DataView(blank.buffer);
-    for (let i = 0; i < count; i++) view.setFloat32(i * FRAME_SIZE, deltaMs, true);
+    for (let i = 0; i < count; i++)
+      view.setFloat32(i * FRAME_SIZE, deltaMs, true);
     this.splice(at, 0, blank);
   }
 
@@ -212,7 +221,11 @@ export class TasFile {
   }
 
   /** 把一段帧写入指定位置：overwrite = 覆盖同样多帧（不够则补空帧），insert = 插入。 */
-  pasteFrames(at: number, frames: Uint8Array, mode: "overwrite" | "insert"): void {
+  pasteFrames(
+    at: number,
+    frames: Uint8Array,
+    mode: "overwrite" | "insert"
+  ): void {
     if (mode === "insert") {
       this.splice(at, 0, frames);
       return;
@@ -223,7 +236,8 @@ export class TasFile {
       grown.set(this.data, 0);
       const view = new DataView(grown.buffer);
       const delta = this.commonDeltaTime;
-      for (let i = this.frameCount; i < needed; i++) view.setFloat32(i * FRAME_SIZE, delta, true);
+      for (let i = this.frameCount; i < needed; i++)
+        view.setFloat32(i * FRAME_SIZE, delta, true);
       this.data = grown;
     }
     this.data.set(frames, at * FRAME_SIZE);
@@ -232,7 +246,9 @@ export class TasFile {
   private splice(at: number, removeCount: number, insert: Uint8Array): void {
     const cutFrom = at * FRAME_SIZE;
     const cutTo = cutFrom + removeCount * FRAME_SIZE;
-    const next = new Uint8Array(this.data.length - (cutTo - cutFrom) + insert.length);
+    const next = new Uint8Array(
+      this.data.length - (cutTo - cutFrom) + insert.length
+    );
     next.set(this.data.subarray(0, cutFrom), 0);
     next.set(insert, cutFrom);
     next.set(this.data.subarray(cutTo), cutFrom + insert.length);
@@ -241,7 +257,11 @@ export class TasFile {
 
   private view(): DataView {
     // Uint8Array 一定带 buffer；byteOffset 通常是 0，但 slice 出来的可能是视图，用真实偏移。
-    return new DataView(this.data.buffer, this.data.byteOffset, this.data.byteLength);
+    return new DataView(
+      this.data.buffer,
+      this.data.byteOffset,
+      this.data.byteLength
+    );
   }
 }
 
@@ -250,7 +270,11 @@ export class TasFile {
 /** 解析 .tas 字节。 */
 export async function parseTas(fileBytes: Uint8Array): Promise<TasFile> {
   if (fileBytes.length < 4) throw new Error("文件太短，不是 .tas");
-  const header = new DataView(fileBytes.buffer, fileBytes.byteOffset, fileBytes.byteLength);
+  const header = new DataView(
+    fileBytes.buffer,
+    fileBytes.byteOffset,
+    fileBytes.byteLength
+  );
   const declared = header.getInt32(0, true);
   if (declared < 0 || declared % FRAME_SIZE !== 0) {
     throw new Error(`文件头的长度字段 ${declared} 不像帧数据长度`);
@@ -259,7 +283,9 @@ export async function parseTas(fileBytes: Uint8Array): Promise<TasFile> {
   try {
     raw = await inflateZlib(fileBytes.subarray(4));
   } catch (error) {
-    throw new Error(`zlib 解压失败：${error instanceof Error ? error.message : String(error)}`);
+    throw new Error(
+      `zlib 解压失败：${error instanceof Error ? error.message : String(error)}`
+    );
   }
   if (raw.length !== declared) {
     throw new Error(`文件头声明 ${declared} 字节，解压出 ${raw.length} 字节`);

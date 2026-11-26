@@ -511,7 +511,7 @@ fn extract_zip_with(
 
         let mut entry = zip.by_index(i)?;
         // 7-Zip 在 Windows 上可能写反斜杠，统一按 / 切分
-        let raw = entry.name().replace('\\', "/");
+        let raw = entry.name()?.replace('\\', "/");
 
         let mut out = target.to_path_buf();
         let mut segs = raw.split('/').filter(|s| !s.is_empty() && *s != ".");

@@ -243,7 +243,7 @@ pub fn unzip(zip_path: String, output_dir: String) -> RcResult {
             continue;
         }
 
-        let output_path = path::Path::new(&output_dir).join(file.name());
+        let output_path = path::Path::new(&output_dir).join(&*file.name()?);
 
         // 防止路径遍历攻击
         if !output_path.starts_with(&output_dir) {

@@ -35,7 +35,7 @@ tauri-plugin-dialog = "^2"
 tauri-plugin-upload = "^2"
 tauri-plugin-http = { version = "^2", features = ["unsafe-headers"] }
 tauri-plugin-deep-link = "^2"
-zip = "2.2.2"
+zip = "9"
 thiserror = "2.0.12"
 log = "0.4.27"
 env_logger = "0.11.8"

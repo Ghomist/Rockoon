@@ -27,7 +27,10 @@ export default function PatchUpdateWatcher() {
         const updates = await checkPatchUpdates(instance.path);
         if (!updates.length) return;
         const body = updates
-          .map(u => `· ${u.component.name}：${u.installed || "?"} → ${u.component.latest}`)
+          .map(
+            u =>
+              `· ${u.component.name}：${u.installed || "?"} → ${u.component.latest}`
+          )
           .join("\n");
         dialog.info({
           title: t("patches.updateTitle"),

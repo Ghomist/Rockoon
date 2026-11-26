@@ -20,7 +20,15 @@ type SkyLetter =
 /** BRP manifest — mirrors the snake_case field names defined in the BRP spec. */
 type BrpManifest = {
   manifest_version: number;
-  category: "map" | "mod" | "bmod" | "bmodp" | "sound" | "sky" | "texture" | "x-patch";
+  category:
+    | "map"
+    | "mod"
+    | "bmod"
+    | "bmodp"
+    | "sound"
+    | "sky"
+    | "texture"
+    | "x-patch";
   name?: string;
   author?: string;
   authors?: string[];

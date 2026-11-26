@@ -132,6 +132,12 @@ export default function ResourcesMaps() {
     // 换了目录就把上一个目录的搜索词清掉（刷新同一目录时保留）
     if (fullPath !== currentPath) setQuery("");
 
+    // 刚装好的游戏还没有 ModLoader/Maps（或者子目录被删了）：当成空的，别抛错
+    if (!(await backend.exists(fullPath))) {
+      setDirectoryList([]);
+      return;
+    }
+
     const dirs = await backend.listDirs(fullPath);
     const dirItems: DirItem[] = dirs.map(d => {
       const dirName = d.split(/[\\/]/).pop()!;

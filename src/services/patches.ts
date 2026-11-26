@@ -141,7 +141,7 @@ async function removePatchRecordEntry(
   try {
     const record = await readPatchRecord(instancePath);
     if (!(key in record)) return;
-    delete record[key];
+    Reflect.deleteProperty(record, key);
     await backend.writeTextFile(
       await join(await patchRecordDir(instancePath), PATCH_RECORD_FILE),
       JSON.stringify(record, null, 2)

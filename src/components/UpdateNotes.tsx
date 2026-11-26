@@ -169,5 +169,7 @@ export function UpdateNotes({
  * 导出成函数是为了能在别处（比如开发时的 DOM 探针）直接渲染同一份内容。
  */
 export function updateNotesContent(version: string, notes: string) {
-  return () => <UpdateNotes version={version} notes={notes} />;
+  const Content = () => <UpdateNotes version={version} notes={notes} />;
+  Content.displayName = "UpdateNotesContent";
+  return Content;
 }

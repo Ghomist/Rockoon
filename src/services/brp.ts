@@ -18,7 +18,11 @@ const CATEGORY_LABEL_KEY: Record<BrpManifest["category"], string> = {
 };
 
 /** 加载器与产物的显示名（BML / BML+ 是产品名，不翻译） */
-const LOADER_NAME: Record<string, string> = { bml: "BML", bmlp: "BML+", none: "" };
+const LOADER_NAME: Record<string, string> = {
+  bml: "BML",
+  bmlp: "BML+",
+  none: ""
+};
 const FORMAT_NAME: Record<string, string> = { bmod: "BML", bmodp: "BML+" };
 
 /**

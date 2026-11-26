@@ -112,7 +112,7 @@ pub fn validate_brp(
     let mut all_entries: Vec<String> = Vec::with_capacity(archive.len());
     for i in 0..archive.len() {
         let entry = archive.by_index(i)?;
-        all_entries.push(entry.name().to_string());
+        all_entries.push(entry.name()?.to_string());
     }
 
     // V7: no path traversal
@@ -510,7 +510,7 @@ pub fn install_brp(
     let mut installed: Vec<String> = Vec::new();
     for i in 0..archive.len() {
         let mut entry = archive.by_index(i)?;
-        let name = entry.name().to_string();
+        let name = entry.name()?.to_string();
         if name.ends_with('/') {
             continue;
         }
