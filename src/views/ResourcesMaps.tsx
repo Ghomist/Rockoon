@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
+  Box,
   Folder,
   FolderInput,
   FolderPlus,
@@ -21,6 +22,8 @@ import { launchMap } from "@/services/launcher";
 import { confirmTasAutoplayOff } from "@/services/tasGuard";
 import { importResources } from "@/services/resourceImport";
 import { editMapInBlender } from "@/services/mapping";
+import { MAP_EDITOR_ROUTE, openInMapEditor } from "@/services/mapEditor";
+import { useNavigate } from "react-router-dom";
 import ListViewPage from "./components/ListViewPage";
 import ResourceToolbar, { IconAction } from "./components/ResourceToolbar";
 import {
@@ -63,6 +66,7 @@ interface DirItem {
 
 export default function ResourcesMaps() {
   const t = useT();
+  const navigate = useNavigate();
   const selectedInstanceData = useAppStore(s => s.selectedInstanceData);
   const refreshKey = useAppStore(s => s.refreshKey);
   const [rootPath, setRootPath] = useState("");
@@ -415,6 +419,23 @@ export default function ResourcesMaps() {
                     <Play className="size-4" />
                     {t("resources.launch.button")}
                   </Button>
+                )}
+                {!item.isDir && !isFileDisabled(item.name) && (
+                  <RowAction
+                    label={t("mapEditor.editButton")}
+                    onClick={() =>
+                      void join(currentPath || rootPath, item.name)
+                        .then(openInMapEditor)
+                        .then(() => navigate(MAP_EDITOR_ROUTE))
+                        .catch(e =>
+                          message.error(
+                            t("mapEditor.openFailed", { reason: String(e) })
+                          )
+                        )
+                    }
+                  >
+                    <Box />
+                  </RowAction>
                 )}
                 {!item.isDir && !isFileDisabled(item.name) && (
                   <RowAction

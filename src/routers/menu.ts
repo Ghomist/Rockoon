@@ -10,6 +10,7 @@ import ResourcesTextures from "@/views/ResourcesTextures";
 import ResourcesSounds from "@/views/ResourcesSounds";
 import Patches from "@/views/Patches";
 import Mapping from "@/views/Mapping";
+import MapEditor from "@/views/MapEditor";
 import Downloads from "@/views/Downloads";
 import Settings from "@/views/Settings";
 import { hubUrl } from "@/services/hub";
@@ -129,6 +130,13 @@ export const getMenuItems = (
     view: ResourcesSounds
   },
   { section: t("menu.section.tools") },
+  // 内嵌的在线制图器（BVM）：iframe 由 App 里的 MapEditorHost 常驻，这个页面只占位
+  {
+    label: t("menu.mapEditor"),
+    route: "/map-editor",
+    icon: "box",
+    view: MapEditor
+  },
   {
     label: t("menu.mapping"),
     route: "/mapping",

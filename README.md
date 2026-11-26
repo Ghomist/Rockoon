@@ -6,7 +6,7 @@ Rockoon 是一款集成了 **下载、管理、启动** 于一体的 Ballance �
 
 ## 功能
 
-- 启动 Ballance（支持一键启动指定地图）
+- 启动 Ballance（支持一键启动指定地图；地图编辑器可以用 `rockoon://play?map=<相对 ModLoader/Maps 的路径>` 直接试玩）
 - 原版游戏内嵌在启动器里：安装不用联网，也不用从下载站取
 - 管理 Ballance 实例
   - 外部更改游戏设置
@@ -19,6 +19,7 @@ Rockoon 是一款集成了 **下载、管理、启动** 于一体的 Ballance �
     - 更改 Mod 设置
   - 新 Player 支持
     - 修改启动参数
+- 在线制图器：内嵌 [Ballance Vibe Mapping](https://ghomist.github.io/ballance-vibe-mapping/)，导出、试玩直接写进当前游戏；自制地图列表里可以一键拿去编辑（开发时用 `VITE_BVM_URL` 指到本地的 BVM）
 - 资源管理
   - 本地地图、Mod、天空盒浏览与管理
 - 资源中心（Resource Hub）

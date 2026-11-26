@@ -100,6 +100,7 @@
   },
   "menu": {
     "mapping": "制图工具",
+    "mapEditor": "在线制图器",
     "downloads": "下载任务",
     "tasEditor": "TAS 编辑器",
     "game": "启动游戏",
@@ -1171,5 +1172,31 @@
     "collapse": "收起侧栏",
     "expand": "展开侧栏",
     "links": "社区与帮助"
+  },
+  "deepLinkPlay": {
+    "invalid": "打不开这张地图：{map}（只能是游戏 ModLoader/Maps 里的 .nmo / .cmo）",
+    "noInstance": "请先在 Rockoon 里选择一个游戏，再从地图编辑器试玩",
+    "notFoundTitle": "当前游戏里没有这张地图",
+    "notFoundBody": "在 {path}\\ModLoader\\Maps 里找不到 {map}。\n\n地图编辑器导出到的游戏目录要和 Rockoon 当前选中的游戏一致：在编辑器里「文件 → Rockoon → 更换游戏目录」选这个目录，或者在 Rockoon 里切换到编辑器导出的那个游戏。",
+    "needBmlpTitle": "需要 BMLPlus",
+    "needBmlpBody": "{map} 已经在地图目录里了，但直接进图要用 BMLPlus 模组加载器（当前游戏没装或者禁用了）。可以到「游戏补丁」里安装 BMLPlus，或者进游戏后在自制地图菜单里打开它。",
+    "restartTitle": "游戏正在运行",
+    "restartBody": "要关掉正在运行的游戏，用 {name} 重新启动吗？",
+    "restart": "重新启动"
+  },
+  "mapEditor": {
+    "editButton": "在制图器中编辑",
+    "openFailed": "读取地图失败：{reason}",
+    "loading": "正在加载在线制图器…",
+    "loadFailed": "在线制图器打不开：检查一下网络，或者在浏览器里打开它",
+    "retry": "重试",
+    "openInBrowser": "在浏览器中打开",
+    "noInstance": "请先在 Rockoon 里选择一个游戏",
+    "badFile": "文件名不对：{name}",
+    "overwriteTitle": "覆盖已有的地图？",
+    "overwriteBody": "游戏的地图目录里已经有 {name}。覆盖后原来的文件就没了；想留着原图，先在制图器顶栏给地图改个名字再导出。",
+    "overwrite": "覆盖",
+    "notOverwritten": "没有覆盖 {name}：先在顶栏改个名字再导出",
+    "saved": "已保存 {name}，但没有启动"
   }
 }

@@ -22,6 +22,9 @@ import AppBackground from "@/components/AppBackground";
 
 import Onboarding from "@/views/Onboarding";
 import { buildImportQueue, packageIdFromUrl } from "@/services/deepLinkImport";
+import { playFromDeepLink } from "@/services/deepLinkPlay";
+import { MAP_EDITOR_ROUTE } from "@/services/mapEditor";
+import MapEditorHost from "@/components/MapEditorHost";
 import { AppRoutes } from "@/routers";
 import { t } from "@/i18n";
 import { useAppStore } from "@/stores/app";
@@ -297,6 +300,17 @@ function MainLayout() {
       try {
         const parsed = new URL(raw);
         if (parsed.protocol !== "rockoon:") return;
+        if (parsed.host === "play") {
+          // 地图编辑器的「试玩」：地图已经写进当前实例的 ModLoader/Maps，直接启动
+          try {
+            await getCurrentWindow().unminimize();
+            await backend.showWindow();
+          } catch {
+            /* window API not ready yet — continue */
+          }
+          void playFromDeepLink(parsed.searchParams.get("map"));
+          return;
+        }
         if (parsed.host === "import") {
           // 把窗口提到最前（还原 → 显示 → 抢焦点），失败不阻塞导入：
           // 单实例回调也会提一次，两边都做是怕浏览器拉起的时机太早、前端监听还没挂上。
@@ -495,6 +509,7 @@ function MainLayout() {
         <AppSidebar collapsed={collapsed} onCollapsedChange={setCollapsed} />
         <main className="relative flex-1 overflow-auto">
           <AppRoutes />
+          <MapEditorHost active={location.pathname === MAP_EDITOR_ROUTE} />
         </main>
         <PatchUpdateWatcher />
         <ResourceUpdateGuard />

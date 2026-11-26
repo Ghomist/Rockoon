@@ -1,6 +1,7 @@
 import {
   ArrowDownToLine,
   BookOpen,
+  Box,
   Circle,
   Download,
   FileCog,
@@ -32,6 +33,7 @@ import {
 const ICONS: Record<string, LucideIcon> = {
   "arrow-down-to-line": ArrowDownToLine,
   "book-open": BookOpen,
+  box: Box,
   download: Download,
   "file-cog": FileCog,
   film: Film,

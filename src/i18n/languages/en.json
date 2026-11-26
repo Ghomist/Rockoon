@@ -100,6 +100,7 @@
   },
   "menu": {
     "mapping": "Mapping Tools",
+    "mapEditor": "Map Editor",
     "downloads": "Downloads",
     "tasEditor": "TAS Editor",
     "game": "Start Game",
@@ -1171,5 +1172,31 @@
     "collapse": "Collapse sidebar",
     "expand": "Expand sidebar",
     "links": "Community & help"
+  },
+  "deepLinkPlay": {
+    "invalid": "Can't open this map: {map} (only .nmo / .cmo files inside the game's ModLoader/Maps)",
+    "noInstance": "Select a game in Rockoon first, then play from the map editor",
+    "notFoundTitle": "Map not found in the current game",
+    "notFoundBody": "{map} was not found in {path}\\ModLoader\\Maps.\n\nThe map editor must export into the same game that is selected in Rockoon: pick this folder via \"File → Rockoon → Change game folder\" in the editor, or switch Rockoon to the game the editor exports to.",
+    "needBmlpTitle": "BMLPlus required",
+    "needBmlpBody": "{map} is already in the map folder, but launching straight into it needs the BMLPlus mod loader (not installed or disabled in this game). Install BMLPlus from \"Patches\", or open the map from the custom map menu in game.",
+    "restartTitle": "Game is running",
+    "restartBody": "Close the running game and restart it with {name}?",
+    "restart": "Restart"
+  },
+  "mapEditor": {
+    "editButton": "Edit in map editor",
+    "openFailed": "Failed to read the map: {reason}",
+    "loading": "Loading the online map editor…",
+    "loadFailed": "The online map editor could not be loaded. Check your network, or open it in a browser",
+    "retry": "Retry",
+    "openInBrowser": "Open in browser",
+    "noInstance": "Select a game in Rockoon first",
+    "badFile": "Invalid file name: {name}",
+    "overwriteTitle": "Overwrite the existing map?",
+    "overwriteBody": "{name} already exists in the game's map folder. Overwriting replaces the original file; to keep it, rename the map in the editor's top bar before exporting.",
+    "overwrite": "Overwrite",
+    "notOverwritten": "{name} was not overwritten: rename the map in the top bar and export again",
+    "saved": "Saved {name}, but the game was not started"
   }
 }
