@@ -61,7 +61,10 @@ const common = {
   toggleWindow: () => invoke("toggle_window"),
   openDevtools: () => invoke("open_devtools"),
   /** 重启启动器（macOS 自更新装完用；这个命令不会返回，进程直接被换掉） */
-  restartApp: () => invoke("restart_app")
+  restartApp: () => invoke("restart_app"),
+  /** 读剪贴板里 BVM 交过来的地图码，SHA-256 前 16 位要等于 hash，否则返回 null */
+  readClipboardMap: (hash: string) =>
+    invoke<string | null>("read_clipboard_map", { hash })
 };
 
 const ballance = {

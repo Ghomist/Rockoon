@@ -33,6 +33,7 @@ pub fn run() {
             commands::app::toggle_window,
             commands::app::open_devtools,
             commands::app::restart_app,
+            commands::app::read_clipboard_map,
             commands::fs::open_in_explorer,
             commands::fs::open,
             commands::fs::exists,

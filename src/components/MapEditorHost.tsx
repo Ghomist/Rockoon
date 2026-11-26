@@ -7,8 +7,10 @@ import { cn } from "@/lib/utils";
 import {
   BVM_URL,
   bvmFrameUrl,
+  currentTheme,
   listenMapEditor,
   setEditorFrame,
+  syncEditorTheme,
   useMapEditorStore
 } from "@/services/mapEditor";
 
@@ -26,8 +28,20 @@ export default function MapEditorHost({ active }: { active: boolean }) {
   const frameRef = useRef<HTMLIFrameElement>(null);
   const [timedOut, setTimedOut] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
+  // 地址只在挂上 / 重试时定一次：之后明暗变化走消息，改地址会让编辑器整页重新加载
+  const [src, setSrc] = useState(() => bvmFrameUrl(currentTheme()));
 
   useEffect(() => listenMapEditor(), []);
+
+  // 明暗跟着 Rockoon：<html> 的 dark 一变（手动切、跟随系统）就通知 BVM
+  useEffect(() => {
+    const mo = new MutationObserver(syncEditorTheme);
+    mo.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"]
+    });
+    return () => mo.disconnect();
+  }, []);
 
   useEffect(() => {
     if (active && !visited) useMapEditorStore.setState({ visited: true });
@@ -63,7 +77,7 @@ export default function MapEditorHost({ active }: { active: boolean }) {
       <iframe
         key={reloadKey}
         ref={frameRef}
-        src={bvmFrameUrl()}
+        src={src}
         title={t("menu.mapEditor")}
         className="size-full border-0"
         allow="fullscreen; clipboard-read; clipboard-write"
@@ -78,7 +92,10 @@ export default function MapEditorHost({ active }: { active: boolean }) {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setReloadKey(k => k + 1)}
+                  onClick={() => {
+                    setSrc(bvmFrameUrl(currentTheme()));
+                    setReloadKey(k => k + 1);
+                  }}
                 >
                   {t("mapEditor.retry")}
                 </Button>

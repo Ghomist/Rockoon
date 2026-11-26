@@ -23,13 +23,35 @@ export const BVM_URL: string =
   (import.meta.env.VITE_BVM_URL as string | undefined) ||
   "https://ghomist.github.io/ballance-vibe-mapping/";
 export const BVM_ORIGIN = new URL(BVM_URL).origin;
-export const bvmFrameUrl = () => {
+/** iframe 地址：theme 是挂上时 Rockoon 的明暗，BVM 第一帧就用它（之后切换走 theme 消息，不改地址免得重新加载） */
+export const bvmFrameUrl = (theme: EditorTheme) => {
   const u = new URL(BVM_URL);
   u.searchParams.set("host", "rockoon");
+  u.searchParams.set("theme", theme);
   return u.toString();
 };
 
-type OpenRequest = { name: string; data: Uint8Array };
+export type EditorTheme = "dark" | "light";
+/** Rockoon 现在的明暗（<html> 上有没有 dark），内嵌的 BVM 跟着它，自己的主题开关藏起来 */
+export const currentTheme = (): EditorTheme =>
+  document.documentElement.classList.contains("dark") ? "dark" : "light";
+let lastTheme: EditorTheme | null = null;
+/** 明暗变了就告诉 BVM */
+export function syncEditorTheme() {
+  const theme = currentTheme();
+  if (theme === lastTheme) return;
+  lastTheme = theme;
+  if (useMapEditorStore.getState().ready) post({ type: "theme", theme });
+}
+
+/** 打开以后做什么：只打开、保存进地图目录、保存并试玩 */
+export type BvmAction = "open" | "save" | "play";
+
+type OpenRequest =
+  /** 地图列表的「在制图器中编辑」：.nmo 文件 */
+  | { kind: "file"; name: string; data: Uint8Array }
+  /** 浏览器里的 BVM 通过 rockoon://bvm 深链交过来的地图码 */
+  | { kind: "code"; code: string; name: string; id: string; action: BvmAction };
 
 interface MapEditorState {
   /** 打开过这个页面：iframe 挂上以后一直留着（切走只是藏起来），编辑器状态不丢 */
@@ -60,7 +82,16 @@ function post(msg: Record<string, unknown>) {
 function flushOpen() {
   const { ready, pendingOpen } = useMapEditorStore.getState();
   if (!ready || !pendingOpen) return;
-  post({ type: "open", name: pendingOpen.name, data: pendingOpen.data });
+  if (pendingOpen.kind === "file")
+    post({ type: "open", name: pendingOpen.name, data: pendingOpen.data });
+  else
+    post({
+      type: "open-code",
+      code: pendingOpen.code,
+      name: pendingOpen.name,
+      id: pendingOpen.id,
+      action: pendingOpen.action
+    });
   useMapEditorStore.setState({ pendingOpen: null });
 }
 
@@ -73,9 +104,51 @@ export async function openInMapEditor(path: string): Promise<void> {
   const name = path.split(/[\\/]/).pop() ?? "map.nmo";
   useMapEditorStore.setState({
     visited: true,
-    pendingOpen: { name, data: bytes }
+    pendingOpen: { kind: "file", name, data: bytes }
   });
   flushOpen();
+}
+
+/**
+ * 深链 `rockoon://bvm?action=&name=&id=&code=`（或 `&clip=<校验码>`）：浏览器里的 BVM 把地图交过来。
+ * 地图码小就直接在链接里；大地图放在剪贴板，链接里只带校验码，核对上了才用。
+ * 交给内嵌的制图器打开，它再按 action 导出、保存（play 接着启动）。
+ * 返回 true = 已经排进制图器，调用方切到 MAP_EDITOR_ROUTE。
+ */
+export async function openBvmLink(params: URLSearchParams): Promise<boolean> {
+  const raw = params.get("action");
+  const action: BvmAction = raw === "play" || raw === "save" ? raw : "open";
+  let code = params.get("code");
+  const clip = params.get("clip");
+  if (!code && clip) {
+    code = await backend.readClipboardMap(clip).catch(() => null);
+    if (!code) {
+      dialog.warning({
+        title: t("mapEditor.clipTitle"),
+        content: t("mapEditor.clipBody")
+      });
+      return false;
+    }
+  }
+  if (!code || !/^[\w-]+$/.test(code)) {
+    dialog.warning({
+      title: t("mapEditor.clipTitle"),
+      content: t("mapEditor.badLink")
+    });
+    return false;
+  }
+  useMapEditorStore.setState({
+    visited: true,
+    pendingOpen: {
+      kind: "code",
+      code,
+      name: params.get("name") ?? "",
+      id: params.get("id") ?? "",
+      action
+    }
+  });
+  flushOpen();
+  return true;
 }
 
 /** 这次运行里由制图器写过的文件：再写就是同一张图的新版本，不用再问 */
@@ -145,7 +218,8 @@ export function listenMapEditor(): () => void {
     const m = e.data as { ns?: string; type?: string } & Partial<SaveMessage>;
     if (m?.ns !== NS) return;
     if (m.type === "ready") {
-      post({ type: "hello" });
+      lastTheme = currentTheme();
+      post({ type: "hello", theme: lastTheme });
       useMapEditorStore.setState({ ready: true });
       flushOpen();
     } else if (m.type === "save" && typeof m.id === "number") {

@@ -30,6 +30,8 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 # 原版 3D Entities 素材校验（commands/vanilla.rs）
 sha2 = "0.10"
+# 读剪贴板：BVM 把大地图的地图码经剪贴板交过来（commands/app.rs 的 read_clipboard_map）
+arboard = { version = "3", default-features = false }
 tauri-plugin-shell = "^2"
 tauri-plugin-dialog = "^2"
 tauri-plugin-upload = "^2"

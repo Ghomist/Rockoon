@@ -1197,6 +1197,9 @@
     "overwriteBody": "{name} already exists in the game's map folder. Overwriting replaces the original file; to keep it, rename the map in the editor's top bar before exporting.",
     "overwrite": "Overwrite",
     "notOverwritten": "{name} was not overwritten: rename the map in the top bar and export again",
-    "saved": "Saved {name}, but the game was not started"
+    "saved": "Saved {name}, but the game was not started",
+    "clipTitle": "Couldn't open the map from BVM",
+    "clipBody": "This map is large, so BVM put it on the clipboard, but the clipboard no longer holds it (something else may have been copied). Go back to BVM and click \"Play in Rockoon\" again.",
+    "badLink": "The map in the link is incomplete. Go back to BVM and try again."
   }
 }

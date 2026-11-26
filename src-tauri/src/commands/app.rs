@@ -1,4 +1,5 @@
-use crate::common::exception::RcResult;
+use crate::common::exception::{RcResult, RcResultWith};
+use sha2::{Digest, Sha256};
 use log::{log, log_enabled, Level};
 use tauri::{command, AppHandle, Runtime, WebviewWindow, Window};
 
@@ -79,4 +80,32 @@ pub fn open_devtools<R: Runtime>(window: WebviewWindow<R>) -> RcResult {
 pub fn restart_app<R: Runtime>(app: AppHandle<R>) -> RcResult {
     // 这个函数不会返回：进程被替换掉了
     app.restart()
+}
+
+/// 读剪贴板里 BVM 交过来的地图码（地图太大、深链放不下时 BVM 改放剪贴板，链接里只带校验码）。
+///
+/// 校验码是地图码 SHA-256 的前 16 位十六进制：对得上才返回内容，对不上（剪贴板被换掉了）或者剪贴板里不是文字
+/// 都返回 None。在 Rust 里核对，免得把剪贴板里不相干的大段内容传到前端。
+///
+/// 核对上了就把剪贴板清空：那是 BVM 临时放进去的一大段地图码，留着只会占地方（剪贴板历史里也一样）。
+#[command]
+pub fn read_clipboard_map(hash: String) -> RcResultWith<Option<String>> {
+    let Ok(mut clipboard) = arboard::Clipboard::new() else {
+        return Ok(None);
+    };
+    let Ok(text) = clipboard.get_text() else {
+        return Ok(None);
+    };
+    let text = text.trim();
+    let hex: String = Sha256::digest(text.as_bytes())
+        .iter()
+        .take(8)
+        .map(|b| format!("{b:02x}"))
+        .collect();
+    if !hex.eq_ignore_ascii_case(hash.trim()) {
+        return Ok(None);
+    }
+    let code = text.to_string();
+    let _ = clipboard.clear();
+    Ok(Some(code))
 }

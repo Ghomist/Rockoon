@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ChevronDown, Check, Layers, Plus, Pencil, Trash2 } from "lucide-react";
 import { Toaster } from "@/components/ui/sonner";
 import { Button } from "@/components/ui/button";
@@ -23,7 +23,7 @@ import AppBackground from "@/components/AppBackground";
 import Onboarding from "@/views/Onboarding";
 import { buildImportQueue, packageIdFromUrl } from "@/services/deepLinkImport";
 import { playFromDeepLink } from "@/services/deepLinkPlay";
-import { MAP_EDITOR_ROUTE } from "@/services/mapEditor";
+import { MAP_EDITOR_ROUTE, openBvmLink } from "@/services/mapEditor";
 import MapEditorHost from "@/components/MapEditorHost";
 import { AppRoutes } from "@/routers";
 import { t } from "@/i18n";
@@ -291,6 +291,11 @@ function MainLayout() {
     return () => clearInterval(id);
   }, [updateRunningTime]);
 
+  // 深链处理里要切页面，但 useNavigate 每次切页都给新函数：放进 effect 依赖会让监听反复重挂、
+  // 冷启动带进来的深链被重复处理，所以经 ref 取最新的
+  const navigateRef = useRef(navigate);
+  navigateRef.current = navigate;
+
   // BRP drag-drop + rockoon:// deep-links.
   useEffect(() => {
     let unlistenDragDrop: (() => void) | undefined;
@@ -300,6 +305,18 @@ function MainLayout() {
       try {
         const parsed = new URL(raw);
         if (parsed.protocol !== "rockoon:") return;
+        if (parsed.host === "bvm") {
+          // 浏览器里的 BVM 交过来一张地图：在内嵌的制图器里打开，再按 action 保存 / 试玩
+          try {
+            await getCurrentWindow().unminimize();
+            await backend.showWindow();
+          } catch {
+            /* window API not ready yet — continue */
+          }
+          if (await openBvmLink(parsed.searchParams))
+            navigateRef.current(MAP_EDITOR_ROUTE);
+          return;
+        }
         if (parsed.host === "play") {
           // 地图编辑器的「试玩」：地图已经写进当前实例的 ModLoader/Maps，直接启动
           try {
