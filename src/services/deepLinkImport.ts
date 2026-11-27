@@ -63,31 +63,41 @@ export async function buildImportQueue(mainUrl: string): Promise<ImportTask[]> {
     return [{ url: rebaseHubUrl(mainUrl), name: "", isDependency: false }];
   }
 
-  const tasks: ImportTask[] = [];
-  const seen = new Set<number>();
+  const tasks = await buildQueueForPackages([mainId]);
+  return tasks.length
+    ? tasks
+    : [{ url: rebaseHubUrl(mainUrl), name: "", isDependency: false }];
+}
 
-  const visit = async (
-    id: number,
-    depth: number,
-    isDependency: boolean
-  ): Promise<void> => {
+/**
+ * 把一组资源（合集里的地图）展开成一条安装队列：每个资源的依赖排在它前面，
+ * 多个资源共用的依赖只装一次。`mainIds` 里的资源本身 `isDependency = false`
+ * （即使它恰好也是别的资源的依赖）。拿不到信息的资源直接跳过。
+ */
+export async function buildQueueForPackages(
+  mainIds: number[]
+): Promise<(ImportTask & { packageId: number })[]> {
+  const tasks: (ImportTask & { packageId: number })[] = [];
+  const seen = new Set<number>();
+  const mains = new Set(mainIds);
+
+  const visit = async (id: number, depth: number): Promise<void> => {
     if (seen.has(id) || depth > MAX_DEPTH) return;
     seen.add(id);
     const info = await fetchPackageInfo(id);
     if (!info) return;
     for (const dep of info.dependencies) {
-      await visit(Number(dep), depth + 1, true);
+      await visit(Number(dep), depth + 1);
     }
     tasks.push({
       url: hubUrl(`/packages/${id}/download`),
       name: info.name,
-      isDependency,
-      category: info.category
+      isDependency: !mains.has(id),
+      category: info.category,
+      packageId: id
     });
   };
 
-  await visit(mainId, 0, false);
-  return tasks.length
-    ? tasks
-    : [{ url: rebaseHubUrl(mainUrl), name: "", isDependency: false }];
+  for (const id of mainIds) await visit(id, 0);
+  return tasks;
 }

@@ -121,6 +121,8 @@ export interface BrpImportOptions {
   title?: string;
   /** true = 这是被依赖的资源：失败多提示一句名字，成功不打扰 */
   isDependency?: boolean;
+  /** true = 成功不单独弹提示、失败提示带上资源名（合集一次装几十张图，最后汇总一条） */
+  quiet?: boolean;
   /** 文件落盘之后、任务算成功之前的收尾（更新资源时挪文件、删旧版）；抛错算这次导入失败 */
   onInstalled?: (result: BrpImportResult) => Promise<void>;
 }
@@ -200,7 +202,9 @@ export async function importFromUrl(
       message.error(
         options.isDependency
           ? t("brp.import.depFailed", { name: title })
-          : t("brp.import.failed", { reason })
+          : t("brp.import.failed", {
+              reason: options.quiet && title ? `${title}：${reason}` : reason
+            })
       );
       return "failed";
     }
@@ -210,7 +214,7 @@ export async function importFromUrl(
     const what = describeBrp(m.manifest);
     useDownloadsStore.getState().succeed(id, { title: what });
     useAppStore.getState().triggerRefresh();
-    if (!options.isDependency) {
+    if (!options.isDependency && !options.quiet) {
       const notice = modInstallNotice(m);
       message.success(
         `${t("brp.import.success", {

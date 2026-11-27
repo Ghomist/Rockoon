@@ -442,6 +442,14 @@
       "bodyRenamed": "\"{local}\" (v{version}) is the same map as \"{hub}\" on the site. Downloading installs it under the site's name and removes the old file.",
       "confirm": "Download anyway",
       "confirmRename": "Download and rename"
+    },
+    "bundle": {
+      "fetchFailed": "Failed to read the map bundle: {reason}",
+      "empty": "This bundle has no maps to install",
+      "upToDate": "All maps in \"{name}\" are already up to date",
+      "start": "Installing bundle \"{name}\": {count} maps",
+      "done": "Bundle \"{name}\" installed: {count} maps → ModLoader/Maps/{folder}/",
+      "partial": "Bundle \"{name}\": {ok} installed, {failed} failed — retry them from Downloads"
     }
   },
   "header": {

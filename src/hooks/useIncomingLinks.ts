@@ -8,6 +8,7 @@ import {
 } from "@tauri-apps/plugin-deep-link";
 import backend from "@/backend";
 import { t } from "@/i18n";
+import { startBundleImport } from "@/services/bundleImport";
 import { buildImportQueue, packageIdFromUrl } from "@/services/deepLinkImport";
 import { playFromDeepLink } from "@/services/deepLinkPlay";
 import { MAP_EDITOR_ROUTE, openBvmLink } from "@/services/mapEditor";
@@ -70,7 +71,8 @@ function askRedownload(opts: {
 
 /**
  * 外部送进来的东西：拖进窗口的 .brp / .zip，以及 `rockoon://` 深链
- * （import = 下载站一键安装，play = 制图器试玩，bvm = 浏览器里的 BVM 交来的地图）。
+ * （import = 下载站一键安装，bundle = 下载站地图合集一键安装，play = 制图器试玩，
+ * bvm = 浏览器里的 BVM 交来的地图）。
  */
 export function useIncomingLinks() {
   const navigate = useNavigate();
@@ -177,6 +179,18 @@ export function useIncomingLinks() {
           // 地图编辑器的「试玩」：地图已经写进当前实例的 ModLoader/Maps，直接启动
           await bringToFront();
           void playFromDeepLink(parsed.searchParams.get("map"));
+          return;
+        }
+        if (parsed.host === "bundle") {
+          // 下载站的地图合集：在 Maps 下建合集文件夹，地图逐个装进去（见 services/bundleImport）
+          await bringToFront();
+          const id = Number(parsed.searchParams.get("id"));
+          if (Number.isInteger(id) && id > 0)
+            void startBundleImport(
+              id,
+              parsed.searchParams.get("name") ?? undefined
+            );
+          else message.warning(t("brp.error.invalidFile"));
           return;
         }
         if (parsed.host === "import") {

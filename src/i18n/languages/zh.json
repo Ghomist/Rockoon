@@ -442,6 +442,14 @@
       "bodyRenamed": "《{local}》（v{version}）与下载站上的《{hub}》是同一个地图。下载会按站上的名字装好，旧文件删掉。",
       "confirm": "仍然下载",
       "confirmRename": "下载并改名"
+    },
+    "bundle": {
+      "fetchFailed": "读取地图合集失败：{reason}",
+      "empty": "这个合集里没有可以安装的地图",
+      "upToDate": "合集「{name}」里的地图都已经是最新版了",
+      "start": "开始安装合集「{name}」：{count} 张地图",
+      "done": "合集「{name}」安装完成：{count} 张地图 → ModLoader/Maps/{folder}/",
+      "partial": "合集「{name}」装好 {ok} 张，{failed} 张失败；可以在「下载任务」里重试"
     }
   },
   "header": {
