@@ -10,6 +10,8 @@
 
 ## Key Learnings
 
+- **App.tsx 拆分（2026-11-27）**：深链 / 拖放导入在 `hooks/useIncomingLinks.ts`，标题栏配置下拉在 `components/ProfileSwitcher.tsx`；暗色模式统一用 `utils/theme.ts` 的 `useDarkMode()`。启动时的更新检查 `checkForUpdate({ silent: true })`。
+
 - **Project:** rockoon
 - **Description:** Rockoon 是一款集成了 **下载、管理、启动** 于一体的 Ballance 启动器。
 
@@ -27,6 +29,8 @@
 
 ## Do-Not-Repeat
 
+- [2026-11-27] HMR 改过 store 之后整页刷新也可能出现两份 `stores/app.ts`（一份带 `?t=`），表现为卡在开屏（booted 设到了另一份上）。验证前先查 `performance.getEntriesByType("resource")` 有没有重复的 store URL，有就重启 dev server（TaskStop 不会杀掉子进程：按 1420 端口找 node 进程 + rockoon.exe 再 taskkill）。Git Bash 里给 node 脚本传 `/game` 这类参数记得 `MSYS_NO_PATHCONV=1`。
+
 - [2026-10-26] CDP 里 `import('/src/stores/pref.ts')` 拿到的可能不是 App 用的那份 store：HMR 改过的模块被 Vite 加了 `?t=` 时间戳，两份实例互不相通，结果「改了 pref 没反应」。要么重启 dev server，要么从 `performance.getEntriesByType('resource')` 里找 App 实际加载的 URL 再 import。
 
 - [2026-10-26] 别在同一帧里起两个 `document.startViewTransition`：后一个会打断前一个，中间帧新旧颜色混在一起。用 `utils/theme.ts` 的 `runInTransition` 合并。读 `--primary` 之类主题变量时别假设 effect 里已经生效（View Transition 的回调是异步的），盯 `<html>` 的 MutationObserver。
@@ -35,6 +39,12 @@
 <!-- Format: [YYYY-MM-DD] Description of what went wrong and what to do instead. -->
 
 ## Decision Log
+
+- (2026-11-27) 安装包里的原版游戏 zip（65.5 MB）照旧整包打进去，自更新也下完整安装包：用户评估过「完整安装包 + 精简更新包」方案（CI 多打一个不含游戏的 NSIS 包、改写 latest.json，下载站 app/rockoon.py 镜像也要配合），嫌维护麻烦放弃了。别再主动提拆分。
+
+- (2026-11-27) 二进制 IPC：`read_file` 返回 `tauri::ipc::Response`（前端拿 ArrayBuffer），`write_file` 收 `tauri::ipc::Request` 原始字节、路径放 `x-path` 头（encodeURIComponent）。不再用 `number[]`。
+- (2026-11-27) 做 IO 的 command 一律 `#[command(async)]`（同步 command 跑在主线程会卡界面）；embed.rs / frame_limit.rs 的 Win32 窗口操作仍保持同步。
+- (2026-11-27) 两个窗口按需加载：main.tsx `lazy()` App / TasEditorWindow，路由页面在 menu.ts 里 `page(() => import(...))` 并空闲预取。TAS 窗口用 `initTasWindowStores()`，不写 pref / Database.tdb。选项写回走 stores/index.ts 的防抖串行队列，启动游戏前 `flushOptionsSave()`。
 
 <!-- Significant technical decisions with rationale. Why X was chosen over Y. -->
 

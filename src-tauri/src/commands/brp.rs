@@ -12,7 +12,7 @@ use tauri::{command, AppHandle, Emitter};
 
 /// Validate a BRP archive against V1-V17 without installing. Returns the parsed
 /// manifest and content summary on success.
-#[command]
+#[command(async)]
 pub fn validate_brp(archive_path: String, instance_path: String) -> RcResultWith<BrpInfo> {
     brp::validate_brp(Path::new(&archive_path), Path::new(&instance_path))
 }
@@ -22,7 +22,7 @@ pub fn validate_brp(archive_path: String, instance_path: String) -> RcResultWith
 ///
 /// `sky_letter`：sky 包里的 `Sky_X_*` 是占位符，这里指定要装到哪一关（A–L/M）；
 /// 不传或传 "X" 就保留 X（自制地图槽位）。
-#[command]
+#[command(async)]
 pub fn import_brp(
     archive_path: String,
     instance_path: String,
@@ -43,13 +43,16 @@ fn register_cancel(id: &str) -> Arc<AtomicBool> {
     let flag = Arc::new(AtomicBool::new(false));
     CANCEL_MAP
         .lock()
-        .unwrap()
+        .unwrap_or_else(|e| e.into_inner())
         .insert(id.to_string(), flag.clone());
     flag
 }
 
 fn unregister_cancel(id: &str) {
-    CANCEL_MAP.lock().unwrap().remove(id);
+    CANCEL_MAP
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .remove(id);
 }
 
 // ── Event Payloads ──────────────────────────────────────────
@@ -109,7 +112,11 @@ pub fn start_brp_import(
 /// is delivered via a `brp-import:complete` event with `success: false`.
 #[command(async)]
 pub fn cancel_brp_import(id: String) -> RcResult {
-    if let Some(flag) = CANCEL_MAP.lock().unwrap().get(&id) {
+    if let Some(flag) = CANCEL_MAP
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .get(&id)
+    {
         flag.store(true, Ordering::Relaxed);
     }
     Ok(())

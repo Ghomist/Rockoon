@@ -1,4 +1,4 @@
-use crate::common::exception::{RcResult, RcResultWith};
+use crate::common::exception::{RcError, RcResult, RcResultWith};
 use log::info;
 use regex::Regex;
 use std::{fs, path, process};
@@ -23,7 +23,7 @@ pub struct SkyboxAnalysisResult {
     directions: Vec<String>,
 }
 
-#[command]
+#[command(async)]
 #[cfg(target_os = "windows")]
 pub fn open_in_explorer(path: String) -> RcResult {
     let is_dir = path::Path::new(&path).is_dir();
@@ -33,7 +33,7 @@ pub fn open_in_explorer(path: String) -> RcResult {
     Ok(())
 }
 
-#[command]
+#[command(async)]
 #[cfg(target_os = "windows")]
 pub fn open(path: String) -> RcResult {
     let path_ref: &std::path::Path = path.as_ref();
@@ -47,7 +47,7 @@ pub fn open(path: String) -> RcResult {
 }
 
 /// macOS：文件夹直接在 Finder 里打开，文件则在 Finder 里选中
-#[command]
+#[command(async)]
 #[cfg(target_os = "macos")]
 pub fn open_in_explorer(path: String) -> RcResult {
     let is_dir = path::Path::new(&path).is_dir();
@@ -59,14 +59,14 @@ pub fn open_in_explorer(path: String) -> RcResult {
     Ok(())
 }
 
-#[command]
+#[command(async)]
 #[cfg(target_os = "macos")]
 pub fn open(path: String) -> RcResult {
     process::Command::new("open").arg(&path).status()?;
     Ok(())
 }
 
-#[command]
+#[command(async)]
 #[cfg(not(any(target_os = "windows", target_os = "macos")))]
 pub fn open_in_explorer(path: String) -> RcResult {
     let path_ref = path::Path::new(&path);
@@ -79,14 +79,14 @@ pub fn open_in_explorer(path: String) -> RcResult {
     Ok(())
 }
 
-#[command]
+#[command(async)]
 #[cfg(not(any(target_os = "windows", target_os = "macos")))]
 pub fn open(path: String) -> RcResult {
     process::Command::new("xdg-open").arg(&path).status()?;
     Ok(())
 }
 
-#[command]
+#[command(async)]
 pub fn exists(path: String) -> RcResultWith<bool> {
     let exists = path::Path::new(&path).exists();
     Ok(exists)
@@ -94,7 +94,7 @@ pub fn exists(path: String) -> RcResultWith<bool> {
 
 /// 目录是否为空（不存在也算空，安装时会自动创建）；路径是文件、或读不到（没权限等）时报错。
 /// 不能用 `Path::exists()`：它把「读不到」也当成「不存在」，那样没权限的目录会被当成空目录装进去。
-#[command]
+#[command(async)]
 pub fn is_dir_empty(path: String) -> RcResultWith<bool> {
     let p = path::Path::new(&path);
     if !p.try_exists()? {
@@ -103,61 +103,47 @@ pub fn is_dir_empty(path: String) -> RcResultWith<bool> {
     Ok(fs::read_dir(p)?.next().is_none())
 }
 
-#[command]
+#[command(async)]
 pub fn size(path: String) -> RcResultWith<u64> {
     let x = fs::metadata(&path)?;
     Ok(x.len())
 }
 
-#[command]
+#[command(async)]
 pub fn list(path: String, exts: Vec<String>) -> RcResultWith<Vec<File>> {
     let mut matches = Vec::new();
     let exts = exts
         .iter()
-        .flat_map(|s| vec![s.to_owned(), format!("{}.disable", s)])
+        .map(|s| s.to_lowercase())
+        .flat_map(|s| [format!("{s}.disable"), s])
         .collect::<Vec<_>>();
 
-    // 遍历目录条目
-    for entry in fs::read_dir(path)? {
-        let entry = match entry {
-            Ok(e) => e,
-            Err(_) => continue,
-        };
-
-        // 检查文件类型是否为普通文件
-        let file_type = match entry.file_type() {
-            Ok(ft) => ft,
-            Err(_) => continue,
-        };
-        if !file_type.is_file() {
+    for entry in fs::read_dir(path)?.flatten() {
+        // 只要普通文件（file_type 不跟随符号链接，与原先行为一致）
+        if !entry.file_type().is_ok_and(|t| t.is_file()) {
             continue;
         }
-
-        // 获取文件路径和元数据
-        let path = entry.path();
-        let metadata = match fs::metadata(&path) {
-            Ok(md) => md,
-            Err(_) => continue, // 跳过无法获取元数据的文件
+        let Ok(file_name) = entry.file_name().into_string() else {
+            continue;
         };
-
-        // 获取文件名并检查后缀
-        if let Some(file_name) = path.file_name().and_then(|s| s.to_str()) {
-            if exts
-                .iter()
-                .any(|ext| file_name.to_lowercase().ends_with(ext))
-            {
-                matches.push(File {
-                    name: file_name.to_string(),
-                    size: metadata.len(),
-                });
-            }
+        let lower = file_name.to_lowercase();
+        if !exts.iter().any(|ext| lower.ends_with(ext.as_str())) {
+            continue;
         }
+        // Windows 上 DirEntry::metadata 直接来自目录枚举结果，不再额外打开文件
+        let Ok(metadata) = entry.metadata() else {
+            continue;
+        };
+        matches.push(File {
+            name: file_name,
+            size: metadata.len(),
+        });
     }
 
     Ok(matches)
 }
 
-#[command]
+#[command(async)]
 pub fn list_dirs(path: String) -> RcResultWith<Vec<String>> {
     let mut matches = Vec::new();
     for entry in fs::read_dir(path)? {
@@ -176,35 +162,35 @@ pub fn list_dirs(path: String) -> RcResultWith<Vec<String>> {
     Ok(matches)
 }
 
-#[command]
+#[command(async)]
 pub fn copy(from: String, to: String) -> RcResult {
     fs::copy(&from, &to)?;
     info!("Copied {} to {}", from, to);
     Ok(())
 }
 
-#[command]
+#[command(async)]
 pub fn mkdir(path: String) -> RcResult {
     fs::create_dir_all(&path)?;
     info!("Created directory {}", path);
     Ok(())
 }
 
-#[command]
+#[command(async)]
 pub fn delete(path: String) -> RcResult {
     fs::remove_file(&path)?;
     info!("Deleted {}", path);
     Ok(())
 }
 
-#[command]
+#[command(async)]
 pub fn remove_dir(path: String) -> RcResult {
     fs::remove_dir_all(&path)?;
     info!("Removed directory {}", path);
     Ok(())
 }
 
-#[command]
+#[command(async)]
 pub fn disable(path: String, file_name: String) -> RcResult {
     if !file_name.ends_with(".disable") {
         let folder = fs::canonicalize(&path)?;
@@ -218,7 +204,7 @@ pub fn disable(path: String, file_name: String) -> RcResult {
     Ok(())
 }
 
-#[command]
+#[command(async)]
 pub fn enable(path: String, file_name: String) -> RcResult {
     if file_name.ends_with(".disable") {
         let folder = fs::canonicalize(&path)?;
@@ -232,7 +218,7 @@ pub fn enable(path: String, file_name: String) -> RcResult {
     Ok(())
 }
 
-#[command]
+#[command(async)]
 pub fn unzip(zip_path: String, output_dir: String) -> RcResult {
     let file = fs::File::open(&zip_path)?;
     let mut archive = zip::ZipArchive::new(file)?;
@@ -243,14 +229,15 @@ pub fn unzip(zip_path: String, output_dir: String) -> RcResult {
             continue;
         }
 
-        let output_path = path::Path::new(&output_dir).join(&*file.name()?);
-
-        // 防止路径遍历攻击
-        if !output_path.starts_with(&output_dir) {
-            return Err(crate::common::exception::RcError::Other(
-                "Invalid file path in archive".to_string(),
-            ));
-        }
+        // 防止路径遍历：Path::starts_with 按路径段比较、不会消解 `..`，
+        // `out/../../x` 照样能通过，所以要用 zip 自带的 enclosed_name（拒绝 `..` 越界、绝对路径和盘符）
+        let Some(rel) = file.enclosed_name() else {
+            return Err(crate::common::exception::RcError::Other(format!(
+                "Invalid file path in archive: {}",
+                file.name().unwrap_or("<invalid>".into())
+            )));
+        };
+        let output_path = path::Path::new(&output_dir).join(rel);
 
         if let Some(parent) = output_path.parent() {
             fs::create_dir_all(parent)?;
@@ -265,7 +252,7 @@ pub fn unzip(zip_path: String, output_dir: String) -> RcResult {
     Ok(())
 }
 
-#[command]
+#[command(async)]
 pub fn get_common_dirs(app: AppHandle) -> RcResultWith<Vec<String>> {
     let mut dirs = Vec::new();
 
@@ -316,14 +303,14 @@ pub fn get_common_dirs(app: AppHandle) -> RcResultWith<Vec<String>> {
     Ok(dirs)
 }
 
-#[command]
+#[command(async)]
 pub fn get_temp_dir() -> RcResultWith<String> {
     let temp_dir = std::env::temp_dir();
     info!("System temp directory: {}", temp_dir.display());
     Ok(temp_dir.to_string_lossy().to_string())
 }
 
-#[command]
+#[command(async)]
 pub fn install_rockoon_mod(app: AppHandle, path: String) -> RcResult {
     let mod_path = app.path().resolve(
         "resources/builtin-mods/RockoonIO.bmodp",
@@ -337,40 +324,68 @@ pub fn install_rockoon_mod(app: AppHandle, path: String) -> RcResult {
     Ok(())
 }
 
-#[command]
-pub fn write_file(path: String, data: Vec<u8>) -> RcResult {
-    info!("Writing {} bytes to {}", data.len(), path);
+/// 写二进制文件。请求体直接是原始字节（前端传 `Uint8Array`），路径放在 `x-path` 头里（encodeURIComponent 过）。
+/// 不走 JSON：`number[]` 序列化后体积是原来的三四倍，几 MB 的地图 / TAS 两头都要解析很久。
+#[command(async)]
+pub fn write_file(request: tauri::ipc::Request<'_>) -> RcResult {
+    let path = request
+        .headers()
+        .get("x-path")
+        .and_then(|v| v.to_str().ok())
+        .map(percent_decode)
+        .ok_or_else(|| RcError::Other("write_file: missing x-path header".to_string()))?;
+    let tauri::ipc::InvokeBody::Raw(data) = request.body() else {
+        return Err(RcError::Other(
+            "write_file: expected a raw byte body".to_string(),
+        ));
+    };
 
-    // 确保目标目录存在
     if let Some(parent) = path::Path::new(&path).parent() {
         if !parent.exists() {
             fs::create_dir_all(parent)?;
         }
     }
-
-    // 直接写入二进制数据
-    fs::write(&path, &data)?;
-
+    fs::write(&path, data)?;
     info!("Wrote {} bytes to {}", data.len(), path);
-
     Ok(())
 }
 
-#[command]
+/// 解 encodeURIComponent（路径里有中文，HTTP 头只能放 ASCII）
+fn percent_decode(s: &str) -> String {
+    let bytes = s.as_bytes();
+    let mut out = Vec::with_capacity(bytes.len());
+    let mut i = 0;
+    while i < bytes.len() {
+        if bytes[i] == b'%' && i + 2 < bytes.len() {
+            let hex = std::str::from_utf8(&bytes[i + 1..i + 3]).unwrap_or("");
+            if let Ok(b) = u8::from_str_radix(hex, 16) {
+                out.push(b);
+                i += 3;
+                continue;
+            }
+        }
+        out.push(bytes[i]);
+        i += 1;
+    }
+    String::from_utf8_lossy(&out).into_owned()
+}
+
+#[command(async)]
 pub fn read_text_file(path: String) -> RcResultWith<String> {
     let content = fs::read_to_string(&path)?;
     Ok(content)
 }
 
 /// 读二进制文件（TAS 编辑器读 .tas 用）。返回字节数组，前端在 JS 侧解 zlib。
-#[command]
-pub fn read_file(path: String) -> RcResultWith<Vec<u8>> {
+/// 返回原始字节（前端拿到 ArrayBuffer），不经 JSON 数组。
+#[command(async)]
+pub fn read_file(path: String) -> RcResultWith<tauri::ipc::Response> {
     let data = fs::read(&path)?;
     info!("Read {} bytes from {}", data.len(), path);
-    Ok(data)
+    Ok(tauri::ipc::Response::new(data))
 }
 
-#[command]
+#[command(async)]
 pub fn write_text_file(path: String, content: String) -> RcResult {
     // 确保目标目录存在
     if let Some(parent) = path::Path::new(&path).parent() {
@@ -383,7 +398,7 @@ pub fn write_text_file(path: String, content: String) -> RcResult {
     Ok(())
 }
 
-#[command]
+#[command(async)]
 pub fn analyze_skybox_files(dir_path: String) -> RcResultWith<SkyboxAnalysisResult> {
     info!("Analyzing skybox files in {}", dir_path);
 
@@ -464,7 +479,7 @@ pub fn analyze_skybox_files(dir_path: String) -> RcResultWith<SkyboxAnalysisResu
 /// 不必给 CSP 开 `data:` / `blob:`。
 ///
 /// 缓存名里带「路径 + 大小 + 修改时间」，所以贴图被换掉后会重新生成，不会显示旧图。
-#[command]
+#[command(async)]
 pub fn convert_texture(path: String) -> RcResultWith<String> {
     let source = path::Path::new(&path);
     let meta = fs::metadata(source)?;
@@ -494,7 +509,7 @@ fn fnv1a(text: &str) -> u64 {
     })
 }
 
-#[command]
+#[command(async)]
 pub fn rename(from: String, to: String) -> RcResult {
     fs::rename(&from, &to)?;
     info!("Renamed {} to {}", from, to);

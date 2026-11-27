@@ -13,7 +13,11 @@ interface AppState {
   booted: boolean;
   markBooted: () => void;
   loadInstance: (path: string) => Promise<boolean>;
-  updateInstanceRunningTime: () => void;
+  /**
+   * 把这次游戏已经过去的时长计入 playtime。`minSeconds`：攒够这么多秒才记
+   * （轮询时传 30：playtime 在 pref 里，每记一次就整份写一次 localStorage）。
+   */
+  updateInstanceRunningTime: (minSeconds?: number) => void;
   triggerRefresh: () => void;
 }
 
@@ -41,18 +45,22 @@ export const useAppStore = create<AppState>()(
       set({ booted: true });
     },
 
-    updateInstanceRunningTime() {
+    updateInstanceRunningTime(minSeconds = 0) {
       const { runningInstancePath, runningInstanceTimestamp } = get();
       if (!runningInstancePath || runningInstanceTimestamp <= 0) return;
       const elapsedSeconds = Math.floor(
         (Date.now() - runningInstanceTimestamp) / 1000
       );
-      if (elapsedSeconds > 0) {
+      if (elapsedSeconds > 0 && elapsedSeconds >= minSeconds) {
         usePrefStore.setState(prev => ({
           playtime: prev.playtime + elapsedSeconds,
           lastPlayedAt: Date.now()
         }));
-        set({ runningInstanceTimestamp: Date.now() });
+        // 只推进记过的整秒，零头留到下次，长时间游戏也不会少算
+        set({
+          runningInstanceTimestamp:
+            runningInstanceTimestamp + elapsedSeconds * 1000
+        });
       }
     },
 

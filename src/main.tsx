@@ -1,12 +1,11 @@
 import "@/assets/styles.css";
+import { lazy, Suspense } from "react";
 import { createRoot } from "react-dom/client";
 import { MemoryRouter } from "react-router-dom";
 import { moveWindow, Position } from "@tauri-apps/plugin-positioner";
-import App from "@/App";
 import GlobalDialogHost from "@/components/GlobalDialogHost";
 import { Toaster } from "@/components/ui/sonner";
-import TasEditorWindow from "@/views/tas/TasEditorWindow";
-import { initStores } from "@/stores";
+import { initStores, initTasWindowStores } from "@/stores";
 import { usePrefStore } from "@/stores/pref";
 import { switchLanguage, useI18nStore } from "@/i18n";
 import { checkForUpdate } from "@/services/updater";
@@ -38,23 +37,32 @@ if (!rootEl) throw new Error("#app not found");
 const isTasWindow =
   new URLSearchParams(window.location.search).get("window") === "tas";
 
+// 两个窗口各自只加载自己的那一份代码：TAS 编辑器有好几千行，主窗口用不到；反过来也一样
+const App = lazy(() => import("@/App"));
+const TasEditorWindow = lazy(() => import("@/views/tas/TasEditorWindow"));
+
 createRoot(rootEl).render(
   isTasWindow ? (
     // 帮助模态等弹窗走同一个 dialog store，所以 TAS 窗口也要挂一份 host；
     // toast 同理：Toaster 只挂在主窗口的 App 里，不在这里也挂一份的话编辑器的提示全都看不见
     <>
-      <TasEditorWindow />
+      <Suspense fallback={null}>
+        <TasEditorWindow />
+      </Suspense>
       <GlobalDialogHost />
       <Toaster richColors closeButton position="top-right" />
     </>
   ) : (
     <MemoryRouter>
-      <App />
+      <Suspense fallback={null}>
+        <App />
+      </Suspense>
     </MemoryRouter>
   )
 );
 
-initStores().catch(e => console.error("initStores failed:", e));
+if (isTasWindow) initTasWindowStores();
+else initStores().catch(e => console.error("initStores failed:", e));
 
 if (!isTasWindow) {
   if (usePrefStore.getState().centerWindow) {
@@ -64,7 +72,7 @@ if (!isTasWindow) {
   }
 
   // Background update check.（上游只发布 Windows 版：macOS 移植版没有更新源，不自动检查）
-  if (!isMac) setTimeout(checkForUpdate, 3000);
+  if (!isMac) setTimeout(() => void checkForUpdate({ silent: true }), 3000);
 }
 
 console.info("Rockoon UI initialized");

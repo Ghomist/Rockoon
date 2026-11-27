@@ -822,7 +822,7 @@ export default function TasEditorWindow() {
         }
         // 数据长度就是 totalFrames（含尾部空帧）—— 保存按它写，不自动裁尾
         const bytes = await writeTas(d.tas);
-        await backend.writeFile(target, Array.from(bytes));
+        await backend.writeFile(target, bytes);
         if (asNew) {
           const next: Doc = {
             ...d,

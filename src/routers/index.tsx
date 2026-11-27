@@ -1,5 +1,6 @@
+import { Suspense, useEffect } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
-import { getMenuItems, type SidebarItem } from "./menu";
+import { getMenuItems, preloadPages, type SidebarItem } from "./menu";
 
 /**
  * Build the route tree from `getMenuItems()`.
@@ -35,9 +36,17 @@ function buildRoutes(items: SidebarItem[]): JSX.Element[] {
 export function AppRoutes() {
   // key by pathname → remounts on navigation, triggering the CSS enter animation.
   const location = useLocation();
+  useEffect(() => {
+    // 首屏渲染完再预取其它页面，不跟当前页抢
+    const idle =
+      window.requestIdleCallback ?? ((cb: () => void) => setTimeout(cb, 500));
+    idle(() => preloadPages());
+  }, []);
   return (
     <div key={location.pathname} className="route-enter h-full">
-      <Routes>{buildRoutes(getMenuItems())}</Routes>
+      <Suspense fallback={null}>
+        <Routes>{buildRoutes(getMenuItems())}</Routes>
+      </Suspense>
     </div>
   );
 }

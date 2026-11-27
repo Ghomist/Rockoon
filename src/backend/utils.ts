@@ -64,7 +64,8 @@ export const dumpBallanceLaunchConfig = (
         rawConfig[category][key] = value ? "1" : "0";
         continue;
       } else if (typeof value === "number") {
-        rawConfig[category][key] = value.toString();
+        // ini 里本来就没有这一项时 parseInt 得到 NaN：照旧不写，别把 "NaN" 写进 Player.ini
+        if (Number.isFinite(value)) rawConfig[category][key] = value.toString();
         continue;
       } else if (typeof value === "string") {
         rawConfig[category][key] = value;

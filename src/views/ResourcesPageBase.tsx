@@ -26,6 +26,7 @@ import {
 } from "./components/ResourceUpdates";
 import {
   EmptyState,
+  EmptyResourceActions,
   ExtTag,
   ResourceRow,
   RowAction
@@ -222,6 +223,7 @@ export default function ResourcesPageBase({ type }: Props) {
               ? t("resources.search.empty", { query: query.trim() })
               : t("resources.empty." + type)
           }
+          action={!query.trim() && <EmptyResourceActions onImport={onImport} />}
         />
       )}
 

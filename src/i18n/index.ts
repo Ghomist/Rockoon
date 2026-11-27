@@ -74,7 +74,10 @@ export function detectSystemLanguage(): string {
 /** Switch locale and persist to pref store. */
 export function switchLanguage(lang: string): void {
   useI18nStore.getState().setLang(lang);
-  usePrefStore.getState().language = lang;
+  // 走 setState：直接改 state 对象的话订阅者（设置页下拉、pref 持久化）都收不到，
+  // Ctrl+T 切的语言下次启动就丢了。语言相同就不写，避免和 language 订阅来回触发。
+  if (usePrefStore.getState().language !== lang)
+    usePrefStore.setState({ language: lang });
 }
 
 /**

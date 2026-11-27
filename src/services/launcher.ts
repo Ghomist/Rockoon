@@ -10,6 +10,7 @@ import {
   unseenUpdates
 } from "@/services/resourceUpdates";
 import { ensureWineReady } from "@/services/wine";
+import { flushOptionsSave } from "@/stores";
 import { useAppStore } from "@/stores/app";
 import { usePrefStore } from "@/stores/pref";
 import { dialog, message } from "@/utils/ui/feedback";
@@ -61,6 +62,8 @@ async function startGame(
   args?: string[],
   highPriority?: boolean
 ): Promise<number | undefined> {
+  // 选项写回是防抖的：刚改完就点启动时，先等它落盘，游戏才读得到新选项
+  await flushOptionsSave();
   if (!isMac) return backend.execute(cwd, bin, env, args, highPriority);
   if (launching) {
     message.info(t("wine.launchingAlready"));

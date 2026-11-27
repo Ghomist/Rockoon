@@ -836,7 +836,8 @@
       },
       "position": {
         "label": "Window position",
-        "tip": "Negative numbers can be set, and setting all to 0 means no restrictions"
+        "tip": "Negative numbers can be set, and setting all to 0 means no restrictions",
+        "auto": "Auto"
       }
     },
     "inGameOptions": {

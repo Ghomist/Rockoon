@@ -45,6 +45,8 @@ const mutateOptions = (mutator: (opts: BallanceOptions) => void): void => {
   });
 };
 
+/** Player.ini 的 Window.X / Y 未设置时的值（INT_MAX） */
+const WINDOW_POS_UNSET = 2147483647;
 /**
  * 只写 Bin/Player.ini 的分区。
  * 原版 Player 读的是注册表（Rockoon 不写注册表），所以没装「新 Player」时
@@ -245,7 +247,12 @@ export default function GameConfig() {
       tip: t("gameConfig.window.position.tip"),
       type: "number-pair",
       field: cfgField("Window", "X"),
-      field2: cfgField("Window", "Y")
+      field2: cfgField("Window", "Y"),
+      // Player.ini 里没设置窗口位置时是 INT_MAX：显示成「自动」而不是一串被截断的数字
+      unset: {
+        value: WINDOW_POS_UNSET,
+        placeholder: t("gameConfig.window.position.auto")
+      }
     }
   ];
 

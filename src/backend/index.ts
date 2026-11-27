@@ -120,11 +120,20 @@ const fs = {
   getTempDir: () => invoke<string>("get_temp_dir"),
   installRockoonMod: (path: string) =>
     invoke<undefined>("install_rockoon_mod", { path }),
-  writeFile: (path: string, data: number[]) =>
-    invoke<undefined>("write_file", { path, data }),
+  /** 写二进制文件：字节作为原始请求体发送（不转 JSON 数组），路径走 `x-path` 头 */
+  writeFile: (path: string, data: Uint8Array | ArrayLike<number>) =>
+    // 只有 ArrayBuffer / Uint8Array 才会被当成原始请求体（制图器 postMessage 过来的贴图保险起见再包一层）
+    invoke<undefined>(
+      "write_file",
+      data instanceof Uint8Array ? data : Uint8Array.from(data),
+      {
+        headers: { "x-path": encodeURIComponent(path) }
+      }
+    ),
   readTextFile: (path: string) => invoke<string>("read_text_file", { path }),
-  /** 读二进制文件（TAS 编辑器用；返回字节数组） */
-  readFile: (path: string) => invoke<number[]>("read_file", { path }),
+  /** 读二进制文件：后端直接回原始字节（ArrayBuffer） */
+  readFile: async (path: string) =>
+    new Uint8Array(await invoke<ArrayBuffer | number[]>("read_file", { path })),
   /** TGA 等浏览器显示不了的贴图 → PNG 缓存文件路径，配 `convertFileSrc()` 使用 */
   convertTexture: (path: string) => invoke<string>("convert_texture", { path }),
   writeTextFile: (path: string, content: string) =>

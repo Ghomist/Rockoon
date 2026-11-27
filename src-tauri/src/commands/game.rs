@@ -88,13 +88,19 @@ pub fn start_game_install(app: AppHandle, target_dir: String) -> RcResultWith<St
 
     let id = unique_id();
     let flag = Arc::new(AtomicBool::new(false));
-    CANCEL_MAP.lock().unwrap().insert(id.clone(), flag.clone());
+    CANCEL_MAP
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .insert(id.clone(), flag.clone());
 
     let app2 = app.clone();
     let id2 = id.clone();
     std::thread::spawn(move || {
         let result = install_from_archive(&app2, &id2, &archive, &target_dir, &flag);
-        CANCEL_MAP.lock().unwrap().remove(&id2);
+        CANCEL_MAP
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .remove(&id2);
         let _ = app2.emit("game-install:complete", result);
     });
 
@@ -119,13 +125,19 @@ pub fn start_patch_install(
 ) -> RcResultWith<String> {
     let id = unique_id();
     let flag = Arc::new(AtomicBool::new(false));
-    CANCEL_MAP.lock().unwrap().insert(id.clone(), flag.clone());
+    CANCEL_MAP
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .insert(id.clone(), flag.clone());
 
     let app2 = app.clone();
     let id2 = id.clone();
     std::thread::spawn(move || {
         let result = download_and_extract(&app2, &id2, &url, &target_dir, &flag, strip_top_level);
-        CANCEL_MAP.lock().unwrap().remove(&id2);
+        CANCEL_MAP
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .remove(&id2);
         let _ = app2.emit("game-install:complete", result);
     });
 
@@ -136,7 +148,11 @@ pub fn start_patch_install(
 /// `game-install:complete` event with `success: false`.
 #[command(async)]
 pub fn cancel_game_install(id: String) -> RcResult {
-    if let Some(flag) = CANCEL_MAP.lock().unwrap().get(&id) {
+    if let Some(flag) = CANCEL_MAP
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .get(&id)
+    {
         flag.store(true, Ordering::Relaxed);
     }
     Ok(())

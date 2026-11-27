@@ -1,6 +1,6 @@
 use crate::common::exception::{RcResult, RcResultWith};
-use sha2::{Digest, Sha256};
 use log::{log, log_enabled, Level};
+use sha2::{Digest, Sha256};
 use tauri::{command, AppHandle, Runtime, WebviewWindow, Window};
 
 #[command]
@@ -33,7 +33,7 @@ pub fn hide_window<R: Runtime>(window: Window<R>) -> RcResult {
     Ok(())
 }
 
-#[command]
+#[command(async)]
 pub fn show_window<R: Runtime>(window: Window<R>) -> RcResult {
     raise_window(&window);
     Ok(())
@@ -55,7 +55,7 @@ pub fn raise_window<R: Runtime>(window: &Window<R>) {
     }
 }
 
-#[command]
+#[command(async)]
 pub fn toggle_window<R: Runtime>(window: Window<R>) -> RcResult {
     let visible = window.is_visible()?;
     if visible {
@@ -88,7 +88,7 @@ pub fn restart_app<R: Runtime>(app: AppHandle<R>) -> RcResult {
 /// 都返回 None。在 Rust 里核对，免得把剪贴板里不相干的大段内容传到前端。
 ///
 /// 核对上了就把剪贴板清空：那是 BVM 临时放进去的一大段地图码，留着只会占地方（剪贴板历史里也一样）。
-#[command]
+#[command(async)]
 pub fn read_clipboard_map(hash: String) -> RcResultWith<Option<String>> {
     let Ok(mut clipboard) = arboard::Clipboard::new() else {
         return Ok(None);

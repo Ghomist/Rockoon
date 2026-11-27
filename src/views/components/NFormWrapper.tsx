@@ -1,4 +1,5 @@
 import {
+  Fragment,
   useEffect,
   useRef,
   useState,
@@ -57,6 +58,10 @@ export interface SelectSchema {
   type: "select";
   options: { value: any; label: string }[];
 }
+/** 数字输入框的值：读不到 / 不是有限数（NaN）时显示空，而不是把 NaN 交给 <input> */
+const numberValue = (v: unknown) =>
+  typeof v === "number" && Number.isFinite(v) ? v : "";
+
 export interface InputSchema {
   type: "input";
 }
@@ -76,6 +81,11 @@ export interface NumberSchema {
 export interface NumberPairSchema {
   type: "number-pair";
   field2: Field;
+  /**
+   * 表示「未设置 / 自动」的哨兵值（如窗口位置的 2147483647）：显示成空输入框 + placeholder，
+   * 清空输入框时写回它。
+   */
+  unset?: { value: number; placeholder: string };
 }
 export interface ButtonSchema {
   type: "button";
@@ -263,30 +273,37 @@ export default function NFormWrapper({ schema }: NFormWrapperProps) {
                 {x.type === "number" && x.field && (
                   <Input
                     type="number"
-                    value={x.field.get() ?? 0}
+                    value={numberValue(x.field.get())}
                     onChange={e => x.field!.set(Number(e.target.value) as any)}
                   />
                 )}
 
                 {x.type === "number-pair" && x.field && (
                   <>
-                    <Input
-                      type="number"
-                      className="w-24"
-                      value={x.field.get() ?? 0}
-                      onChange={e =>
-                        x.field!.set(Number(e.target.value) as any)
-                      }
-                    />
-                    <span className="text-muted-foreground">×</span>
-                    <Input
-                      type="number"
-                      className="w-24"
-                      value={x.field2.get() ?? 0}
-                      onChange={e =>
-                        x.field2!.set(Number(e.target.value) as any)
-                      }
-                    />
+                    {[x.field, x.field2].map((f, i) => (
+                      <Fragment key={i}>
+                        {i === 1 && (
+                          <span className="text-muted-foreground">×</span>
+                        )}
+                        <Input
+                          type="number"
+                          className="w-28"
+                          placeholder={x.unset?.placeholder}
+                          value={
+                            x.unset && f.get() === x.unset.value
+                              ? ""
+                              : numberValue(f.get())
+                          }
+                          onChange={e =>
+                            f.set(
+                              (e.target.value === "" && x.unset
+                                ? x.unset.value
+                                : Number(e.target.value)) as any
+                            )
+                          }
+                        />
+                      </Fragment>
+                    ))}
                   </>
                 )}
 

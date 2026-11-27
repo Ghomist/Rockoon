@@ -100,7 +100,7 @@ function flushOpen() {
  * 调用方负责跳到 MAP_EDITOR_ROUTE。
  */
 export async function openInMapEditor(path: string): Promise<void> {
-  const bytes = Uint8Array.from(await backend.readFile(path));
+  const bytes = await backend.readFile(path);
   const name = path.split(/[\\/]/).pop() ?? "map.nmo";
   useMapEditorStore.setState({
     visited: true,
@@ -196,14 +196,14 @@ async function save(
         message: t("mapEditor.notOverwritten", { name: map })
       };
   }
-  await backend.writeFile(abs, Array.from(msg.data));
+  await backend.writeFile(abs, msg.data);
   savedThisSession.add(key);
   for (const tex of msg.textures ?? []) {
     if (!/^[^\\/:*?"<>|]+$/.test(tex.name) || tex.name.startsWith("."))
       continue;
     const texPath = `${root}/Textures/${tex.name}`;
     if (await backend.exists(texPath)) continue;
-    await backend.writeFile(texPath, Array.from(tex.data));
+    await backend.writeFile(texPath, tex.data);
   }
   if (msg.play && !(await playMap(map)))
     return { ok: false, message: t("mapEditor.saved", { name: map }) };

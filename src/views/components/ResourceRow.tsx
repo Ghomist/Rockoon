@@ -5,6 +5,10 @@ import {
   TooltipContent,
   TooltipTrigger
 } from "@/components/ui/tooltip";
+import { ExternalLink, Import } from "lucide-react";
+import { open as openUrl } from "@tauri-apps/plugin-shell";
+import { t } from "@/i18n";
+import { hubUrl } from "@/services/hub";
 import { cn } from "@/lib/utils";
 
 interface RowProps {
@@ -129,11 +133,14 @@ export function ExtTag({ children }: { children: ReactNode }) {
 export function EmptyState({
   icon,
   title,
-  hint
+  hint,
+  action
 }: {
   icon?: ReactNode;
   title: ReactNode;
   hint?: ReactNode;
+  /** 空列表时给个出路（导入 / 去下载站），别让用户对着空白页 */
+  action?: ReactNode;
 }) {
   return (
     <div className="flex flex-col items-center justify-center gap-2 px-6 py-20 text-center">
@@ -144,6 +151,29 @@ export function EmptyState({
       )}
       <p className="text-sm font-medium">{title}</p>
       {hint && <p className="max-w-md text-xs text-muted-foreground">{hint}</p>}
+      {action && (
+        <div className="mt-3 flex flex-wrap justify-center gap-2">{action}</div>
+      )}
     </div>
+  );
+}
+
+/** 资源列表为空时的两个出路：导入本地文件 / 去下载站找 */
+export function EmptyResourceActions({ onImport }: { onImport: () => void }) {
+  return (
+    <>
+      <Button size="sm" onClick={onImport}>
+        <Import />
+        {t("resources.import.button")}
+      </Button>
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={() => void openUrl(hubUrl("/"))}
+      >
+        <ExternalLink />
+        {t("menu.downloadSite")}
+      </Button>
+    </>
   );
 }

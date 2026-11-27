@@ -35,6 +35,7 @@ import {
 } from "./components/ResourceUpdates";
 import {
   EmptyState,
+  EmptyResourceActions,
   ExtTag,
   ResourceRow,
   RowAction
@@ -378,6 +379,7 @@ export default function ResourcesMaps() {
               ? t("resources.search.empty", { query: query.trim() })
               : t("resources.empty.map")
           }
+          action={!query.trim() && <EmptyResourceActions onImport={onImport} />}
         />
       )}
 

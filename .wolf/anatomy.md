@@ -1,7 +1,7 @@
 # anatomy.md
 
-> Auto-maintained by OpenWolf. Last scanned: 2026-10-26T14:14:51.476Z
-> Files: 403 tracked | Anatomy hits: 0 | Misses: 0
+> Auto-maintained by OpenWolf. Last scanned: 2026-11-27T11:08:58.556Z
+> Files: 405 tracked | Anatomy hits: 0 | Misses: 0
 
 ## ./
 
@@ -47,6 +47,11 @@
 
 - `shot.ps1` — Declares W (~325 tok)
 - `sidebar_edit.py` — 选中项左侧的小竖条 (~2582 tok)
+
+## C:/Users/ghomist/AppData/Local/Temp/claude/dc7bc8f637e62e3c/19a83ed3-68d5-4121-97c7-d4ffcffdc2d1/scratchpad/
+
+- `eval.mjs` — Usage: node eval.mjs "<js expression>" (~191 tok)
+- `shots.mjs` — Usage: node shots.mjs <outDir> [dark|light] [routes...] (~616 tok)
 
 ## C:/Users/ghomist/AppData/Local/pnpm/bin/
 
@@ -372,7 +377,7 @@
 - `app.rs` — [command] (~381 tok)
 - `ballance.rs` — read_options, save_options, read_launch_config, save_launch_config + 2 more (~1324 tok)
 - `brp.rs` — Tauri commands wrapping the BRP validate/install logic. (~2072 tok)
-- `fs.rs` — [derive(serde::Serialize, serde::Deserialize)] (~3017 tok)
+- `fs.rs` — [derive(serde::Serialize, serde::Deserialize)] (~4091 tok)
 - `mod.rs` (~21 tok)
 - `process.rs` — [command] (~622 tok)
 
@@ -397,7 +402,7 @@
 
 ## src/backend/
 
-- `index.ts` — Start async BRP download + install. Returns a download ID immediately. (~1244 tok)
+- `index.ts` — `game_window_info` 的返回：当前有没有游戏窗口被嵌进来。 (~3043 tok)
 - `instance.ts` — Exports instanceBackend (~1110 tok)
 - `utils.ts` — Exports parseBallanceLaunchConfig, dumpBallanceLaunchConfig (~989 tok)
 
@@ -458,8 +463,6 @@
 
 ## src/services/
 
-- `resourceUpdates.ts` — 地图/mod 按 sha256 反查下载站、更新检查与更新流程
-
 - `brp.ts` — Render a short description of what the manifest contains, for notifications. (~1171 tok)
 - `hub.ts` — Exports fetchMaps, fetchMap, fetchTags, getDownloadUrl + 14 more (~1324 tok)
 - `launcher.ts` — Launch the Ballance Player.exe for the selected instance. (~692 tok)
@@ -469,7 +472,7 @@
 
 - `app.ts` — Load the single instance's InstanceData and install RockoonIO mod. (~520 tok)
 - `hub.ts` — Exports useHubStore (~242 tok)
-- `index.ts` — Wire up store subscriptions and load initial state. (~503 tok)
+- `index.ts` — 立刻把还没写的选项写进 Database.tdb（启动游戏前调用，保证游戏读到的是最新的）。 (~1138 tok)
 - `instances.ts` — Exports useInstancesStore (~499 tok)
 - `pref.ts` — Persist the entire store state to localStorage. (~401 tok)
 - `profiles.ts` — Resource dirs whose disable-state we capture per-profile. (~3375 tok)
@@ -557,6 +560,11 @@
 
 ## 地图/mod 更新检查（2026-11-07 新增）
 
-- `src/components/ResourceUpdateGuard.tsx` — 启动器打开 / 开游戏时的更新提示
-- `src/views/components/ResourceUpdates.tsx` — 列表元信息、行尾与右上角更新按钮
-- `src-tauri/src/commands/resources.rs` — 实例地图/mod 文件 sha256（带缓存）
+
+## src/hooks/
+
+- `useIncomingLinks.ts` — rockoon:// 深链（import/play/bvm）+ 拖放 .brp/.zip 导入，从 App.tsx 拆出 (~1800 tok)
+
+## src/components/ (added 2026-11-27)
+
+- `ProfileSwitcher.tsx` — 标题栏「当前配置」下拉：切换/新建/重命名/删除选项配置 (~900 tok)

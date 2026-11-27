@@ -21,17 +21,24 @@ import backend from "@/backend";
  * 展示交给 components/UpdateNotes。
  */
 
-export async function checkForUpdate(): Promise<void> {
+/**
+ * 检查更新。`silent`：启动时的后台检查 —— 只有真有新版本才打扰用户，
+ * 「已是最新」和网络失败都不弹提示（否则每次打开启动器都会冒一条 toast）。
+ * 设置页里手动点「检查更新」时不传，照常给反馈。
+ */
+export async function checkForUpdate(
+  options: { silent?: boolean } = {}
+): Promise<void> {
   try {
     const update = await check({ timeout: 15 * 1000 });
     if (update) {
       showUpdateDialog(update);
-    } else {
+    } else if (!options.silent) {
       message.success(t("settings.noUpdate"));
     }
   } catch (e) {
     console.warn("Update check failed:", e);
-    message.error(t("updater.error"));
+    if (!options.silent) message.error(t("updater.error"));
   }
 }
 

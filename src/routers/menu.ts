@@ -1,21 +1,36 @@
-import type { ComponentType } from "react";
+import { lazy, type ComponentType } from "react";
 import { t } from "@/i18n";
-import Start from "@/views/Start";
-import GameConfig from "@/views/GameConfig";
-import GameData from "@/views/GameData";
-import ResourcesMaps from "@/views/ResourcesMaps";
-import ResourcesMods from "@/views/ResourcesMods";
-import ResourcesSkys from "@/views/ResourcesSkys";
-import ResourcesTextures from "@/views/ResourcesTextures";
-import ResourcesSounds from "@/views/ResourcesSounds";
-import Patches from "@/views/Patches";
-import Mapping from "@/views/Mapping";
-import MapEditor from "@/views/MapEditor";
-import Downloads from "@/views/Downloads";
-import Settings from "@/views/Settings";
 import { hubUrl } from "@/services/hub";
 import { openTasEditorWindow } from "@/services/tasWindow";
 import { isMac } from "@/utils/platform";
+
+// ── 页面按需加载 ────────────────────────────────────────────
+// 每个页面单独成块，首屏只加载当前页；空闲时再把其它页面预取进来，切页时就不会等网络 / 磁盘。
+type PageModule = { default: ComponentType };
+const pageLoaders: (() => Promise<PageModule>)[] = [];
+const page = (load: () => Promise<PageModule>) => {
+  pageLoaders.push(load);
+  return lazy(load);
+};
+
+/** 空闲时预取所有页面（只触发一次 import，结果由浏览器模块缓存复用）。 */
+export const preloadPages = () => {
+  for (const load of pageLoaders) void load().catch(() => {});
+};
+
+const Start = page(() => import("@/views/Start"));
+const GameConfig = page(() => import("@/views/GameConfig"));
+const GameData = page(() => import("@/views/GameData"));
+const ResourcesMaps = page(() => import("@/views/ResourcesMaps"));
+const ResourcesMods = page(() => import("@/views/ResourcesMods"));
+const ResourcesSkys = page(() => import("@/views/ResourcesSkys"));
+const ResourcesTextures = page(() => import("@/views/ResourcesTextures"));
+const ResourcesSounds = page(() => import("@/views/ResourcesSounds"));
+const Patches = page(() => import("@/views/Patches"));
+const Mapping = page(() => import("@/views/Mapping"));
+const MapEditor = page(() => import("@/views/MapEditor"));
+const Downloads = page(() => import("@/views/Downloads"));
+const Settings = page(() => import("@/views/Settings"));
 
 export type MenuItem =
   | ({

@@ -9,7 +9,7 @@ use log::info;
 use std::collections::HashMap;
 use tauri::command;
 
-#[command]
+#[command(async)]
 pub fn read_options(path: String) -> RcResultWith<BallanceOptions> {
     let mut options = BallanceOptions::new();
     options.read_from(&path)?;
@@ -17,14 +17,14 @@ pub fn read_options(path: String) -> RcResultWith<BallanceOptions> {
     Ok(options)
 }
 
-#[command]
+#[command(async)]
 pub fn save_options(path: String, mut options: BallanceOptions) -> RcResult {
     options.write_to(&path)?;
     info!("Saved options to {}", path);
     Ok(())
 }
 
-#[command]
+#[command(async)]
 pub fn read_launch_config(path: String) -> RcResultWith<HashMap<String, HashMap<String, String>>> {
     let content = std::fs::read_to_string(&path)?;
     let lines: Vec<String> = content.lines().map(|s| s.to_string()).collect();
@@ -50,7 +50,7 @@ pub fn read_launch_config(path: String) -> RcResultWith<HashMap<String, HashMap<
     Ok(config_map)
 }
 
-#[command]
+#[command(async)]
 pub fn save_launch_config(
     path: String,
     config: HashMap<String, HashMap<String, String>>,
@@ -69,7 +69,7 @@ pub fn save_launch_config(
     Ok(())
 }
 
-#[command]
+#[command(async)]
 pub fn read_mod_config(path: String) -> RcResultWith<ModConfig> {
     let content = std::fs::read_to_string(&path)?;
     let lines = &content.lines().collect::<Vec<_>>()[1..];
@@ -120,7 +120,7 @@ pub fn read_mod_config(path: String) -> RcResultWith<ModConfig> {
     Ok(config)
 }
 
-#[command]
+#[command(async)]
 pub fn save_mod_config(path: String, config: ModConfig) -> RcResult {
     let mut content = String::new();
     for (cat, entries) in config.entries {

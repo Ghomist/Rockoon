@@ -5,7 +5,7 @@ use std::{os::windows::process::CommandExt, path::PathBuf};
 use tauri::command;
 
 #[cfg(target_os = "windows")]
-#[command]
+#[command(async)]
 pub fn execute(
     cwd: String,
     bin: String,
@@ -320,7 +320,7 @@ pub fn kill(pid: u32) -> RcResult {
     Err(RcError::Other(format!("kill-failed: {stderr}")))
 }
 #[cfg(not(target_os = "windows"))]
-#[command]
+#[command(async)]
 pub fn kill(pid: u32) -> RcResult {
     std::process::Command::new("kill")
         .args(["-9", &pid.to_string()])

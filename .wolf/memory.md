@@ -651,3 +651,28 @@
 | 22:15 | Session end: 3 writes across 2 files (sidebar_edit.py, theme.ts) | 9 reads | ~4672 tok |
 | 22:43 | Session end: 3 writes across 2 files (sidebar_edit.py, theme.ts) | 9 reads | ~4672 tok |
 | 2026-11-07 | 地图/mod 按 hash 反查下载站：更新检查、右上角更新按钮、列表显示作者/日期/版本 | src/services/resourceUpdates.ts, src/components/ResourceUpdateGuard.tsx, src/views/components/ResourceUpdates.tsx, src-tauri/src/commands/resources.rs | build:ui + cargo test + 无头 UI 流程通过，未真机运行 | - |
+
+## Session: 2026-11-27 18:56
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 18:57 | 代码优化分析（只读）：sync command 卡主线程、二进制走 JSON 数组、fs::unzip 路径穿越、TAS/主窗口同包、options 写回无防抖 | src-tauri/src/commands/*, src/main.tsx, src/stores/index.ts | 已汇报，未改代码 | ~25k |
+
+## Session: 2026-11-27 18:58
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 19:00 | Edited src-tauri/src/commands/fs.rs | added optional chaining | ~223 |
+| 19:00 | Edited src-tauri/src/commands/fs.rs | 8→9 lines | ~121 |
+| 19:00 | Edited src-tauri/src/commands/fs.rs | inline fix | ~16 |
+| 19:01 | Edited src-tauri/src/commands/fs.rs | modified len() | ~51 |
+| 19:01 | Edited src/backend/index.ts | expanded (+6 lines) | ~130 |
+| 19:01 | Edited src/backend/index.ts | 2→6 lines | ~75 |
+| 19:03 | Created src/stores/index.ts | — | ~1105 |
+| 19:03 | Edited src/stores/index.ts | 3→4 lines | ~44 |
+| 19:03 | Edited src/stores/index.ts | added 1 import(s) | ~25 |
+| 19:07 | Created C:/Users/ghomist/AppData/Local/Temp/claude/dc7bc8f637e62e3c/19a83ed3-68d5-4121-97c7-d4ffcffdc2d1/scratchpad/shots.mjs | — | ~616 |
+| 19:08 | Created C:/Users/ghomist/AppData/Local/Temp/claude/dc7bc8f637e62e3c/19a83ed3-68d5-4121-97c7-d4ffcffdc2d1/scratchpad/eval.mjs | — | ~191 |
+| 19:15 | 落实优化：unzip 穿越、IO command async、二进制 IPC、懒加载、TAS 窗口 store 隔离、选项写回防抖串行、playtime 节流、Player.ini NaN、窗口位置哨兵、空列表操作、静默更新检查、App 拆分 | src-tauri/src/commands/*, src/{main,App}.tsx, src/stores, src/routers, src/hooks, src/components/ProfileSwitcher.tsx | tsc/cargo check 通过，tauri dev 实测通过 | ~120k |
+| 19:18 | Session end: 11 writes across 4 files (fs.rs, index.ts, shots.mjs, eval.mjs) | 9 reads | ~6983 tok |
+| 19:52 | Session end: 11 writes across 4 files (fs.rs, index.ts, shots.mjs, eval.mjs) | 9 reads | ~6983 tok |

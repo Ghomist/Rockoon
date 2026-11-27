@@ -62,7 +62,11 @@ fn sha256_of(path: &Path) -> std::io::Result<String> {
 }
 
 fn cached_sha256(path: &Path, size: u64, modified: SystemTime) -> std::io::Result<String> {
-    if let Some((s, m, hash)) = HASH_CACHE.lock().unwrap().get(path) {
+    if let Some((s, m, hash)) = HASH_CACHE
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .get(path)
+    {
         if *s == size && *m == modified {
             return Ok(hash.clone());
         }
@@ -70,13 +74,19 @@ fn cached_sha256(path: &Path, size: u64, modified: SystemTime) -> std::io::Resul
     let hash = sha256_of(path)?;
     HASH_CACHE
         .lock()
-        .unwrap()
+        .unwrap_or_else(|e| e.into_inner())
         .insert(path.to_path_buf(), (size, modified, hash.clone()));
     Ok(hash)
 }
 
 /// 扫一个目录。目录不存在、单个文件读不了都跳过：这里只是查更新，不该因此报错。
-fn scan(dir: &Path, kind: &'static str, exts: &[&str], recursive: bool, out: &mut Vec<ResourceFile>) {
+fn scan(
+    dir: &Path,
+    kind: &'static str,
+    exts: &[&str],
+    recursive: bool,
+    out: &mut Vec<ResourceFile>,
+) {
     let Ok(entries) = fs::read_dir(dir) else {
         return;
     };
@@ -168,8 +178,14 @@ mod tests {
         fs::write(&file, b"one").unwrap();
         let first = cached_sha256(&file, 3, SystemTime::UNIX_EPOCH).unwrap();
         fs::write(&file, b"two!").unwrap();
-        assert_eq!(cached_sha256(&file, 3, SystemTime::UNIX_EPOCH).unwrap(), first);
-        assert_ne!(cached_sha256(&file, 4, SystemTime::UNIX_EPOCH).unwrap(), first);
+        assert_eq!(
+            cached_sha256(&file, 3, SystemTime::UNIX_EPOCH).unwrap(),
+            first
+        );
+        assert_ne!(
+            cached_sha256(&file, 4, SystemTime::UNIX_EPOCH).unwrap(),
+            first
+        );
         let _ = fs::remove_dir_all(&root);
     }
 }

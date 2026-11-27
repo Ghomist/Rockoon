@@ -1215,6 +1215,134 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-10-26T14:30:00Z"
+    },
+    {
+      "id": "bug-077",
+      "timestamp": "2026-11-27T11:00:02.011Z",
+      "error_message": "Null/undefined access in ",
+      "file": "src-tauri/src/commands/fs.rs",
+      "root_cause": "Property access on potentially null/undefined value",
+      "fix": "Added null safety (optional chaining or null check)",
+      "tags": [
+        "auto-detected",
+        "null-safety",
+        "rs"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-11-27T11:00:02.011Z"
+    },
+    {
+      "id": "bug-078",
+      "timestamp": "2026-11-27T11:00:11.753Z",
+      "error_message": "Significant refactor of ",
+      "file": "src-tauri/src/commands/fs.rs",
+      "root_cause": "7 lines replaced/restructured",
+      "fix": "Rewrote 8→9 lines (7 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "rs"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-11-27T11:00:11.753Z"
+    },
+    {
+      "id": "bug-079",
+      "timestamp": "2026-11-27T11:01:19.734Z",
+      "error_message": "Missing await",
+      "file": "src/backend/index.ts",
+      "root_cause": "Async call without await — returned Promise instead of value",
+      "fix": "Added await to async call",
+      "tags": [
+        "auto-detected",
+        "async-fix",
+        "ts"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-11-27T11:01:19.734Z"
+    },
+    {
+      "id": "bug-080",
+      "timestamp": "2026-11-27T19:30:00+08:00",
+      "error_message": "fs::unzip path traversal: '../' entries pass Path::starts_with",
+      "file": "src-tauri/src/commands/fs.rs",
+      "root_cause": "Path::starts_with compares components without resolving '..'",
+      "fix": "use ZipFile::enclosed_name()",
+      "tags": [
+        "security",
+        "zip",
+        "path-traversal",
+        "rust"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-11-27T19:30:00+08:00"
+    },
+    {
+      "id": "bug-081",
+      "timestamp": "2026-11-27T19:30:00+08:00",
+      "error_message": "Player.ini gets 'NaN' written for missing keys; React NaN warning on GameConfig",
+      "file": "src/backend/utils.ts",
+      "root_cause": "parseInt(undefined) -> NaN, dump wrote value.toString()",
+      "fix": "dump skips non-finite numbers; NFormWrapper shows '' for NaN",
+      "tags": [
+        "ini",
+        "nan",
+        "gameconfig"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-11-27T19:30:00+08:00"
+    },
+    {
+      "id": "bug-082",
+      "timestamp": "2026-11-27T19:30:00+08:00",
+      "error_message": "TAS window could overwrite main window prefs (playtime etc.) in shared localStorage",
+      "file": "src/stores/index.ts",
+      "root_cause": "TAS window ran initStores with full pref persistence on a stale snapshot",
+      "fix": "initTasWindowStores: language + storage-event sync only, never writes pref/tdb",
+      "tags": [
+        "multi-window",
+        "localStorage",
+        "tas"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-11-27T19:30:00+08:00"
+    },
+    {
+      "id": "bug-083",
+      "timestamp": "2026-11-27T19:30:00+08:00",
+      "error_message": "Ctrl+T language switch not persisted / settings dropdown stale",
+      "file": "src/i18n/index.ts",
+      "root_cause": "switchLanguage mutated usePrefStore.getState().language directly",
+      "fix": "use setState when different",
+      "tags": [
+        "i18n",
+        "zustand"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-11-27T19:30:00+08:00"
+    },
+    {
+      "id": "bug-084",
+      "timestamp": "2026-11-27T19:30:00+08:00",
+      "error_message": "Options writes to Database.tdb not debounced, could finish out of order",
+      "file": "src/stores/index.ts",
+      "root_cause": "each options change fired an independent async saveOptions",
+      "fix": "debounced + serialized queue, flushOptionsSave() before launch",
+      "tags": [
+        "options",
+        "tdb",
+        "race"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-11-27T19:30:00+08:00"
     }
   ]
 }
