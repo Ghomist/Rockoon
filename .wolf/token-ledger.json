@@ -2,14 +2,14 @@
   "version": 1,
   "created_at": "2026-07-12T07:29:28.815Z",
   "lifetime": {
-    "total_tokens_estimated": 57722,
-    "total_reads": 124,
-    "total_writes": 43,
+    "total_tokens_estimated": 71688,
+    "total_reads": 142,
+    "total_writes": 65,
     "total_sessions": 6,
-    "anatomy_hits": 8,
-    "anatomy_misses": 116,
-    "repeated_reads_blocked": 30,
-    "estimated_savings_vs_bare_cli": 8816
+    "anatomy_hits": 12,
+    "anatomy_misses": 130,
+    "repeated_reads_blocked": 34,
+    "estimated_savings_vs_bare_cli": 16832
   },
   "sessions": [
     {
@@ -1001,6 +1001,258 @@
       "id": "session-2026-11-27-1858",
       "started": "2026-11-27T10:58:11.162Z",
       "ended": "2026-11-27T11:52:02.882Z",
+      "reads": [
+        {
+          "file": "D:/Codes/ballance-projects/rockoon/src-tauri/src/commands/fs.rs",
+          "tokens_estimated": 3608,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "D:/Codes/ballance-projects/rockoon/src/services/launcher.ts",
+          "tokens_estimated": 692,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/ghomist/AppData/Local/Temp/claude/dc7bc8f637e62e3c/19a83ed3-68d5-4121-97c7-d4ffcffdc2d1/scratchpad/shots/light_game.jpg",
+          "tokens_estimated": 0,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/ghomist/AppData/Local/Temp/claude/dc7bc8f637e62e3c/19a83ed3-68d5-4121-97c7-d4ffcffdc2d1/scratchpad/shots/light_options.jpg",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/ghomist/AppData/Local/Temp/claude/dc7bc8f637e62e3c/19a83ed3-68d5-4121-97c7-d4ffcffdc2d1/scratchpad/shots/light_maps.jpg",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/ghomist/AppData/Local/Temp/claude/dc7bc8f637e62e3c/19a83ed3-68d5-4121-97c7-d4ffcffdc2d1/scratchpad/shots/light_settings.jpg",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/ghomist/AppData/Local/Temp/claude/dc7bc8f637e62e3c/19a83ed3-68d5-4121-97c7-d4ffcffdc2d1/scratchpad/shots2/light_maps.jpg",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/ghomist/AppData/Local/Temp/claude/dc7bc8f637e62e3c/19a83ed3-68d5-4121-97c7-d4ffcffdc2d1/scratchpad/shots2/light_options.jpg",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/ghomist/AppData/Local/Temp/claude/dc7bc8f637e62e3c/19a83ed3-68d5-4121-97c7-d4ffcffdc2d1/scratchpad/shots2/light_game.jpg",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "D:/Codes/ballance-projects/rockoon/src-tauri/src/commands/fs.rs",
+          "tokens_estimated": 239,
+          "action": "edit"
+        },
+        {
+          "file": "D:/Codes/ballance-projects/rockoon/src-tauri/src/commands/fs.rs",
+          "tokens_estimated": 130,
+          "action": "edit"
+        },
+        {
+          "file": "D:/Codes/ballance-projects/rockoon/src-tauri/src/commands/fs.rs",
+          "tokens_estimated": 17,
+          "action": "edit"
+        },
+        {
+          "file": "D:/Codes/ballance-projects/rockoon/src-tauri/src/commands/fs.rs",
+          "tokens_estimated": 54,
+          "action": "edit"
+        },
+        {
+          "file": "D:/Codes/ballance-projects/rockoon/src/backend/index.ts",
+          "tokens_estimated": 130,
+          "action": "edit"
+        },
+        {
+          "file": "D:/Codes/ballance-projects/rockoon/src/backend/index.ts",
+          "tokens_estimated": 75,
+          "action": "edit"
+        },
+        {
+          "file": "D:/Codes/ballance-projects/rockoon/src/stores/index.ts",
+          "tokens_estimated": 1105,
+          "action": "create"
+        },
+        {
+          "file": "D:/Codes/ballance-projects/rockoon/src/stores/index.ts",
+          "tokens_estimated": 44,
+          "action": "edit"
+        },
+        {
+          "file": "D:/Codes/ballance-projects/rockoon/src/stores/index.ts",
+          "tokens_estimated": 25,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/ghomist/AppData/Local/Temp/claude/dc7bc8f637e62e3c/19a83ed3-68d5-4121-97c7-d4ffcffdc2d1/scratchpad/shots.mjs",
+          "tokens_estimated": 660,
+          "action": "create"
+        },
+        {
+          "file": "C:/Users/ghomist/AppData/Local/Temp/claude/dc7bc8f637e62e3c/19a83ed3-68d5-4121-97c7-d4ffcffdc2d1/scratchpad/eval.mjs",
+          "tokens_estimated": 204,
+          "action": "create"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 4300,
+        "output_tokens_estimated": 2683,
+        "reads_count": 9,
+        "writes_count": 11,
+        "repeated_reads_blocked": 2,
+        "anatomy_lookups": 2
+      }
+    },
+    {
+      "id": "session-2026-11-27-1858",
+      "started": "2026-11-27T10:58:11.162Z",
+      "ended": "2026-11-27T11:57:08.912Z",
+      "reads": [
+        {
+          "file": "D:/Codes/ballance-projects/rockoon/src-tauri/src/commands/fs.rs",
+          "tokens_estimated": 3608,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "D:/Codes/ballance-projects/rockoon/src/services/launcher.ts",
+          "tokens_estimated": 692,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/ghomist/AppData/Local/Temp/claude/dc7bc8f637e62e3c/19a83ed3-68d5-4121-97c7-d4ffcffdc2d1/scratchpad/shots/light_game.jpg",
+          "tokens_estimated": 0,
+          "was_repeated": true,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/ghomist/AppData/Local/Temp/claude/dc7bc8f637e62e3c/19a83ed3-68d5-4121-97c7-d4ffcffdc2d1/scratchpad/shots/light_options.jpg",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/ghomist/AppData/Local/Temp/claude/dc7bc8f637e62e3c/19a83ed3-68d5-4121-97c7-d4ffcffdc2d1/scratchpad/shots/light_maps.jpg",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/ghomist/AppData/Local/Temp/claude/dc7bc8f637e62e3c/19a83ed3-68d5-4121-97c7-d4ffcffdc2d1/scratchpad/shots/light_settings.jpg",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/ghomist/AppData/Local/Temp/claude/dc7bc8f637e62e3c/19a83ed3-68d5-4121-97c7-d4ffcffdc2d1/scratchpad/shots2/light_maps.jpg",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/ghomist/AppData/Local/Temp/claude/dc7bc8f637e62e3c/19a83ed3-68d5-4121-97c7-d4ffcffdc2d1/scratchpad/shots2/light_options.jpg",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        },
+        {
+          "file": "C:/Users/ghomist/AppData/Local/Temp/claude/dc7bc8f637e62e3c/19a83ed3-68d5-4121-97c7-d4ffcffdc2d1/scratchpad/shots2/light_game.jpg",
+          "tokens_estimated": 0,
+          "was_repeated": false,
+          "anatomy_had_description": false
+        }
+      ],
+      "writes": [
+        {
+          "file": "D:/Codes/ballance-projects/rockoon/src-tauri/src/commands/fs.rs",
+          "tokens_estimated": 239,
+          "action": "edit"
+        },
+        {
+          "file": "D:/Codes/ballance-projects/rockoon/src-tauri/src/commands/fs.rs",
+          "tokens_estimated": 130,
+          "action": "edit"
+        },
+        {
+          "file": "D:/Codes/ballance-projects/rockoon/src-tauri/src/commands/fs.rs",
+          "tokens_estimated": 17,
+          "action": "edit"
+        },
+        {
+          "file": "D:/Codes/ballance-projects/rockoon/src-tauri/src/commands/fs.rs",
+          "tokens_estimated": 54,
+          "action": "edit"
+        },
+        {
+          "file": "D:/Codes/ballance-projects/rockoon/src/backend/index.ts",
+          "tokens_estimated": 130,
+          "action": "edit"
+        },
+        {
+          "file": "D:/Codes/ballance-projects/rockoon/src/backend/index.ts",
+          "tokens_estimated": 75,
+          "action": "edit"
+        },
+        {
+          "file": "D:/Codes/ballance-projects/rockoon/src/stores/index.ts",
+          "tokens_estimated": 1105,
+          "action": "create"
+        },
+        {
+          "file": "D:/Codes/ballance-projects/rockoon/src/stores/index.ts",
+          "tokens_estimated": 44,
+          "action": "edit"
+        },
+        {
+          "file": "D:/Codes/ballance-projects/rockoon/src/stores/index.ts",
+          "tokens_estimated": 25,
+          "action": "edit"
+        },
+        {
+          "file": "C:/Users/ghomist/AppData/Local/Temp/claude/dc7bc8f637e62e3c/19a83ed3-68d5-4121-97c7-d4ffcffdc2d1/scratchpad/shots.mjs",
+          "tokens_estimated": 660,
+          "action": "create"
+        },
+        {
+          "file": "C:/Users/ghomist/AppData/Local/Temp/claude/dc7bc8f637e62e3c/19a83ed3-68d5-4121-97c7-d4ffcffdc2d1/scratchpad/eval.mjs",
+          "tokens_estimated": 204,
+          "action": "create"
+        }
+      ],
+      "totals": {
+        "input_tokens_estimated": 4300,
+        "output_tokens_estimated": 2683,
+        "reads_count": 9,
+        "writes_count": 11,
+        "repeated_reads_blocked": 2,
+        "anatomy_lookups": 2
+      }
+    },
+    {
+      "id": "session-2026-11-27-1858",
+      "started": "2026-11-27T10:58:11.162Z",
+      "ended": "2026-11-27T11:58:22.958Z",
       "reads": [
         {
           "file": "D:/Codes/ballance-projects/rockoon/src-tauri/src/commands/fs.rs",

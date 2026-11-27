@@ -676,3 +676,5 @@
 | 19:15 | 落实优化：unzip 穿越、IO command async、二进制 IPC、懒加载、TAS 窗口 store 隔离、选项写回防抖串行、playtime 节流、Player.ini NaN、窗口位置哨兵、空列表操作、静默更新检查、App 拆分 | src-tauri/src/commands/*, src/{main,App}.tsx, src/stores, src/routers, src/hooks, src/components/ProfileSwitcher.tsx | tsc/cargo check 通过，tauri dev 实测通过 | ~120k |
 | 19:18 | Session end: 11 writes across 4 files (fs.rs, index.ts, shots.mjs, eval.mjs) | 9 reads | ~6983 tok |
 | 19:52 | Session end: 11 writes across 4 files (fs.rs, index.ts, shots.mjs, eval.mjs) | 9 reads | ~6983 tok |
+| 19:57 | Session end: 11 writes across 4 files (fs.rs, index.ts, shots.mjs, eval.mjs) | 9 reads | ~6983 tok |
+| 19:58 | Session end: 11 writes across 4 files (fs.rs, index.ts, shots.mjs, eval.mjs) | 9 reads | ~6983 tok |
